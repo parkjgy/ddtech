@@ -1,0 +1,154 @@
+2019-01-10 17:25:59,257 [WARNING] django.request: Bad Request: /
+2019-01-10 17:26:02,253 [WARNING] django.request: Bad Request: /
+2019-01-11 10:52:58,690 [WARNING] django.request: Not Found: /
+2019-01-11 10:53:08,546 [WARNING] django.request: Not Found: /
+2019-01-11 10:53:10,994 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 10:53:14,869 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 10:53:19,471 [WARNING] django.request: Not Found: /
+2019-01-11 10:53:27,480 [WARNING] django.request: Not Found: /
+2019-01-11 10:53:31,956 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 43, in checkVersion
+    rqst = json.loads(request.body.decode("utf-8"))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2019-01-11 10:53:32,034 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 10:55:00,766 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 43, in checkVersion
+    rqst = json.loads(request.body.decode("utf-8"))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2019-01-11 10:55:05,485 [WARNING] django.request: Not Found: /check_version&i=10
+2019-01-11 10:55:05,509 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 10:55:10,886 [WARNING] django.request: Not Found: /check_version&i=10
+2019-01-11 10:55:11,785 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 43, in checkVersion
+    rqst = json.loads(request.body.decode("utf-8"))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2019-01-11 10:55:14,777 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 43, in checkVersion
+    rqst = json.loads(request.body.decode("utf-8"))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2019-01-11 10:55:14,828 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 10:55:47,335 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 43, in checkVersion
+    rqst = json.loads(request.body.decode("utf-8"))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2019-01-11 10:58:28,102 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 46, in checkVersion
+    rqst = request["GET"]
+TypeError: 'WSGIRequest' object is not subscriptable
+2019-01-11 10:58:45,037 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 46, in checkVersion
+    rqst = request["GET"]
+TypeError: 'WSGIRequest' object is not subscriptable
+2019-01-11 10:58:46,637 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 46, in checkVersion
+    rqst = request["GET"]
+TypeError: 'WSGIRequest' object is not subscriptable
+2019-01-11 11:20:27,421 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 48, in checkVersion
+    return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+NameError: name 'result' is not defined
+2019-01-11 11:21:56,760 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-11 11:23:21,424 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 47, in checkVersion
+    for key in rqst.allkeys:
+AttributeError: 'QueryDict' object has no attribute 'allkeys'
