@@ -1434,3 +1434,108 @@ TypeError: must be str, not bytes
 2019-01-16 03:51:29,643 [WARNING] django.request: Not Found: /
 2019-01-16 03:51:36,372 [ERROR] django.request: Service Unavailable: /check_version
 2019-01-16 03:51:36,399 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 03:56:38,607 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 03:56:38,629 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 03:56:49,501 [WARNING] django.request: Not Found: /check_version
+2019-01-16 03:56:51,458 [WARNING] django.request: Not Found: /check_version
+2019-01-16 05:39:28,295 [WARNING] django.request: Not Found: /check_version
+2019-01-16 05:39:41,755 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 05:39:42,367 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 05:39:46,223 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 05:39:53,902 [DEBUG] aegis.log: passer_reg >>> 503 ERROR: local variable 'response' referenced before assignment
+2019-01-16 05:39:53,926 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:42:17,391 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:42:23,735 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:42:28,486 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 05:42:50,577 [WARNING] django.request: Not Found: /employee/beacon_veriry
+2019-01-16 05:42:50,595 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:42:55,395 [WARNING] django.request: Not Found: /employee/beacon_veriry
+2019-01-16 05:42:59,337 [WARNING] django.request: Not Found: /employee/beacon_verify
+2019-01-16 05:42:59,357 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:43:03,263 [WARNING] django.request: Not Found: /employee/beacon_verify
+2019-01-16 05:43:05,331 [ERROR] django.request: Service Unavailable: /employee/check_version
+2019-01-16 05:43:13,215 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:43:24,169 [WARNING] django.request: Not Found: /employee/vefiry_employee
+2019-01-16 05:43:24,188 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:43:38,329 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:48:58,344 [DEBUG] aegis.log: >>> testDecryptionStr: 540c91671b9ead40238220ea87d580c7532f36a6fe8c27c8377b1c830a9489b4dfa36796dc017d0c1c1e6c7ac27d0d8479ee6ee0686d3cbe17d614e71e02afd99e13dedebbba322fbbbc1cb66469d4d89d8add97c098c7e2aead2d49938cdfafef0c3e4fc2350091f96c8d375a01bb349cf895ab9b7bc4bfad137b6cacce36bdaee104d346d634211658bf18c9c4f3518d424ce67b87ee3a210aca60113a16cff88cf8262648155ecb07c2090250005a
+2019-01-16 05:48:58,406 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 132, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 85, in AES_DECRYPT_BASE64
+    return AES_DECRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 78, in AES_DECRYPT
+    dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(msg)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 295, in decrypt
+    return self._cipher.decrypt(ciphertext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 05:49:23,474 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 05:49:23,503 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 132, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 84, in AES_DECRYPT_BASE64
+    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/base64.py", line 87, in b64decode
+    return binascii.a2b_base64(s)
+binascii.Error: Incorrect padding
+2019-01-16 05:49:23,588 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:49:59,905 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg==
+2019-01-16 05:49:59,929 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 05:54:03,510 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg==
+2019-01-16 05:54:03,572 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 133, in testDecryptionStr
+    r += '</br>*** base64 cipherText = ' + _b64CipherText
+TypeError: must be str, not bytes
+2019-01-16 05:58:40,081 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg==
+2019-01-16 05:58:59,568 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg==
+2019-01-16 05:58:59,732 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 05:59:01,630 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 06:00:27,282 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 06:00:27,345 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 137, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 84, in AES_DECRYPT_BASE64
+    pad = '=' * (-len(_b64CipherText) % 4)
+NameError: name '_b64CipherText' is not defined
+2019-01-16 06:00:52,820 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 06:02:49,966 [DEBUG] aegis.log: >>> testDecryptionStr: qgf6YHf1z2Fx80DR8o/Lvg
+2019-01-16 06:07:43,813 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 06:07:43,814 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 06:07:43,814 [DEBUG] aegis.log: b'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98'
+2019-01-16 06:07:43,832 [WARNING] django.request: Not Found: /favicon.ico

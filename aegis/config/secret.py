@@ -81,14 +81,15 @@ def AES_DECRYPT(msg):
 
 # decrypt ( base64:str ) return bytes;
 def AES_DECRYPT_BASE64(msg: str):
+    msg += '=' * (-len(msg) % 4)
     msg = base64.b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg)
 
 """
 Management: testEncryptionStr: get Encryption (Development only)
    문자열을 암호화한다.
-http://localhost:8000/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
-http://dev.seole.net:8000/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
+http://dev.ddtechi.com:8055/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
+http://dev1.ddtechi.com:8033/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
 < plainText: 암호되지 않은 문서
 > cipherText: 암호화된 문서
 """
@@ -100,18 +101,12 @@ def testEncryptionStr(request):
 
     logSend(_plainText)
     r = '*** plainText = ' + _plainText
-    print('--- ', r)
     _cipherText = AES_ENCRYPT(_plainText)
-    print('--- s 1', _cipherText)
     r += '</br>*** cipherText(bytes) = ' + _cipherText.hex()
-    print('--- s 2')
     b64cipherText = AES_ENCRYPT_BASE64(_plainText)
-    print('--- s 3')
     r += '</br>*** base64 cipherText = ' + b64cipherText
     plainText = AES_DECRYPT_BASE64(b64cipherText)
-    print('--- s 7')
     r += '</br>*** replainText = ' + plainText.decode(encoding='UTF-8')
-    print('--- s 8')
     logSend(plainText)
     return HttpResponse(r)
 
@@ -131,5 +126,4 @@ def testDecryptionStr(request):
     r = '*** base64 cipherText = ' + _b64CipherText
     plainText = AES_DECRYPT_BASE64(_b64CipherText)
     r += '</br>*** plainText = ' + plainText.decode(encoding='UTF-8')
-    print(plainText.decode(encoding='UTF-8'))
     return HttpResponse(r)

@@ -41,9 +41,16 @@ urlpatterns = [
 
     # url(r'^api-auth', include('router.urls')),
     # url(r'^beacon_test_d3$', views.beaconTestD3, name = 'beaconTestD3'),
-    url(r'check_version$', views.checkVersion, name = 'checkVersion'),
+    url(r'employee/check_version$', views.checkVersion, name = 'checkVersion'),
     url(r'test_RSA$', views.test_RSA,  name='test_RSA'),
     url(r'request_AES256$', views.request_AES256, name='request_AES256'),
+
+    url(r'employee/passer_reg$', views.passer_reg, name = 'passer_reg'),
+
+    url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
+    url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
+    url(r'employee/reg_employee$', views.reg_employee, name='reg_employee'),
+    url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

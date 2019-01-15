@@ -55,3 +55,4 @@
 2019-01-16 03:19:32,824 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
 2019-01-16 03:22:28,437 [DEBUG] aegis.error.log: ERROR: base64decode
 2019-01-16 03:22:28,438 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 05:39:53,902 [DEBUG] aegis.error.log: passer_reg >>> 503 ERROR: local variable 'response' referenced before assignment
