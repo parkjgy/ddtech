@@ -152,3 +152,363 @@ Traceback (most recent call last):
   File "/Volumes/Work/ddtech/aegis/employee/views.py", line 47, in checkVersion
     for key in rqst.allkeys:
 AttributeError: 'QueryDict' object has no attribute 'allkeys'
+2019-01-14 15:05:29,768 [WARNING] django.request: Not Acceptable: /
+2019-01-14 15:07:04,099 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:25:22,195 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:37:53,518 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:39:05,493 [WARNING] django.request: Not Found: /
+2019-01-14 15:39:09,165 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:39:09,186 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:39:21,112 [WARNING] django.request: Not Found: /api_auth/
+2019-01-14 15:39:33,046 [WARNING] django.request: Not Found: /api_auth/
+2019-01-14 15:39:33,190 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:39:34,554 [WARNING] django.request: Not Found: /
+2019-01-14 15:42:14,880 [WARNING] django.request: Not Found: /
+2019-01-14 15:42:15,561 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:42:17,621 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:42:33,900 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 15:47:17,345 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:47:18,695 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:47:37,876 [WARNING] django.request: Not Found: /api_auth/
+2019-01-14 15:47:38,010 [WARNING] django.request: Not Found: /api_auth/
+2019-01-14 15:47:45,363 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:47:46,362 [WARNING] django.request: Not Found: /api_auth
+2019-01-14 15:47:46,726 [WARNING] django.request: Not Found: /
+2019-01-14 16:00:58,580 [WARNING] django.request: Not Found: /
+2019-01-14 16:13:02,283 [WARNING] django.request: Not Found: /
+2019-01-14 16:13:03,168 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 51, in checkVersion
+    resultJson = JsonResopnse(result)
+NameError: name 'JsonResopnse' is not defined
+2019-01-14 16:13:05,420 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 51, in checkVersion
+    resultJson = JsonResopnse(result)
+NameError: name 'JsonResopnse' is not defined
+2019-01-14 16:13:46,867 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 51, in checkVersion
+    resultJson = JsonResopnse(result)
+NameError: name 'JsonResopnse' is not defined
+2019-01-14 16:14:16,178 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 52, in checkVersion
+    print(result.constent)
+AttributeError: 'dict' object has no attribute 'constent'
+2019-01-14 16:14:48,142 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 52, in checkVersion
+    print(resultJson.constent)
+AttributeError: 'JsonResponse' object has no attribute 'constent'
+2019-01-14 16:18:20,453 [ERROR] django.request: Internal Server Error: /check_version
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 53, in checkVersion
+    response.content = json.dumps(result, cls=DateTimeEncoder)
+AttributeError: 'int' object has no attribute 'content'
+2019-01-14 16:22:48,183 [ERROR] django.request: Service Unavailable: /check_version
+2019-01-14 16:23:45,203 [ERROR] django.request: Service Unavailable: /check_version
+2019-01-14 16:24:03,013 [ERROR] django.request: Service Unavailable: /check_version
+2019-01-14 16:50:13,966 [ERROR] django.request: Service Unavailable: /check_version
+2019-01-14 16:50:15,917 [WARNING] django.request: Not Found: /
+2019-01-14 16:50:20,112 [WARNING] django.request: Not Found: /rest_RSA
+2019-01-14 16:50:20,133 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 16:50:56,038 [WARNING] django.request: Not Found: /rest_RSA
+2019-01-14 16:50:57,464 [WARNING] django.request: Not Found: /rest_RSA
+2019-01-14 16:50:58,690 [WARNING] django.request: Not Found: /rest_RSA
+2019-01-14 16:51:10,244 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 120, in test_RSA
+    return exceptionError('mng_currentEnv', staffCode, e)
+UnboundLocalError: local variable 'staffCode' referenced before assignment
+2019-01-14 16:51:10,302 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 16:51:56,477 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 121, in test_RSA
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:52:59,955 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 121, in test_RSA
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:53:41,475 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 121, in test_RSA
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:54:15,066 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 121, in test_RSA
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:54:33,737 [ERROR] django.request: Internal Server Error: /test_RSA
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 95, in test_RSA
+    rsapKey = request.GET["RSAPublicKey"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'RSAPublicKey'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 121, in test_RSA
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:55:47,858 [ERROR] django.request: Service Unavailable: /test_RSA
+2019-01-14 16:56:38,312 [ERROR] django.request: Service Unavailable: /test_RSA
+2019-01-14 16:56:44,206 [ERROR] django.request: Service Unavailable: /test_RSA
+2019-01-14 16:56:47,654 [WARNING] django.request: Not Found: /
+2019-01-14 16:56:48,437 [WARNING] django.request: Not Found: /rest_RSA
+2019-01-14 16:56:54,492 [ERROR] django.request: Internal Server Error: /request_AES256
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 152, in request_AES256
+    response = HttpResponse(json.dump(result, cls=DateTimeEncoder))
+TypeError: dump() missing 1 required positional argument: 'fp'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 156, in request_AES256
+    eResponse = HttpResponse(json.dump({'R': 20, 'M': "에러 났어요"}))
+TypeError: dump() missing 1 required positional argument: 'fp'
+2019-01-14 16:56:54,545 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 16:57:08,576 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 16:57:54,375 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:00:53,791 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:04:48,046 [ERROR] django.request: Internal Server Error: /request_AES256
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 147, in request_AES256
+    if request.method == 'POST':
+NameError: name 'request' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 167, in request_AES256
+    return exceptionError('request_AES256', 0, e)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 173, in exceptionError
+    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
+TypeError: must be str, not int
+2019-01-14 17:05:25,998 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: name 'request' is not defined
+2019-01-14 17:05:26,086 [ERROR] django.request: Internal Server Error: /request_AES256
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 147, in request_AES256
+    if request.method == 'POST':
+NameError: name 'request' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 167, in request_AES256
+    return exceptionError('request_AES256', '0', e)
+  File "/Volumes/Work/ddtech/aegis/employee/views.py", line 176, in exceptionError
+    return testResponse(json.dumps(result, cls=DateTimeEncoder))
+NameError: name 'testResponse' is not defined
+2019-01-14 17:05:45,046 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: name 'request' is not defined
+2019-01-14 17:05:56,441 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: name 'request' is not defined
+2019-01-14 17:06:13,687 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:07:27,590 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:07:53,723 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:10:15,338 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:10:15,355 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 17:10:30,100 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:10:32,775 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:10:33,222 [WARNING] django.request: Not Found: /
+2019-01-14 17:16:40,035 [WARNING] django.request: Not Found: /
+2019-01-14 17:16:44,250 [WARNING] django.request: Not Found: /
+2019-01-14 17:16:44,598 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:16:47,484 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:16:50,317 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:17:43,339 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:31:08,605 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:31:21,251 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:48:48,961 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:52:24,256 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:52:56,281 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:53:36,677 [ERROR] django.request: Service Unavailable: /request_AES256
+2019-01-14 17:53:36,705 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-14 17:53:54,893 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:54:53,112 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:55:02,110 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:57:12,906 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:57:25,514 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-14 17:58:20,732 [DEBUG] aegis.log: request_AES256 >>> 0 ERROR: 'rk'

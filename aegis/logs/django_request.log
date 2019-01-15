@@ -275,3 +275,390 @@
 2019-01-11 17:04:09,224 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
 2019-01-11 17:04:09,225 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
 2019-01-11 17:04:09,227 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 11:25:08,455 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 11:25:08,456 [DEBUG] django.db.backends: (0.001) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 11:25:08,472 [DEBUG] django.db.backends: (0.016) SHOW FULL TABLES; args=None
+2019-01-14 11:25:08,482 [DEBUG] django.db.backends: (0.008) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:01:40,556 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:01:40,556 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:01:40,557 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:01:40,560 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:02:30,224 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:02:30,224 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:02:30,225 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:02:30,227 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:03:13,644 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:03:13,644 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:03:13,645 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:03:13,647 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:04:59,874 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:04:59,874 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:04:59,875 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:04:59,879 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:05:11,236 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:05:11,237 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:05:11,239 [DEBUG] django.db.backends: (0.002) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:05:11.212766' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:05:11.212766', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:05:11,246 [DEBUG] django.db.backends: (0.006) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:06:40,769 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:06:40,770 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:06:40,771 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:06:40,773 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:06:54,180 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:06:54,181 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:06:54,181 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:06:54.157348' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:06:54.157348', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:06:54,183 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:07:04,030 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:07:04,031 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:07:04.011734' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:07:04.011734', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:07:04,031 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:07:06,025 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:07:06,026 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:07:06.002255' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:07:06.002255', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:07:06,027 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:09:38,068 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:09:38,068 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:09:38,069 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:09:38.047238' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:09:38.047238', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:09:38,070 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:09:43,569 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:09:43,570 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:09:43.548379' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:09:43.548379', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:09:43,571 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:24:15,391 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:24:15,392 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:24:15,393 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:24:15,395 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:24:48,679 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:24:48,680 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:24:48,681 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:24:48,683 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:25:22,096 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:25:22,096 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:25:22,097 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:25:22.071414' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:25:22.071414', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:25:22,098 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:37:29,689 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:37:29,690 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:37:29,691 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:37:29,695 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:37:38,940 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:37:38,940 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:37:38,941 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:37:38.914372' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:37:38.914372', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:37:38,942 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:37:50,886 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:37:50,887 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:37:50.864798' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:37:50.864798', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:37:50,888 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:37:53,406 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:37:53,407 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:37:53.382038' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:37:53.382038', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:37:53,408 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:38:54,477 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:38:54,477 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:38:54,478 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:38:54,481 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:38:56,643 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:38:56,644 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:38:56,644 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:38:56.618373' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:38:56.618373', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:38:56,645 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:39:04,561 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:39:04,562 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:39:04.540692' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:39:04.540692', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:39:04,563 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:39:35,172 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:39:35,173 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:39:35,174 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:39:35.152339' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:39:35.152339', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:39:35,175 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:39:37,834 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:39:37,834 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:39:37.809662' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:39:37.809662', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:39:37,835 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:41:53,845 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:41:53,845 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:41:53,846 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:41:53,850 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:42:06,713 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:42:06,713 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:06,714 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:42:06,717 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:42:10,181 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:42:10,182 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:10,182 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:42:10.157250' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:42:10.157250', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:42:10,183 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:42:13,919 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:13,920 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:42:13.899060' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:42:13.899060', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:42:13,921 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:42:17,491 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:17,492 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:42:17.467505' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:42:17.467505', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:42:17,493 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:42:26,937 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:26,937 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:42:26.912489' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:42:26.912489', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:42:26,938 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:42:33,849 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:42:33,849 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:42:33.827081' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:42:33.827081', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:42:33,850 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:45:37,416 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:45:37,417 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:45:37,418 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:45:37,421 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:46:00,576 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:46:00,576 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:00,577 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:46:00,579 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:46:20,659 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:46:20,660 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:20,660 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:46:20,663 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:46:42,794 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:46:42,794 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:42,795 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 15:46:42,797 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 15:46:45,616 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:46:45,616 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:45,617 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:46:45.597960' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:46:45.597960', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:46:45,618 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:46:48,269 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:48,269 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:46:48.250687' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:46:48.250687', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:46:48,270 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:46:50,720 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:46:50,720 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:46:50.695833' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:46:50.695833', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:46:50,721 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:03,923 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:03,924 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:03.899724' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:03.899724', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:03,925 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:09,489 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:09,489 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:09.466364' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:09.466364', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:09,490 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:11,632 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:11,632 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:11.608348' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:11.608348', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:11,633 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:46,228 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:46,228 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:46.206042' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:46.206042', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:46,230 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:47,131 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 15:47:47,131 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:47,131 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:47.110146' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:47.110146', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:47,132 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 15:47:48,158 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 15:47:48,159 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 06:47:48.134527' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 06:47:48.134527', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 15:47:48,160 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:00:57,693 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:00:57,693 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:00:57,693 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:00:57.671990' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:00:57.671990', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:00:57,694 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:12:53,524 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:12:53,525 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:12:53,526 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:12:53,528 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:13:01,399 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:13:01,399 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:13:01,399 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:13:01.376731' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:13:01.376731', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:13:01,401 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:13:03,122 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:13:03,122 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:13:03.101274' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:13:03.101274', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:13:03,123 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:13:05,397 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:13:05,397 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:13:05.373571' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:13:05.373571', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:13:05,398 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:13:40,609 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:13:40,613 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:13:40,614 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:13:40,617 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:13:46,822 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:13:46,823 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:13:46,823 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:13:46.804234' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:13:46.804234', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:13:46,824 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:14:13,979 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:14:13,980 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:14:13,981 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:14:13,982 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:14:16,129 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:14:16,129 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:14:16,129 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:14:16.104385' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:14:16.104385', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:14:16,131 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:14:45,309 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:14:45,310 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:14:45,311 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:14:45,313 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:14:48,092 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:14:48,093 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:14:48,093 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:14:48.067155' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:14:48.067155', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:14:48,094 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:15:22,813 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:15:22,814 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:15:22,815 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:15:22,817 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:16:02,370 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:16:02,370 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:16:02,371 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:16:02,374 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:18:16,130 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:18:16,130 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:18:16,131 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:18:16,133 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:18:20,403 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:18:20,403 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:18:20,404 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:18:20.378277' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:18:20.378277', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:18:20,405 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:19:51,293 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:19:51,294 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:19:51,295 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:19:51,298 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:21:24,976 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:21:24,977 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:21:24,977 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:21:24,979 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:22:44,468 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:22:44,468 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:22:44,469 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:22:44,471 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:23:42,448 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:23:42,448 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:23:42,449 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:23:42,451 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:24:01,520 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:24:01,521 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:24:01,522 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:24:01,524 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:50:05,991 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:50:05,992 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:50:05,992 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:50:05,994 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:50:55,734 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:50:55,734 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:50:55,735 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:50:55,737 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:51:10,186 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:51:10,186 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:51:10,187 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:51:10.162317' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:51:10.162317', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:51:10,188 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:51:54,770 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:51:54,771 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:51:54,772 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:51:54,774 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:51:56,425 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:51:56,426 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:51:56,426 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:51:56.401465' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:51:56.401465', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:51:56,427 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:52:55,788 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:52:55,789 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:52:55,790 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:52:55,792 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:52:59,877 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:52:59,877 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:52:59,877 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:52:59.852274' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:52:59.852274', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:52:59,879 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:53:40,550 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:53:40,550 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:53:40,551 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:53:40,553 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:53:41,423 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:53:41,423 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:53:41,424 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:53:41.399402' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:53:41.399402', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:53:41,425 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:54:11,884 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:54:11,884 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:54:11,885 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:54:11,887 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:54:15,016 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:54:15,016 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:54:15,016 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:54:14.993523' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:54:14.993523', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:54:15,018 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:54:30,935 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:54:30,935 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:54:30,936 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:54:30,938 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:54:33,685 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:54:33,685 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:54:33,686 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:54:33.660679' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:54:33.660679', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:54:33,687 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:55:43,254 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:55:43,255 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:55:43,256 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:55:43,257 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:56:38,171 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:56:38,171 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:56:38,172 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:56:38,174 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:56:54,441 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:56:54,442 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:56:54,442 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 07:56:54.417417' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 07:56:54.417417', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 16:56:54,444 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 16:57:06,424 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:57:06,425 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:57:06,425 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:57:06,427 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:57:54,177 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:57:54,177 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:57:54,178 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:57:54,180 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 16:58:16,307 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 16:58:16,308 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 16:58:16,309 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 16:58:16,311 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:00:51,024 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:00:51,025 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:00:51,026 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:00:51,028 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:04:42,484 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:04:42,484 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:04:42,485 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:04:42,487 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:04:47,996 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:04:47,996 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:04:47,997 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 08:04:47.972752' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 08:04:47.972752', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 17:04:47,998 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 17:05:23,027 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:05:23,027 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:05:23,028 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:05:23,030 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:05:26,033 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:05:26,034 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:05:26,034 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 08:05:26.008350' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 08:05:26.008350', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 17:05:26,035 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 17:05:43,085 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:05:43,086 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:05:43,086 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:05:43,088 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:05:54,970 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:05:54,971 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:05:54,972 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:05:54,974 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:06:11,972 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:06:11,972 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:06:11,973 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:06:11,975 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:07:26,351 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:07:26,351 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:07:26,352 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:07:26,354 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:07:52,572 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:07:52,573 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:07:52,573 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:07:52,575 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:10:33,721 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:10:33,721 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:10:33,721 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 08:10:33.698917' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 08:10:33.698917', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 17:10:33,723 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 17:10:34,622 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:10:34,622 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 08:10:34.597466' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 08:10:34.597466', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 17:10:34,623 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 17:16:39,088 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:16:39,088 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:16:39,089 [DEBUG] django.db.backends: (0.000) SELECT `django_session`.`session_key`, `django_session`.`session_data`, `django_session`.`expire_date` FROM `django_session` WHERE (`django_session`.`expire_date` > '2019-01-14 08:16:39.066915' AND `django_session`.`session_key` = 'bscflrmqu0f4dmqpunu8gnj90238st79'); args=('2019-01-14 08:16:39.066915', 'bscflrmqu0f4dmqpunu8gnj90238st79')
+2019-01-14 17:16:39,090 [DEBUG] django.db.backends: (0.000) SELECT `auth_user`.`id`, `auth_user`.`password`, `auth_user`.`last_login`, `auth_user`.`is_superuser`, `auth_user`.`username`, `auth_user`.`first_name`, `auth_user`.`last_name`, `auth_user`.`email`, `auth_user`.`is_staff`, `auth_user`.`is_active`, `auth_user`.`date_joined` FROM `auth_user` WHERE `auth_user`.`id` = 1; args=(1,)
+2019-01-14 17:31:06,258 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:31:06,259 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:31:06,259 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:31:06,261 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:52:22,382 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:52:22,383 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:52:22,383 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:52:22,386 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:52:52,572 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:52:52,573 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:52:52,574 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:52:52,576 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:54:49,987 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:54:49,987 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:54:49,988 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:54:49,990 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:57:11,211 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:57:11,212 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:57:11,212 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:57:11,214 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-14 17:58:20,333 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-14 17:58:20,334 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-14 17:58:20,335 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-14 17:58:20,336 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
