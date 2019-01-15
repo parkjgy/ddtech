@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 SECRET_KEY = 'd*)n0s&_3cufmn4x^&0_ny_pplg&1a4k1==r7cxronkfd$7no@'
 
 #ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', '192.168.219.55', '211.220.119.24']
+ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', '192.168.219.55', '211.220.119.24', '192.168.123.33', '61.78.188.250']
 
 # Application definition
 
