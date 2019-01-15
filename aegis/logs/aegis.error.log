@@ -13,3 +13,45 @@
 2019-01-14 17:57:12,906 [DEBUG] aegis.error.log: request_AES256 >>> 0 ERROR: 'rk'
 2019-01-14 17:57:25,514 [DEBUG] aegis.error.log: request_AES256 >>> 0 ERROR: 'rk'
 2019-01-14 17:58:20,732 [DEBUG] aegis.error.log: request_AES256 >>> 0 ERROR: 'rk'
+2019-01-16 02:11:04,146 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:15:28,623 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:19:57,712 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:26:07,828 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:26:56,764 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:27:49,515 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:27:49,515 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:28:21,253 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:28:21,253 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:29:55,776 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:29:55,776 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:30:27,668 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:30:27,668 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:31:12,669 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:31:12,669 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:35:09,628 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:35:09,628 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:36:31,387 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:36:31,387 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:37:05,784 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:37:05,785 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:38:00,639 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:38:00,640 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:38:54,651 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:38:54,651 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:39:18,332 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 02:39:18,332 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 02:39:34,960 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:03:47,755 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:05:29,286 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:08:06,933 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:11:55,656 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:17:55,770 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:17:55,771 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:18:29,926 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:18:29,926 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:19:13,711 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:19:13,711 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:19:32,824 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:19:32,824 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
+2019-01-16 03:22:28,437 [DEBUG] aegis.error.log: ERROR: base64decode
+2019-01-16 03:22:28,438 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT

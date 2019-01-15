@@ -529,3 +529,908 @@ NameError: name 'testResponse' is not defined
 2019-01-15 15:27:10,508 [WARNING] django.request: Bad Request: /favicon.ico
 2019-01-15 16:53:13,656 [WARNING] django.request: Bad Request: /swagger
 2019-01-15 16:53:13,772 [WARNING] django.request: Bad Request: /favicon.ico
+2019-01-16 01:21:27,794 [WARNING] django.request: Not Found: /
+2019-01-16 01:21:27,826 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 01:21:36,351 [DEBUG] aegis.log: >>> testEncryptionStr: 
+2019-01-16 01:21:36,412 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 96, in testEncryptionStr
+    logSend(_plainText.decode('utf-8'))
+AttributeError: 'str' object has no attribute 'decode'
+2019-01-16 01:21:36,495 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 01:22:35,592 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:22:35,621 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 96, in testEncryptionStr
+    logSend(_plainText.decode('utf-8'))
+AttributeError: 'str' object has no attribute 'decode'
+2019-01-16 01:22:35,718 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 01:26:09,247 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:26:09,248 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:26:09,313 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 99, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 23, in AES_ENCRYPT
+    aes = AES.new(bytes(AESkey), AES.MODE_CBC, AESiv)
+TypeError: string argument without an encoding
+2019-01-16 01:27:10,871 [DEBUG] aegis.log: >>> testEncryptionStr: 
+2019-01-16 01:27:10,871 [DEBUG] aegis.log: 
+2019-01-16 01:27:10,901 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 99, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 23, in AES_ENCRYPT
+    aes = AES.new(bytes(AESkey), AES.MODE_CBC, AESiv)
+TypeError: string argument without an encoding
+2019-01-16 01:29:17,521 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:29:17,521 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:29:17,585 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 101, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 37, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 29, in AES_ENCRYPT
+    return aes.encrypt(msg2)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 244, in encrypt
+    return self._cipher.encrypt(plaintext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 01:31:55,580 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:31:55,581 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:31:55,644 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 100, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 24, in AES_ENCRYPT
+    aes = AES.new(AESkey, AES.MODE_EAX, AESiv)
+AttributeError: module 'Crypto.Cipher.AES' has no attribute 'MODE_EAX'
+2019-01-16 01:34:41,811 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:34:41,812 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:34:41,880 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 101, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 37, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 29, in AES_ENCRYPT
+    return aes.encrypt(msg2)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 244, in encrypt
+    return self._cipher.encrypt(plaintext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 01:36:57,158 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:36:57,158 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:36:57,222 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 102, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 38, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 30, in AES_ENCRYPT
+    return aes.encrypt(msg2)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 244, in encrypt
+    return self._cipher.encrypt(plaintext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 01:37:35,970 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:37:35,971 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:37:36,034 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 102, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 38, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 30, in AES_ENCRYPT
+    return aes.encrypt(msg2)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 244, in encrypt
+    return self._cipher.encrypt(plaintext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 01:48:33,107 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:48:33,107 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:48:33,173 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 128, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg), 16)
+TypeError: string argument without an encoding
+2019-01-16 01:50:09,464 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:50:09,464 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:50:09,525 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 128, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg), 16)
+TypeError: string argument without an encoding
+2019-01-16 01:50:25,817 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:50:25,817 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:50:25,847 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 128, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg), 16)
+TypeError: string argument without an encoding
+2019-01-16 01:51:17,256 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:51:17,256 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:51:17,318 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 128, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg), 16, 'pkcs7')
+TypeError: string argument without an encoding
+2019-01-16 01:52:18,636 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:52:18,636 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:52:18,704 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 129, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 65, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg, 'utf-8'), 16, 'pkcs7')
+TypeError: encoding without a string argument
+2019-01-16 01:55:30,146 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:55:30,146 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:55:30,208 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 129, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 65, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(bytes(msg, encoding='UTF-8'), 16, 'pkcs7')
+TypeError: encoding without a string argument
+2019-01-16 01:56:19,747 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:56:19,747 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:56:19,833 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 129, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 65, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg.encode(encoding='UTF-8'), 16, 'pkcs7')
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 01:58:19,661 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:58:19,661 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:58:19,724 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 128, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg, 16, 'pkcs7')
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 46, in pad
+    return data_to_pad + padding
+TypeError: must be str, not bytes
+2019-01-16 01:58:58,576 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:58:58,576 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:58:58,640 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 129, in testEncryptionStr
+    _cipherText = AES_ENCRYPT(_plainText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg, 16, 'pkcs7')
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 46, in pad
+    return data_to_pad + padding
+TypeError: must be str, not bytes
+2019-01-16 01:59:49,695 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:59:49,696 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 01:59:49,762 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 130, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 66, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg.encode(encoding='UTF-8'), 16, 'pkcs7')
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 02:02:08,835 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:02:08,835 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:02:08,900 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 131, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 66, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg.encode(encoding='UTF-8'), 16, 'pkcs7')
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 02:05:47,536 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:05:47,536 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:05:47,600 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 132, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 66, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg.encode(encoding='UTF-8'), 16, 'pkcs7')
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 02:06:31,568 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:06:31,568 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:06:31,631 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 132, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 66, in AES_ENCRYPT_HEX
+    cipherText = AES_ENCRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 55, in AES_ENCRYPT
+    msg2 = pad(msg.encode(encoding='UTF-8'), 16, 'pkcs7')
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 02:07:47,742 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:07:47,743 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:07:47,805 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 133, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 71, in AES_ENCRYPT_HEX
+    r += '%02X' % ord(ch) + ' '
+TypeError: ord() expected string of length 1, but int found
+2019-01-16 02:09:10,846 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:09:10,846 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:09:10,909 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 133, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + AES_ENCRYPT_HEX(_cipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 71, in AES_ENCRYPT_HEX
+    r += '%02X' % int(ord(ch)) + ' '
+TypeError: ord() expected string of length 1, but int found
+2019-01-16 02:09:52,089 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:09:52,089 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:09:52,151 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 138, in testEncryptionStr
+    r += '</br>*** base64 cipherText = ' + b64cipherText
+TypeError: must be str, not bytes
+2019-01-16 02:11:04,145 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:11:04,146 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:11:04,146 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:11:04,146 [DEBUG] aegis.log: ......
+2019-01-16 02:15:28,622 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:15:28,623 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:15:28,623 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:15:28,623 [DEBUG] aegis.log: ......
+2019-01-16 02:19:57,712 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:19:57,712 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:19:57,712 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:19:57,712 [DEBUG] aegis.log: ......
+2019-01-16 02:21:59,673 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:21:59,673 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:21:59,740 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 176, in testEncryptionStr
+    r += '</br>*** replainText = ' + plainText
+TypeError: must be str, not bytes
+2019-01-16 02:22:55,811 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:22:55,811 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:22:55,811 [DEBUG] aegis.log: b'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98'
+2019-01-16 02:24:06,393 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:24:06,393 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 02:24:06,454 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 176, in testEncryptionStr
+    r += '</br>*** replainText = ' + plainText.encode(encoding='UTF-8')
+TypeError: must be str, not bytes
+2019-01-16 02:25:32,506 [WARNING] django.request: Bad Request: /dr/testDecryptionStr
+2019-01-16 02:25:32,621 [WARNING] django.request: Bad Request: /favicon.ico
+2019-01-16 02:25:45,303 [WARNING] django.request: Bad Request: /dr/testDecryptionStr
+2019-01-16 02:26:07,828 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:26:07,828 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:26:07,855 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 199, in testDecryptionStr
+    r += '</br>*** cipherText = ' + _cipherText.hex()
+AttributeError: 'str' object has no attribute 'hex'
+2019-01-16 02:26:07,949 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 02:26:56,764 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:26:56,765 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:26:56,825 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 199, in testDecryptionStr
+    r += '</br>*** cipherText = ' + _cipherText.hex()
+AttributeError: 'str' object has no attribute 'hex'
+2019-01-16 02:27:49,515 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:27:49,515 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:27:49,516 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:27:49,577 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 202, in testDecryptionStr
+    logSend(plainText.decode('utf-8'))
+AttributeError: 'str' object has no attribute 'decode'
+2019-01-16 02:28:21,252 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:28:21,253 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:28:21,253 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:29:55,776 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:29:55,776 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:29:55,776 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:30:27,668 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:30:27,668 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:30:27,668 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:31:12,668 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:31:12,669 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:31:12,669 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:35:09,627 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:35:09,628 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:35:09,628 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:36:31,387 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:36:31,387 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:36:31,387 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:37:05,784 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:37:05,785 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:37:05,785 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:38:00,639 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:38:00,640 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:38:00,640 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:38:54,651 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:38:54,651 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:38:54,651 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:39:18,332 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:39:18,332 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 02:39:18,332 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:39:34,960 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:39:34,960 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 02:41:05,061 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 02:41:05,122 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 206, in testDecryptionStr
+    r += '</br>*** cipherText = ' + _cipherText
+TypeError: must be str, not bytes
+2019-01-16 03:03:47,755 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:03:47,755 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:05:29,286 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:05:29,287 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:08:06,932 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:08:06,933 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:08:56,826 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:08:56,886 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 210, in testDecryptionStr
+    r += '</br>*** plainText = ' + plainText
+TypeError: must be str, not bytes
+2019-01-16 03:09:46,508 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:10:14,440 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:10:14,502 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 211, in testDecryptionStr
+    print(plainText.encode(encoding='UTF-8'))
+AttributeError: 'bytes' object has no attribute 'encode'
+2019-01-16 03:10:31,450 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:11:23,403 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:11:55,655 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:11:55,656 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:11:55,656 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:11:55,716 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 181, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + cipherText.hex()
+AttributeError: 'str' object has no attribute 'hex'
+2019-01-16 03:16:43,083 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:16:43,083 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:16:43,144 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 177, in testEncryptionStr
+    r += '</br>*** base64 cipherText = ' + b64cipherText
+TypeError: must be str, not bytes
+2019-01-16 03:17:55,770 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:17:55,770 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:17:55,770 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:17:55,771 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:17:55,832 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 185, in testEncryptionStr
+    r += '</br>*** replainText = ' + plainText.encode(encoding='UTF-8')
+TypeError: must be str, not bytes
+2019-01-16 03:18:29,925 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:18:29,926 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:18:29,926 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:18:29,926 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:18:29,987 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 185, in testEncryptionStr
+    r += '</br>*** replainText = ' + str(plainText).encode(encoding='UTF-8')
+TypeError: must be str, not bytes
+2019-01-16 03:19:13,710 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:19:13,711 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:19:13,711 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:19:13,711 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:19:13,771 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 185, in testEncryptionStr
+    r += '</br>*** replainText = ' + plainText.hex()
+AttributeError: 'str' object has no attribute 'hex'
+2019-01-16 03:19:32,823 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:19:32,824 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:19:32,824 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:19:32,824 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:19:32,824 [DEBUG] aegis.log: ......
+2019-01-16 03:22:28,437 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:22:28,437 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:22:28,438 [DEBUG] aegis.log: ERROR: base64decode
+2019-01-16 03:22:28,438 [DEBUG] aegis.log: ERROR: AES_DECRYPT
+2019-01-16 03:22:28,438 [DEBUG] aegis.log: ......
+2019-01-16 03:30:07,090 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:30:07,090 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:30:07,151 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 185, in testEncryptionStr
+    r += '</br>*** replainText = ' + plainText
+TypeError: must be str, not bytes
+2019-01-16 03:30:54,868 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:30:54,868 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:30:54,868 [DEBUG] aegis.log: b'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98'
+2019-01-16 03:31:12,909 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:31:12,972 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    _cipherText = base64decode(_b64CipherText)
+NameError: name 'base64decode' is not defined
+2019-01-16 03:32:52,859 [DEBUG] aegis.log: >>> testDecryptionStr: bPRlRWGlo2jEJ0o1UuzqFG_-YCFOJLZn9LFk_213X0rbrALoPyF3x1YhRobhUdJCvk13FUA8Xrs4F0aajD3r-4ak9GYxYD97Plo1CAtxtS77Z7rsYFqTak_JKo3pSCTm
+2019-01-16 03:32:52,924 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 84, in AES_DECRYPT_BASE64
+    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/base64.py", line 87, in b64decode
+    return binascii.a2b_base64(s)
+binascii.Error: Incorrect padding
+2019-01-16 03:34:12,162 [DEBUG] aegis.log: >>> testDecryptionStr: 540c91671b9ead40238220ea87d580c7532f36a6fe8c27c8377b1c830a9489b4dfa36796dc017d0c1c1e6c7ac27d0d8479ee6ee0686d3cbe17d614e71e02afd99e13dedebbba322fbbbc1cb66469d4d89d8add97c098c7e2aead2d49938cdfafef0c3e4fc2350091f96c8d375a01bb349cf895ab9b7bc4bfad137b6cacce36bdaee104d346d634211658bf18c9c4f3518d424ce67b87ee3a210aca60113a16cff88cf8262648155ecb07c2090250005a
+2019-01-16 03:34:12,194 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 85, in AES_DECRYPT_BASE64
+    return AES_DECRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 78, in AES_DECRYPT
+    dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(msg)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 295, in decrypt
+    return self._cipher.decrypt(ciphertext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 03:34:12,253 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 03:36:02,749 [WARNING] django.request: Not Found: /
+2019-01-16 03:36:02,900 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 03:36:18,404 [DEBUG] aegis.log: >>> testDecryptionStr: abcd%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%91%E3%85%82%E3%85%82%E3%85%82%E3%85%82
+2019-01-16 03:36:18,433 [ERROR] django.request: Internal Server Error: /testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 84, in AES_DECRYPT_BASE64
+    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/base64.py", line 87, in b64decode
+    return binascii.a2b_base64(s)
+binascii.Error: Incorrect padding
+2019-01-16 03:36:36,175 [DEBUG] aegis.log: >>> testDecryptionStr: abcd%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%91%E3%85%82%E3%85%82%E3%85%82%E3%85%82
+2019-01-16 03:36:36,205 [ERROR] django.request: Internal Server Error: /testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 84, in AES_DECRYPT_BASE64
+    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/base64.py", line 87, in b64decode
+    return binascii.a2b_base64(s)
+binascii.Error: Incorrect padding
+2019-01-16 03:36:47,030 [DEBUG] aegis.log: >>> testEncryptionStr: abcd%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%91%E3%85%82%E3%85%82%E3%85%82%E3%85%82
+2019-01-16 03:36:47,030 [DEBUG] aegis.log: abcd%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%91%E3%85%82%E3%85%82%E3%85%82%E3%85%82
+2019-01-16 03:36:47,030 [DEBUG] aegis.log: b'abcd%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%80%EA%B0%91%E3%85%82%E3%85%82%E3%85%82%E3%85%82'
+2019-01-16 03:37:07,275 [DEBUG] aegis.log: >>> testDecryptionStr: a5a7b9de54fad66dbe907e1675df8fd19fdd55c351a696988fd5c3c9cd526c211a9d725f1f45b946909aa8f41fb5d38b5cbb6228f1d764cfc2e5d6b7954abc8b6ad6467dc1d412373d905504ced36412301e01919ee4169d7469c0cab252f51f
+2019-01-16 03:37:07,305 [ERROR] django.request: Internal Server Error: /testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 85, in AES_DECRYPT_BASE64
+    return AES_DECRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 79, in AES_DECRYPT
+    return unpad(dec, 16)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 48, in unpad
+    raise ValueError("Padding is incorrect.")
+ValueError: Padding is incorrect.
+2019-01-16 03:38:13,111 [DEBUG] aegis.log: >>> testDecryptionStr: 540c91671b9ead40238220ea87d580c7532f36a6fe8c27c8377b1c830a9489b4dfa36796dc017d0c1c1e6c7ac27d0d8479ee6ee0686d3cbe17d614e71e02afd99e13dedebbba322fbbbc1cb66469d4d89d8add97c098c7e2aead2d49938cdfafef0c3e4fc2350091f96c8d375a01bb349cf895ab9b7bc4bfad137b6cacce36bdaee104d346d634211658bf18c9c4f3518d424ce67b87ee3a210aca60113a16cff88cf8262648155ecb07c2090250005a
+2019-01-16 03:38:13,142 [ERROR] django.request: Internal Server Error: /dr/testDecryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 207, in testDecryptionStr
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 85, in AES_DECRYPT_BASE64
+    return AES_DECRYPT(msg)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 78, in AES_DECRYPT
+    dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(msg)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/Crypto/Cipher/blockalgo.py", line 295, in decrypt
+    return self._cipher.decrypt(ciphertext)
+ValueError: Input strings must be a multiple of 16 in length
+2019-01-16 03:38:16,311 [DEBUG] aegis.log: >>> testDecryptionStr: 9qCWsIER64A2L06V12icebFeWqEamBod8nzgEEAwZ9g=
+2019-01-16 03:39:20,658 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:39:20,658 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:39:20,721 [ERROR] django.request: Internal Server Error: /testEncryptionStr
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/views/decorators/csrf.py", line 54, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/Volumes/Work/ddtech/aegis/config/secret.py", line 173, in testEncryptionStr
+    r += '</br>*** cipherText(bytes) = ' + _cipherText
+TypeError: must be str, not bytes
+2019-01-16 03:40:07,391 [DEBUG] aegis.log: >>> testEncryptionStr: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:40:07,391 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
+2019-01-16 03:40:07,391 [DEBUG] aegis.log: b'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98'
+2019-01-16 03:40:21,865 [DEBUG] aegis.log: >>> testDecryptionStr: VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
+2019-01-16 03:40:21,915 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 03:40:40,692 [DEBUG] aegis.log: >>> testEncryptionStr: %EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C123
+2019-01-16 03:40:40,692 [DEBUG] aegis.log: %EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C123
+2019-01-16 03:40:40,692 [DEBUG] aegis.log: b'%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C123'
+2019-01-16 03:41:01,367 [DEBUG] aegis.log: >>> testDecryptionStr: +ofboMQKNARI9Zx6GRq/VQKTXp5jSRUuRXWWPkyi+xzEPncBX3GUDgTgS9Hv9SUSH9xx+Odc2it5YcE7kBz31BwBRnHSNKzizgGLvZFTjmzttSfN7xbRln06/R7ijp1fFQzNUanRq49kk+8egcNh2pu8xrVrpPxq8Jl2oU8jZcM=
+2019-01-16 03:51:29,643 [WARNING] django.request: Not Found: /
+2019-01-16 03:51:36,372 [ERROR] django.request: Service Unavailable: /check_version
+2019-01-16 03:51:36,399 [WARNING] django.request: Not Found: /favicon.ico
