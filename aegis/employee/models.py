@@ -18,15 +18,16 @@ class Employee(models.Model):
 출입자
 id
 전화 번호 : phone_no
-전화 종류 : phone_type push_token
+전화 종류 : phone_type 
+push_token
 근로자 id : null (근로자 아님)
 """
 class Passer(models.Model):
     pNo = models.CharField(max_length = 19)
     pType = models.IntegerField()
     # 00:iPhone, 10:Android, 20:Window
+    push_token = models.CharField(max_length = 255, default='unknown')
     employee_id = models.IntegerField(default = -1) # 차후 개인정보를 분리했을 때 개인정보 id (email, pNo, email, pw, name, dt_reg)
-
 """
 출입
 id
