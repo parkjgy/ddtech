@@ -1539,3 +1539,30 @@ NameError: name '_b64CipherText' is not defined
 2019-01-16 06:07:43,814 [DEBUG] aegis.log: 1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98
 2019-01-16 06:07:43,814 [DEBUG] aegis.log: b'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ%20%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%EC%95%84%EC%9E%90%EC%B0%A8%EC%B9%B4%ED%83%80%ED%8C%8C%ED%95%98'
 2019-01-16 06:07:43,832 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 21:58:11,931 [WARNING] django.request: Not Found: /
+2019-01-16 21:58:32,082 [ERROR] django.request: Internal Server Error: /operation/reg_staff
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/operation/views.py", line 18, in reg_staff
+    response = HttpResponse()
+NameError: name 'HttpResponse' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/operation/views.py", line 22, in reg_staff
+    return exceptionError('reg_staff', '503', e)
+NameError: name 'exceptionError' is not defined
+2019-01-16 21:58:32,168 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:00:42,906 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:00:59,803 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:01:13,553 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:01:24,959 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:01:35,417 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:01:46,331 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-16 22:01:56,503 [WARNING] django.request: Not Found: /favicon.ico
