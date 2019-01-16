@@ -20,7 +20,7 @@ class Staff(models.Model):
     position = models.CharField(max_length=33, default='') # 직위, 직책
     department = models.CharField(max_length=33, default='') # 소속, 부서
     pNo = models.CharField(max_length = 19) # 전화번호
-    pType = models.IntegerField(default=0, default=0) # 전화 종류
+    pType = models.IntegerField(default=0) # 전화 종류
     # 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
     email = models.CharField(max_length = 320, default='unknown') # 이메일
@@ -48,9 +48,9 @@ staff_pNo
 """
 class Work_Place(models.Model):
     major = models.IntegerField(default=0) # beacon major
-    order_staff_id = models.IntegerField(default=-1) # 담당자 id
-    order_staff_name = models.CharField(max_length=127, default='unknown') # 담당자 이름
-    order_staff_pNo = models.CharField(max_length = 19, default='') # 담당자 전화번호
+    staff_id = models.IntegerField(default=-1) # 담당자 id
+    staff_name = models.CharField(max_length=127, default='unknown') # 담당자 이름
+    staff_pNo = models.CharField(max_length = 19, default='') # 담당자 전화번호
 
     place_name = models.CharField(max_length=127, default='unknown') # 현장 이름
     contractor_id = models.IntegerField(default=-1) # 파견업체, 도급업체 id

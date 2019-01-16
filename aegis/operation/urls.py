@@ -6,15 +6,14 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-    # url(r'employee/check_version$', views.checkVersion, name = 'checkVersion'),
-    # url(r'employee/passer_reg$', views.passer_reg, name = 'passer_reg'),
-    #
-    # url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
-    # url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
-    # url(r'employee/reg_employee$', views.reg_employee, name='reg_employee'),
-    # url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
-    # url(r'employee/work_list$', views.work_list, name='work_list'),
-    # url(r'employee/exchange_info$', views.exchange_info, name='exchange_info'),
+    url(r'operation/reg_staff$', views.reg_staff, name='reg_staff'),
+    url(r'operation/login$', views.login, name='login'),
+    url(r'operation/update_staff$', views.update_staff, name='update_staff'),
+    url(r'operation/update_work_place$', views.update_work_place, name='update_work_place'),
+    url(r'operation/update_beacon$', views.update_beacon, name='update_beacon'),
+    url(r'operation/list_work_place$', views.list_work_place, name='list_work_place'),
+    url(r'operation/list_beacon$', views.list_beacon, name='list_beacon'),
+    url(r'operation/detail_beacon$', views.detail_beacon, name='detail_beacon'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
