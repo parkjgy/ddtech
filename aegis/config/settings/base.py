@@ -39,8 +39,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
 
-    # 'secret',
     'employee',
+    'operation',
 ]
 
 MIDDLEWARE = [

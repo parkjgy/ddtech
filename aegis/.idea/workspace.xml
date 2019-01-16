@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="fb1ab98c-7d31-4eae-b1e1-b15231229a35" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/secret.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/secret.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/employee/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/employee/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/aegis.error.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/aegis.error.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/aegis.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/aegis.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/django_request.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/django_request.log" afterDir="false" />
+    <list default="true" id="fb1ab98c-7d31-4eae-b1e1-b15231229a35" name="Default Changelist" comment="employee API">
+      <change beforePath="$PROJECT_DIR$/config/settings/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/settings/base.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -31,7 +25,7 @@
         <entry file="file://$PROJECT_DIR$/employee/models.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-53">
-              <caret line="19" column="4" lean-forward="true" selection-start-line="19" selection-start-column="4" selection-end-line="19" selection-end-column="4" />
+              <caret line="19" column="4" selection-start-line="19" selection-start-column="4" selection-end-line="19" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -39,8 +33,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/employee/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="517">
-              <caret line="321" column="32" lean-forward="true" selection-start-line="321" selection-start-column="32" selection-end-line="321" selection-end-column="32" />
+            <state relative-caret-position="753">
+              <caret line="337" selection-start-line="337" selection-end-line="337" />
               <folding>
                 <element signature="e#0#35#0" expanded="true" />
               </folding>
@@ -48,11 +42,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/config/secret.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="470">
-              <caret line="107" column="49" lean-forward="true" selection-start-line="107" selection-start-column="49" selection-end-line="107" selection-end-column="49" />
+              <caret line="107" column="49" selection-start-line="107" selection-start-column="49" selection-end-line="107" selection-end-column="49" />
               <folding>
                 <element signature="e#46#79#0" expanded="true" />
               </folding>
@@ -64,7 +58,7 @@
         <entry file="file://$PROJECT_DIR$/config/urls.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="435">
-              <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
+              <caret line="29" selection-start-line="29" selection-end-line="29" />
               <folding>
                 <element signature="e#630#662#0" expanded="true" />
               </folding>
@@ -76,7 +70,7 @@
         <entry file="file://$PROJECT_DIR$/employee/urls.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="757">
-              <caret line="56" lean-forward="true" selection-start-line="56" selection-end-line="56" />
+              <caret line="56" selection-start-line="56" selection-end-line="56" />
               <folding>
                 <element signature="e#0#41#0" expanded="true" />
               </folding>
@@ -84,11 +78,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/config/settings/base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="570">
-              <caret line="38" column="21" lean-forward="true" selection-start-line="38" selection-start-column="21" selection-end-line="38" selection-end-column="21" />
+            <state relative-caret-position="544">
+              <caret line="44" lean-forward="true" selection-start-line="44" selection-end-line="44" />
             </state>
           </provider>
         </entry>
@@ -111,10 +105,10 @@
       <list>
         <option value="$PROJECT_DIR$/employee/models.py" />
         <option value="$PROJECT_DIR$/config/urls.py" />
-        <option value="$PROJECT_DIR$/config/settings/base.py" />
         <option value="$PROJECT_DIR$/employee/urls.py" />
         <option value="$PROJECT_DIR$/employee/views.py" />
         <option value="$PROJECT_DIR$/config/secret.py" />
+        <option value="$PROJECT_DIR$/config/settings/base.py" />
       </list>
     </option>
   </component>
@@ -235,26 +229,33 @@
       <option name="project" value="LOCAL" />
       <updated>1547578481717</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="encrypttion &amp; decryption">
+      <created>1547586612665</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1547586612665</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="1043" y="23" width="1517" height="1417" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22994652" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.22994652" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49933156" visible="true" weight="0.32528302" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4986631" weight="0.32528302" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Version Control" order="7" />
-      <window_info anchor="bottom" id="Terminal" order="8" weight="0.32830188" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50066847" side_tool="true" weight="0.32528302" />
+      <window_info anchor="bottom" id="Terminal" order="8" visible="true" weight="0.32830188" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5013369" side_tool="true" weight="0.32528302" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.3290566" />
       <window_info anchor="bottom" id="Messages" order="11" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -336,43 +337,26 @@
     <entry file="file://$PROJECT_DIR$/config/urls.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="435">
-          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
+          <caret line="29" selection-start-line="29" selection-end-line="29" />
           <folding>
             <element signature="e#630#662#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config/settings/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="38" column="21" lean-forward="true" selection-start-line="38" selection-start-column="21" selection-end-line="38" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/employee/models.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-53">
-          <caret line="19" column="4" lean-forward="true" selection-start-line="19" selection-start-column="4" selection-end-line="19" selection-end-column="4" />
+          <caret line="19" column="4" selection-start-line="19" selection-start-column="4" selection-end-line="19" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/employee/urls.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="757">
-          <caret line="56" lean-forward="true" selection-start-line="56" selection-end-line="56" />
+          <caret line="56" selection-start-line="56" selection-end-line="56" />
           <folding>
             <element signature="e#0#41#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/employee/views.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="517">
-          <caret line="321" column="32" lean-forward="true" selection-start-line="321" selection-start-column="32" selection-end-line="321" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#35#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -380,10 +364,27 @@
     <entry file="file://$PROJECT_DIR$/config/secret.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="470">
-          <caret line="107" column="49" lean-forward="true" selection-start-line="107" selection-start-column="49" selection-end-line="107" selection-end-column="49" />
+          <caret line="107" column="49" selection-start-line="107" selection-start-column="49" selection-end-line="107" selection-end-column="49" />
           <folding>
             <element signature="e#46#79#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/employee/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="753">
+          <caret line="337" selection-start-line="337" selection-end-line="337" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config/settings/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="544">
+          <caret line="44" lean-forward="true" selection-start-line="44" selection-end-line="44" />
         </state>
       </provider>
     </entry>
