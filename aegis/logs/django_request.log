@@ -1509,3 +1509,7 @@
 2019-01-16 14:08:03,545 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
 2019-01-16 14:08:03,546 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
 2019-01-16 14:08:03,549 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
+2019-01-16 18:19:55,607 [DEBUG] django.db.backends: (0.000) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-16 18:19:55,608 [DEBUG] django.db.backends: (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-16 18:19:55,609 [DEBUG] django.db.backends: (0.001) SHOW FULL TABLES; args=None
+2019-01-16 18:19:55,611 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()

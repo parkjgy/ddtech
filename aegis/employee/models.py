@@ -8,7 +8,7 @@ id
 급여 계좌 : bank_account
 """
 class Employee(models.Model):
-    name = models.CharField(max_length = 127, default = 'Not_Enter') # 암호화 한다.
+    name = models.CharField(max_length = 127, default = 'unknown') # 암호화 한다.
     va_bank = models.CharField(max_length = 20) # 급여 은행
     va_account = models.CharField(max_length = 20) # 급여 계좌
     def __unicode__(self):
