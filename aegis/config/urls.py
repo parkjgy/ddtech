@@ -23,7 +23,10 @@ from . import secret
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('employee/', include('employee.urls')),
+
     url(r'', include('employee.urls')),
+    url(r'', include('operation.urls')),
+
     url(r'testEncryptionStr', secret.testEncryptionStr, name='testEncryptionStr'),
     url(r'testDecryptionStr', secret.testDecryptionStr, name='testDecryptionStr'),
 ]

@@ -335,3 +335,61 @@ def verify_employee(request):
         return response
     except Exception as e:
         return exceptionError('verify_employee', '503', e)
+"""
+/employee/work_list
+근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+GET
+	employee_id='서버로 받아 저장해둔 근로자 id'
+	dt = '2018-01'
+response
+	STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+	STATUS 200
+	{
+		'working':
+		[
+			{ 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36', 
+				'outing': 
+				[
+					{'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+				]
+			},
+			......
+		]
+	}
+"""
+def work_list(request):
+    try:
+        id = 1
+        str_id = str(id)
+        infor = {'id': AES_ENCRYPT_BASE64(str_id)}
+        response = HttpResponse(json.dumps(infor, cls=DateTimeEncoder))
+        print(response)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('work_list', '503', e)
+
+"""
+/employee/exchange_info
+근로자 정보 변경 : 근로자의 정보를 변경한다.
+	주) 	로그인이 있으면 앱 시작할 때 화면 표출
+		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
+POST
+	{
+		'employee_id': '서버로 받아 저장해둔 근로자 id',
+		'pw': '암호화해서 보낸다.',
+		'bank': '기업은행',
+		'bank_account': '12300000012000',
+		'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
+	} 
+response
+	STATUS 200
+"""
+def exchange_info(request):
+    try:
+        id = 1
+        response = HttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('exchange_info', '503', e)
