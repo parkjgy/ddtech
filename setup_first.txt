@@ -1,0 +1,223 @@
+mac 에서 프로젝트 설치
+
+----- 01 작업할 볼륨으로 옮기기
+$ cd /Volumes/Work
+
+----- 02 회사 폴더 만들고 들어가기
+$ mkdir ddtech
+$ cd ddtech
+
+----- 03 가상환경 만들고 들어가기
+$ python3 -m venv ddtenv
+$ source ddtenv/bin/activate
+
+----- 04 프로젝트 폴더 만들고 확인하고 들어가기
+(ddtenv) $ mkdir aegis
+(ddtenv) $ ls -l
+total 0
+drwxr-xr-x  2 graywolf  admin   64  1 11 13:48 aegis
+drwxr-xr-x  6 graywolf  admin  192  1 11 13:48 ddtenv
+(ddtenv) $ cd aegis
+
+----- 05 PIP 최신버전으로 업그레이드
+(ddtenv) $ pip install --upgrade pip
+Collecting pip
+  Using cached https://files.pythonhosted.org/packages/c2/d7/90f34cb0d83a6c5631cf71dfe64cc1054598c843a92b400e55675cc2ac37/pip-18.1-py2.py3-none-any.whl
+Installing collected packages: pip
+  Found existing installation: pip 10.0.1
+    Uninstalling pip-10.0.1:
+      Successfully uninstalled pip-10.0.1
+Successfully installed pip-18.1
+
+----- 06 django 설치하기
+(ddtenv) $ pip install django~=2.1
+Collecting django~=2.1
+  Using cached https://files.pythonhosted.org/packages/36/50/078a42b4e9bedb94efd3e0278c0eb71650ed9672cdc91bd5542953bec17f/Django-2.1.5-py3-none-any.whl
+Collecting pytz (from django~=2.1)
+  Using cached https://files.pythonhosted.org/packages/61/28/1d3920e4d1d50b19bc5d24398a7cd85cc7b9a75a490570d5a30c57622d34/pytz-2018.9-py2.py3-none-any.whl
+Installing collected packages: pytz, django
+Successfully installed django-2.1.5 pytz-2018.9
+
+----- 07 mysql 연결하기
+(ddtenv) $ pip install mysqlclient
+Collecting mysqlclient
+    ......
+    ld: library not found for -lssl
+    clang: error: linker command failed with exit code 1 (use -v to see invocation)
+    error: command 'gcc' failed with exit status 1
+    ......
+
+---------- 071 위와 같이 ssl 링크에러가 발생하면 openssl 설치 
+(ddtenv) $ brew install openssl
+Updating Homebrew...
+==> Auto-updated Homebrew!
+Updated 1 tap (homebrew/core).
+==> New Formulae
+cryptominisat          libgusb                libvirt-glib           lsd                    needle                 oxipng                 simple-scan            spice-protocol
+==> Updated Formulae
+capstone       diff-pdf       fltk           fuseki         hexyl          jid            mu             pdftoedn       php            pyenv          tor            youtube-dl
+clamav         eccodes        fluid-synth    hbase          imagemagick    mongodb        opentsdb       pdftoipe       poppler        tcpdump        weboob
+
+Warning: openssl 1.0.2q is already installed and up-to-date
+To reinstall 1.0.2q, run `brew reinstall openssl`
+
+---------- 072 ssl 경로 설정
+(ddtenv) $ export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
+
+---------- 073 mysql 연결하기
+(ddtenv) $ pip install mysqlclient
+Collecting mysqlclient
+  Using cached https://files.pythonhosted.org/packages/f7/a2/1230ebbb4b91f42ad6b646e59eb8855559817ad5505d81c1ca2b5a216040/mysqlclient-1.3.14.tar.gz
+Installing collected packages: mysqlclient
+  Running setup.py install for mysqlclient ... done
+Successfully installed mysqlclient-1.3.14
+
+----- 08 프로젝트 시작하기 (환경이 만들어짐)
+(ddtenv) $ django-admin startproject config .
+(ddtenv) $ tree ../aegis
+../aegis
+├── config
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── manage.py
+
+1 directory, 5 files
+
+---------- 081 config - setting 을 아래와 같이 수정
+  ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0']
+  DATABASES = {
+      'default': {
+          'ENGINE': 'django.db.backends.sqlite3',
+          'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+      }
+  }
+  LANGUAGE_CODE = 'ko'
+  TIME_ZONE = 'Asia/Seoul'
+  STATIC_URL = '/static/'
+  STATIC_ROOT = os.path.join(BASE_DIR, '/static')
+
+---------- 082 DB 를 옮긴다. (모델이 없어서 특별히 하는건 없음.)
+(ddtenv) $ python manage.py migrate
+
+---------- 083 서버를 임시로 실행해서 잘 작동하는 확인한다.
+(ddtenv) $ python manage.py runserver
+(ddtenv) $ python manage.py runserver 0.0.0.0:8000
+
+----- 09 근로자 어플리케이션을 만든다.
+(ddtenv) $ python manage.py startapp employee
+(ddtenv) $ tree ../aegis
+../aegis
+├── config
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-36.pyc
+│   │   └── settings.cpython-36.pyc
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── employee
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+└── manage.py
+
+4 directories, 14 files
+
+---------- 091 근로자 어플리케이션을 아래와 같이 등록한다. (aegis/config/setting.py)
+INSTALLED_APPS = [
+    ......
+    'employee',
+]    
+
+---------- 092 어플리케이션에 모델을 아래와 같이 추가한다. (istoaegis/configry/models.py)
+from django.db import models
+from django.utils import timezone
+
+
+class Post(models.Model):
+    author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    text = models.TextField()
+    created_date = models.DateTimeField(default=timezone.now)
+    published_date = models.DateTimeField(blank=True, null=True)
+
+    def publish(self):
+        self.published_date = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return self.title
+
+---------- 093 DB 에 테이블을 추가한다.
+(ddtenv) $ python manage.py makemigrations knowledge
+(ddtenv) $ python manage.py migrate knowledge
+
+----- 10 관리자 설정 ( knowledge/admin.py )
+from django.contrib import admin
+from .models import Post
+
+admin.site.register(Post)
+
+---------- 101 관리자 생성
+(ddtenv) $ python manage.py createsuperuser
+Username: admin
+Email address: thinking@ddtechi.com
+Password: p...j
+Password (again): p...j
+Superuser created successfully.
+
+---------- 102 로그인
+http://127.0.0.1:8000/admin/
+
+---------- 103 관리자 추가 정보
+https://docs.djangoproject.com/en/1.8/ref/contrib/admin/
+
+----- 11 url 설정 ( aegis/config/urls.py )
+from django.conf.urls import include, url
+from django.contrib import admin
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    url(r'', include('knowledge.urls')),
+]
+
+---------- 111 어플리케이션 url 설정 ( knowledge/urls.py )
+from django.conf.urls import url
+from . import views
+
+urlpatterns = [
+    url(r'^$', views.post_list, name='post_list'),
+]
+
+---------- 112 url 추가 정보
+https://docs.djangoproject.com/en/1.11/topics/http/urls/
+
+----- 12 view 만들기 ( blog/views.py )
+from django.shortcuts import render
+from django.utils import timezone
+from .models import Post
+
+def post_list(request):
+    posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+    return render(request, 'blog/post_list.html', {})
+
+----- 12 HTML 만들기 (knowledge/templates/knowledge/post_list.html )
+<div>
+    <h1><a href="/">유아이야기</a></h1>
+</div>
+
+{% for post in posts %}
+    <div>
+        <p>published: {{ post.published_date }}</p>
+        <h1><a href="">{{ post.title }}</a></h1>
+        <p>{{ post.text|linebreaksbr }}</p>
+    </div>
+{% endfor %}
+
