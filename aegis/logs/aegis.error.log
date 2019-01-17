@@ -62,3 +62,29 @@
 2019-01-17 15:25:05,945 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: (1048, "Column 'manager_id' cannot be null")
 2019-01-17 15:25:31,522 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: name 'Staff' is not defined
 2019-01-17 17:35:54,930 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: Expecting value: line 2 column 1 (char 1)
+2019-01-17 21:17:32,678 [DEBUG] aegis.error.log: passer_reg >>> 503 ERROR: list assignment index out of range
+2019-01-17 23:21:40,019 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-17 23:56:13,330 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: name 'requests' is not defined
+2019-01-18 00:00:52,783 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: list index out of range
+2019-01-18 00:01:57,544 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: 'pNo'
+2019-01-18 00:03:01,246 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: 'pNo'
+2019-01-18 00:05:29,678 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: 'pNo'
+2019-01-18 00:09:40,404 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: 'pNo'
+2019-01-18 00:10:26,438 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: 'pNo'
+2019-01-18 00:11:11,693 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: Passer matching query does not exist.
+2019-01-18 00:13:08,983 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:15:02,047 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:16:40,370 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:16:46,099 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:16:56,991 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:17:23,767 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:17:35,782 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:18:36,257 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:19:29,879 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:20:36,659 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: object of type 'int' has no len()
+2019-01-18 00:21:17,712 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: invalid literal for int() with base 10: 'A'
+2019-01-18 00:22:14,299 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: invalid literal for int() with base 10: 'A'
+2019-01-18 00:32:00,315 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:36:57,297 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:39:53,690 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
+2019-01-18 00:44:27,859 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: list index out of range

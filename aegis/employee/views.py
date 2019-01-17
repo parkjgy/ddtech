@@ -15,9 +15,15 @@ from django.forms.models import model_to_dict
 
 import json
 
+from .models import Passer
+
+import random
+
 from django.http import HttpResponse
 from django.http import HttpRequest
 from django.http import JsonResponse
+
+from django.views.decorators.csrf import csrf_exempt, csrf_protect # POST 에서 사용
 
 ##### JSON Processor
 
@@ -190,8 +196,10 @@ def exceptionError(funcName, code, e) :
 """
 /employee/passer_reg
 출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
+http://0.0.0.0:8000/employee/passer_reg?p1=01025573555&p2=01074648939&p3=01020736959&p4=01054214410&p5=01047302499&p6=01024505942
 POST : json
 	{
+	    'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자 
 		'phones': [
 			'010-1111-2222', '010-2222-3333', ...
 		]
@@ -203,9 +211,31 @@ response
 		'message': '양식이 잘못되었습니다.'
 	}
 """
+@csrf_exempt
 def passer_reg(request):
     try:
-        response = HttpResponse()
+        phone_numbers = []
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            # rqst = {'phones': ["01025573555", "01074648939", "01020736959", "01054214410", "01047302499", "01024505942"]}
+            phones = rqst['phones']
+            for x in phones :
+                phone_numbers.append(x)
+        else :
+            phone_numbers.append(request.GET["p1"])
+            phone_numbers.append(request.GET["p2"])
+            phone_numbers.append(request.GET["p3"])
+            phone_numbers.append(request.GET["p4"])
+            phone_numbers.append(request.GET["p5"])
+            phone_numbers.append(request.GET["p6"])
+
+        print(phone_numbers)
+        for i in range(6) :
+            passer = Passer(
+                pNo = phone_numbers[i]
+            )
+            passer.save()
+        response = HttpResponse(json.dumps(phone_numbers, cls=DateTimeEncoder))
         response.status_code = 200
         return response
     except Exception as e:
@@ -229,6 +259,7 @@ POST : json
 response
 	STATUS 200
 """
+@csrf_exempt
 def pass_reg(request):
     try:
         response = HttpResponse()
@@ -275,6 +306,7 @@ POST : json
 response
 	STATUS 200
 """
+@csrf_exempt
 def beacon_verify(request):
     try:
         response = HttpResponse()
@@ -285,19 +317,61 @@ def beacon_verify(request):
 
 """
 /employee/reg_employee
-근로자 앱 활성화 : 앱을 처음 작동 시켰을 때
+근로자를 등록한다.
+근로자 앱을 처음 실행시킬 때 사용한다.
+SMS 로 인증 문자(6자리)를 보낸다.
+http://192.168.123.33:8000/employee/reg_employee?phone_no=01025573555
 POST : json
 {
 	'phone_no' : '010-1111-2222'
-	'phone_type' : 'A' # 안드로이드 폰
-	'push_token' : 'push token'	
 }
 response
 	STATUS 200 
-	전화번호 확인용 SMS 발송(6자리 숫자)
 """
+import requests
+
+@csrf_exempt
 def reg_employee(request):
     try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            phone_no = rqst['phone_no']
+        else :
+            phone_no = request.GET["phone_no"]
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+        passers = Passer.objects.filter(pNo=phone_no)
+        # passer = passers[0]
+        if len(passers) == 0 :
+            passer = Passer(
+                pNo = phone_no
+            )
+        certificateNo = random.randint(100000, 999999)
+        passer.cn = certificateNo
+        passer.save()
+
+        rData = {
+            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+            'user_id': 'yuadocjon22',
+            'sender':'01024505942',
+            'receiver': passer.pNo,
+            'msg_type': 'SMS',
+            'msg': '이지스 팩토리 앱 사용\n'
+                   '인증번호[' + str(certificateNo) + ']입니다.'
+        }
+
+        rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+        print(rSMS.status_code)
+        print(rSMS.headers['content-type'])
+        print(rSMS.text)
+        print(rSMS.json())
+        logSend(json.dumps(rSMS.json(), cls=DateTimeEncoder))
+        # rJson = rSMS.json()
+        # rJson['vefiry_no'] = str(certificateNo)
+
+        # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
         response = HttpResponse()
         response.status_code = 200
         return response
@@ -307,10 +381,19 @@ def reg_employee(request):
 """
 /employee/verify_employee
 근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
-GET 
-	pNo=010-1111-2222
-	vNo=123456
+http://192.168.123.33:8000/employee/verify_employee?phone_no=010-2557-3555&cn=9899&phone_type=A&push_token=token
+POST
+    { 
+	    'phone_no' : '010-1111-2222'
+	    'cn' ; 123456
+    	'phone_type' : 'A' # 안드로이드 폰
+	    'push_token' : 'push token'
+	}	
 response
+    STATUS 503
+    {
+        'msg': '인증번호가 틀립니다.'
+    }
 	STATUS 200 # 기존 근로자
 	{
 		'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000'
@@ -324,20 +407,64 @@ response
 		'id': '암호화된 id'
 	}
 """
+@csrf_exempt
 def verify_employee(request):
     try:
-        id = 1
-        str_id = str(id)
-        infor = {'id': AES_ENCRYPT_BASE64(str_id)}
-        response = HttpResponse(json.dumps(infor, cls=DateTimeEncoder))
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            phone_no = rqst['phone_no']
+            cn = rqst['cn']
+            phone_type = rqst['phone_type']
+            push_token = rqst['push_token']
+        else :
+            phone_no = request.GET["phone_no"]
+            cn = request.GET["cn"]
+            phone_type = request.GET["phone_type"]
+            push_token = request.GET["push_token"]
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+
+        print(phone_no)
+        passer = Passer.objects.get(pNo=phone_no)
+        if passer.cn != int(cn) :
+            rMsg = {'msg': '인증번호가 틀립니다.'}
+            response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
+            response.status_code = 503
+            print(response)
+            return response
+        print('s 1')
+        status_code = 200
+        result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
+        if passer.employee_id == -2 : # 근로자 아님 출입만 처리함
+            status_code = 202
+        elif passer.pType == 0 : # 신규 근로자
+            status_code = 201
+            employee = Employee(
+            )
+            employee.save()
+            passer.employee_id = employee.id
+        else :
+            employee = Employee.objects.get(id=passer.employee_id)
+            result['name'] = employee.name
+            result['va_bank'] = employee.va_bank
+            result['va_account'] = employee.va_account
+        print(result)
+
+        passer.pType = 20 if phone_type == 'A' else 10
+        passer.push_token = push_token
+        passer.cn = 0
+        passer.save()
+
+        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = status_code
         print(response)
-        response.status_code = 201
         return response
     except Exception as e:
         return exceptionError('verify_employee', '503', e)
 """
 /employee/work_list
 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+http://192.168.123.33:8000/employee/work_list?employee_id=123&dt=2018-12
 GET
 	employee_id='서버로 받아 저장해둔 근로자 id'
 	dt = '2018-01'
@@ -359,10 +486,34 @@ response
 """
 def work_list(request):
     try:
-        id = 1
-        str_id = str(id)
-        infor = {'id': AES_ENCRYPT_BASE64(str_id)}
-        response = HttpResponse(json.dumps(infor, cls=DateTimeEncoder))
+        result = {
+            'working':[
+                {'action': 10, 'dt_begin': '2018-12-01 08:25:00', 'dt_end': '2018-12-01 17:33:00', 'outing':[
+                             {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
+                {'action': 10, 'dt_begin': '2018-12-02 08:25:00', 'dt_end': '2018-12-02 17:33:00', 'outing':[]},
+                {'action': 10, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing':[]},
+                {'action': 10, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing':[]},
+                {'action': 10, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing':[]},
+                {'action': 10, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing':[]},
+
+                {'action': 10, 'dt_begin': '2018-12-08 08:25:00', 'dt_end': '2018-12-08 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-09 08:25:00', 'dt_end': '2018-12-09 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-10 08:25:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 17:33:00', 'outing': []},
+
+                {'action': 10, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-15 08:25:00', 'dt_end': '2018-12-15 17:33:00', 'outing': [
+                    {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
+                {'action': 10, 'dt_begin': '2018-12-16 08:25:00', 'dt_end': '2018-12-16 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-12-17 17:33:00', 'outing': []},
+                {'action': 10, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-12-18 17:33:00', 'outing': []},
+            ]
+        }
+        # id = 1
+        # str_id = str(id)
+        # infor = {'id': AES_ENCRYPT_BASE64(str_id)}
+        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
         print(response)
         response.status_code = 200
         return response
@@ -385,6 +536,7 @@ POST
 response
 	STATUS 200
 """
+@csrf_exempt
 def exchange_info(request):
     try:
         id = 1

@@ -9,8 +9,8 @@ id
 """
 class Employee(models.Model):
     name = models.CharField(max_length = 127, default = 'unknown') # 암호화 한다.
-    va_bank = models.CharField(max_length = 20) # 급여 은행
-    va_account = models.CharField(max_length = 20) # 급여 계좌
+    va_bank = models.CharField(max_length = 20, default='') # 급여 은행
+    va_account = models.CharField(max_length = 20, default='') # 급여 계좌
     def __unicode__(self):
         return self.name
 
@@ -24,10 +24,12 @@ push_token
 """
 class Passer(models.Model):
     pNo = models.CharField(max_length = 19)
-    pType = models.IntegerField()
-    # 00:iPhone, 10:Android, 20:Window
-    push_token = models.CharField(max_length = 255, default='unknown')
+    pType = models.IntegerField(default = 0)
+    # 0:unkown, 10:iPhone, 20:Android
+    push_token = models.CharField(max_length = 255, default='')
     employee_id = models.IntegerField(default = -1) # 차후 개인정보를 분리했을 때 개인정보 id (email, pNo, email, pw, name, dt_reg)
+    alert_id = models.IntegerField(default = -1) # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
+    cn = models.IntegerField(default = 0) # 인증 문자
 """
 출입
 id
