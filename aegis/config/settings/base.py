@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 CSRF_FAILURE_VIEW = "config.views.csrf_failure"
 
 ROOT_URLCONF = 'config.urls'

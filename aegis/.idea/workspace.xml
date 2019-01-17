@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="fb1ab98c-7d31-4eae-b1e1-b15231229a35" name="Default Changelist" comment="operation view add">
+    <list default="true" id="fb1ab98c-7d31-4eae-b1e1-b15231229a35" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/employee/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/employee/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/aegis.error.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/aegis.error.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/aegis.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/aegis.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/settings/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/settings/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/django_request.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/django_request.log" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -41,14 +39,32 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/employee/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="615">
+            <state relative-caret-position="271">
               <caret line="487" column="8" lean-forward="true" selection-start-line="487" selection-start-column="8" selection-end-line="487" selection-end-column="8" />
               <folding>
                 <element signature="e#0#35#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/config/settings/base.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="645">
+              <caret line="56" column="37" selection-start-line="56" selection-start-column="37" selection-end-line="56" selection-end-column="37" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/config/views.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="30">
+              <caret line="2" selection-start-line="2" selection-end-line="2" />
             </state>
           </provider>
         </entry>
@@ -75,7 +91,6 @@
         <option value="$PROJECT_DIR$/employee/urls.py" />
         <option value="$PROJECT_DIR$/config/urls.py" />
         <option value="$PROJECT_DIR$/customer/urls.py" />
-        <option value="$PROJECT_DIR$/config/settings/base.py" />
         <option value="$PROJECT_DIR$/customer/models.py" />
         <option value="$PROJECT_DIR$/employee/models.py" />
         <option value="$PROJECT_DIR$/operation/urls.py" />
@@ -83,6 +98,8 @@
         <option value="$PROJECT_DIR$/operation/views.py" />
         <option value="$PROJECT_DIR$/customer/views.py" />
         <option value="$PROJECT_DIR$/employee/views.py" />
+        <option value="$PROJECT_DIR$/config/settings/base.py" />
+        <option value="$PROJECT_DIR$/config/views.py" />
       </list>
     </option>
   </component>
@@ -267,7 +284,14 @@
       <option name="project" value="LOCAL" />
       <updated>1547643756702</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="employee update">
+      <created>1547741092796</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1547741092796</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TodoView">
@@ -288,12 +312,12 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.4986631" visible="true" weight="0.32528302" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4986631" weight="0.32528302" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32981133" />
-      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32981133" />
+      <window_info active="true" anchor="bottom" id="Version Control" order="7" visible="true" weight="0.32981133" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32830188" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5013369" side_tool="true" weight="0.32528302" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.32830188" />
@@ -331,7 +355,8 @@
     <MESSAGE value="customer API" />
     <MESSAGE value="operation model add" />
     <MESSAGE value="operation view add" />
-    <option name="LAST_COMMIT_MESSAGE" value="operation view add" />
+    <MESSAGE value="employee update" />
+    <option name="LAST_COMMIT_MESSAGE" value="employee update" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/../ddtenv/lib/python3.6/site-packages/django/db/backends/base/base.py">
@@ -450,13 +475,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config/settings/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="645">
-          <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/employee/urls.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="540">
@@ -489,11 +507,25 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/employee/views.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="615">
+        <state relative-caret-position="271">
           <caret line="487" column="8" lean-forward="true" selection-start-line="487" selection-start-column="8" selection-end-line="487" selection-end-column="8" />
           <folding>
             <element signature="e#0#35#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config/settings/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="645">
+          <caret line="56" column="37" selection-start-line="56" selection-start-column="37" selection-end-line="56" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="30">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
         </state>
       </provider>
     </entry>
