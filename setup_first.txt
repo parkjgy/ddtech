@@ -208,7 +208,7 @@ def post_list(request):
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
     return render(request, 'blog/post_list.html', {})
 
------ 12 HTML 만들기 (knowledge/templates/knowledge/post_list.html )
+----- 13 HTML 만들기 (knowledge/templates/knowledge/post_list.html )
 <div>
     <h1><a href="/">유아이야기</a></h1>
 </div>
@@ -221,3 +221,36 @@ def post_list(request):
     </div>
 {% endfor %}
 
+----- 13 Model 에 정의된 Table migration 하기
+(ddtenv) $ export DJANGO_SETTINGS_MODULE=config.settings.development
+(ddtenv) $ python manage.py makemigrations employee
+Migrations for 'employee':
+  employee/migrations/0001_initial.py
+    - Create model Beacon
+    - Create model Beacon_History
+    - Create model Employee
+    - Create model Pass
+    - Create model Passer
+(ddtenv) $ python manage.py makemigrations operation
+Migrations for 'operation':
+  operation/migrations/0001_initial.py
+    - Create model Beacon
+    - Create model Staff
+    - Create model Work_Place
+(ddtenv) $ python manage.py makemigrations customer
+Migrations for 'customer':
+  customer/migrations/0001_initial.py
+    - Create model Business_Registration
+    - Create model Customer
+    - Create model Employee
+    - Create model Staff
+    - Create model Work
+    - Create model Work_Place
+(ddtenv) $ python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, customer, employee, operation, sessions
+Running migrations:
+  Applying customer.0001_initial... OK
+  Applying employee.0001_initial... OK
+  Applying operation.0001_initial... OK
+(ddtenv) $

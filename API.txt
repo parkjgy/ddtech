@@ -176,6 +176,15 @@ response
 
 운영 웹 API
 --------------------------------------------------------------------------------------------------------
+URI
+/operation/reg_staff
+/operation/login
+/operation/update_staff
+/operation/update_work_place
+/operation/update_beacon
+/operation/list_work_place
+/operation/list_beacon
+--------------------------------------------------------------------------------------------------------
 /operation/reg_staff
 운영 직원 등록
 POST 

@@ -56,3 +56,9 @@
 2019-01-16 03:22:28,437 [DEBUG] aegis.error.log: ERROR: base64decode
 2019-01-16 03:22:28,438 [DEBUG] aegis.error.log: ERROR: AES_DECRYPT
 2019-01-16 05:39:53,902 [DEBUG] aegis.error.log: passer_reg >>> 503 ERROR: local variable 'response' referenced before assignment
+2019-01-17 15:04:58,108 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: 'staff_name'
+2019-01-17 15:11:32,217 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: (1048, "Column 'contractor_id' cannot be null")
+2019-01-17 15:24:22,620 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: (1048, "Column 'manager_id' cannot be null")
+2019-01-17 15:25:05,945 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: (1048, "Column 'manager_id' cannot be null")
+2019-01-17 15:25:31,522 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: name 'Staff' is not defined
+2019-01-17 17:35:54,930 [DEBUG] aegis.error.log: reg_customer >>> 503 ERROR: Expecting value: line 2 column 1 (char 1)

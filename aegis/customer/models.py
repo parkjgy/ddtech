@@ -24,28 +24,26 @@ dt_결재일
 """
 class Customer(models.Model):
     name = models.CharField(max_length = 255, default = 'Not_Enter') # 암호화 한다.
-    contract_no = models.CharField(max_length=33) # 계약서 번호
+    contract_no = models.CharField(max_length=33, default='') # 계약서 번호
     dt_reg = models.DateTimeField(auto_now_add = True) # 등록 일
     dt_accept = models.DateTimeField(null=True, blank=True) # 승인 일
     type = models.IntegerField(default=10) # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
 
-    contractor_id = models.IntegerField() # 파견업체, 도급업체 id
-    contractor_name = models.CharField(max_length=127) # 파견업체, 도급업체 이름
+    contractor_id = models.IntegerField(default=-1) # 파견업체, 도급업체 id
+    contractor_name = models.CharField(max_length=127, default='') # 파견업체, 도급업체 이름
 
-    staff_id = models.IntegerField() # 담당자 id
+    staff_id = models.IntegerField(default=-1) # 담당자 id
     staff_name = models.CharField(max_length=127) # 담당자 이름
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
     staff_email = models.CharField(max_length = 320) # 담당자 이메일
 
-    manager_id = models.IntegerField() # 관리자 id
-    manager_name = models.CharField(max_length=127) # 관리자 이름
-    manager_pNo = models.CharField(max_length = 19) # 관리자 전화번호
-    manager_email = models.CharField(max_length = 320) # 관리자 이메일
+    manager_id = models.IntegerField(default=-1) # 관리자 id
+    manager_name = models.CharField(max_length=127, default='') # 관리자 이름
+    manager_pNo = models.CharField(max_length = 19, default='') # 관리자 전화번호
+    manager_email = models.CharField(max_length = 320, default='') # 관리자 이메일
 
-    business_reg_id = models.IntegerField() # 사업자등록 id
+    business_reg_id = models.IntegerField(default=-1) # 사업자등록 id
     dt_payment = models.DateTimeField(null=True, blank=True) # 결재일
-    def __unicode__(self):
-        return self.name
 """
 사업자등록
     업체명
@@ -65,9 +63,6 @@ class Business_Registration(models.Model):
     business_item = models.CharField(max_length=1024) # 종목
     dt_reg = models.DateTimeField(auto_now_add = True) # 사업자등록일
     customer_id = models.IntegerField() # 고객 id
-    def __unicode__(self):
-        return self.name
-
 """
 직원 (관리자, 담당자)
 id 
@@ -82,6 +77,8 @@ push_token
 """
 class Staff(models.Model):
     name = models.CharField(max_length=127) # 이름
+    login_id = models.CharField(max_length=55, default='') # 로그인 id
+    login_pw = models.CharField(max_length=55, default='happy_day!!!') # 로그인 pw
     co_id = models.IntegerField() # 소속사 id
     co_name = models.CharField(max_length=127) # 소속사 이름
     position = models.CharField(max_length=127) # 직위, 직책
@@ -91,9 +88,6 @@ class Staff(models.Model):
     # 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
     email = models.CharField(max_length = 320) # 이메일
-    def __unicode__(self):
-        return self.name
-
 """
 사업장
 id
@@ -116,10 +110,6 @@ class Work_Place(models.Model):
     manager_email = models.CharField(max_length = 320) # 관리자 이메일
     order_id = models.IntegerField() # 발주사 id
     order_name = models.IntegerField() # 발주사 상호
-
-    def __unicode__(self):
-        return self.name
-
 """
 업무 (사업장별)
 id
@@ -148,10 +138,6 @@ class Work(models.Model):
     staff_name = models.CharField(max_length=127) # 담당자 이름
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
     staff_email = models.CharField(max_length = 320) # 담당자 이메일
-
-    def __unicode__(self):
-        return self.name
-
 """
 근로자 (업무별)
 id
@@ -168,6 +154,3 @@ class Employee(models.Model):
     pType = models.IntegerField(default=0)
     # 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
-
-    def __unicode__(self):
-        return self.employee_name

@@ -1566,3 +1566,55 @@ NameError: name 'exceptionError' is not defined
 2019-01-16 22:01:35,417 [WARNING] django.request: Not Found: /favicon.ico
 2019-01-16 22:01:46,331 [WARNING] django.request: Not Found: /favicon.ico
 2019-01-16 22:01:56,503 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-17 15:03:47,072 [ERROR] django.request: Internal Server Error: /customer/reg_customer
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 77, in __getitem__
+    list_ = super().__getitem__(key)
+KeyError: 'staff_name'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/aegis/customer/views.py", line 68, in reg_customer
+    staff_name = request.GET["staff_name"]
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/datastructures.py", line 79, in __getitem__
+    raise MultiValueDictKeyError(key)
+django.utils.datastructures.MultiValueDictKeyError: 'staff_name'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 126, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/base.py", line 124, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Volumes/Work/ddtech/aegis/customer/views.py", line 82, in reg_customer
+    return exceptionError('reg_customer', '503', e)
+  File "/Volumes/Work/ddtech/aegis/customer/views.py", line 32, in exceptionError
+    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
+NameError: name 'logError' is not defined
+2019-01-17 15:03:47,341 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-17 15:04:58,109 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: 'staff_name'
+2019-01-17 15:05:40,982 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-17 15:11:32,217 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: (1048, "Column 'contractor_id' cannot be null")
+2019-01-17 15:24:22,620 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: (1048, "Column 'manager_id' cannot be null")
+2019-01-17 15:25:05,945 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: (1048, "Column 'manager_id' cannot be null")
+2019-01-17 15:25:31,523 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: name 'Staff' is not defined
+2019-01-17 16:31:31,142 [WARNING] django.request: Not Found: /operation/reg_custmer
+2019-01-17 16:31:31,179 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-17 16:31:57,565 [WARNING] django.request: Not Found: /operation/reg_custmer
+2019-01-17 16:32:00,582 [WARNING] django.request: Not Found: /operation/reg_custmer
+2019-01-17 16:32:07,986 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-17 16:36:28,234 [ERROR] django.request: Internal Server Error: /operation/reg_customer
+Traceback (most recent call last):
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/utils/deprecation.py", line 93, in __call__
+    response = self.process_response(request, response)
+  File "/Volumes/Work/ddtech/ddtenv/lib/python3.6/site-packages/django/middleware/clickjacking.py", line 26, in process_response
+    if response.get('X-Frame-Options') is not None:
+AttributeError: 'Response' object has no attribute 'get'
+2019-01-17 17:35:54,931 [DEBUG] aegis.log: reg_customer >>> 503 ERROR: Expecting value: line 2 column 1 (char 1)
+2019-01-17 17:35:54,958 [WARNING] django.request: Not Found: /favicon.ico
