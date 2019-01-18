@@ -9,10 +9,9 @@ id
 """
 class Employee(models.Model):
     name = models.CharField(max_length = 127, default = 'unknown') # 암호화 한다.
+    login_pw = models.CharField(max_length=55, default='') # 로그인 pw
     va_bank = models.CharField(max_length = 20, default='') # 급여 은행
     va_account = models.CharField(max_length = 20, default='') # 급여 계좌
-    def __unicode__(self):
-        return self.name
 
 """
 출입자
@@ -34,14 +33,14 @@ class Passer(models.Model):
 출입
 id
 출입자 id
-action ( 10 : 출근 11 : 지각 20 : 외출 30 : 퇴근 31 : 조퇴 )  
+action ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
 출입 등록 시간 : dt_reg 
 출입자 확인 시간 : dt_verify
 """
 
 class Pass(models.Model):
     passer_id = models.IntegerField()
-    action = models.IntegerField(default=10) # ( 10 : 출근 11 : 지각 20 : 외출 30 : 퇴근 31 : 조퇴 )
+    action = models.IntegerField(default=10) # ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
     dt_reg = models.DateTimeField(auto_now_add = True)
     dt_verify = models.DateTimeField(auto_now_add = True)
 

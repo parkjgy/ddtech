@@ -88,3 +88,13 @@
 2019-01-18 00:36:57,297 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
 2019-01-18 00:39:53,690 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: 'phone_no'
 2019-01-18 00:44:27,859 [DEBUG] aegis.error.log: reg_employee >>> 503 ERROR: list index out of range
+2019-01-18 10:44:38,479 [DEBUG] aegis.error.log: passer_reg >>> 503 ERROR: (1054, "Unknown column 'alert_id' in 'field list'")
+2019-01-18 10:52:16,856 [DEBUG] aegis.error.log: verify_employee >>> 503 ERROR: Employee matching query does not exist.
+2019-01-18 11:12:45,224 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: Input strings must be a multiple of 16 in length
+2019-01-18 11:13:23,927 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: name 'employee' is not defined
+2019-01-18 11:14:34,515 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: (1054, "Unknown column 'employee_employee.login_pw' in 'field list'")
+2019-01-18 11:15:04,900 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: name 'datetime' is not defined
+2019-01-18 11:15:54,414 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: month must be in 1..12
+2019-01-18 11:20:23,053 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: module 'datetime' has no attribute 'strptime'
+2019-01-18 11:21:10,362 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: 'months' is an invalid keyword argument for this function
+2019-01-18 11:23:06,034 [DEBUG] aegis.error.log: work_list >>> 503 ERROR: type object 'Pass' has no attribute 'object'

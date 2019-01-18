@@ -1665,3 +1665,22 @@ AttributeError: 'Response' object has no attribute 'get'
 2019-01-18 00:44:27,859 [DEBUG] aegis.log: reg_employee >>> 503 ERROR: list index out of range
 2019-01-18 00:47:06,994 [DEBUG] aegis.log: {"result_code": -101, "message": "\uc778\uc99d\uc624\ub958\uc785\ub2c8\ub2e4.-IP"}
 2019-01-18 01:00:38,607 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 10:44:38,479 [DEBUG] aegis.log: passer_reg >>> 503 ERROR: (1054, "Unknown column 'alert_id' in 'field list'")
+2019-01-18 10:44:38,495 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 10:46:39,328 [DEBUG] aegis.log: {"result_code": "1", "message": "success", "msg_id": "30040471", "error_cnt": 0, "success_cnt": 1, "msg_type": "SMS"}
+2019-01-18 10:46:39,345 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 10:46:40,308 [DEBUG] aegis.log: {"result_code": "1", "message": "success", "msg_id": "30040473", "error_cnt": 0, "success_cnt": 1, "msg_type": "SMS"}
+2019-01-18 10:46:40,330 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 10:48:21,762 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 10:50:57,503 [ERROR] django.request: Service Unavailable: /employee/verify_employee
+2019-01-18 10:52:16,856 [DEBUG] aegis.log: verify_employee >>> 503 ERROR: Employee matching query does not exist.
+2019-01-18 11:12:45,224 [DEBUG] aegis.log: work_list >>> 503 ERROR: Input strings must be a multiple of 16 in length
+2019-01-18 11:12:45,243 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 11:13:23,927 [DEBUG] aegis.log: work_list >>> 503 ERROR: name 'employee' is not defined
+2019-01-18 11:13:23,961 [WARNING] django.request: Not Found: /favicon.ico
+2019-01-18 11:14:34,515 [DEBUG] aegis.log: work_list >>> 503 ERROR: (1054, "Unknown column 'employee_employee.login_pw' in 'field list'")
+2019-01-18 11:15:04,900 [DEBUG] aegis.log: work_list >>> 503 ERROR: name 'datetime' is not defined
+2019-01-18 11:15:54,414 [DEBUG] aegis.log: work_list >>> 503 ERROR: month must be in 1..12
+2019-01-18 11:20:23,053 [DEBUG] aegis.log: work_list >>> 503 ERROR: module 'datetime' has no attribute 'strptime'
+2019-01-18 11:21:10,362 [DEBUG] aegis.log: work_list >>> 503 ERROR: 'months' is an invalid keyword argument for this function
+2019-01-18 11:23:06,034 [DEBUG] aegis.log: work_list >>> 503 ERROR: type object 'Pass' has no attribute 'object'

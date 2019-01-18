@@ -1,14 +1,7 @@
 *.pyc
 *~
 __pycache__
-/logs
+/aegis/logs
 ddtenv
-# db.sqlite3
 #/static
 .DS_Store
-# /docs
-/docs/_build
-/docs/_static
-/docs/_templates
-/source
-
