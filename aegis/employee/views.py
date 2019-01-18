@@ -343,11 +343,13 @@ def reg_employee(request):
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
         passers = Passer.objects.filter(pNo=phone_no)
-        # passer = passers[0]
         if len(passers) == 0 :
             passer = Passer(
                 pNo = phone_no
             )
+        else :
+            passer = passers[0]
+
         certificateNo = random.randint(100000, 999999)
         passer.cn = certificateNo
         passer.save()
