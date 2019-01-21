@@ -42,7 +42,7 @@ class Pass(models.Model):
     passer_id = models.IntegerField()
     action = models.IntegerField(default=10) # ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
     dt_reg = models.DateTimeField(auto_now_add = True)
-    dt_verify = models.DateTimeField(auto_now_add = True)
+    dt_verify = models.DateTimeField(null=True, blank=True)
 
 """
 비콘 history (날짜별)
@@ -69,7 +69,7 @@ dt_last
 """
 
 class Beacon(models.Model):
-    uuid = models.CharField(max_length = 32) # 8-4-4-4-12
+    uuid = models.CharField(max_length = 38) # 8-4-4-4-12
     major = models.IntegerField()
     minor = models.IntegerField()
     dt_last = models.DateTimeField(auto_now_add = True)

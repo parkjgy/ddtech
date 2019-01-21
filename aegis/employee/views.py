@@ -122,7 +122,6 @@ def check_version(request):
 """
 /employee/passer_reg
 출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
-http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
 POST : json
 	{
 	    'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자 
@@ -176,16 +175,17 @@ def passer_reg(request):
 """
 /employee/pass_reg
 출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
+http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10&major=11001
 POST : json
 	{
 		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
-		'dt' : '2018-01-16 08:29:00',
+		'dt' : '2018-01-21 08:25:30',
 		'action' : 10,
 		'major' : 11001 # 11 (지역) 001(사업장)
 		'beacons' : [
-			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70},
-			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70},
-			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70}		
+             {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+             {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+             {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
 		]
 	}
 response
@@ -196,6 +196,63 @@ response
 @csrf_exempt
 def pass_reg(request):
     try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            enPasser_id = rqst['passer_id']
+            dt = rqst['dt']
+            action = rqst['action']
+            major = rqst['major']
+            beacons = rqst['beacons']
+        else:
+            enPasser_id = request.GET["passer_id"]
+            dt = request.GET["dt"]
+            action = request.GET["action"]
+            major = request.GET["major"]
+            # beacons = request.GET["beacons"]
+            beacons = [
+                {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+                {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+                # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
+                # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+            ]
+        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        print(passer_id, dt, action, major)
+        print(beacons)
+        for i in range(3) :
+            beacon_list = Beacon.objects.filter(major = major, minor = beacons[i]['minor'])
+            if len(beacon_list) > 0 :
+                beacon = beacon_list[0]
+                beacon.dt_last = dt
+                beacon.save()
+            else :
+                # ?? 운영에서 관리하도록 바뀌어야하나?
+                beacon = Beacon(
+                    uuid = '12345678-0000-0000-0000-123456789012',
+                            # 1234567890123456789012345678901234567890
+                    major = major,
+                    minor = beacons[i]['minor'],
+                    dt_last = dt
+                )
+                beacon.save()
+
+            beacon_history = Beacon_History(
+                major = major,
+                minor = beacons[i]['minor'],
+                passer_id = passer_id,
+                dt_begin = beacons[i]['dt_begin'],
+                RSSI_begin = beacons[i]['rssi']
+            )
+            beacon_history.save()
+
+        isIn = isInCheck(beacons)
+        new_pass = Pass(
+            passer_id=passer_id,
+            action=isIn,
+            dt_reg=dt
+        )
+        new_pass.save()
         response = HttpResponse()
         response.status_code = 200
         return response
@@ -203,12 +260,27 @@ def pass_reg(request):
         return exceptionError('pass_reg', '503', e)
 
 
+def isInCheck(beacons) :
+    inCount = 0
+    outCount = 0
+
+    for i in range(1, len(beacons)) :
+        if beacons[i - 1]['minor'] < beacons[i]['minor'] :
+            inCount += 1
+        else:
+            outCount += 1
+
+    isIn = inCount > outCount
+    return isIn
+
+
 """
 /employee/pass_verify
 출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
+http://0.0.0.0:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10
 POST : json
 	{
-		'passer_id' : '출입자 id',
+		'passer_id' : '암호화된 출입자 id',
 		'dt' : '2018-12-28 12:53:36',
 		'action' : 10,
 	} 
@@ -219,6 +291,21 @@ response
 
 def pass_verify(request):
     try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            enPasser_id = rqst['passer_id']
+            dt = rqst['dt']
+            action = rqst['action']
+        else:
+            enPasser_id = request.GET["passer_id"]
+            dt = request.GET["dt"]
+            action = request.GET["action"]
+        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        print(passer_id, dt, action)
+        # 가장 최근에 저장된 값부터 가져옮
+        before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
+        for x in before_passes :
+            print(x.dt_reg)
         response = HttpResponse()
         response.status_code = 200
         return response
@@ -495,7 +582,7 @@ def work_list(request):
 근로자 정보 변경 : 근로자의 정보를 변경한다.
 	주) 	로그인이 있으면 앱 시작할 때 화면 표출
 		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
-http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=&bank=&bank_account=&pNo=010-
+http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
 POST
 	{
 		'passer_id': '서버로 받아 저장해둔 출입자 id',
