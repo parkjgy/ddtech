@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.http import HttpRequest
 from django.http import JsonResponse
 
+from django.views.decorators.csrf import csrf_exempt
+
 # log import
 from config.common import logSend
 from config.common import logHeader
@@ -29,6 +31,24 @@ class DateTimeEncoder(json.JSONEncoder):
             #logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
         return encoded_object
 
+# Cross-Origin Read Allow Rule 
+class CRSJsonResponse(JsonResponse):
+    def __init__(self, data, **kwargs):
+        super().__init__(data, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+        self["Access-Control-Max-Age"] = "1000"
+        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+	
+class CRSHttpResponse(HttpResponse):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+        self["Access-Control-Max-Age"] = "1000"
+        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+	
+	
 # try: 다음에 code = 'argument incorrect'
 
 def exceptionError(funcName, code, e) :
@@ -140,7 +160,10 @@ response
 """
 import requests
 
+@csrf_exempt
 def reg_customer(request):
+    if request.method == 'OPTIONS':
+        return CRSHttpResponse()
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -181,7 +204,7 @@ def reg_customer(request):
         print(r.text)
         print(r.json())
 
-        response = HttpResponse(json.dumps(r.json(), cls=DateTimeEncoder))
+        response = CRSJsonResponse(r.json())
         response.status_code = 200
         return response
     except Exception as e:
