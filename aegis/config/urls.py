@@ -19,8 +19,10 @@ from django.urls import include
 from django.conf.urls import url
 
 from . import secret
+from . import views as confViews
 
 urlpatterns = [
+    path('apiView', confViews.api_view),
     path('admin/', admin.site.urls),
     # path('employee/', include('employee.urls')),
 
