@@ -53,15 +53,21 @@ class DateTimeEncoder(json.JSONEncoder):
 # try: 다음에 code = 'argument incorrect'
 
 def exceptionError(funcName, code, e):
+    print(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
     logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
     logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    result = {'R': 'ERROR', 'MSG': str(e)}
-    return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    result = {'message': str(e)}
+    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    print(response)
+    response.status_code = 503
+    print(response.content)
+    return response
 
 
 """
 /employee/check_version
 앱 버전을 확인한다.
+http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
 GET
 	v=A.1.0.0.190111
 
@@ -75,146 +81,48 @@ response
 """
 
 
-def checkVersion(request):
-    print("employee : check version")
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-        for key in rqst.keys():
-            print(key, rqst[key])
-    print(rqst)
-    result = {'R': 'OK'}
-    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    print(response)
-    response.status_code = 503
-    print(response.content)
-    return response
-
-
-"""
-test_RSA
-앱에서 만들어 보낸 RSA1024 public key가 정상인지 확인
-request:
-RSAPublicKey: RSA1024 public key
-
-response:
-R: 10
-M: ""
-D:
-	RSAPublicKey: 보낸키 확인용
-	testValue: 보낸키로 ABCDEFGHIJKLMNOPQRSTUVWXYZ`0123456789~!@#$%^&*()_+-=[]\;',./{}|:"<>? 을 암호화한 값
-"""
-
-
-def test_RSA(request):
+def check_version(request):
     try:
+        print("employee : check version")
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            rsapKey = rqst["RSAPublicKey"]
-        # elif settings.IS_COVER_GET :
-        #     logSend('>>> :-(')
-        #     return HttpResponse(":-(");
+            version = rqst['v']
         else:
-            rsapKey = request.GET["RSAPublicKey"]
-        result = {'R': 10,
-                  'M': "문제없음",
-                  'D': {'RSAPublicKey': rsapKey,
-                        'testValue': "ABCDEFGHIJKLMNOPQRSTUVWXYZ`0123456789~!@#$%^&*()_+-=[]\;',./{}|:\"<>?"
-                        }
-                  }
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
-        # staffCode = AES_DECRYPT(base64decode(_staffCode.encode('utf-8')))
-        # if staffCode == '......' :
-        #     return exceptionError('mng_currentEnv', staffCode, 'cannot decrypt')
-        # logSend('mng_currentEnv >>> staffCode = ' + staffCode)
-        #
-        # staffs = Staff.objects.filter(isDeleted = False, id = staffCode[2:])
-        # if len(staffs) == 0 :
-        #     return jsonNotFoundManagement('mng_currentEnv', staffCode)
-        #
-        # envirenments = Environment.objects.filter().values('manager_id', 'dt', 'timeOutPushMinute', 'timeOutWorkingMinute', 'timeCheckServer', 'feeDriver', 'responseDelaySec', 'driverRegServiceAmount').order_by('-dt')
-        # arrEnv = [env for env in envirenments]
-        #
-        # result = { 'R': 'OK', 'MSG': 'Current', 'ARRAY': arrEnv }
-        # return testMngResponse(json.dumps(result, cls=DateTimeEncoder))
-    except Exception as e:
-        # return exceptionError('mng_currentEnv', staffCode, e)
-        eResponse = HttpResponse(json.dumps({'R': 20, 'M': "에러 났어요"}))
-        eResponse.status_code = 503
-        return eResponse
+            version = request.GET['v']
 
-
-"""
-request_AES256
-대칭키(AES 256) 요청
-request:
-	rk : 대칭키를 암호화할 RSA 1024 public key,
-response:
-	R : 10
-	M : ""
-    D :
-    	AESKey : "01234567890123456789012345678900"
-
-test_AES
-받은 대칭키(AES 256) 가 정상인지 확인
-request:
-	cipherText : "검사하고 싶은 문자열"
-response:
-	R : 00
-	M : ""
-	D :
-		text : "복호화된 문자열"
-"""
-
-
-def request_AES256(request):
-    try:
-        print(request)
-        print(request.GET)
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-            rsapKey = rqst["rk"]
-        # elif settings.IS_COVER_GET :
-        #     logSend('>>> :-(')
-        #     return HttpResponse(":-(");
-        else:
-            print('# keys = ' + len(request.GET["rk"].keys))
-            rsapKey = request.GET["rk"]
-        print('# keys = ' + len(rsapKey.keys))
-        if rsapKey != '':
-            print('parameter empty')
-
-        result = {'R': 10,
-                  'M': "문제없음",
-                  'D': {'AESKey': "01234567890123456789012345678900"
-                        },
-                  }
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
+        items = version.split('.')
+        if (items[4]) == 0 :
+            result = {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            print(response)
+            response.status_code = 503
+            print(response.content)
+            return response
+        ver_dt = items[4]
+        dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
+        dt_check = datetime.datetime.strptime('2019-01-12 00:00:00', '%Y-%m-%d %H:%M:%S')
+        print(dt_version)
+        if dt_version < dt_check :
+            print('dt_version < dt_check')
+            result = {'messge': '업그레이드가 필요합니다.',
+                      'url': 'http://...'  # itune, google play update
+                      }
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            print(response)
+            response.status_code = 503
+        else :
+            result = {}
+            response = HttpResponse()
+        print(response.content)
         return response
     except Exception as e:
-        print('error ' + str(e))
-        return exceptionError('request_AES256', '0', e)
-        eResponse = HttpResponse(json.dumps({'R': 20, 'M': "에러 났어요"}))
-        eResponse.status_code = 503
-        return eResponse
-
-
-def exceptionError(funcName, code, e):
-    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    print(str(e))
-    result = {'R': 'ERROR', 'MSG': str(e)}
-    return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        return exceptionError('check_version', '503', e)
 
 
 """
 /employee/passer_reg
 출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
-http://0.0.0.0:8000/employee/passer_reg?p1=01025573555&p2=01074648939&p3=01020736959&p4=01054214410&p5=01047302499&p6=01024505942
+http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
 POST : json
 	{
 	    'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자 
@@ -432,11 +340,13 @@ response
     }
 	STATUS 200 # 기존 근로자
 	{
-		'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000'
+		'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000',
+		'bank_list': ['국민은행', ... 'NH투자증권']
 	}
 	STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
 	{
-		'id': '암호화된 id 그대로 보관되어서 사용되어야 함'
+		'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
+		'bank_list': ['국민은행', ... 'NH투자증권']
 	}
 	STATUS 202 # 출입 정보만 처리하는 출입자
 	{
@@ -481,11 +391,12 @@ def verify_employee(request):
             )
             employee.save()
             passer.employee_id = employee.id
+            result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행', '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행', '신협중앙회', '우체국', '전북은행', '제주은행', '카카오뱅크', '중국공상은행', 'BNP파리바은행', 'HSBC은행', 'JP모간체이스은행', '케이뱅크', '교보증권', '대신증권', 'DB금융투자', '메리츠종합금융증권', '미래에셋대우', '부국증권', '삼성증권', '신영증권', '신한금융투자', '에스케이증권', '현대차증권주식회사', '유안타증권주식회사', '유진투자증권', '이베스트증권', '케이프투자증권', '키움증권', '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
         else:
             employee = Employee.objects.get(id=passer.employee_id)
             result['name'] = employee.name
-            result['va_bank'] = employee.va_bank
-            result['va_account'] = employee.va_account
+            result['bank'] = employee.bank
+            result['bank_account'] = employee.bank_account
         print(result)
 
         passer.pType = 20 if phone_type == 'A' else 10
@@ -584,10 +495,11 @@ def work_list(request):
 근로자 정보 변경 : 근로자의 정보를 변경한다.
 	주) 	로그인이 있으면 앱 시작할 때 화면 표출
 		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
+http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=&bank=&bank_account=&pNo=010-
 POST
 	{
 		'passer_id': '서버로 받아 저장해둔 출입자 id',
-		'pw': '암호화해서 보낸다.',
+		'name': '이름',
 		'bank': '기업은행',
 		'bank_account': '12300000012000',
 		'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
@@ -600,7 +512,33 @@ response
 @csrf_exempt
 def exchange_info(request):
     try:
-        id = 1
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            name = rqst['name']
+            enPasser_id = rqst['passer_id']
+            bank_account = rqst['bank_account']
+            pNo = rqst['pNo']
+        else:
+            enPasser_id = request.GET['passer_id']
+            name = request.GET['name']
+            bank = request.GET['bank']
+            bank_account = request.GET['bank_account']
+            pNo = request.GET['pNo']
+        if len(pNo) :
+            pNo = pNo.replace('-', '')
+            pNo = pNo.replace(' ', '')
+            print(pNo)
+
+        print(enPasser_id, name, bank, bank_account)
+        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        passer = Passer.objects.get(id = passer_id)
+        employee = Employee.objects.get(id = passer.employee_id)
+        if len(name) > 0 :
+            employee.name = name
+        if len(bank) > 0  and len(bank_account) > 0 :
+            employee.bank = bank
+            employee.bank_account = bank_account
+        employee.save()
         response = HttpResponse()
         response.status_code = 200
         return response

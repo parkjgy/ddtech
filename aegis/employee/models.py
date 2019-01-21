@@ -10,8 +10,8 @@ id
 class Employee(models.Model):
     name = models.CharField(max_length = 127, default = 'unknown') # 암호화 한다.
     login_pw = models.CharField(max_length=55, default='') # 로그인 pw
-    va_bank = models.CharField(max_length = 20, default='') # 급여 은행
-    va_account = models.CharField(max_length = 20, default='') # 급여 계좌
+    bank = models.CharField(max_length = 20, default='') # 급여 은행
+    bank_account = models.CharField(max_length = 20, default='') # 급여 계좌
 
 """
 출입자
