@@ -157,7 +157,7 @@ response
 import requests
 
 def reg_customer(request):
-    if request.method == 'OPTIONS'
+    if request.method == 'OPTIONS':
         return CRSHttpResponse()
     try:
         if request.method == 'POST':
