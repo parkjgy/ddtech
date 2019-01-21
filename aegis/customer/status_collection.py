@@ -9,11 +9,11 @@ class StatusCollection(object):
         self.message = message
 
     def to_json_response(self):
-        resp = JsonResponse({"message": self.message})
+        resp = JsonResponse({"msg": self.message})
         resp.status_code = self.status
 
     def to_response(self):
-        resp = HttpResponse(json.dumps({"message": self.message}))
+        resp = HttpResponse(json.dumps({"msg": self.message}))
         resp.status_code = self.status
         return resp
 
