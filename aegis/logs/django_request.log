@@ -3457,3 +3457,7 @@
 2019-01-18 11:29:02,038 [DEBUG] django.db.backends: (0.000) SELECT `employee_passer`.`id`, `employee_passer`.`pNo`, `employee_passer`.`pType`, `employee_passer`.`push_token`, `employee_passer`.`employee_id`, `employee_passer`.`alert_id`, `employee_passer`.`cn` FROM `employee_passer` WHERE `employee_passer`.`id` = 1; args=(1,)
 2019-01-18 11:29:02,039 [DEBUG] django.db.backends: (0.000) SELECT `employee_employee`.`id`, `employee_employee`.`name`, `employee_employee`.`login_pw`, `employee_employee`.`va_bank`, `employee_employee`.`va_account` FROM `employee_employee` WHERE `employee_employee`.`id` = 1; args=(1,)
 2019-01-18 11:29:02,073 [DEBUG] django.db.backends: (0.000) SELECT `employee_pass`.`id`, `employee_pass`.`passer_id`, `employee_pass`.`action`, `employee_pass`.`dt_reg`, `employee_pass`.`dt_verify` FROM `employee_pass` WHERE (`employee_pass`.`dt_reg` > '2018-11-30 15:00:00' AND `employee_pass`.`dt_reg` < '2018-12-31 15:00:00' AND `employee_pass`.`passer_id` = 1); args=('2018-11-30 15:00:00', '2018-12-31 15:00:00', 1)
+2019-01-21 10:29:04,690 [DEBUG] django.db.backends: (0.004) SELECT @@SQL_AUTO_IS_NULL; args=None
+2019-01-21 10:29:04,692 [DEBUG] django.db.backends: (0.001) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None
+2019-01-21 10:29:04,719 [DEBUG] django.db.backends: (0.027) SHOW FULL TABLES; args=None
+2019-01-21 10:29:04,721 [DEBUG] django.db.backends: (0.000) SELECT `django_migrations`.`app`, `django_migrations`.`name` FROM `django_migrations`; args=()
