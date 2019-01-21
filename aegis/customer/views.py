@@ -1,45 +1,47 @@
-from django.shortcuts import render
+import datetime
+from datetime import timedelta
 
-import json
-
-from .models import Customer
-from .models import Staff
-
-from django.http import HttpResponse
-from django.http import HttpRequest
-from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 # log import
-from config.common import logSend
-from config.common import logHeader
-from config.common import logError
+from config.common import CRSHttpResponse
+from config.common import logError, logSend
+from .models import Customer
+from .models import Staff
+from .status_collection import *
+
 
 ##### JSON Processor
 
 def ValuesQuerySetToDict(vqs):
     return [item for item in vqs]
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, datetime.datetime) :
+        if isinstance(obj, datetime.datetime):
             if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0,0,0,0,0,9)
-                #logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
+                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
+                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
             encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            #logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
+            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
         else:
-            encoded_object =json.JSONEncoder.default(self, obj)
-            #logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
+            encoded_object = json.JSONEncoder.default(self, obj)
+            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
         return encoded_object
+
 
 # try: 다음에 code = 'argument incorrect'
 
-def exceptionError(funcName, code, e) :
-    print(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    result = {'R': 'ERROR', 'MSG': str(e)}
-    return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+def exceptionError(funcName, code=503, e=Exception(), crs=False):
+    logError(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
+    logSend(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
+    result = {'msg': str(e)}
+    if crs:
+        return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
+    else:
+        return HttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
+
 
 """
 /customer/reg_customer
@@ -59,48 +61,41 @@ POST
 response
 	STATUS 200
 """
-from django.views.decorators.csrf import csrf_exempt, csrf_protect # POST 에서 사용
+
 
 @csrf_exempt
 def reg_customer(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            customer_name = rqst["customer_name"]
-            staff_name = rqst["staff_name"]
-            staff_pNo = rqst["staff_pNo"]
-            staff_email = rqst["staff_email"]
-        else :
-            customer_name = request.GET["customer_name"]
-            staff_name = request.GET["staff_name"]
-            staff_pNo = request.GET["staff_pNo"]
-            staff_email = request.GET["staff_email"]
+        else:
+            rqst = request.GET
+
+        customer_name = rqst["customer_name"]
+        staff_name = rqst["staff_name"]
+        staff_pNo = rqst["staff_pNo"]
+        staff_email = rqst["staff_email"]
 
         print(customer_name, staff_name, staff_pNo, staff_email)
-        customers = Customer.objects.filter(name = customer_name, staff_name = staff_name)
-        if len(customers) > 0 :
-            staff = Staff.objects.get(id = customers[0].staff_id)
-            result = { 'msg': '이미 등록되어 있는 고객업체의 담당자',
-                       'login_id': staff.login_id,
-                       'login_pw': staff.login_pw
-                       }
-            return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        customers = Customer.objects.filter(name=customer_name, staff_name=staff_name)
+        if len(customers) > 0:
+            staff = Staff.objects.get(id=customers[0].staff_id)
+            return REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED.to_response()
         customer = Customer(
-            name = customer_name,
-            staff_name = staff_name,
-            staff_pNo = staff_pNo,
-            staff_email = staff_email
+            name=customer_name,
+            staff_name=staff_name,
+            staff_pNo=staff_pNo,
+            staff_email=staff_email
         )
         customer.save()
-        print('customer id = ', customer.id)
         staff = Staff(
-            name = staff_name,
-            login_id = 'temp_' + str(customer.id),
-            login_pw = 'happy_day!!!',
-            co_id = customer.id,
-            co_name = customer.name,
-            pNo = staff_pNo,
-            email = staff_email
+            name=staff_name,
+            login_id='temp_' + str(customer.id),
+            login_pw='happy_day!!!',
+            co_id=customer.id,
+            co_name=customer.name,
+            pNo=staff_pNo,
+            email=staff_email
         )
         staff.save()
         print('staff id = ', staff.id)
@@ -111,11 +106,12 @@ def reg_customer(request):
 
         result = {'msg': '정상처리되었습니다.',
                   'login_id': staff.login_id,
-                  'login_pw': staff.login_pw
-                  }
+                  'login_pw': staff.login_pw}
         return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     except Exception as e:
-        return exceptionError('reg_customer', '503', e)
+        return exceptionError('reg_customer', 503, e)
+
+
 """
 /customer/reg_staff
 고객사 직원을 등록한다.
@@ -130,10 +126,12 @@ POST
 response
 	STATUS 200
 """
+
+
 def reg_staff(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('reg_customer', '503', e)
+        return exceptionError('reg_customer', 503, e)

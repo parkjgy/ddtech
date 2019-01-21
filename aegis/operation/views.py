@@ -1,61 +1,49 @@
-from django.shortcuts import render
-
 import json
+import datetime
+from datetime import timedelta
 
 from django.http import HttpResponse
-from django.http import HttpRequest
 from django.http import JsonResponse
-
 from django.views.decorators.csrf import csrf_exempt
 
+from config.common import CRSJsonResponse, CRSHttpResponse, CRSReqLibJsonResponse
 # log import
-from config.common import logSend
-from config.common import logHeader
-from config.common import logError
+from config.common import logSend, logError
+
+from config.settings.base import CUSTOMER_URL
+
 
 ##### JSON Processor
 
 def ValuesQuerySetToDict(vqs):
     return [item for item in vqs]
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, datetime.datetime) :
+        if isinstance(obj, datetime.datetime):
             if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0,0,0,0,0,9)
-                #logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
+                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
+                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
             encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            #logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
+            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
         else:
-            encoded_object =json.JSONEncoder.default(self, obj)
-            #logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
+            encoded_object = json.JSONEncoder.default(self, obj)
+            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
         return encoded_object
 
-# Cross-Origin Read Allow Rule 
-class CRSJsonResponse(JsonResponse):
-    def __init__(self, data, **kwargs):
-        super().__init__(data, **kwargs)
-        self["Access-Control-Allow-Origin"] = "*"
-        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
-        self["Access-Control-Max-Age"] = "1000"
-        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-	
-class CRSHttpResponse(HttpResponse):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["Access-Control-Allow-Origin"] = "*"
-        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
-        self["Access-Control-Max-Age"] = "1000"
-        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-	
-	
+
 # try: 다음에 code = 'argument incorrect'
 
-def exceptionError(funcName, code, e) :
-    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    result = {'R': 'ERROR', 'MSG': str(e)}
-    return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+def exceptionError(funcName, code=503, e=Exception(), crs=False):
+    logError(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
+    logSend(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
+    result = {'msg': str(e)}
+    if crs:
+        return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
+    else:
+        return HttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
+
 
 """
 /operation/reg_staff
@@ -69,13 +57,16 @@ POST
 response
 	STATUS 200
 """
+
+
 def reg_staff(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('reg_staff', '503', e)
+        return exceptionError('reg_staff', 503, e)
+
 
 """
 /operation/login
@@ -96,13 +87,16 @@ response
 		  "stat": "fail"
 		}
 """
+
+
 def login(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('login', '503', e)
+        return exceptionError('login', 503, e)
+
 
 """
 /operation/update_staff
@@ -132,13 +126,16 @@ response
 			}
 		}
 """
+
+
 def update_staff(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('update_staff', '503', e)
+        return exceptionError('update_staff', 503, e)
+
 
 """
 /operation/reg_customer
@@ -160,30 +157,28 @@ response
 """
 import requests
 
+
 @csrf_exempt
 def reg_customer(request):
-    if request.method == 'OPTIONS':
-        return CRSHttpResponse()
     try:
-        if request.method == 'POST':
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            customer_name = rqst["customer_name"]
-            staff_name = rqst["staff_name"]
-            staff_pNo = rqst["staff_pNo"]
-            staff_email = rqst["staff_email"]
-        else :
-            customer_name = request.GET["customer_name"]
-            staff_name = request.GET["staff_name"]
-            staff_pNo = request.GET["staff_pNo"]
-            staff_email = request.GET["staff_email"]
+        else:
+            rqst = request.GET
+
+        customer_name = rqst["customer_name"]
+        staff_name = rqst["staff_name"]
+        staff_pNo = rqst["staff_pNo"]
+        staff_email = rqst["staff_email"]
 
         rJson = {'customer_name': customer_name,
                  'staff_name': staff_name,
                  'staff_pNo': staff_pNo,
                  'staff_email': staff_email
                  }
-        response_customer = requests.post('http://0.0.0.0:8000/customer/reg_customer', json=rJson)
-        r = response_customer
+        response_customer = requests.post(CUSTOMER_URL + 'reg_customer', json=rJson)
         """
         rData = {
             'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -196,19 +191,13 @@ def reg_customer(request):
                    '아이디 temp_id\n'
                    '비밀번호 happy_day!!!\n'
         }
-
+    
         r = requests.post('https://apis.aligo.in/send/', data=rData)
         """
-        print(r.status_code)
-        print(r.headers['content-type'])
-        print(r.text)
-        print(r.json())
-
-        response = CRSJsonResponse(r.json())
-        response.status_code = 200
-        return response
+        return CRSReqLibJsonResponse(response_customer)
     except Exception as e:
-        return exceptionError('reg_customer', '503', e)
+        return exceptionError('reg_customer', 503, e)
+
 
 """
 /operation/update_work_place
@@ -244,13 +233,16 @@ response
 			}
 		}
 """
+
+
 def update_work_place(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('update_work_place', '503', e)
+        return exceptionError('update_work_place', 503, e)
+
 
 """
 /operation/update_beacon
@@ -277,13 +269,17 @@ response
 			}
 		}
 """
+
+
 def update_beacon(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('update_beacon', '503', e)
+        return exceptionError('update_beacon', 503, e)
+
+
 """
 /operation/list_work_place
 사업장 정보 리스트를 요청한다.
@@ -317,13 +313,16 @@ response
 			]
 		}
 """
+
+
 def list_work_place(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('list_work_place', '503', e)
+        return exceptionError('list_work_place', 503, e)
+
 
 """
 /operation/list_beacon
@@ -360,13 +359,16 @@ response
 			]
 		}
 """
+
+
 def list_beacon(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('list_beacon', '503', e)
+        return exceptionError('list_beacon', 503, e)
+
 
 """
 /operation/detail_beacon
@@ -407,10 +409,12 @@ response
 			]
 		}
 """
+
+
 def detail_beacon(request):
     try:
         response = HttpResponse()
         response.status_code = 200
         return response
     except Exception as e:
-        return exceptionError('detail_beacon', '503', e)
+        return exceptionError('detail_beacon', 503, e)
