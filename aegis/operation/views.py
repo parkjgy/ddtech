@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.http import HttpRequest
 from django.http import JsonResponse
 
+from django.views.decorators.csrf import csrf_exempt
+
 # log import
 from config.common import logSend
 from config.common import logHeader
@@ -158,6 +160,7 @@ response
 """
 import requests
 
+@csrf_exempt
 def reg_customer(request):
     if request.method == 'OPTIONS':
         return CRSHttpResponse()
