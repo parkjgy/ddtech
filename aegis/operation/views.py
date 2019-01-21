@@ -37,7 +37,14 @@ class CRSJsonResponse(JsonResponse):
         self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
         self["Access-Control-Max-Age"] = "1000"
         self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-
+	
+class CRSHttpResponse(HttpResponse):
+    def __init__(self, data, **kwargs):
+        super().__init__(data, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+        self["Access-Control-Max-Age"] = "1000"
+        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
 # try: 다음에 code = 'argument incorrect'
 
 def exceptionError(funcName, code, e) :
@@ -150,6 +157,8 @@ response
 import requests
 
 def reg_customer(request):
+    if request.method == 'OPTIONS'
+        return CRSHttpResponse()
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
