@@ -1,48 +1,17 @@
 import json
-import datetime
-from datetime import timedelta
 
+import requests
 from django.http import HttpResponse
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from config.common import CRSJsonResponse, CRSHttpResponse, CRSReqLibJsonResponse
-# log import
-from config.common import logSend, logError
-
+from config.common import CRSHttpResponse, CRSReqLibJsonResponse
 from config.settings.base import CUSTOMER_URL
 
-
-##### JSON Processor
-
-def ValuesQuerySetToDict(vqs):
-    return [item for item in vqs]
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
-                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
-            encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
-        else:
-            encoded_object = json.JSONEncoder.default(self, obj)
-            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
-        return encoded_object
-
-
-# try: 다음에 code = 'argument incorrect'
-
-def exceptionError(funcName, code=503, e=Exception(), crs=False):
-    logError(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
-    result = {'msg': str(e)}
-    if crs:
-        return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
-    else:
-        return HttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
+# Operation
+# 1) request.method ='OPTIONS'
+# 서버에서 Cross-Site 관련 옵션들을 확인
+# 2) request.method == REAL_METHOD:
+# 실제 사용할 데이터를 전송
 
 
 """
@@ -60,12 +29,9 @@ response
 
 
 def reg_staff(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('reg_staff', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -90,12 +56,9 @@ response
 
 
 def login(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('login', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -129,12 +92,9 @@ response
 
 
 def update_staff(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('update_staff', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -155,48 +115,44 @@ POST
 response
 	STATUS 200
 """
-import requests
 
 
 @csrf_exempt
 def reg_customer(request):
-    try:
-        if request.method == 'OPTIONS':
-            return CRSHttpResponse()
-        elif request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-        else:
-            rqst = request.GET
+    if request.method == 'OPTIONS':
+        return CRSHttpResponse()
+    elif request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
 
-        customer_name = rqst["customer_name"]
-        staff_name = rqst["staff_name"]
-        staff_pNo = rqst["staff_pNo"]
-        staff_email = rqst["staff_email"]
+    customer_name = rqst["customer_name"]
+    staff_name = rqst["staff_name"]
+    staff_pNo = rqst["staff_pNo"]
+    staff_email = rqst["staff_email"]
 
-        rJson = {'customer_name': customer_name,
-                 'staff_name': staff_name,
-                 'staff_pNo': staff_pNo,
-                 'staff_email': staff_email
-                 }
-        response_customer = requests.post(CUSTOMER_URL + 'reg_customer', json=rJson)
-        """
-        rData = {
-            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
-            'user_id': 'yuadocjon22',
-            'sender':'01024505942',
-            'receiver': '01020736959', #'01025573555',
-            'msg_type': 'SMS',
-            'msg': '반갑습니다.\n'
-                   '\'이지스 팩토리\'예요~~\n'
-                   '아이디 temp_id\n'
-                   '비밀번호 happy_day!!!\n'
-        }
-    
-        r = requests.post('https://apis.aligo.in/send/', data=rData)
-        """
-        return CRSReqLibJsonResponse(response_customer)
-    except Exception as e:
-        return exceptionError('reg_customer', 503, e)
+    rJson = {'customer_name': customer_name,
+             'staff_name': staff_name,
+             'staff_pNo': staff_pNo,
+             'staff_email': staff_email
+             }
+    response_customer = requests.post(CUSTOMER_URL + 'reg_customer', json=rJson)
+    """
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender':'01024505942',
+        'receiver': '01020736959', #'01025573555',
+        'msg_type': 'SMS',
+        'msg': '반갑습니다.\n'
+               '\'이지스 팩토리\'예요~~\n'
+               '아이디 temp_id\n'
+               '비밀번호 happy_day!!!\n'
+    }
+
+    r = requests.post('https://apis.aligo.in/send/', data=rData)
+    """
+    return CRSReqLibJsonResponse(response_customer)
 
 
 """
@@ -236,12 +192,9 @@ response
 
 
 def update_work_place(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('update_work_place', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -272,12 +225,9 @@ response
 
 
 def update_beacon(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('update_beacon', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -316,12 +266,9 @@ response
 
 
 def list_work_place(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('list_work_place', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -362,12 +309,9 @@ response
 
 
 def list_beacon(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('list_beacon', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
@@ -412,9 +356,6 @@ response
 
 
 def detail_beacon(request):
-    try:
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('detail_beacon', 503, e)
+    response = HttpResponse()
+    response.status_code = 200
+    return response
