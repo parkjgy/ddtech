@@ -198,13 +198,13 @@ def pass_reg(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            enPasser_id = rqst['passer_id']
+            chiper_passer_id = rqst['passer_id']
             dt = rqst['dt']
             is_in = rqst['is_in']
             major = rqst['major']
             beacons = rqst['beacons']
         else:
-            enPasser_id = request.GET["passer_id"]
+            chiper_passer_id = request.GET["passer_id"]
             dt = request.GET["dt"]
             is_in = request.GET["is_in"]
             major = request.GET["major"]
@@ -217,7 +217,7 @@ def pass_reg(request):
                 # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
                 # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
             ]
-        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
         print(passer_id, dt, is_in, major)
         print(beacons)
         for i in range(3) :
@@ -250,7 +250,7 @@ def pass_reg(request):
         print(is_in, str(is_in_verify()))
         new_pass = Pass(
             passer_id=passer_id,
-            action=is_in,
+            is_in=is_in,
             dt_reg=dt
         )
         new_pass.save()
@@ -282,7 +282,7 @@ POST : json
 	{
 		'passer_id' : '암호화된 출입자 id',
 		'dt' : '2018-12-28 12:53:36',
-		'action' : 10,
+		'is_in' : 1, # 0: out, 1 : in
 	} 
 response
 	STATUS 200
@@ -293,19 +293,26 @@ def pass_verify(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            enPasser_id = rqst['passer_id']
+            chiper_passer_id = rqst['passer_id']
             dt = rqst['dt']
             action = rqst['action']
         else:
-            enPasser_id = request.GET["passer_id"]
+            chiper_passer_id = request.GET["passer_id"]
             dt = request.GET["dt"]
             action = request.GET["action"]
-        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
         print(passer_id, dt, action)
         # 가장 최근에 저장된 값부터 가져옮
         before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
         for x in before_passes :
-            print(x.dt_reg)
+            print(x.dt_reg, x.is_in)
+            if is_in == x.is_in :
+                x.dt_verify = dt
+                s.save()
+                break
+            elif x.dt_verify != '' :
+                break
+
         response = HttpResponse()
         response.status_code = 200
         return response
@@ -320,7 +327,7 @@ POST : json
 	{
 		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
 		'dt' : '2018-01-16 08:29:00',
-		'action' : 10,
+		'is_in' : 1, # 0: out, 1 : in
 		'major' : 11001 # 11 (지역) 001(사업장)
 		'beacons' : [
 			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70},
@@ -416,7 +423,7 @@ http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&ph
 POST
     { 
 	    'phone_no' : '010-1111-2222'
-	    'cn' ; 123456
+	    'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화'
     	'phone_type' : 'A' # 안드로이드 폰
 	    'push_token' : 'push token'
 	}	
@@ -448,7 +455,7 @@ def verify_employee(request):
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             phone_no = rqst['phone_no']
-            cn = rqst['cn']
+            chiper_cn = rqst['cn']
             phone_type = rqst['phone_type']
             push_token = rqst['push_token']
         else:
@@ -461,6 +468,7 @@ def verify_employee(request):
 
         print(phone_no)
         passer = Passer.objects.get(pNo=phone_no)
+        cn = AES_DECRYPT_BASE64(chiper_cn)
         if passer.cn != int(cn):
             rMsg = {'msg': '인증번호가 틀립니다.'}
             response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
@@ -602,11 +610,11 @@ def exchange_info(request):
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']
-            enPasser_id = rqst['passer_id']
+            chiper_passer_id = rqst['passer_id']
             bank_account = rqst['bank_account']
             pNo = rqst['pNo']
         else:
-            enPasser_id = request.GET['passer_id']
+            chiper_passer_id = request.GET['passer_id']
             name = request.GET['name']
             bank = request.GET['bank']
             bank_account = request.GET['bank_account']
@@ -616,8 +624,8 @@ def exchange_info(request):
             pNo = pNo.replace(' ', '')
             print(pNo)
 
-        print(enPasser_id, name, bank, bank_account)
-        passer_id = AES_DECRYPT_BASE64(enPasser_id)
+        print(chiper_passer_id, name, bank, bank_account)
+        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
         passer = Passer.objects.get(id = passer_id)
         employee = Employee.objects.get(id = passer.employee_id)
         if len(name) > 0 :
