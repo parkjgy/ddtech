@@ -17,15 +17,19 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include
 from django.conf.urls import url
+from django.conf.urls.static import static
 
 from . import secret
 from . import views as confViews
+
+from .settings import base
 
 urlpatterns = [
     path('apiView', confViews.api_view),
     path('admin/', admin.site.urls),
     path('beta_employee_app_download', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
-    path('beta_app_upload', confViews.app_upload_view),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
+    path('beta_app_upload', confViews.app_upload_view),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 ),
+    path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
@@ -35,3 +39,5 @@ urlpatterns = [
     url(r'testEncryptionStr', secret.testEncryptionStr, name='testEncryptionStr'),
     url(r'testDecryptionStr', secret.testDecryptionStr, name='testDecryptionStr'),
 ]
+
+urlpatterns += static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)

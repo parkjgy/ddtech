@@ -118,10 +118,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_ROOT = os.path.join(BASE_DIR, 'knowledge/static/')
+STATIC_ROOT = os.path.join(BASE_DIR, 'resources/static/')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'knowledge/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'resources/media/')
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
