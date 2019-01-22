@@ -1,6 +1,7 @@
 export DJANGO_SETTINGS_MODULE=config.settings.development
 unset DJANGO_SETTINGS_MODULE
 
+pip install -r requirements.txt
 
 echo "# aegis_server" >> README.md
 git init
@@ -17,6 +18,8 @@ pip install django-filter
 pip install django-rest-swagger
 
 pip install mysqlclient
+	export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
+	brew install openssl
 
 pip install pycrypto
 
@@ -46,7 +49,36 @@ mysql> FLUSH PRIVILEGES;
 외부 접속 확인
 mysql> SELECT Host,User,authentication_string FROM mysql.user;
 
-python manage.py migrate --run-syncdb
+(ddtenv) $ export DJANGO_SETTINGS_MODULE=config.settings.development
+(ddtenv) $ python manage.py makemigrations employee
+(ddtenv) $ python manage.py makemigrations operation
+(ddtenv) $ python manage.py makemigrations customer
+(ddtenv) $ python manage.py migrate
+
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc"  -delete
+python manage.py showmigrations
 
 
+json_data = {
+		'passer_id' : 'qgf6YHf1z2Fx80DR8o/Lvg',
+		'dt' : '2018-01-21 08:25:30',
+		'is_in' : 1, # 0: out, 1 : in
+		'major' : 11001, # 11 (지역) 001(사업장)
+		'beacons' : [
+             {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+             {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+             {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+		]
+	}
+
+r = requests.post('http://0.0.0.0:8000/employee/pass_reg', json=json_data)
+
+json_data = {
+	'passer_id' : 'qgf6YHf1z2Fx80DR8o/Lvg',
+	'dt' : '2018-12-28 12:53:36',
+	'is_in' : 1, # 0: out, 1 : in
+} 
+
+r = requests.post('http://0.0.0.0:8000/employee/pass_verify', json=json_data)
 

@@ -1,5 +1,7 @@
 from django.shortcuts import render
 
+from django.utils import timezone
+
 # log import
 from config.common import logSend
 from config.common import logHeader
@@ -181,7 +183,7 @@ POST : json
 		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
 		'dt' : '2018-01-21 08:25:30',
 		'is_in' : 1, # 0: out, 1 : in
-		'major' : 11001 # 11 (지역) 001(사업장)
+		'major' : 11001, # 11 (지역) 001(사업장)
 		'beacons' : [
              {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
              {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
@@ -197,13 +199,7 @@ response
 def pass_reg(request):
     try:
         if request.method == 'POST':
-            print('--- start')
-            rbd = request.body.decode("utf-8")
-            print(rbd)
-            req = json.loads(rbd)
-            print(req)
             rqst = json.loads(request.body.decode("utf-8"))
-            print(rqst)
             cipher_passer_id = rqst['passer_id']
             dt = rqst['dt']
             is_in = rqst['is_in']
@@ -226,7 +222,7 @@ def pass_reg(request):
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         print(passer_id, dt, is_in, major)
         print(beacons)
-        for i in len(beacons) :
+        for i in range(len(beacons)) :
             beacon_list = Beacon.objects.filter(major = major, minor = beacons[i]['minor'])
             if len(beacon_list) > 0 :
                 beacon = beacon_list[0]
@@ -252,8 +248,8 @@ def pass_reg(request):
             )
             beacon_history.save()
 
-        logSend(is_in, str(is_in_verify()))
-        print(is_in, str(is_in_verify()))
+        # logSend(is_in + str(is_in_verify(beacons)))
+        print(is_in, str(is_in_verify(beacons)))
         new_pass = Pass(
             passer_id=passer_id,
             is_in=is_in,
@@ -299,29 +295,23 @@ def pass_verify(request):
     try:
         print('-- 0')
         if request.method == 'POST':
-            print('-- 1')
             rqst = json.loads(request.body.decode("utf-8"))
-            print('-- 2')
             cipher_passer_id = rqst['passer_id']
-            print('-- 3')
             dt = rqst['dt']
-            print('-- 4')
             is_in = rqst['is_in']
-            print('-- 5')
         else:
-            print('-- 1')
             cipher_passer_id = request.GET["passer_id"]
-            print('-- 2')
             dt = request.GET["dt"]
-            print('-- 3')
             is_in = request.GET["is_in"]
-            print('-- 4')
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         print(passer_id, dt, is_in)
+        dt = datetime.datetime.now()
+        # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+        # print(dt, str_dt)
         new_pass = Pass(
             passer_id=passer_id,
             is_in=is_in,
-            dt_verify=dt
+            dt_verify=datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
         )
         new_pass.save()
         response = HttpResponse()

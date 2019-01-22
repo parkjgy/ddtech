@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from config.common import CRSHttpResponse, CRSReqLibJsonResponse
-from config.settings.base import CUSTOMER_URL
+# from config.settings.base import CUSTOMER_URL
 
 # Operation
 # 1) request.method ='OPTIONS'
@@ -136,7 +136,7 @@ def reg_customer(request):
              'staff_pNo': staff_pNo,
              'staff_email': staff_email
              }
-    response_customer = requests.post(CUSTOMER_URL + 'reg_customer', json=rJson)
+    response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=rJson)
     """
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',

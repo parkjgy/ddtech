@@ -23,3 +23,4 @@ DATABASES = {
     }
 }
 
+CUSTOMER_URL = 'http://dev.ddtechi.com:8055/customer/'
