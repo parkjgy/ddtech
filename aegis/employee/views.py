@@ -198,13 +198,13 @@ def pass_reg(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            chiper_passer_id = rqst['passer_id']
+            cipher_passer_id = rqst['passer_id']
             dt = rqst['dt']
             is_in = rqst['is_in']
             major = rqst['major']
             beacons = rqst['beacons']
         else:
-            chiper_passer_id = request.GET["passer_id"]
+            cipher_passer_id = request.GET["passer_id"]
             dt = request.GET["dt"]
             is_in = request.GET["is_in"]
             major = request.GET["major"]
@@ -217,10 +217,10 @@ def pass_reg(request):
                 # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
                 # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
             ]
-        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         print(passer_id, dt, is_in, major)
         print(beacons)
-        for i in range(3) :
+        for i in len(beacons) :
             beacon_list = Beacon.objects.filter(major = major, minor = beacons[i]['minor'])
             if len(beacon_list) > 0 :
                 beacon = beacon_list[0]
@@ -293,29 +293,45 @@ def pass_verify(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            chiper_passer_id = rqst['passer_id']
+            cipher_passer_id = rqst['passer_id']
             dt = rqst['dt']
-            action = rqst['action']
+            is_in = rqst['is_in']
         else:
-            chiper_passer_id = request.GET["passer_id"]
+            cipher_passer_id = request.GET["passer_id"]
             dt = request.GET["dt"]
-            action = request.GET["action"]
-        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
-        print(passer_id, dt, action)
-        # 가장 최근에 저장된 값부터 가져옮
-        before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
-        for x in before_passes :
-            print(x.dt_reg, x.is_in)
-            if is_in == x.is_in :
-                x.dt_verify = dt
-                s.save()
-                break
-            elif x.dt_verify != '' :
-                break
-
+            is_in = request.GET["is_in"]
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        print(passer_id, dt, is_in)
+        new_pass = Pass(
+            passer_id=passer_id,
+            is_in=is_in,
+            dt_verify=dt
+        )
+        new_pass.save()
         response = HttpResponse()
         response.status_code = 200
         return response
+        # 가장 최근에 저장된 값부터 가져옮
+        # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
+        # for x in before_passes :
+        #     print(x.dt_reg, x.is_in, x.dt_verify)
+        #     if is_in == x.is_in and x.dt_verify == '':
+        #         print('--- save')
+        #         x.dt_verify = dt
+        #         # s.save()
+        #         break
+        #     elif x.dt_verify != '' :
+        #         print('--- message')
+        #         result = {'messge': '출근 전에 퇴근이 요청되었습니다.' if is_in else '퇴근 전에 출근이 요청되었습니다.'}
+        #         response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        #         response.status_code = 503
+        #         print(response)
+        #         return response
+        #         break
+        #
+        # response = HttpResponse()
+        # response.status_code = 200
+        # return response
     except Exception as e:
         return exceptionError('pass_verify', '503', e)
 
@@ -342,6 +358,55 @@ response
 @csrf_exempt
 def beacon_verify(request):
     try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            cipher_passer_id = rqst['passer_id']
+            dt = rqst['dt']
+            is_in = rqst['is_in']
+            major = rqst['major']
+            beacons = rqst['beacons']
+        else:
+            cipher_passer_id = request.GET["passer_id"]
+            dt = request.GET["dt"]
+            is_in = request.GET["is_in"]
+            major = request.GET["major"]
+            # beacons = request.GET["beacons"]
+            beacons = [
+                {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+                {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+                # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
+                # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+            ]
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        print(passer_id, dt, is_in, major)
+        print(beacons)
+        for i in len(beacons) :
+            beacon_list = Beacon.objects.filter(major = major, minor = beacons[i]['minor'])
+            if len(beacon_list) > 0 :
+                beacon = beacon_list[0]
+                beacon.dt_last = dt
+                beacon.save()
+            else :
+                # ?? 운영에서 관리하도록 바뀌어야하나?
+                beacon = Beacon(
+                    uuid = '12345678-0000-0000-0000-123456789012',
+                            # 1234567890123456789012345678901234567890
+                    major = major,
+                    minor = beacons[i]['minor'],
+                    dt_last = dt
+                )
+                beacon.save()
+
+            beacon_history = Beacon_History(
+                major = major,
+                minor = beacons[i]['minor'],
+                passer_id = passer_id,
+                dt_begin = beacons[i]['dt_begin'],
+                RSSI_begin = beacons[i]['rssi']
+            )
+            beacon_history.save()
         response = HttpResponse()
         response.status_code = 200
         return response
@@ -455,7 +520,7 @@ def verify_employee(request):
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             phone_no = rqst['phone_no']
-            chiper_cn = rqst['cn']
+            cipher_cn = rqst['cn']
             phone_type = rqst['phone_type']
             push_token = rqst['push_token']
         else:
@@ -468,7 +533,7 @@ def verify_employee(request):
 
         print(phone_no)
         passer = Passer.objects.get(pNo=phone_no)
-        cn = AES_DECRYPT_BASE64(chiper_cn)
+        cn = AES_DECRYPT_BASE64(cipher_cn)
         if passer.cn != int(cn):
             rMsg = {'msg': '인증번호가 틀립니다.'}
             response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
@@ -584,6 +649,48 @@ def work_list(request):
     except Exception as e:
         return exceptionError('work_list', '503', e)
 
+def generation_pass_history(dt):
+    try:
+        """
+        출입 기록에서 일자별 출퇴근 기록을 만든다.
+        퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
+        1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
+        2. 주어진 날짜의 
+        """
+
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            name = rqst['name']
+            cipher_passer_id = rqst['passer_id']
+            bank_account = rqst['bank_account']
+            pNo = rqst['pNo']
+        else:
+            cipher_passer_id = request.GET['passer_id']
+            name = request.GET['name']
+            bank = request.GET['bank']
+            bank_account = request.GET['bank_account']
+            pNo = request.GET['pNo']
+        if len(pNo) :
+            pNo = pNo.replace('-', '')
+            pNo = pNo.replace(' ', '')
+            print(pNo)
+
+        print(cipher_passer_id, name, bank, bank_account)
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        passer = Passer.objects.get(id = passer_id)
+        employee = Employee.objects.get(id = passer.employee_id)
+        if len(name) > 0 :
+            employee.name = name
+        if len(bank) > 0  and len(bank_account) > 0 :
+            employee.bank = bank
+            employee.bank_account = bank_account
+        employee.save()
+        response = HttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('exchange_info', '503', e)
+
 
 """
 /employee/exchange_info
@@ -610,11 +717,11 @@ def exchange_info(request):
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']
-            chiper_passer_id = rqst['passer_id']
+            cipher_passer_id = rqst['passer_id']
             bank_account = rqst['bank_account']
             pNo = rqst['pNo']
         else:
-            chiper_passer_id = request.GET['passer_id']
+            cipher_passer_id = request.GET['passer_id']
             name = request.GET['name']
             bank = request.GET['bank']
             bank_account = request.GET['bank_account']
@@ -624,8 +731,8 @@ def exchange_info(request):
             pNo = pNo.replace(' ', '')
             print(pNo)
 
-        print(chiper_passer_id, name, bank, bank_account)
-        passer_id = AES_DECRYPT_BASE64(chiper_passer_id)
+        print(cipher_passer_id, name, bank, bank_account)
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         passer = Passer.objects.get(id = passer_id)
         employee = Employee.objects.get(id = passer.employee_id)
         if len(name) > 0 :
