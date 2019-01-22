@@ -180,7 +180,7 @@ POST : json
 	{
 		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
 		'dt' : '2018-01-21 08:25:30',
-		'action' : 10,
+		'is_in' : 1, # 0: out, 1 : in
 		'major' : 11001 # 11 (지역) 001(사업장)
 		'beacons' : [
              {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
@@ -200,13 +200,13 @@ def pass_reg(request):
             rqst = json.loads(request.body.decode("utf-8"))
             enPasser_id = rqst['passer_id']
             dt = rqst['dt']
-            action = rqst['action']
+            is_in = rqst['is_in']
             major = rqst['major']
             beacons = rqst['beacons']
         else:
             enPasser_id = request.GET["passer_id"]
             dt = request.GET["dt"]
-            action = request.GET["action"]
+            is_in = request.GET["is_in"]
             major = request.GET["major"]
             # beacons = request.GET["beacons"]
             beacons = [
@@ -218,7 +218,7 @@ def pass_reg(request):
                 # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
             ]
         passer_id = AES_DECRYPT_BASE64(enPasser_id)
-        print(passer_id, dt, action, major)
+        print(passer_id, dt, is_in, major)
         print(beacons)
         for i in range(3) :
             beacon_list = Beacon.objects.filter(major = major, minor = beacons[i]['minor'])
@@ -246,10 +246,11 @@ def pass_reg(request):
             )
             beacon_history.save()
 
-        isIn = isInCheck(beacons)
+        # logSend(is_in, str(is_in_verify()))
+        print(is_in, str(is_in_verify()))
         new_pass = Pass(
             passer_id=passer_id,
-            action=isIn,
+            action=is_in,
             dt_reg=dt
         )
         new_pass.save()
@@ -260,18 +261,17 @@ def pass_reg(request):
         return exceptionError('pass_reg', '503', e)
 
 
-def isInCheck(beacons) :
-    inCount = 0
-    outCount = 0
+def is_in_verify(beacons) :
+    in_count = 0
+    out_count = 0
 
     for i in range(1, len(beacons)) :
         if beacons[i - 1]['minor'] < beacons[i]['minor'] :
-            inCount += 1
+            in_count += 1
         else:
-            outCount += 1
+            out_count += 1
 
-    isIn = inCount > outCount
-    return isIn
+    return in_count > out_count
 
 
 """
