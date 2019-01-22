@@ -24,6 +24,7 @@ from . import views as confViews
 urlpatterns = [
     path('apiView', confViews.api_view),
     path('admin/', admin.site.urls),
+    path('beta_employee_app_download', confViews.beta_employee_app_download), # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
