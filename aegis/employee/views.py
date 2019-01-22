@@ -246,7 +246,7 @@ def pass_reg(request):
             )
             beacon_history.save()
 
-        # logSend(is_in, str(is_in_verify()))
+        logSend(is_in, str(is_in_verify()))
         print(is_in, str(is_in_verify()))
         new_pass = Pass(
             passer_id=passer_id,

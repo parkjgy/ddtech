@@ -27,9 +27,9 @@ from .settings import base
 urlpatterns = [
     path('apiView', confViews.api_view),
     path('admin/', admin.site.urls),
-    path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
-    path('android_apk_upload', confViews.app_upload_view),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 ),
     path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
+    path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
+    path('android_upload', confViews.app_upload_view),  # 근로자 앱 업로드
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
