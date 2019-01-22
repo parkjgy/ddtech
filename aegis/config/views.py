@@ -13,5 +13,15 @@ def api_view(request):
     return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
 
 
+# appLink           다운로드에 사용할 링크
 def beta_employee_app_download(request):
     return render(request, 'root/beta_app_download.html', {"appLink": "test.apk"})
+
+
+# upload_app ( POST )
+# -- Params
+# type              worker(근로자) or admin(관리자)
+# file              APK FILE
+# version           APK VERSION
+def app_upload_view(request):
+    return render(request, 'root/beta_app_upload.html')
