@@ -197,7 +197,13 @@ response
 def pass_reg(request):
     try:
         if request.method == 'POST':
+            print('--- start')
+            rbd = request.body.decode("utf-8")
+            print(rbd)
+            req = json.loads(rbd)
+            print(req)
             rqst = json.loads(request.body.decode("utf-8"))
+            print(rqst)
             cipher_passer_id = rqst['passer_id']
             dt = rqst['dt']
             is_in = rqst['is_in']
@@ -277,7 +283,7 @@ def is_in_verify(beacons) :
 """
 /employee/pass_verify
 출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
-http://0.0.0.0:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10
+http://192.168.219.62:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1
 POST : json
 	{
 		'passer_id' : '암호화된 출입자 id',
@@ -288,18 +294,28 @@ response
 	STATUS 200
 """
 
-
+@csrf_exempt
 def pass_verify(request):
     try:
+        print('-- 0')
         if request.method == 'POST':
+            print('-- 1')
             rqst = json.loads(request.body.decode("utf-8"))
+            print('-- 2')
             cipher_passer_id = rqst['passer_id']
+            print('-- 3')
             dt = rqst['dt']
+            print('-- 4')
             is_in = rqst['is_in']
+            print('-- 5')
         else:
+            print('-- 1')
             cipher_passer_id = request.GET["passer_id"]
+            print('-- 2')
             dt = request.GET["dt"]
+            print('-- 3')
             is_in = request.GET["is_in"]
+            print('-- 4')
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         print(passer_id, dt, is_in)
         new_pass = Pass(
