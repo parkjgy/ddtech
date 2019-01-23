@@ -55,7 +55,7 @@ def api_apk_upload(request):
                 destination.write(chunk)
 
         with open(os.path.join(APK_FILE_PATH, desc_file_name), 'w') as desc_file:
-            desc_file.write(json.dumps({"version": p_version, "apkLink": base.MEDIA_URL + "APK/" + apk_file_name}))
+            desc_file.write(json.dumps({"version": p_version, "apkLink": settings.MEDIA_URL + "APK/" + apk_file_name}))
         return JsonResponse({"msg": "업로드 되었습니다.", "status": 0})
     else:
         return JsonResponse({"msg": "", "status": -1})
