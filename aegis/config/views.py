@@ -48,7 +48,7 @@ def api_apk_upload(request):
             os.makedirs(APK_FILE_PATH)
 
         desc_file_name = "desc_" + p_type + ".txt"
-        apk_file_name = p_type + "_" + str(int(time.time_ns() / 1000)) + ".apk"
+        apk_file_name = p_type + "_" + str(int(round(time.time() * 1000))) + ".apk"
 
         with open(os.path.join(APK_FILE_PATH, apk_file_name), 'wb+') as destination:
             for chunk in request.FILES['file'].chunks():
