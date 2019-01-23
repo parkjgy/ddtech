@@ -717,11 +717,11 @@ def exchange_info(request):
         else:
             rqst = request.GET
 
-        cipher_passer_id = request.GET['passer_id']
-        name = request.GET['name']
-        bank = request.GET['bank']
-        bank_account = request.GET['bank_account']
-        pNo = request.GET['pNo']
+        cipher_passer_id = rqst['passer_id']
+        name = rqst['name']
+        bank = rqst['bank']
+        bank_account = rqst['bank_account']
+        pNo = rqst['pNo']
 
         if len(pNo):
             pNo = pNo.replace('-', '')
