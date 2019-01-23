@@ -359,61 +359,58 @@ response
 
 @csrf_exempt
 def beacon_verify(request):
-    try:
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-            cipher_passer_id = rqst['passer_id']
-            dt = rqst['dt']
-            is_in = rqst['is_in']
-            major = rqst['major']
-            beacons = rqst['beacons']
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+        cipher_passer_id = rqst['passer_id']
+        dt = rqst['dt']
+        is_in = rqst['is_in']
+        major = rqst['major']
+        beacons = rqst['beacons']
+    else:
+        cipher_passer_id = request.GET["passer_id"]
+        dt = request.GET["dt"]
+        is_in = request.GET["is_in"]
+        major = request.GET["major"]
+        # beacons = request.GET["beacons"]
+        beacons = [
+            {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+            {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+            {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+            # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
+            # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+            # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+        ]
+    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    print(passer_id, dt, is_in, major)
+    print(beacons)
+    for i in range(len(beacons)):
+        beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
+        if len(beacon_list) > 0:
+            beacon = beacon_list[0]
+            beacon.dt_last = dt
+            beacon.save()
         else:
-            cipher_passer_id = request.GET["passer_id"]
-            dt = request.GET["dt"]
-            is_in = request.GET["is_in"]
-            major = request.GET["major"]
-            # beacons = request.GET["beacons"]
-            beacons = [
-                {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-                {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-                {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
-                # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
-                # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-                # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-            ]
-        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-        print(passer_id, dt, is_in, major)
-        print(beacons)
-        for i in len(beacons):
-            beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
-            if len(beacon_list) > 0:
-                beacon = beacon_list[0]
-                beacon.dt_last = dt
-                beacon.save()
-            else:
-                # ?? 운영에서 관리하도록 바뀌어야하나?
-                beacon = Beacon(
-                    uuid='12345678-0000-0000-0000-123456789012',
-                    # 1234567890123456789012345678901234567890
-                    major=major,
-                    minor=beacons[i]['minor'],
-                    dt_last=dt
-                )
-                beacon.save()
-
-            beacon_history = Beacon_History(
+            # ?? 운영에서 관리하도록 바뀌어야하나?
+            beacon = Beacon(
+                uuid='12345678-0000-0000-0000-123456789012',
+                # 1234567890123456789012345678901234567890
                 major=major,
                 minor=beacons[i]['minor'],
-                passer_id=passer_id,
-                dt_begin=beacons[i]['dt_begin'],
-                RSSI_begin=beacons[i]['rssi']
+                dt_last=dt
             )
-            beacon_history.save()
-        response = HttpResponse()
-        response.status_code = 200
-        return response
-    except Exception as e:
-        return exceptionError('beacon_verify', '503', e)
+            beacon.save()
+
+        beacon_history = Beacon_History(
+            major=major,
+            minor=beacons[i]['minor'],
+            passer_id=passer_id,
+            dt_begin=beacons[i]['dt_begin'],
+            RSSI_begin=beacons[i]['rssi']
+        )
+        beacon_history.save()
+    response = HttpResponse()
+    response.status_code = 200
+    return response
 
 
 """
