@@ -19,16 +19,19 @@ router = routers.DefaultRouter()
 
 schema_view = get_swagger_view(title='근로자 API')
 
+
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ('url', 'username', 'email', 'is_staff')
 
+
 # ViewSets define the view behavior.
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -41,8 +44,8 @@ urlpatterns = [
 
     # url(r'^api-auth', include('router.urls')),
     # url(r'^beacon_test_d3$', views.beaconTestD3, name = 'beaconTestD3'),
-    url(r'employee/check_version$', views.check_version, name = 'check_version'),
-    url(r'employee/passer_reg$', views.passer_reg, name = 'passer_reg'),
+    url(r'employee/check_version$', views.check_version, name='check_version'),
+    url(r'employee/passer_reg$', views.passer_reg, name='passer_reg'),
 
     url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
     url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
@@ -50,6 +53,7 @@ urlpatterns = [
     url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
     url(r'employee/work_list$', views.work_list, name='work_list'),
     url(r'employee/exchange_info$', views.exchange_info, name='exchange_info'),
+    url(r'employee/beacon_verify$', views.beacon_verify, name='beacon_verify')
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
