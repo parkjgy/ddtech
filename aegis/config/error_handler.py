@@ -14,9 +14,11 @@ class BaseMiddleware:
 
 class ProcessExceptionMiddleware(BaseMiddleware):
     def process_exception(self, request, exception):
+        stack_trace = get_traceback_str()
+        print(stack_trace)
         return HttpResponse(json.dumps(
             {'msg': str(exception),
-             'stack_trace': get_traceback_str()}
+             'stack_trace': stack_trace}
         ), status=503)
 
 
