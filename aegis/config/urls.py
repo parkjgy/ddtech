@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 from . import secret
 from . import views as confViews
 
-from .settings import base
+from django.conf import settings
 
 urlpatterns = [
     path('apiView', confViews.api_view),
@@ -40,4 +40,4 @@ urlpatterns = [
     url(r'testDecryptionStr', secret.testDecryptionStr, name='testDecryptionStr'),
 ]
 
-urlpatterns += static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

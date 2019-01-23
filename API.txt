@@ -150,7 +150,7 @@ response
 /employee/work_list
 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
 http://0.0.0.0:8000/employee/work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
-GET
+POST
 	passer_id='서버로 받아 저장해둔 출입자 id'
 	dt = '2018-01'
 response

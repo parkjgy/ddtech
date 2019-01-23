@@ -6,10 +6,9 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-from .settings import base
-from .settings.base import BASE_DIR
+from django.conf import settings
 
-APK_FILE_PATH = os.path.join(base.MEDIA_ROOT, "APK")
+APK_FILE_PATH = os.path.join(settings.MEDIA_ROOT, "APK")
 
 
 def csrf_failure(request, reason=""):
@@ -17,7 +16,7 @@ def csrf_failure(request, reason=""):
 
 
 def api_view(request):
-    text_data = open(BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
+    text_data = open(settings.BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
     return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
 
 

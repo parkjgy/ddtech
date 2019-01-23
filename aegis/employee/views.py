@@ -606,8 +606,13 @@ import datetime
 
 def work_list(request):
     try:
-        cipher_passer_id = request.GET["passer_id"]
-        str_dt = request.GET["dt"]
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        cipher_passer_id = rqst["passer_id"]
+        str_dt = rqst["dt"]
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
         print('work_list : passer_id', passer_id)
         passer = Passer.objects.get(id=passer_id)
@@ -656,7 +661,7 @@ def work_list(request):
         return exceptionError('work_list', '503', e)
 
 
-def generation_pass_history(dt):
+def generation_pass_history(request):
     try:
         """
         출입 기록에서 일자별 출퇴근 기록을 만든다.
@@ -723,16 +728,15 @@ def exchange_info(request):
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            name = rqst['name']
-            cipher_passer_id = rqst['passer_id']
-            bank_account = rqst['bank_account']
-            pNo = rqst['pNo']
         else:
-            cipher_passer_id = request.GET['passer_id']
-            name = request.GET['name']
-            bank = request.GET['bank']
-            bank_account = request.GET['bank_account']
-            pNo = request.GET['pNo']
+            rqst = request.GET
+
+        cipher_passer_id = request.GET['passer_id']
+        name = request.GET['name']
+        bank = request.GET['bank']
+        bank_account = request.GET['bank_account']
+        pNo = request.GET['pNo']
+
         if len(pNo):
             pNo = pNo.replace('-', '')
             pNo = pNo.replace(' ', '')
