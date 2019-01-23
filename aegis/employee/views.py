@@ -8,14 +8,13 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 # secret import
-from config.secret import AES_ENCRYPT_BASE64
+from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 
 from .models import Beacon
 from .models import Beacon_History
 from .models import Employee
 from .models import Pass
 from .models import Passer
-
 
 """
 /employee/check_version
