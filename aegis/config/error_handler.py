@@ -2,6 +2,7 @@ from django.http import HttpResponse
 import traceback
 import os
 import json
+from .common import logSend, logError
 
 
 class BaseMiddleware:
@@ -16,6 +17,7 @@ class ProcessExceptionMiddleware(BaseMiddleware):
     def process_exception(self, request, exception):
         stack_trace = get_traceback_str()
         print(stack_trace)
+        logError(stack_trace)
         return HttpResponse(json.dumps(
             {'msg': str(exception),
              'stack_trace': stack_trace}

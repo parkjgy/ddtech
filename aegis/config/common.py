@@ -2,9 +2,9 @@
 
 # Create your views here.
 
-import logging
-import json
 import datetime
+import json
+import logging
 from datetime import timedelta
 
 from django.http import HttpResponse, JsonResponse
@@ -30,7 +30,7 @@ def logSend(message):
     try:
         logger_log.debug(message)
     except Exception as e:
-        logger_error(str(e))
+        logger_error.error(str(e))
         return
 
 
@@ -57,18 +57,8 @@ def logError(message):
     try:
         logger_error.debug(message)
     except Exception as e:
-        logger_error(str(e))
+        logger_error.error(str(e))
         return
-
-
-def cryptMessage(message):
-    # print "a"
-    return
-
-
-def decryptMessage(mesage):
-    # print "b"
-    return
 
 
 # Cross-Origin Read Allow Rule
