@@ -10,6 +10,8 @@ urlpatterns = [
     url(r'operation/login$', views.login, name='login'),
     url(r'operation/update_staff$', views.update_staff, name='update_staff'),
     url(r'operation/reg_customer', views.reg_customer, name='reg_customer'),
+    url(r'operation/list_customer', views.list_customer, name='list_customer'),
+
     url(r'operation/update_work_place$', views.update_work_place, name='update_work_place'),
     url(r'operation/update_beacon$', views.update_beacon, name='update_beacon'),
     url(r'operation/list_work_place$', views.list_work_place, name='list_work_place'),

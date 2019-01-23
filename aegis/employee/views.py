@@ -5,50 +5,16 @@ import random
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
-from config.common import logError
-from config.common import logSend
-from config.secret import AES_DECRYPT_BASE64
+from config.common import logSend, logError
+from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 # secret import
 from config.secret import AES_ENCRYPT_BASE64
+
 from .models import Beacon
 from .models import Beacon_History
 from .models import Employee
 from .models import Pass
 from .models import Passer
-
-
-# --- JSON Processor
-
-def ValuesQuerySetToDict(vqs):
-    return [item for item in vqs]
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
-                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
-            encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
-        else:
-            encoded_object = json.JSONEncoder.default(self, obj)
-            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
-        return encoded_object
-
-
-# try: 다음에 code = 'argument incorrect'
-
-def exceptionError(funcName, code, e):
-    print(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    result = {'message': str(e)}
-    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    print(response)
-    response.status_code = 503
-    print(response.content)
-    return response
 
 
 """

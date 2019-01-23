@@ -3,44 +3,19 @@ from datetime import timedelta
 
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
+import json
+from django.conf import settings
+
+from config.common import logSend, logError
+from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import CRSHttpResponse, CRSReqLibJsonResponse
+# secret import
+from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
+
 # log import
-from config.common import CRSHttpResponse
-from config.common import logError, logSend
 from .models import Customer
 from .models import Staff
 from .status_collection import *
-
-
-##### JSON Processor
-
-def ValuesQuerySetToDict(vqs):
-    return [item for item in vqs]
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
-                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
-            encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
-        else:
-            encoded_object = json.JSONEncoder.default(self, obj)
-            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
-        return encoded_object
-
-
-# try: 다음에 code = 'argument incorrect'
-
-def exceptionError(funcName, code=503, e=Exception(), crs=False):
-    logError(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + str(code) + ' ERROR: ' + str(e))
-    result = {'msg': str(e)}
-    if crs:
-        return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
-    else:
-        return HttpResponse(json.dumps(result, cls=DateTimeEncoder), status=code)
 
 
 """
@@ -110,6 +85,43 @@ def reg_customer(request):
         return HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     except Exception as e:
         return exceptionError('reg_customer', 503, e)
+
+
+"""
+/customer/list_customer
+고객사 리스트를 요청한다.
+http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+GET 
+	customer_name=대덕기공
+	staff_name=홍길동
+	staff_pNo=010-1111-2222
+	staff_email=id@daeducki.com
+response
+	STATUS 200
+"""
+
+
+@csrf_exempt
+def list_customer(request):
+    print('--- /customer/list_customer')
+    if request.method == 'OPTIONS':
+        return CRSHttpResponse()
+    elif request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    customer_name = rqst['customer_name']
+    staff_name = rqst['staff_name']
+    staff_pNo = rqst['staff_pNo']
+    staff_email = rqst['staff_email']
+
+    customers = Customer.objects.filter().values('name', 'contract_no','dt_reg', 'dt_accept', 'type', 'contractor_name', 'staff_name', 'staff_pNo', 'staff_email', 'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
+    arr_customer = [customer for customer in customers]
+    result = {'customers':arr_customer}
+    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    response.status_code = 200
+    return CRSHttpResponse(response)
 
 
 """

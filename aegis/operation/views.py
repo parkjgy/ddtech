@@ -1,10 +1,20 @@
 import json
+from django.conf import settings
+
+from config.common import logSend, logError
+from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import CRSHttpResponse, CRSReqLibJsonResponse
+# secret import
+from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
+
+from .models import Staff
+from .models import Work_Place
+from .models import Beacon
 
 import requests
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from config.common import CRSHttpResponse, CRSReqLibJsonResponse
 # from config.settings.base import CUSTOMER_URL
 
 # Operation
@@ -14,9 +24,12 @@ from config.common import CRSHttpResponse, CRSReqLibJsonResponse
 # 실제 사용할 데이터를 전송
 
 
+# try: 다음에 code = 'argument incorrect'
+
 """
 /operation/reg_staff
 운영 직원 등록
+http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282
 POST 
 	{
 		'pNo': '010-1111-2222',
@@ -25,13 +38,45 @@ POST
 	}
 response
 	STATUS 200
+	STATUS 503
+	    {'message': '전화번호나 id 가 중복됩니다.'}
 """
 
 
 def reg_staff(request):
-    response = HttpResponse()
-    response.status_code = 200
-    return response
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        phone_no = rqst['pNo']
+        id = rqst['id']
+        pw = rqst['pw']
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
+        if len(staffs) > 0:
+            result = {'message': '전화번호나 id 가 중복됩니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 503
+            return response
+        new_staff = Staff(
+            login_id = id,
+            login_pw = pw,
+            pNo = phone_no
+        )
+        new_staff.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('reg_staff', '509', e)
 
 
 """
@@ -56,9 +101,39 @@ response
 
 
 def login(request):
-    response = HttpResponse()
-    response.status_code = 200
-    return response
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        phone_no = rqst['pNo']
+        id = rqst['id']
+        pw = rqst['pw']
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
+        if len(staffs) > 0:
+            result = {'message': '전화번호나 id 가 중복됩니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 503
+            return response
+        new_staff = Staff(
+            login_id = id,
+            login_pw = pw,
+            pNo = phone_no
+        )
+        new_staff.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('reg_staff', '509', e)
 
 
 """
@@ -66,10 +141,12 @@ def login(request):
 직원 정보를 수정한다.
 	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
 		response 는 추후 추가될 예정이다.
+http://0.0.0.0:8000/operation/update_staff?id=&login_id=thinking&before_pw=a~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
 POST 
 	{
-		'id': '암호화된 id',
-		'before_pw': '기존 비밀번호',
+		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
+		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+		'before_pw': '기존 비밀번호',     # 필수
 		'login_pw': '변경하려는 비밀번호',
 		'name': '이름',
 		'position': '직책',
@@ -85,16 +162,71 @@ response
 		{
 			'err': {
 				'code': 301,
-				'msg': '기존 비밀번호가 틀립니다.'
+				'message': '기존 비밀번호가 틀립니다.'
 			}
 		}
 """
 
 
 def update_staff(request):
-    response = HttpResponse()
-    response.status_code = 200
-    return response
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        id = rqst['id']  # 암호화된 id
+        login_id = rqst['login_id']  # id 로 사용
+        before_pw = rqst['before_pw']  # 기존 비밀번호
+        login_pw = rqst['login_pw']  # 변경하려는 비밀번호
+        name = rqst['name']  # 이름
+        position = rqst['position']  # 직책
+        department = rqst['department']  # 부서 or 소속
+        phone_no = rqst['phone_no']  # 전화번호
+        phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
+        push_token = rqst['push_token']  # token
+        email = rqst['email']  # id@ddtechi.co
+        print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+
+        if len(phone_no) > 0:
+            phone_no = phone_no.replace('-', '')
+            phone_no = phone_no.replace(' ', '')
+            print(phone_no)
+
+        if len(id) > 0:
+            staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+        else:
+            staff = Staff.objects.get(login_id=login_id)
+        if before_pw != staff.login_pw:
+            result = {'message': '비밀번호가 틀립니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 503
+            return response
+
+        if len(login_pw) > 0:
+            staff.login_pw = login_pw
+        if len(name) > 0:
+            staff.name = name
+        if len(position) > 0:
+            staff.position = position
+        if len(department) > 0:
+            staff.department = department
+        if len(phone_no) > 0:
+            staff.phone_no = phone_no
+        if len(phone_type) > 0:
+            staff.phone_type = phone_type
+        if len(push_token) > 0:
+            staff.push_token = push_token
+        if len(email) > 0:
+            staff.email = email
+        staff.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('update_staff', '509', e)
 
 
 """
@@ -137,7 +269,6 @@ def reg_customer(request):
              'staff_email': staff_email
              }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=rJson)
-    """
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -151,7 +282,47 @@ def reg_customer(request):
     }
 
     r = requests.post('https://apis.aligo.in/send/', data=rData)
-    """
+    return CRSReqLibJsonResponse(response_customer)
+
+
+"""
+/operation/list_customer
+고객사 리스트를 요청한다.
+http://0.0.0.0:8000/operation/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+GET 
+	customer_name=대덕기공
+	staff_name=홍길동
+	staff_pNo=010-1111-2222
+	staff_email=id@daeducki.com
+response
+	STATUS 200
+"""
+
+
+@csrf_exempt
+def list_customer(request):
+    if request.method == 'OPTIONS':
+        return CRSHttpResponse()
+    elif request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    customer_name = rqst['customer_name']
+    staff_name = rqst['staff_name']
+    staff_pNo = rqst['staff_pNo']
+    staff_email = rqst['staff_email']
+
+    json_data = {
+        'customer_name': customer_name,
+        'staff_name': staff_name,
+        'staff_pNo': staff_pNo,
+        'staff_email': staff_email
+    }
+    # print(json_data, settings.CUSTOMER_URL)
+    response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer', params=json_data)
+    # response_customer = requests.get('http://0.0.0.0:8000/customer/list_customer', params=json_data)
+    # print(response_customer.status_code, response_customer.json())
     return CRSReqLibJsonResponse(response_customer)
 
 
