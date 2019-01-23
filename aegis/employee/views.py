@@ -16,25 +16,27 @@ from .models import Employee
 from .models import Pass
 from .models import Passer
 
-
-"""
-/employee/check_version
-앱 버전을 확인한다.
-http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
-GET
-	v=A.1.0.0.190111
-
-response
-	STATUS 200
-	STATUS 503
-	{
-		'message': '업그레이드가 필요합니다.'
-		'url': 'http://...' # itune, google play update
-	}
-"""
+import requests
+from datetime import datetime, timedelta
+import datetime
 
 
 def check_version(request):
+    """
+    /employee/check_version
+    앱 버전을 확인한다.
+    http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
+    GET
+    	v=A.1.0.0.190111
+
+    response
+    	STATUS 200
+    	STATUS 503
+    	{
+    		'message': '업그레이드가 필요합니다.'
+    		'url': 'http://...' # itune, google play update
+    	}
+    """
     try:
         print("employee : check version")
         if request.method == 'POST':
@@ -73,27 +75,25 @@ def check_version(request):
         return exceptionError('check_version', '503', e)
 
 
-"""
-/employee/passer_reg
-출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
-POST : json
-	{
-	    'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자 
-		'phones': [
-			'010-1111-2222', '010-2222-3333', ...
-		]
-	}
-response
-	STATUS 200
-	STATUS 503
-	{
-		'message': '양식이 잘못되었습니다.'
-	}
-"""
-
-
 @csrf_exempt
 def passer_reg(request):
+    """
+    /employee/passer_reg
+    출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
+    POST : json
+    	{
+    	    'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자
+    		'phones': [
+    			'010-1111-2222', '010-2222-3333', ...
+    		]
+    	}
+    response
+    	STATUS 200
+    	STATUS 503
+    	{
+    		'message': '양식이 잘못되었습니다.'
+    	}
+    """
     try:
         phone_numbers = []
         if request.method == 'POST':
@@ -126,29 +126,27 @@ def passer_reg(request):
         return exceptionError('passer_reg', '503', e)
 
 
-"""
-/employee/pass_reg
-출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10&major=11001
-POST : json
-	{
-		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
-		'dt' : '2018-01-21 08:25:30',
-		'is_in' : 1, # 0: out, 1 : in
-		'major' : 11001, # 11 (지역) 001(사업장)
-		'beacons' : [
-             {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-             {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-             {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
-		]
-	}
-response
-	STATUS 200
-"""
-
-
 @csrf_exempt
 def pass_reg(request):
+    """
+    /employee/pass_reg
+    출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
+    http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10&major=11001
+    POST : json
+    	{
+    		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
+    		'dt' : '2018-01-21 08:25:30',
+    		'is_in' : 1, # 0: out, 1 : in
+    		'major' : 11001, # 11 (지역) 001(사업장)
+    		'beacons' : [
+                 {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+                 {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                 {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+    		]
+    	}
+    response
+    	STATUS 200
+    """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -225,24 +223,21 @@ def is_in_verify(beacons):
     return in_count > out_count
 
 
-"""
-/employee/pass_verify
-출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
-http://192.168.219.62:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1
-POST : json
-	{
-		'passer_id' : '암호화된 출입자 id',
-		'dt' : '2018-12-28 12:53:36',
-		'is_in' : 1, # 0: out, 1 : in
-	} 
-response
-	STATUS 200
-"""
-
-
 @csrf_exempt
 def pass_verify(request):
-    print('-- 0')
+    """
+    /employee/pass_verify
+    출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
+    http://192.168.219.62:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1
+    POST : json
+    	{
+    		'passer_id' : '암호화된 출입자 id',
+    		'dt' : '2018-12-28 12:53:36',
+    		'is_in' : 1, # 0: out, 1 : in
+    	}
+    response
+    	STATUS 200
+    """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -289,27 +284,25 @@ def pass_verify(request):
     # return response
 
 
-"""
-/employee/beacon_verify
-비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
-POST : json
-	{
-		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
-		'dt' : '2018-01-16 08:29:00',
-		'is_in' : 1, # 0: out, 1 : in
-		'major' : 11001 # 11 (지역) 001(사업장)
-		'beacons' : [
-			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70},
-			......
-		]
-	}
-response
-	STATUS 200
-"""
-
-
 @csrf_exempt
 def beacon_verify(request):
+    """
+    /employee/beacon_verify
+    비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
+    POST : json
+    	{
+    		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
+    		'dt' : '2018-01-16 08:29:00',
+    		'is_in' : 1, # 0: out, 1 : in
+    		'major' : 11001 # 11 (지역) 001(사업장)
+    		'beacons' : [
+    			{'minor': 11001, 'dt_begin': '2018-12-28 12:53:36', 'rssi': -70},
+    			......
+    		]
+    	}
+    response
+    	STATUS 200
+    """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -364,24 +357,21 @@ def beacon_verify(request):
     return response
 
 
-"""
-/employee/reg_employee
-근로자를 등록한다.
-근로자 앱을 처음 실행시킬 때 사용한다.
-SMS 로 인증 문자(6자리)를 보낸다.
-http://0.0.0.0:8000/employee/reg_employee?phone_no=01025573555
-POST : json
-{
-	'phone_no' : '010-1111-2222'
-}
-response
-	STATUS 200 
-"""
-import requests
-
-
 @csrf_exempt
 def reg_employee(request):
+    """
+    /employee/reg_employee
+    근로자를 등록한다.
+    근로자 앱을 처음 실행시킬 때 사용한다.
+    SMS 로 인증 문자(6자리)를 보낸다.
+    http://0.0.0.0:8000/employee/reg_employee?phone_no=01025573555
+    POST : json
+    {
+    	'phone_no' : '010-1111-2222'
+    }
+    response
+    	STATUS 200
+    """
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -431,41 +421,39 @@ def reg_employee(request):
         return exceptionError('reg_employee', '503', e)
 
 
-"""
-/employee/verify_employee
-근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
-http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
-POST
-    { 
-	    'phone_no' : '010-1111-2222'
-	    'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화'
-    	'phone_type' : 'A' # 안드로이드 폰
-	    'push_token' : 'push token'
-	}	
-response
-    STATUS 503
-    {
-        'msg': '인증번호가 틀립니다.'
-    }
-	STATUS 200 # 기존 근로자
-	{
-		'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000',
-		'bank_list': ['국민은행', ... 'NH투자증권']
-	}
-	STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
-	{
-		'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
-		'bank_list': ['국민은행', ... 'NH투자증권']
-	}
-	STATUS 202 # 출입 정보만 처리하는 출입자
-	{
-		'id': '암호화된 id'
-	}
-"""
-
-
 @csrf_exempt
 def verify_employee(request):
+    """
+    /employee/verify_employee
+    근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
+    http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
+    POST
+        {
+    	    'phone_no' : '010-1111-2222'
+    	    'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화'
+        	'phone_type' : 'A' # 안드로이드 폰
+    	    'push_token' : 'push token'
+    	}
+    response
+        STATUS 503
+        {
+            'msg': '인증번호가 틀립니다.'
+        }
+    	STATUS 200 # 기존 근로자
+    	{
+    		'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000',
+    		'bank_list': ['국민은행', ... 'NH투자증권']
+    	}
+    	STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
+    	{
+    		'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
+    		'bank_list': ['국민은행', ... 'NH투자증권']
+    	}
+    	STATUS 202 # 출입 정보만 처리하는 출입자
+    	{
+    		'id': '암호화된 id'
+    	}
+    """
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -529,36 +517,31 @@ def verify_employee(request):
         return exceptionError('verify_employee', '503', e)
 
 
-"""
-/employee/work_list
-근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
-http://0.0.0.0:8000/employee/work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
-GET
-	passer_id='서버로 받아 저장해둔 출입자 id'
-	dt = '2018-01'
-response
-	STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
-	STATUS 200
-	{
-		'working':
-		[
-			{ 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36', 
-				'outing': 
-				[
-					{'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
-				]
-			},
-			......
-		]
-	}
-"""
-
-from datetime import datetime, timedelta
-import datetime
-
-
 @csrf_exempt
 def work_list(request):
+    """
+    /employee/work_list
+    근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    http://0.0.0.0:8000/employee/work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+    	passer_id='서버로 받아 저장해둔 출입자 id'
+    	dt = '2018-01'
+    response
+    	STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+    	STATUS 200
+    	{
+    		'working':
+    		[
+    			{ 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+    				'outing':
+    				[
+    					{'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+    				]
+    			},
+    			......
+    		]
+    	}
+    """
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -623,7 +606,6 @@ def generation_pass_history(request):
         1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
         2. 주어진 날짜의 
         """
-
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']
@@ -658,27 +640,25 @@ def generation_pass_history(request):
         return exceptionError('exchange_info', '503', e)
 
 
-"""
-/employee/exchange_info
-근로자 정보 변경 : 근로자의 정보를 변경한다.
-	주) 	로그인이 있으면 앱 시작할 때 화면 표출
-		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
-http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
-POST
-	{
-		'passer_id': '서버로 받아 저장해둔 출입자 id',
-		'name': '이름',
-		'bank': '기업은행',
-		'bank_account': '12300000012000',
-		'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
-	} 
-response
-	STATUS 200
-"""
-
-
 @csrf_exempt
 def exchange_info(request):
+    """
+    /employee/exchange_info
+    근로자 정보 변경 : 근로자의 정보를 변경한다.
+    	주) 	로그인이 있으면 앱 시작할 때 화면 표출
+    		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
+    http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
+    POST
+    	{
+    		'passer_id': '서버로 받아 저장해둔 출입자 id',
+    		'name': '이름',
+    		'bank': '기업은행',
+    		'bank_account': '12300000012000',
+    		'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
+    	}
+    response
+    	STATUS 200
+    """
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))

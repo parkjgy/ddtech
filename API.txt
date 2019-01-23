@@ -192,6 +192,7 @@ URI
 /operation/reg_staff
 /operation/login
 /operation/update_staff
+/operation/list_staff
 /operation/reg_customer
 /operation/update_work_place
 /operation/update_beacon
@@ -253,6 +254,22 @@ response
 				'msg': '기존 비밀번호가 틀립니다.'
 			}
 		}
+
+--------------------------------------------------------------------------------------------------------
+/operation/list_staff
+직원 list 요청
+    주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        response 는 추후 추가될 예정이다.
+http://0.0.0.0:8000/operation/list_staff?id=&login_id=thinking&login_pw=A~~~8282
+GET
+    id = 요청직원 id
+    login_id = 요청직원 id
+    login_pw = 요청직원 pw
+response
+    STATUS 200
+        [{'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...'}, ...]
+    STATUS 503
+        {'message': '직원이 아닙니다.'}
 --------------------------------------------------------------------------------------------------------
 /operation/reg_customer
 고객사를 등록한다.
@@ -436,6 +453,11 @@ response
 --------------------------------------------------------------------------------------------------------
 URI
 /customer/reg_customer
-	url(r'customer/reg_customer$', views.reg_customer, name='reg_customer'),
+/customer/reg_customer
 /customer/reg_staff
-	url(r'customer/reg_staff$', views.reg_staff, name='reg_staff'),
+/customer/login
+/customer/update_staff
+/customer/list_staff
+	url(r'customer/update_staff$', views.update_staff, name='update_staff'),
+/customer/reg_staff
+
