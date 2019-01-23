@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 # secret import
-from config.secret import AES_ENCRYPT_BASE64
+from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 
 from .models import Beacon
 from .models import Beacon_History
@@ -606,6 +606,7 @@ def generation_pass_history(request):
         1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
         2. 주어진 날짜의 
         """
+
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']

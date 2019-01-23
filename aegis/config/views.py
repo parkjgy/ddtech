@@ -48,14 +48,14 @@ def api_apk_upload(request):
             os.makedirs(APK_FILE_PATH)
 
         desc_file_name = "desc_" + p_type + ".txt"
-        apk_file_name = p_type + "_" + str(int(time.time_ns() / 1000)) + ".apk"
+        apk_file_name = p_type + "_" + str(int(round(time.time() * 1000))) + ".apk"
 
         with open(os.path.join(APK_FILE_PATH, apk_file_name), 'wb+') as destination:
             for chunk in request.FILES['file'].chunks():
                 destination.write(chunk)
 
         with open(os.path.join(APK_FILE_PATH, desc_file_name), 'w') as desc_file:
-            desc_file.write(json.dumps({"version": p_version, "apkLink": base.MEDIA_URL + "APK/" + apk_file_name}))
+            desc_file.write(json.dumps({"version": p_version, "apkLink": settings.MEDIA_URL + "APK/" + apk_file_name}))
         return JsonResponse({"msg": "업로드 되었습니다.", "status": 0})
     else:
         return JsonResponse({"msg": "", "status": -1})
