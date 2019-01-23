@@ -1,35 +1,20 @@
-from django.shortcuts import render
-
-from django.utils import timezone
-
 # log import
-from config.common import logSend
-from config.common import logHeader
-from config.common import logError
-
-# secret import
-from config.secret import AES_ENCRYPT_BASE64
-from config.secret import AES_DECRYPT_BASE64
-
-from employee.models import Employee
-
-from django.forms.models import model_to_dict
-
 import json
-
-from .models import Employee
-from .models import Passer
-from .models import Pass
-from .models import Beacon_History
-from .models import Beacon
-
 import random
 
 from django.http import HttpResponse
-from django.http import HttpRequest
-from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
-from django.views.decorators.csrf import csrf_exempt, csrf_protect  # POST 에서 사용
+from config.common import logError
+from config.common import logSend
+from config.secret import AES_DECRYPT_BASE64
+# secret import
+from config.secret import AES_ENCRYPT_BASE64
+from .models import Beacon
+from .models import Beacon_History
+from .models import Employee
+from .models import Pass
+from .models import Passer
 
 
 # --- JSON Processor
@@ -604,6 +589,7 @@ from datetime import datetime, timedelta
 import datetime
 
 
+@csrf_exempt
 def work_list(request):
     try:
         if request.method == 'POST':
