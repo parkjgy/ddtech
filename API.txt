@@ -33,7 +33,7 @@ URI
 앱 버전을 확인한다.
 http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
 GET
-	v=A.1.0.0.190111 ( Platform ( A, I ) . Version ( X.X.X.X )
+	v=A.1.0.0.190111 ( Platform ( A, I ) . Version ( X.X.X.YYMMDD )
 
 response
 	STATUS 200
