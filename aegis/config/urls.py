@@ -26,7 +26,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('apiView', confViews.api_view),
-    path('apiView_beta', confViews.api_view_beta),
+    # path('apiView_beta', confViews.api_view_beta),
 
     path('admin/', admin.site.urls),
     path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL

@@ -16,9 +16,9 @@ def csrf_failure(request, reason=""):
     return JsonResponse({"msg": "CSRF TOKEN ACCESS FAILURE"}, status=403)
 
 
-def api_view(request):
-    text_data = open(settings.BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
-    return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
+# def api_view(request):
+#     text_data = open(settings.BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
+#     return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
 
 
 class StringAppender:
@@ -50,64 +50,115 @@ class CategoryStringAppender:
         return ret.get()
 
 
-def api_view_beta(request):
-    from django.urls import URLResolver, URLPattern
+api_view_html = ''
 
-    _filters = ["operation", "employee", "customer", "test"]
-    _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
 
-    if 'filter' in request.GET:
-        _custom_filter = request.GET['filter']
-        for i in range(len(_filters)):
-            if _filters[i] == _custom_filter:
-                _filters = [_custom_filter]
-                _filter_names = [_filter_names[i]]
-                break
+def api_view(request):
+    global html_api_view_str
+    if api_view_html == '':
+        try:
+            from django.urls import URLResolver, URLPattern
 
-        if len(_filters) > 1:
-            _filters = [_custom_filter]
-            _filter_names = ['Unknown']
+            _filters = ["operation", "employee", "customer", "test"]
+            _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
 
-    titles = CategoryStringAppender()
-    contents = CategoryStringAppender()
-    for i in range(len(_filters)):
-        titles.append(_filters[i], "<p style='font-weight: bold; font-size: 1.2rem'>" + _filter_names[i] + '</p><br/>')
-
-    def recursively_build__url_dict(_titles, _contents, root, d, urlpatterns):
-        for i in urlpatterns:
-            if isinstance(i, URLResolver):
-                if not str(i.pattern) in d:
-                    d[str(i.pattern)] = {}
-                recursively_build__url_dict(_titles, _contents,
-                                            root + str(i.pattern),
-                                            d[str(i.pattern)], i.url_patterns
-                                            )
-            elif isinstance(i, URLPattern):
-                d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
-                for _filter in _filters:
-                    if str(i.pattern).startswith(_filter):
-                        _titles.append(_filter, '<p>- ' + str(i.pattern) + '</p><br/>')
-                        doc_str = i.callback.__doc__
-                        if doc_str is None:
-                            doc_str = "문서가 존재하지 않습니다."
-                        else:
-                            doc_splited = doc_str.splitlines()
-                            for idx in range(len(doc_splited)):
-                                split_tmp = doc_splited[idx].strip()
-                                if split_tmp == 'response' or split_tmp.startswith('GET') or split_tmp.startswith(
-                                        'POST'):
-                                    doc_splited[idx] = '<p style="font-weight: bold">' + split_tmp + '</p>'
-                                else:
-                                    doc_splited[idx] = '<p>' + doc_splited[idx] + '</p>'
-                            doc_str = '<br/>'.join(doc_splited)
-                        _contents.append(_filter, '<br/><p style="color:blue;font-size: 1.1rem">' + str(
-                            i.pattern) + '</p><br/>' + doc_str + '<br/>')
+            if 'filter' in request.GET:
+                _custom_filter = request.GET['filter']
+                for i in range(len(_filters)):
+                    if _filters[i] == _custom_filter:
+                        _filters = [_custom_filter]
+                        _filter_names = [_filter_names[i]]
                         break
 
-    d = {}
-    recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
-    return HttpResponse(
-        '<body><style>body{  font-family: "Nanum Gothic Coding", monospace; font-size: 14px; } p{ white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + '</body>')
+                if len(_filters) > 1:
+                    _filters = [_custom_filter]
+                    _filter_names = ['Unknown']
+
+            titles = CategoryStringAppender()
+            contents = CategoryStringAppender()
+            for i in range(len(_filters)):
+                titles.append(_filters[i],
+                              "<p style='font-weight: bold; font-size: 1.2rem'>" + _filter_names[i] + '</p><br/>')
+
+            def recursively_build__url_dict(_titles, _contents, root, d, urlpatterns):
+                for i in urlpatterns:
+                    if isinstance(i, URLResolver):
+                        if not str(i.pattern) in d:
+                            d[str(i.pattern)] = {}
+                        recursively_build__url_dict(_titles, _contents,
+                                                    root + str(i.pattern),
+                                                    d[str(i.pattern)], i.url_patterns
+                                                    )
+                    elif isinstance(i, URLPattern):
+                        d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
+                        for _filter in _filters:
+                            if str(i.pattern).startswith(_filter):
+                                import uuid
+                                doc_id = str(uuid.uuid4()).replace('-', '')
+                                doc_str = i.callback.__doc__
+                                str_title = ''
+
+                                if doc_str is None:
+                                    doc_str = "문서가 존재하지 않습니다."
+                                else:
+                                    flag = 0
+                                    flag_change_cnt = 0
+                                    document_blank_cnt = 0
+                                    # 0 None
+                                    # 1 response
+                                    # 2 get or post
+                                    doc_splited = doc_str.splitlines()
+                                    for idx in range(len(doc_splited)):
+                                        split_tmp = doc_splited[idx].strip()
+                                        if split_tmp == 'response':
+                                            flag = 1
+                                            flag_change_cnt = 0
+                                            doc_splited[idx] = '<p style="font-weight: bold">' + split_tmp + '</p>'
+                                        elif (split_tmp.startswith('GET') or split_tmp.startswith(
+                                                'POST')):
+                                            flag = 2
+                                            flag_change_cnt = 0
+                                            doc_splited[idx] = '<p style="font-weight: bold">' + split_tmp + '</p>'
+                                        else:
+                                            if str_title == '' and doc_splited[idx].strip() != '':
+                                                str_title = doc_splited[idx].strip()
+
+                                            current_blank_cnt = 0
+                                            flag_change_cnt += 1
+                                            doc_splited[idx] = doc_splited[idx].replace('    ', '\t')
+
+                                            for _chr in doc_splited[idx]:
+                                                if _chr == '\t':
+                                                    current_blank_cnt = current_blank_cnt + 1
+                                                else:
+                                                    break
+
+                                            if flag_change_cnt == 1:
+                                                document_blank_cnt = current_blank_cnt
+
+                                            if 1 < document_blank_cnt <= current_blank_cnt:
+                                                doc_splited[idx] = doc_splited[idx][document_blank_cnt - 1:]
+
+                                            doc_splited[idx] = '<p>' + doc_splited[idx].replace('\t', '  ') + '</p>'
+                                            # doc_splited[idx] = doc_splited[idx].replace('\t', '  ')
+                                        # Tab 문자 기준이 back-space 4개로 간주
+                                    doc_str = '<br/>'.join(doc_splited)
+                                _contents.append(_filter,
+                                                 '<br/><a name="' + doc_id + '"><p style="color:blue;font-size: 1.1rem">' + str(
+                                                     i.pattern) + '</p></a><br/>' + doc_str + '<br/>')
+                                _titles.append(_filter,
+                                               '<p>- <a href="#' + doc_id + '">' + str(
+                                                   i.pattern) + '</a> ' + str_title + '</p><br/>')
+                                break
+
+            d = {}
+            recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
+            html_api_view_str = '<body><style>body{  font-family: "Nanum Gothic Coding", monospace; font-size: 14px; } p{ ' \
+                                'white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + \
+                                '</body> '
+        except:
+            html_api_view_str = '<b>Render Error<b/>'
+    return HttpResponse(html_api_view_str)
 
 
 # appLink           다운로드에 사용할 링크
