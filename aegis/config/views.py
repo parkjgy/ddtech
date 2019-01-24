@@ -86,6 +86,7 @@ def api_view_beta(request):
     # return JsonResponse(d)
 
 
+
 # appLink           다운로드에 사용할 링크
 def beta_employee_app_download(request):
     with open(os.path.join(APK_FILE_PATH, "desc_worker.txt")) as desc_file:

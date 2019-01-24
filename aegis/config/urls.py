@@ -27,6 +27,7 @@ from django.conf import settings
 urlpatterns = [
     path('apiView', confViews.api_view),
     path('apiView_beta', confViews.api_view_beta),
+
     path('admin/', admin.site.urls),
     path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
     path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
