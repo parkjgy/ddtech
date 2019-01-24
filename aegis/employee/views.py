@@ -293,6 +293,7 @@ def beacon_verify(request):
     """
     /employee/beacon_verify
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
+    http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001
     POST : json
     	{
     		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
