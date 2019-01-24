@@ -133,7 +133,7 @@ http://dev1.ddtechi.com:8033/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9W
 
 @csrf_exempt
 def testDecryptionStr(request):
-    logSend('>>> testDecryptionStr: ' + request.META["QUERY_STRING"][11:])
+    logSend('>>> testDecryptionStr: ', request.META["QUERY_STRING"][11:])
 
     _b64CipherText = request.META["QUERY_STRING"][11:]
     r = '*** base64 cipherText = ' + _b64CipherText
