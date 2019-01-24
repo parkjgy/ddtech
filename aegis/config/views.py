@@ -86,8 +86,8 @@ def api_view_beta(request):
                 d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
                 for _filter in _filters:
                     if str(i.pattern).startswith(_filter):
-                        _titles.append(_filter, str(i.pattern) + '\n')
-                        _contents.append(_filter, '\n' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
+                        _titles.append(_filter, '- ' + str(i.pattern) + '\n')
+                        _contents.append(_filter, '\n- ' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
                                 i.callback.__doc__ is not None) else "문서가 존재하지 않습니다.") + '\n')
                         break
 
