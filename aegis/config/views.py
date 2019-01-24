@@ -46,7 +46,7 @@ class CategoryStringAppender:
         ret = StringAppender()
         for map in self.category_map:
             ret.append(self.category_map[map].get())
-            ret.append('\n')
+            ret.append('<br/>')
         return ret.get()
 
 
@@ -86,14 +86,27 @@ def api_view_beta(request):
                 d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
                 for _filter in _filters:
                     if str(i.pattern).startswith(_filter):
-                        _titles.append(_filter, '- ' + str(i.pattern) + '\n')
-                        _contents.append(_filter, '\n- ' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
-                                i.callback.__doc__ is not None) else "문서가 존재하지 않습니다.") + '\n')
+                        _titles.append(_filter, '- ' + str(i.pattern) + '<br/>')
+                        doc_str = i.callback.__doc__
+                        if doc_str is None:
+                            doc_str = "문서가 존재하지 않습니다."
+                        else:
+                            doc_splited = doc_str.splitlines()
+                            for idx in range(len(doc_splited)):
+                                split_tmp = doc_splited[idx].strip()
+                                if split_tmp == 'response' or split_tmp.startswith('GET') or split_tmp.startswith('POST'):
+                                    doc_splited[idx] = '<b>' + split_tmp + '</b>'
+                                else:
+                                    doc_splited[idx] = '<p>' + doc_splited[idx] + '</p>'
+                            doc_str = '<br/>'.join(doc_splited)
+                        _contents.append(_filter, '<br/><font color="blue">' + str(
+                            i.pattern) + '</font><br/>' + doc_str + '<br/>')
                         break
 
     d = {}
     recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
-    return HttpResponse(titles.get() + contents.get(), content_type="text/plain; charset=utf-8")
+    return HttpResponse(
+        '<body><style>p{ white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + '</body>')
 
 
 # appLink           다운로드에 사용할 링크
