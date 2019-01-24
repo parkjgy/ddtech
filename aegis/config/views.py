@@ -70,7 +70,7 @@ def api_view(request):
             from django.urls import URLResolver, URLPattern
 
             if 'filter' in request.GET:
-                _custom_filter = request.GET['filter']
+                _custom_filter = type
                 for i in range(len(_filters)):
                     if _filters[i] == _custom_filter:
                         _filters = [_custom_filter]
