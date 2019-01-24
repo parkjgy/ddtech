@@ -133,7 +133,7 @@ def pass_reg(request):
     """
     /employee/pass_reg
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-    http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&action=10&major=11001
+    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001
     POST : json
     	{
     		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -389,6 +389,7 @@ def reg_employee(request):
         else:
             phone_no = request.GET["phone_no"]
 
+        phone_no = phone_no.replace('+82', '0')
         phone_no = phone_no.replace('-', '')
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
