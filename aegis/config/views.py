@@ -62,14 +62,13 @@ def api_view(request):
     if 'filter' in request.GET:
         type = request.GET['filter']
 
-    if type not in _filters:
+    if not type in _filters:
         type = 'global'
-
     if type not in html_api_view_str or 'filter' in request.GET:
         try:
             from django.urls import URLResolver, URLPattern
 
-            if 'filter' in request.GET:
+            if 'filter' in request.GET and 'global' != type:
                 _custom_filter = type
                 for i in range(len(_filters)):
                     if _filters[i] == _custom_filter:
