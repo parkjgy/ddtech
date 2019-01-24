@@ -38,7 +38,7 @@ def check_version(request):
     	}
     """
     try:
-        logSeend('--- /employee/check_version')
+        logSend('--- /employee/check_version')
         print("employee : check version")
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -96,7 +96,7 @@ def passer_reg(request):
     	}
     """
     try:
-        logSeend('--- /employee/passer_reg')
+        logSend('--- /employee/passer_reg')
         phone_numbers = []
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -149,7 +149,7 @@ def pass_reg(request):
     response
     	STATUS 200
     """
-    logSeend('--- /employee/pass_reg')
+    logSend('--- /employee/pass_reg')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -241,7 +241,7 @@ def pass_verify(request):
     response
     	STATUS 200
     """
-    logSeend('--- /employee/pass_verify')
+    logSend('--- /employee/pass_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -307,7 +307,7 @@ def beacon_verify(request):
     response
     	STATUS 200
     """
-    logSeend('--- /employee/beacon_verify')
+    logSend('--- /employee/beacon_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -377,7 +377,7 @@ def reg_employee(request):
     response
     	STATUS 200
     """
-    logSeend('--- /employee/reg_employee')
+    logSend('--- /employee/reg_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -460,7 +460,7 @@ def verify_employee(request):
     		'id': '암호화된 id'
     	}
     """
-    logSeend('--- /employee/verify_employee')
+    logSend('--- /employee/verify_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -549,7 +549,7 @@ def work_list(request):
     		]
     	}
     """
-    logSeend('--- /employee/work_list')
+    logSend('--- /employee/work_list')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -613,7 +613,7 @@ def generation_pass_history(request):
     1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
     2. 주어진 날짜의
     """
-    logSeend('--- /employee/generation_pass_history')
+    logSend('--- /employee/generation_pass_history')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -668,7 +668,7 @@ def exchange_info(request):
     response
     	STATUS 200
     """
-    logSeend('--- /employee/exchange_info')
+    logSend('--- /employee/exchange_info')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
