@@ -38,6 +38,7 @@ def check_version(request):
     	}
     """
     try:
+        logSend('--- /employee/check_version')
         print("employee : check version")
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -95,6 +96,7 @@ def passer_reg(request):
     	}
     """
     try:
+        logSend('--- /employee/passer_reg')
         phone_numbers = []
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -147,6 +149,7 @@ def pass_reg(request):
     response
     	STATUS 200
     """
+    logSend('--- /employee/pass_reg')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -238,6 +241,7 @@ def pass_verify(request):
     response
     	STATUS 200
     """
+    logSend('--- /employee/pass_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -289,6 +293,7 @@ def beacon_verify(request):
     """
     /employee/beacon_verify
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
+    http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001
     POST : json
     	{
     		'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -303,6 +308,7 @@ def beacon_verify(request):
     response
     	STATUS 200
     """
+    logSend('--- /employee/beacon_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -372,6 +378,7 @@ def reg_employee(request):
     response
     	STATUS 200
     """
+    logSend('--- /employee/reg_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -454,6 +461,7 @@ def verify_employee(request):
     		'id': '암호화된 id'
     	}
     """
+    logSend('--- /employee/verify_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -542,6 +550,7 @@ def work_list(request):
     		]
     	}
     """
+    logSend('--- /employee/work_list')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -599,14 +608,14 @@ def work_list(request):
 
 
 def generation_pass_history(request):
+    """
+    출입 기록에서 일자별 출퇴근 기록을 만든다.
+    퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
+    1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
+    2. 주어진 날짜의
+    """
+    logSend('--- /employee/generation_pass_history')
     try:
-        """
-        출입 기록에서 일자별 출퇴근 기록을 만든다.
-        퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
-        1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
-        2. 주어진 날짜의 
-        """
-
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']
@@ -660,6 +669,7 @@ def exchange_info(request):
     response
     	STATUS 200
     """
+    logSend('--- /employee/exchange_info')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
