@@ -2,11 +2,12 @@ import json
 import os
 import time
 
+from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-from django.conf import settings
+from . import urls
 
 APK_FILE_PATH = os.path.join(settings.MEDIA_ROOT, "APK")
 
@@ -18,6 +19,71 @@ def csrf_failure(request, reason=""):
 def api_view(request):
     text_data = open(settings.BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
     return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
+
+
+class StringAppender:
+    def __init__(self):
+        self.str_list = []
+
+    def append(self, str: str):
+        self.str_list.append(str)
+
+    def get(self) -> str:
+        return ''.join(self.str_list)
+
+
+class CategoryStringAppender:
+    def __init__(self):
+        self.category_map = {}
+
+    def append(self, name: str, _str: str):
+        if not name in self.category_map:
+            self.category_map[name] = StringAppender()
+        appender: StringAppender = self.category_map[name]
+        appender.append(_str)
+
+    def get(self):
+        ret = StringAppender()
+        for map in self.category_map:
+            ret.append(self.category_map[map].get())
+            ret.append('\n')
+        return ret.get()
+
+
+def api_view_beta(request):
+    from django.urls import URLResolver, URLPattern
+    string_builder = StringAppender()
+
+    _filters = ["operation", "employee", "customer", "test"]
+    _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
+
+    titles = CategoryStringAppender()
+    contents = CategoryStringAppender()
+    for i in range(len(_filters)):
+        titles.append(_filters[i], _filter_names[i] + '\n')
+
+    def recursively_build__url_dict(_titles, _contents, root, d, urlpatterns):
+        for i in urlpatterns:
+            if isinstance(i, URLResolver):
+                if not str(i.pattern) in d:
+                    d[str(i.pattern)] = {}
+                recursively_build__url_dict(_titles, _contents,
+                                            root + str(i.pattern),
+                                            d[str(i.pattern)], i.url_patterns
+                                            )
+            elif isinstance(i, URLPattern):
+                d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
+                for _filter in _filters:
+                    if str(i.pattern).startswith(_filter):
+                        _titles.append(_filter, str(i.pattern) + '\n')
+                        _contents.append(_filter, '\n' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
+                                i.callback.__doc__ is not None) else "문서가 존재하지 않습니다.") + '\n')
+                        break
+
+    d = {}
+    recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
+    return HttpResponse(titles.get() + contents.get(), content_type="text/plain; charset=utf-8")
+    # return JsonResponse(d)
 
 
 # appLink           다운로드에 사용할 링크
