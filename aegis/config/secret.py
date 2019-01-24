@@ -8,8 +8,7 @@ from config.common import logHeader
 from config.common import logError
 
 from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie # POST 에서 사용
-
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie  # POST 에서 사용
 
 AESkey = "\x3B\x2F\x2A\x20\x4E\x36\x3F\x67\x2D\x6B\x3B\x2C\x3B\x6B\x50\x31\x29\x5A\x47\x6C\x49\x79\x4C\x5F\x5C\x5A\x2C\x67\x73\x3A\x50\x47"
 AESiv = "\x31\x47\x42\x75\x42\x7C\x6D\x31\x47\x7B\x22\x5F\x3B\x7B\x2D\x58"
@@ -62,28 +61,37 @@ def unpad(padded_data, block_size, style='pkcs7'):
         raise ValueError("Unknown padding style")
     return padded_data[:-padding_len]
 
+
 # encrypt ( str or bytes ) return bytes;
-def AES_ENCRYPT(msg):
+def AES_ENCRYPT(msg) -> bytes:
     aes = AES.new(AESkey, AES.MODE_CBC, AESiv)
     return aes.encrypt(pad(msg, 16))
 
 
 # encrypt ( str or bytes ) return base64:str;
-def AES_ENCRYPT_BASE64(msg):
+def AES_ENCRYPT_BASE64(msg) -> str:
     return base64.b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8')
 
 
 # decrypt ( bytes ) return bytes;
-def AES_DECRYPT(msg):
+def AES_DECRYPT(msg) -> bytes:
     dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(msg)
     return unpad(dec, 16)
 
 
 # decrypt ( base64:str ) return bytes;
-def AES_DECRYPT_BASE64(msg: str):
+def AES_DECRYPT_BASE64(msg: str) -> str:
+    msg += '=' * (-len(msg) % 4)
+    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+    return AES_DECRYPT(msg).decode(encoding='UTF-8')
+
+
+# decrypt ( base64:str ) return bytes;
+def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
     msg += '=' * (-len(msg) % 4)
     msg = base64.b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg)
+
 
 """
 Management: testEncryptionStr: get Encryption (Development only)
@@ -93,6 +101,8 @@ http://dev1.ddtechi.com:8033/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJ
 < plainText: 암호되지 않은 문서
 > cipherText: 암호화된 문서
 """
+
+
 @csrf_exempt
 def testEncryptionStr(request):
     logSend('>>> testEncryptionStr: ' + request.META["QUERY_STRING"][10:])
@@ -106,9 +116,10 @@ def testEncryptionStr(request):
     b64cipherText = AES_ENCRYPT_BASE64(_plainText)
     r += '</br>*** base64 cipherText = ' + b64cipherText
     plainText = AES_DECRYPT_BASE64(b64cipherText)
-    r += '</br>*** replainText = ' + plainText.decode(encoding='UTF-8')
+    r += '</br>*** replainText = ' + plainText
     logSend(plainText)
     return HttpResponse(r)
+
 
 """
 Management: testDecryptionStr: get Decryption (Development only)
@@ -118,6 +129,8 @@ http://dev1.ddtechi.com:8033/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9W
 < cipherText: 암호화된 문서
 > plainText: 복호화된 문서
 """
+
+
 @csrf_exempt
 def testDecryptionStr(request):
     logSend('>>> testDecryptionStr: ' + request.META["QUERY_STRING"][11:])
@@ -125,5 +138,5 @@ def testDecryptionStr(request):
     _b64CipherText = request.META["QUERY_STRING"][11:]
     r = '*** base64 cipherText = ' + _b64CipherText
     plainText = AES_DECRYPT_BASE64(_b64CipherText)
-    r += '</br>*** plainText = ' + plainText.decode(encoding='UTF-8')
+    r += '</br>*** plainText = ' + plainText
     return HttpResponse(r)
