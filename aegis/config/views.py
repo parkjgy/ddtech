@@ -52,10 +52,21 @@ class CategoryStringAppender:
 
 def api_view_beta(request):
     from django.urls import URLResolver, URLPattern
-    string_builder = StringAppender()
 
     _filters = ["operation", "employee", "customer", "test"]
     _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
+
+    if 'filter' in request.GET:
+        _custom_filter = request.GET['filter']
+        for i in range(len(_filters)):
+            if _filters[i] == _custom_filter:
+                _filters = [_custom_filter]
+                _filter_names = [_filter_names[i]]
+                break
+
+        if len(_filters) > 1:
+            _filters = [_custom_filter]
+            _filter_names = ['Unknown']
 
     titles = CategoryStringAppender()
     contents = CategoryStringAppender()
@@ -83,8 +94,6 @@ def api_view_beta(request):
     d = {}
     recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
     return HttpResponse(titles.get() + contents.get(), content_type="text/plain; charset=utf-8")
-    # return JsonResponse(d)
-
 
 
 # appLink           다운로드에 사용할 링크
