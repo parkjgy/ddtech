@@ -38,6 +38,7 @@ def check_version(request):
     	}
     """
     try:
+        logSeend('--- /employee/check_version')
         print("employee : check version")
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -95,6 +96,7 @@ def passer_reg(request):
     	}
     """
     try:
+        logSeend('--- /employee/passer_reg')
         phone_numbers = []
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -147,6 +149,7 @@ def pass_reg(request):
     response
     	STATUS 200
     """
+    logSeend('--- /employee/pass_reg')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -238,6 +241,7 @@ def pass_verify(request):
     response
     	STATUS 200
     """
+    logSeend('--- /employee/pass_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -303,6 +307,7 @@ def beacon_verify(request):
     response
     	STATUS 200
     """
+    logSeend('--- /employee/beacon_verify')
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
         cipher_passer_id = rqst['passer_id']
@@ -372,6 +377,7 @@ def reg_employee(request):
     response
     	STATUS 200
     """
+    logSeend('--- /employee/reg_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -454,6 +460,7 @@ def verify_employee(request):
     		'id': '암호화된 id'
     	}
     """
+    logSeend('--- /employee/verify_employee')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -542,6 +549,7 @@ def work_list(request):
     		]
     	}
     """
+    logSeend('--- /employee/work_list')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -599,14 +607,14 @@ def work_list(request):
 
 
 def generation_pass_history(request):
+    """
+    출입 기록에서 일자별 출퇴근 기록을 만든다.
+    퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
+    1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
+    2. 주어진 날짜의
+    """
+    logSeend('--- /employee/generation_pass_history')
     try:
-        """
-        출입 기록에서 일자별 출퇴근 기록을 만든다.
-        퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
-        1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
-        2. 주어진 날짜의 
-        """
-
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
             name = rqst['name']
@@ -660,6 +668,7 @@ def exchange_info(request):
     response
     	STATUS 200
     """
+    logSeend('--- /employee/exchange_info')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
