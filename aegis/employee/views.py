@@ -172,6 +172,7 @@ def pass_reg(request):
             # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
         ]
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    logSend('\t\t\t\t\t', passer_id)
     print(passer_id, dt, is_in, major)
     print(beacons)
     for i in range(len(beacons)):
@@ -252,6 +253,7 @@ def pass_verify(request):
         dt = request.GET["dt"]
         is_in = request.GET["is_in"]
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    logSend('\t\t\t\t\t', passer_id)
     print(passer_id, dt, is_in)
     dt = datetime.datetime.now()
     # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -331,6 +333,7 @@ def beacon_verify(request):
             # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
         ]
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    logSend('\t\t\t\t\t', passer_id)
     print(passer_id, dt, is_in, major)
     print(beacons)
     for i in range(len(beacons)):
@@ -423,6 +426,7 @@ def reg_employee(request):
         # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
         response = HttpResponse()
         response.status_code = 200
+        logSend('\t\t\t\t\t', phone_no)
         return response
     except Exception as e:
         return exceptionError('reg_employee', '503', e)
@@ -519,6 +523,7 @@ def verify_employee(request):
 
         response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = status_code
+        logSend('\t\t\t\t\t', passer.id)
         print(response)
         return response
     except Exception as e:
@@ -560,6 +565,7 @@ def work_list(request):
         cipher_passer_id = rqst["passer_id"]
         str_dt = rqst["dt"]
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        logSend('\t\t\t\t\t', passer_id)
         print('work_list : passer_id', passer_id)
         passer = Passer.objects.get(id=passer_id)
         employee = Employee.objects.get(id=passer.employee_id)
@@ -635,6 +641,7 @@ def generation_pass_history(request):
 
         print(cipher_passer_id, name, bank, bank_account)
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        logSend('\t\t\t\t\t', passer_id)
         passer = Passer.objects.get(id=passer_id)
         employee = Employee.objects.get(id=passer.employee_id)
         if len(name) > 0:
@@ -689,6 +696,7 @@ def exchange_info(request):
 
         print(cipher_passer_id, name, bank, bank_account)
         passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        logSend('\t\t\t\t\t', passer_id)
         passer = Passer.objects.get(id=passer_id)
         employee = Employee.objects.get(id=passer.employee_id)
         if len(name) > 0:
