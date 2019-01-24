@@ -522,7 +522,7 @@ def verify_employee(request):
 
     response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     response.status_code = status_code
-    logSend('\t\t\t\t\t' + passer.id)
+    logSend('\t\t\t\t\t' + str(passer.id))
     print(response)
     return response
 
