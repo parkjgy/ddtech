@@ -96,26 +96,6 @@ def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
     return AES_DECRYPT(msg)
 
 
-"""
-Management: testEncryptionStr: get Encryption (Development only)
-   문자열을 암호화한다.
-http://dev.ddtechi.com:8055/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
-http://dev1.ddtechi.com:8033/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
-< plainText: 암호되지 않은 문서
-> cipherText: 암호화된 문서
-"""
-
-
-@csrf_exempt
-def testEncryptionStr(request):
-    """
-    Management: testEncryptionStr: get Encryption (Development only)
-    문자열을 암호화한다.
-    http://dev.ddtechi.com:8055/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
-    http://dev1.ddtechi.com:8033/dr/testEncryptionStr?plaintext=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
-    < plainText: 암호되지 않은 문서
-    > cipherText: 암호화된 문서
-    """
 @csrf_exempt
 def testEncryptionStr(request):
     """
@@ -142,27 +122,6 @@ def testEncryptionStr(request):
     return HttpResponse(r)
 
 
-"""
-Management: testDecryptionStr: get Decryption (Development only)
-   암호화된 문자열을 복호화한다.
-http://dev.ddtechi.com:8055/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
-http://dev1.ddtechi.com:8033/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
-< cipherText: 암호화된 문서
-> plainText: 복호화된 문서
-"""
-
-
-@csrf_exempt
-def testDecryptionStr(request):
-    """
-    Management: testDecryptionStr: get Decryption (Development only)
-       암호화된 문자열을 복호화한다.
-    http://dev.ddtechi.com:8055/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
-    http://dev1.ddtechi.com:8033/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
-    < cipherText: 암호화된 문서
-    > plainText: 복호화된 문서
-    """
-    logSend('>>> testDecryptionStr: ', request.META["QUERY_STRING"][11:])
 @csrf_exempt
 def testDecryptionStr(request):
     """
