@@ -17,7 +17,7 @@ logger_error = logging.getLogger("aegis.error.log")
 logger_error.setLevel(logging.DEBUG)
 
 
-def logSend(message):
+def logSend(*args):
     """앱에서 게시물은 요청한다.
 
     :param: id 게시물의 id 이다
@@ -28,7 +28,10 @@ def logSend(message):
     :returns: R: json 양식으로된 게시물이다. {'title': '임신 중 ', 'text': '<!DOCTYPE html><html>...', 'published_date': '2018-10-04', 'author':'Thinking'}
     """
     try:
-        logger_log.debug(message)
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_log.debug(''.join(str_list))
     except Exception as e:
         logger_error.error(str(e))
         return
@@ -37,15 +40,18 @@ def logSend(message):
 logger_header = logging.getLogger("aegis.header.log")
 
 
-def logHeader(message):
+def logHeader(*args):
     try:
-        logger_header.debug(message)
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_header.debug(''.join(str_list))
     except Exception as e:
         logger_log.debug(str(e))
         return
 
 
-def logError(message):
+def logError(*args):
     """
     Yields
     ------
@@ -55,7 +61,10 @@ def logError(message):
         Human readable error message, or None on success.
     """
     try:
-        logger_error.debug(message)
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_error.debug(''.join(str_list))
     except Exception as e:
         logger_error.error(str(e))
         return
@@ -113,9 +122,9 @@ class DateTimeEncoder(json.JSONEncoder):
 
 
 def exceptionError(funcName, code, e):
-    print(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logError(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
-    logSend(funcName + ' >>> ' + code + ' ERROR: ' + str(e))
+    print(funcName, ' >>> ', code, ' ERROR: ', e)
+    logError(funcName, ' >>> ', code, ' ERROR: ', e)
+    logSend(funcName, ' >>> ', code, ' ERROR: ', e)
     result = {'message': str(e)}
     response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     print(response)

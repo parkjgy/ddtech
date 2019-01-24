@@ -1,1 +1,1 @@
-{"version": "0.0.0.0", "apkLink": "/media/APK/worker_1548136630626136.apk"}
+{"version": "A.0.0.0.0", "apkLink": "/media/APK/aegisFactory.apk"}

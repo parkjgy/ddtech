@@ -467,68 +467,65 @@ def verify_employee(request):
     	}
     """
     logSend('--- /employee/verify_employee')
-    try:
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-            phone_no = rqst['phone_no']
-            cipher_cn = rqst['cn']
-            phone_type = rqst['phone_type']
-            push_token = rqst['push_token']
-        else:
-            phone_no = request.GET["phone_no"]
-            cn = request.GET["cn"]
-            phone_type = request.GET["phone_type"]
-            push_token = request.GET["push_token"]
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+        phone_no = rqst['phone_no']
+        cipher_cn = rqst['cn']
+        phone_type = rqst['phone_type']
+        push_token = rqst['push_token']
+    else:
+        phone_no = request.GET["phone_no"]
+        cn = request.GET["cn"]
+        phone_type = request.GET["phone_type"]
+        push_token = request.GET["push_token"]
+    phone_no = phone_no.replace('-', '')
+    phone_no = phone_no.replace(' ', '')
 
-        print(phone_no)
-        passer = Passer.objects.get(pNo=phone_no)
-        cn = AES_DECRYPT_BASE64(cipher_cn)
-        if passer.cn != int(cn):
-            rMsg = {'msg': '인증번호가 틀립니다.'}
-            response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
-            response.status_code = 503
-            print(response)
-            return response
-        print('s 1')
-        status_code = 200
-        result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
-        if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
-            status_code = 202
-        elif passer.pType == 0:  # 신규 근로자
-            status_code = 201
-            employee = Employee(
-            )
-            employee.save()
-            passer.employee_id = employee.id
-        else:
-            employee = Employee.objects.get(id=passer.employee_id)
-            result['name'] = employee.name
-            result['bank'] = employee.bank
-            result['bank_account'] = employee.bank_account
-
-        if status_code == 200 or status_code == 201:
-            result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
-                                   '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행',
-                                   '신협중앙회', '우체국', '전북은행', '제주은행', '카카오뱅크', '중국공상은행', 'BNP파리바은행', 'HSBC은행', 'JP모간체이스은행',
-                                   '케이뱅크', '교보증권', '대신증권', 'DB금융투자', '메리츠종합금융증권', '미래에셋대우', '부국증권', '삼성증권', '신영증권',
-                                   '신한금융투자', '에스케이증권', '현대차증권주식회사', '유안타증권주식회사', '유진투자증권', '이베스트증권', '케이프투자증권', '키움증권',
-                                   '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
-        print(result)
-
-        passer.pType = 20 if phone_type == 'A' else 10
-        passer.push_token = push_token
-        passer.cn = 0
-        passer.save()
-
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = status_code
-        logSend('\t\t\t\t\t' + passer.id)
+    print(phone_no)
+    passer = Passer.objects.get(pNo=phone_no)
+    cn = AES_DECRYPT_BASE64(cipher_cn)
+    if passer.cn != int(cn):
+        rMsg = {'msg': '인증번호가 틀립니다.'}
+        response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
+        response.status_code = 503
         print(response)
         return response
-    except Exception as e:
-        return exceptionError('verify_employee', '503', e)
+    print('s 1')
+    status_code = 200
+    result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
+    if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
+        status_code = 202
+    elif passer.pType == 0:  # 신규 근로자
+        status_code = 201
+        employee = Employee(
+        )
+        employee.save()
+        passer.employee_id = employee.id
+    else:
+        employee = Employee.objects.get(id=passer.employee_id)
+        result['name'] = employee.name
+        result['bank'] = employee.bank
+        result['bank_account'] = employee.bank_account
+
+    if status_code == 200 or status_code == 201:
+        result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
+                               '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행',
+                               '신협중앙회', '우체국', '전북은행', '제주은행', '카카오뱅크', '중국공상은행', 'BNP파리바은행', 'HSBC은행', 'JP모간체이스은행',
+                               '케이뱅크', '교보증권', '대신증권', 'DB금융투자', '메리츠종합금융증권', '미래에셋대우', '부국증권', '삼성증권', '신영증권',
+                               '신한금융투자', '에스케이증권', '현대차증권주식회사', '유안타증권주식회사', '유진투자증권', '이베스트증권', '케이프투자증권', '키움증권',
+                               '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
+    print(result)
+
+    passer.pType = 20 if phone_type == 'A' else 10
+    passer.push_token = push_token
+    passer.cn = 0
+    passer.save()
+
+    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    response.status_code = status_code
+    logSend('\t\t\t\t\t' + str(passer.id))
+    print(response)
+    return response
 
 
 @csrf_exempt

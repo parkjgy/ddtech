@@ -86,8 +86,8 @@ def api_view_beta(request):
                 d[str(i.pattern)] = {'name': i.callback.__name__, 'doc': i.callback.__doc__}
                 for _filter in _filters:
                     if str(i.pattern).startswith(_filter):
-                        _titles.append(_filter, str(i.pattern) + '\n')
-                        _contents.append(_filter, '\n' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
+                        _titles.append(_filter, '- ' + str(i.pattern) + '\n')
+                        _contents.append(_filter, '\n- ' + str(i.pattern) + '\n' + (i.callback.__doc__ if (
                                 i.callback.__doc__ is not None) else "문서가 존재하지 않습니다.") + '\n')
                         break
 
@@ -113,6 +113,7 @@ def app_upload_view(request):
 
 @csrf_exempt
 def api_apk_upload(request):
+    from shutil import copyfile
     if request.method == "POST":
         if not bool(request.FILES):
             return JsonResponse({"msg": "파일이 없습니다.", "status": -1})
@@ -124,11 +125,17 @@ def api_apk_upload(request):
             os.makedirs(APK_FILE_PATH)
 
         desc_file_name = "desc_" + p_type + ".txt"
-        apk_file_name = p_type + "_" + str(int(round(time.time() * 1000))) + ".apk"
+        tmp_apk_file_name = p_type + "_" + str(int(round(time.time() * 1000))) + ".apk"
+        apk_file_name = "aegisFactory.apk"
 
-        with open(os.path.join(APK_FILE_PATH, apk_file_name), 'wb+') as destination:
+        with open(os.path.join(APK_FILE_PATH, tmp_apk_file_name), 'wb+') as destination:
             for chunk in request.FILES['file'].chunks():
                 destination.write(chunk)
+
+        if os.path.exists(os.path.join(APK_FILE_PATH, apk_file_name)):
+            os.remove(os.path.join(APK_FILE_PATH, apk_file_name))
+        copyfile(os.path.join(APK_FILE_PATH, tmp_apk_file_name),
+                 os.path.join(APK_FILE_PATH, apk_file_name))
 
         with open(os.path.join(APK_FILE_PATH, desc_file_name), 'w') as desc_file:
             desc_file.write(json.dumps({"version": p_version, "apkLink": settings.MEDIA_URL + "APK/" + apk_file_name}))
