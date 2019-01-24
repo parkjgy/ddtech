@@ -23,7 +23,6 @@ import datetime
 
 def check_version(request):
     """
-    /employee/check_version
     앱 버전을 확인한다.
     http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
     GET
@@ -79,7 +78,6 @@ def check_version(request):
 @csrf_exempt
 def passer_reg(request):
     """
-    /employee/passer_reg
     출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
     POST : json
     	{
@@ -131,7 +129,6 @@ def passer_reg(request):
 @csrf_exempt
 def pass_reg(request):
     """
-    /employee/pass_reg
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
     http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001
     POST : json
@@ -230,7 +227,6 @@ def is_in_verify(beacons):
 @csrf_exempt
 def pass_verify(request):
     """
-    /employee/pass_verify
     출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
     http://192.168.219.62:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1
     POST : json
@@ -293,7 +289,6 @@ def pass_verify(request):
 @csrf_exempt
 def beacon_verify(request):
     """
-    /employee/beacon_verify
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
     http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001
     POST : json
@@ -369,7 +364,6 @@ def beacon_verify(request):
 @csrf_exempt
 def reg_employee(request):
     """
-    /employee/reg_employee
     근로자를 등록한다.
     근로자 앱을 처음 실행시킬 때 사용한다.
     SMS 로 인증 문자(6자리)를 보낸다.
@@ -436,7 +430,6 @@ def reg_employee(request):
 @csrf_exempt
 def verify_employee(request):
     """
-    /employee/verify_employee
     근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
     http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
     POST
@@ -531,7 +524,6 @@ def verify_employee(request):
 @csrf_exempt
 def work_list(request):
     """
-    /employee/work_list
     근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
     http://0.0.0.0:8000/employee/work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
@@ -658,7 +650,6 @@ def generation_pass_history(request):
 @csrf_exempt
 def exchange_info(request):
     """
-    /employee/exchange_info
     근로자 정보 변경 : 근로자의 정보를 변경한다.
     	주) 	로그인이 있으면 앱 시작할 때 화면 표출
     		항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.

@@ -88,7 +88,6 @@ def reg_customer(request):
 @csrf_exempt
 def list_customer(request):
     """
-    /customer/list_customer
     고객사 리스트를 요청한다.
     http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
@@ -122,7 +121,6 @@ def list_customer(request):
 
 def reg_staff(request):
     """
-    /customer/reg_staff
     고객사 직원을 등록한다.
     	주)	response 는 추후 추가될 예정이다.
 	http://0.0.0.0:8000/customer/reg_staff?staff_id=qgf6YHf1z2Fx80DR8o/Lvg&name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
@@ -189,7 +187,6 @@ def reg_staff(request):
 
 def login(request):
     """
-    /customer/login
     로그인
     http://0.0.0.0:8000/customer/login?id=thinking&pw=A~~~8282
     POST
@@ -229,7 +226,6 @@ def login(request):
 
 def update_staff(request):
     """
-    /customer/update_staff
     직원 정보를 수정한다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
@@ -314,7 +310,6 @@ def update_staff(request):
 
 def list_staff(request):
     """
-    /customer/list_staff
     직원 list 요청
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.

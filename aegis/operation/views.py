@@ -29,7 +29,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 def reg_staff(request):
     """
-    /operation/reg_staff
     운영 직원 등록
     http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282
     POST
@@ -80,7 +79,6 @@ def reg_staff(request):
 
 def login(request):
     """
-    /operation/login
     로그인
     POST
     	{
@@ -118,7 +116,6 @@ def login(request):
 
 def update_staff(request):
     """
-    /operation/update_staff
     직원 정보를 수정한다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
@@ -208,7 +205,6 @@ def update_staff(request):
 
 def list_staff(request):
     """
-    /operation/list_staff
     직원 list 요청
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
@@ -259,7 +255,6 @@ def list_staff(request):
 @csrf_exempt
 def reg_customer(request):
     """
-    /operation/reg_customer
     고객사를 등록한다.
     간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
@@ -315,7 +310,6 @@ def reg_customer(request):
 @csrf_exempt
 def list_customer(request):
     """
-    /operation/list_customer
     고객사 리스트를 요청한다.
     http://0.0.0.0:8000/operation/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
@@ -353,7 +347,6 @@ def list_customer(request):
 
 def update_work_place(request):
     """
-    /operation/update_work_place
     사업장 내용을 수정한다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
@@ -393,7 +386,6 @@ def update_work_place(request):
 
 def update_beacon(request):
     """
-    /operation/update_beacon
     비콘 내용을 수정한다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예이다.
@@ -424,7 +416,6 @@ def update_beacon(request):
 
 def list_work_place(request):
     """
-    /operation/list_work_place
     사업장 정보 리스트를 요청한다.
     GET
     	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
@@ -464,7 +455,6 @@ def list_work_place(request):
 
 def list_beacon(request):
     """
-    /operation/list_beacon
     beacon 정보 리스트를 요청한다.
     GET
     	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
@@ -505,7 +495,6 @@ def list_beacon(request):
 
 def detail_beacon(request):
     """
-    /operation/detail_beacon
     beacon 정보 리스트를 요청한다.
     GET
     	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
