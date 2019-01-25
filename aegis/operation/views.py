@@ -15,6 +15,7 @@ import requests
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+
 # from config.settings.base import CUSTOMER_URL
 
 # Operation
@@ -32,15 +33,15 @@ def reg_staff(request):
     운영 직원 등록
     http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282
     POST
-    	{
-    		'pNo': '010-1111-2222',
-    		'id': 'thinking',
-    		'pw': 'a~~~8282'
-    	}
+        {
+            'pNo': '010-1111-2222',
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
     response
-    	STATUS 200
-    	STATUS 503
-    	    {'message': '전화번호나 id 가 중복됩니다.'}
+        STATUS 200
+        STATUS 503
+            {'message': '전화번호나 id 가 중복됩니다.'}
     """
     try:
         if request.method == 'OPTIONS':
@@ -65,9 +66,9 @@ def reg_staff(request):
             response.status_code = 503
             return response
         new_staff = Staff(
-            login_id = id,
-            login_pw = pw,
-            pNo = phone_no
+            login_id=id,
+            login_pw=pw,
+            pNo=phone_no
         )
         new_staff.save()
         response = CRSHttpResponse()
@@ -81,14 +82,14 @@ def login(request):
     """
     로그인
     POST
-    	{
-    		'id': 'thinking',
-    		'pw': 'a~~~8282'
-    	}
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
     response
-    	STATUS 200
-    	STATUS 401
-    		{'message':'id 나 비밀번호가 틀립니다.'}
+        STATUS 200
+        STATUS 401
+            {'message':'id 나 비밀번호가 틀립니다.'}
     """
     try:
         if request.method == 'OPTIONS':
@@ -117,32 +118,32 @@ def login(request):
 def update_staff(request):
     """
     직원 정보를 수정한다.
-    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    		response 는 추후 추가될 예정이다.
+        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/operation/update_staff?id=&login_id=thinking&before_pw=a~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
-    	{
-    		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
-    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
-    		'before_pw': '기존 비밀번호',     # 필수
-    		'login_pw': '변경하려는 비밀번호',
-    		'name': '이름',
-    		'position': '직책',
-    		'department': '부서 or 소속',
-    		'phone_no': '전화번호',
-    		'phone_type': '전화 종류', # 10:iPhone, 20: Android
-    		'push_token': 'token',
-    		'email': 'id@ddtechi.com'
-    	}
+        {
+            'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
+            'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+            'before_pw': '기존 비밀번호',     # 필수
+            'login_pw': '변경하려는 비밀번호',
+            'name': '이름',
+            'position': '직책',
+            'department': '부서 or 소속',
+            'phone_no': '전화번호',
+            'phone_type': '전화 종류', # 10:iPhone, 20: Android
+            'push_token': 'token',
+            'email': 'id@ddtechi.com'
+        }
     response
-    	STATUS 200
-    	STATUS 503
-    		{
-    			'err': {
-    				'code': 301,
-    				'message': '기존 비밀번호가 틀립니다.'
-    			}
-    		}
+        STATUS 200
+        STATUS 503
+            {
+                'err': {
+                    'code': 301,
+                    'message': '기존 비밀번호가 틀립니다.'
+                }
+            }
     """
     try:
         if request.method == 'OPTIONS':
@@ -160,7 +161,7 @@ def update_staff(request):
         position = rqst['position']  # 직책
         department = rqst['department']  # 부서 or 소속
         phone_no = rqst['phone_no']  # 전화번호
-        phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
+        phone_type = rqst['phone_type']  # 전화 종류    10:iPhone, 20: Android
         push_token = rqst['push_token']  # token
         email = rqst['email']  # id@ddtechi.co
         print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
@@ -203,10 +204,11 @@ def update_staff(request):
     except Exception as e:
         return exceptionError('update_staff', '509', e)
 
+
 def list_staff(request):
     """
     직원 list 요청
-        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/operation/list_staff?id=&login_id=thinking&login_pw=A~~~8282
     GET
@@ -231,7 +233,6 @@ def list_staff(request):
         login_id = rqst['login_id']  # 암호화된 id
         login_pw = rqst['login_pw']  # 암호화된 id
         print(id, login_id)
-
 
         if len(id) > 0:
             staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
@@ -258,18 +259,18 @@ def reg_customer(request):
     고객사를 등록한다.
     간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
-    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    		response 는 추후 추가될 예정이다.
+        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/operation/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
-    	{
-    		'customer_name': '대덕기공',
-    		'staff_name': '홍길동',
-    		'staff_pNo': '010-1111-2222',
-    		'staff_email': 'id@daeducki.com'
-    	}
+        {
+            'customer_name': '대덕기공',
+            'staff_name': '홍길동',
+            'staff_pNo': '010-1111-2222',
+            'staff_email': 'id@daeducki.com'
+        }
     response
-    	STATUS 200
+        STATUS 200
     """
     if request.method == 'OPTIONS':
         return CRSHttpResponse()
@@ -294,8 +295,8 @@ def reg_customer(request):
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
-        'sender':'01024505942',
-        'receiver': '01020736959', #'01025573555',
+        'sender': '01024505942',
+        'receiver': '01020736959',  # '01025573555',
         'msg_type': 'SMS',
         'msg': '반갑습니다.\n'
                '\'이지스 팩토리\'예요~~\n'
@@ -313,12 +314,12 @@ def list_customer(request):
     고객사 리스트를 요청한다.
     http://0.0.0.0:8000/operation/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
-    	customer_name=대덕기공
-    	staff_name=홍길동
-    	staff_pNo=010-1111-2222
-    	staff_email=id@daeducki.com
+        customer_name=대덕기공
+        staff_name=홍길동
+        staff_pNo=010-1111-2222
+        staff_email=id@daeducki.com
     response
-    	STATUS 200
+        STATUS 200
     """
     if request.method == 'OPTIONS':
         return CRSHttpResponse()
@@ -348,36 +349,36 @@ def list_customer(request):
 def update_work_place(request):
     """
     사업장 내용을 수정한다.
-    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    		response 는 추후 추가될 예정이다.
+        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
     POST
-    	{
-    		'id': '암호화된 id',
-        	'major': (비콘 major 번호),
-        	'staff_name': '박종기',
-        	'staff_pNo': '010-2557-3555',
+        {
+            'id': '암호화된 id',
+            'major': (비콘 major 번호),
+            'staff_name': '박종기',
+            'staff_pNo': '010-2557-3555',
 
-        	'place_name': '효성 용연2공장',
-        	'contractor_name': '대덕기공',
+            'place_name': '효성 용연2공장',
+            'contractor_name': '대덕기공',
 
-        	'manager_name': '홍길동',
-        	'manager_pNo': '010-1111-2222',
-        	'manager_email': 'id@daeducki.com',
+            'manager_name': '홍길동',
+            'manager_pNo': '010-1111-2222',
+            'manager_email': 'id@daeducki.com',
 
-        	'order_name': '(주)효성',
-        	'order_staff_name': '제갈공명',
-        	'order_staff_pNo': '010-2222-3333',
-        	'order_staff_email': 'id@company.com',
-    	}
+            'order_name': '(주)효성',
+            'order_staff_name': '제갈공명',
+            'order_staff_pNo': '010-2222-3333',
+            'order_staff_email': 'id@company.com',
+        }
     response
-    	STATUS 200
-    	STATUS 503
-    		{
-    			'err': {
-    				'code': 401,
-    				'msg': 'id가 틀립니다.'
-    			}
-    		}
+        STATUS 200
+        STATUS 503
+            {
+                'err': {
+                    'code': 401,
+                    'msg': 'id가 틀립니다.'
+                }
+            }
     """
     response = HttpResponse()
     response.status_code = 200
@@ -387,27 +388,27 @@ def update_work_place(request):
 def update_beacon(request):
     """
     비콘 내용을 수정한다.
-    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    		response 는 추후 추가될 예이다.
+        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예이다.
     POST
-    	{
-    		'id': '암호화된 id',
-        	'uuid': '12345678-0000-0000-123456789012', # 8-4-4-4-12
-        	'major': 12001, # 앞 2자리 지역, 뒷 3자리 일련번호 (max 65536)
-        	'minor': 10001, # 앞 2자리 사용 방법(10: 출입, 20:위험지역, 30:통제구역), 뒷 3자리 일련번호
-        	'dt_last': '2018-12-28 12:53:36', # 최종 인식 날짜
-        	'dt_battery': '2018-12-28 12:53:36', # 최종 밧데리 변경 날짜
-        	'work_place_id': -1 # 사업장 id
-    	}
+        {
+            'id': '암호화된 id',
+            'uuid': '12345678-0000-0000-123456789012', # 8-4-4-4-12
+            'major': 12001, # 앞 2자리 지역, 뒷 3자리 일련번호 (max 65536)
+            'minor': 10001, # 앞 2자리 사용 방법(10: 출입, 20:위험지역, 30:통제구역), 뒷 3자리 일련번호
+            'dt_last': '2018-12-28 12:53:36', # 최종 인식 날짜
+            'dt_battery': '2018-12-28 12:53:36', # 최종 밧데리 변경 날짜
+            'work_place_id': -1 # 사업장 id
+        }
     response
-    	STATUS 200
-    	STATUS 503
-    		{
-    			'err': {
-    				'code': 401,
-    				'msg': 'id가 틀립니다.'
-    			}
-    		}
+        STATUS 200
+        STATUS 503
+            {
+                'err': {
+                    'code': 401,
+                    'msg': 'id가 틀립니다.'
+                }
+            }
     """
     response = HttpResponse()
     response.status_code = 200
@@ -418,34 +419,34 @@ def list_work_place(request):
     """
     사업장 정보 리스트를 요청한다.
     GET
-    	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
-    	area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
+        cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
+        area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
     response
-    	STATUS 200
-    		{
-    			'no': 20
-    			'list': [
-    				{
-    					'id': '암호화된 id',
-        				'major':'10001',
-        				'staff_name':'한국인',
-        				'staff_pNo':'010-1111-2222',
+        STATUS 200
+            {
+                'no': 20
+                'list': [
+                    {
+                        'id': '암호화된 id',
+                        'major':'10001',
+                        'staff_name':'한국인',
+                        'staff_pNo':'010-1111-2222',
 
-        				'place_name':'(주)효성 용연2공장',
-        				'contractor_name':'대덕기공',
+                        'place_name':'(주)효성 용연2공장',
+                        'contractor_name':'대덕기공',
 
-        				'manager_name':'홍길동',
-        				'manager_pNo':'010-2222-3333',
-        				'manager_email':'id@daeducki.com',
+                        'manager_name':'홍길동',
+                        'manager_pNo':'010-2222-3333',
+                        'manager_email':'id@daeducki.com',
 
-        				'order_name':'(주)효성',
-        				'order_staff_name':'제갈공명',
-        				'order_staff_pNo':'010-3333-4444',
-        				'order_staff_email':'id@company.com',
-    				},
-    				......
-    			]
-    		}
+                        'order_name':'(주)효성',
+                        'order_staff_name':'제갈공명',
+                        'order_staff_pNo':'010-3333-4444',
+                        'order_staff_email':'id@company.com',
+                    },
+                    ......
+                ]
+            }
     """
 
     response = HttpResponse()
@@ -457,36 +458,36 @@ def list_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
     GET
-    	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
-    	area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
-    	staff_phone_no=010-1111-2222 # blank to all
-    	is_problem=y # 문제가 있는 비콘 사업장만 표시
+        cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
+        area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
+        staff_phone_no=010-1111-2222 # blank to all
+        is_problem=y # 문제가 있는 비콘 사업장만 표시
     response
-    	STATUS 200
-    		{
-    			'no': 20
-    			'list': [
-    				{
-    					'id': '암호화된 id',
-        				'major':'10001',
-        				'staff_name':'한국인',
-        				'staff_pNo':'010-1111-2222',
+        STATUS 200
+            {
+                'no': 20
+                'list': [
+                    {
+                        'id': '암호화된 id',
+                        'major':'10001',
+                        'staff_name':'한국인',
+                        'staff_pNo':'010-1111-2222',
 
-        				'place_name':'(주)효성 용연2공장',
-        				'contractor_name':'대덕기공',
+                        'place_name':'(주)효성 용연2공장',
+                        'contractor_name':'대덕기공',
 
-        				'manager_name':'홍길동',
-        				'manager_pNo':'010-2222-3333',
-        				'manager_email':'id@daeducki.com',
+                        'manager_name':'홍길동',
+                        'manager_pNo':'010-2222-3333',
+                        'manager_email':'id@daeducki.com',
 
-        				'order_name':'(주)효성',
-        				'order_staff_name':'제갈공명',
-        				'order_staff_pNo':'010-3333-4444',
-        				'order_staff_email':'id@company.com',
-    				},
-    				......
-    			]
-    		}
+                        'order_name':'(주)효성',
+                        'order_staff_name':'제갈공명',
+                        'order_staff_pNo':'010-3333-4444',
+                        'order_staff_email':'id@company.com',
+                    },
+                    ......
+                ]
+            }
     """
     response = HttpResponse()
     response.status_code = 200
@@ -497,40 +498,40 @@ def detail_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
     GET
-    	cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
-    	area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
-    	staff_phone_no=010-1111-2222 # blank to all
-    	is_problem=y # 문제가 있는 비콘 사업장만 표시
+        cust_type=10 # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
+        area=10 # 10 : 울산, 11 : 부산, 12 : 경남, 20 : 대구, 경북, 30 : 광주, 전남
+        staff_phone_no=010-1111-2222 # blank to all
+        is_problem=y # 문제가 있는 비콘 사업장만 표시
     response
-    	STATUS 200
-    		{
-    			'no': 20
-    			'list': [
-    				{
-    					'id': '암호화된 id',
-        				'major':'10001',
-        				'staff_name':'한국인',
-        				'staff_pNo':'010-1111-2222',
+        STATUS 200
+            {
+                'no': 20
+                'list': [
+                    {
+                        'id': '암호화된 id',
+                        'major':'10001',
+                        'staff_name':'한국인',
+                        'staff_pNo':'010-1111-2222',
 
-        				'place_name':'(주)효성 용연2공장',
-        				'contractor_name':'대덕기공',
+                        'place_name':'(주)효성 용연2공장',
+                        'contractor_name':'대덕기공',
 
-        				'manager_name':'홍길동',
-        				'manager_pNo':'010-2222-3333',
-        				'manager_email':'id@daeducki.com',
+                        'manager_name':'홍길동',
+                        'manager_pNo':'010-2222-3333',
+                        'manager_email':'id@daeducki.com',
 
-        				'order_name':'(주)효성',
-        				'order_staff_name':'제갈공명',
-        				'order_staff_pNo':'010-3333-4444',
-        				'order_staff_email':'id@company.com',
+                        'order_name':'(주)효성',
+                        'order_staff_name':'제갈공명',
+                        'order_staff_pNo':'010-3333-4444',
+                        'order_staff_email':'id@company.com',
 
-        				'no_inout': 10,
-        				'no_err': 1,
-        				'dt_last': '2018-12-28 12:53:36',
-    				},
-    				......
-    			]
-    		}
+                        'no_inout': 10,
+                        'no_err': 1,
+                        'dt_last': '2018-12-28 12:53:36',
+                    },
+                    ......
+                ]
+            }
     """
 
     response = HttpResponse()

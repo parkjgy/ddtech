@@ -50,20 +50,26 @@ class CategoryStringAppender:
         return ret.get()
 
 
-api_view_html = ''
+html_api_view_str = {}
 
 
 def api_view(request):
     global html_api_view_str
-    if api_view_html == '':
+    _filters = ["operation", "employee", "customer", "test"]
+    _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
+
+    type = 'global'
+    if 'filter' in request.GET:
+        type = request.GET['filter']
+
+    if not type in _filters:
+        type = 'global'
+    if type not in html_api_view_str or 'filter' in request.GET:
         try:
             from django.urls import URLResolver, URLPattern
 
-            _filters = ["operation", "employee", "customer", "test"]
-            _filter_names = ["운영 API", "근로자 API", "고객사 API", "테스트"]
-
-            if 'filter' in request.GET:
-                _custom_filter = request.GET['filter']
+            if 'filter' in request.GET and 'global' != type:
+                _custom_filter = type
                 for i in range(len(_filters)):
                     if _filters[i] == _custom_filter:
                         _filters = [_custom_filter]
@@ -153,12 +159,13 @@ def api_view(request):
 
             d = {}
             recursively_build__url_dict(titles, contents, '', d, urls.urlpatterns)
-            html_api_view_str = '<body><style>body{  font-family: "Nanum Gothic Coding", monospace; font-size: 14px; } p{ ' \
-                                'white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + \
-                                '</body> '
+            html_api_view_str[
+                type] = '<body><style>body{  font-family: "Nanum Gothic Coding", monospace; font-size: 14px; } p{ ' \
+                        'white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + \
+                        '</body> '
         except:
-            html_api_view_str = '<b>Render Error<b/>'
-    return HttpResponse(html_api_view_str)
+            html_api_view_str[type] = '<b>Render Error<b/>'
+    return HttpResponse(html_api_view_str[type])
 
 
 # appLink           다운로드에 사용할 링크
