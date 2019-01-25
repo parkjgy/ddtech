@@ -15,13 +15,17 @@ from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 # log import
 from .models import Customer
 from .models import Staff
+from .models import Business_Registration
+from .models import Work_Place
+from .models import Work
+from .models import Employee
+
 from .status_collection import *
 
 
 @csrf_exempt
 def reg_customer(request):
     """
-    /customer/reg_customer
     고객사를 등록한다.
     간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
@@ -83,6 +87,139 @@ def reg_customer(request):
         return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
     except Exception as e:
         return exceptionError('reg_customer', 503, e)
+
+
+def update_customer(request):
+    """
+    고객사(협력사, 발주사) 정보 변경 (담당자, 관리자만 가능)
+    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+    	    id(staff_id, manager_id, ...) 가 잘못되면 ERROR 처리한다.
+    	    담당자와 관리자가 바뀌면 로그아웃 한다.
+    	    담당자나 관리자가 바뀔 때는 다른 값은 바꿀 수 없다.
+    http://0.0.0.0:8000/customer/update_customer?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    POST
+    	{
+    		'id': '암호화된 id',           # 처리 직원 id 아래 login_id 와 둘 중의 하나는 필수
+    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+    		'login_pw': '비밀번호',     # 필수
+    		'co_id': '암호화된 소속사 id', # 로그인 할 때 받음
+
+            'staff_id': '서버에서 받은 암호화된 id', # 담당자를 변경할 때만 (담당자, 관리자만 변경 가능)
+
+            'manager_id': '서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
+
+            'business_reg_id': '서버에서 받은 암호화된 id', # 사업자 등록 정보 (담당자, 관리자만 변경 가능)
+
+            'name': '상호',
+            'regNo': '123-00-12345', # 사업자등록번호
+            'ceoName': '대표자', # 성명
+            'address': '사업장 소재지',
+            'business_type': '업태',
+            'business_item': '종목',
+            'dt_reg': '2018-03-01', # 사업자등록일
+
+            'dt_payment': '25', # 유료고객의 결제일 (5, 10, 15, 20, 25 중 에서 선택) 담당자, 관리자만 변경 가능
+    	}
+    response
+    	STATUS 200
+    	STATUS 503
+    		{'message': '비밀번호가 틀립니다.'}
+    		{'message': '담당자나 관리자만 변경 가능합니다.'}
+    		{'message': '관리자만 변경 가능합니다.'}
+    """
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        id = rqst['id']  # 암호화된 id
+        login_id = rqst['login_id']  # id 로 사용
+        login_pw = rqst['login_pw']  # 비밀번호
+        co_id = rqst['co_id']  # 소속사 id
+        print(id, login_id, login_pw, co_id)
+
+        customer = Customer.objects.get(id=AES_DECRYPT_BASE64(co_id))
+        # id 가 틀리면 위에서 에러가 나야한다.
+        id = AES_DECRYPT_BASE64(id)
+        print(id)
+        print(str(customer.staff_id.id))
+        print(str(customer.manager_id))
+        if customer.staff_id != id and customer.manager_id != id:
+            print('담당자나 관리자만 변경 가능합니다.')
+            result = {'message': '담당자나 관리자만 변경 가능합니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 503
+            return response
+        staff_id = rqst['staff_id']
+        if len(staff_id) > 0:
+            staff_id = AES_DECRYPT_BASE64(staff_id)
+            staff = Staff.objects.get(id=staff_id)
+            customer.staff_id = staff.id
+            customer.staff_name = staff.name
+            customer.staff_pNo = staff.pNo
+            customer.staff_email = staff.email
+            customer.save()
+            result = {'message': '담당자가 바뀌었습니다.\n로그아웃하십시요.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 200
+            return response
+        manager_id = rqst['manager_id']
+        if len(manager_id) > 0:
+            if customer.manager_id != id:
+                manager_id = AES_DECRYPT_BASE64(manager_id)
+                manager = Staff.objects.get(id=manager_id)
+                customer.manager_id = manager.id
+                customer.manager_name = manager.name
+                customer.manager_pNo = manager.pNo
+                customer.manager_email = manager.email
+                customer.save()
+                result = {'message': '관리자가 바뀌었습니다.\n로그아웃하십시요.'}
+                response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                response.status_code = 200
+                return response
+            else:
+                result = {'message': '관리자만 변경 가능합니다.'}
+                response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                response.status_code = 200
+                return response
+        br_id.name = rqst['business_reg_id']
+        if len(br_id) > 0:
+            br_id = AES_DECRYPT_BASE64(rqst['business_reg_id'])
+            buss_regs = Business_Registration.objects.filter(id=br_id)
+            if len(buss_regs) > 0:
+                buss_reg = buss_regs[0]
+                if len(rqst.rqst['name']) > 0:
+                    buss_reg.name = rqst['name']
+                if len(rqst.rqst['regNo']) > 0:
+                    buss_reg.regNo = rqst['regNo']
+                if len(rqst.rqst['ceoName']) > 0:
+                    buss_reg.ceoName = rqst['ceoName']
+                if len(rqst.rqst['address']) > 0:
+                    buss_reg.address = rqst['address']
+                if len(rqst.rqst['business_type']) > 0:
+                    buss_reg.business_type = rqst['business_type']
+                if len(rqst.rqst['business_item']) > 0:
+                    buss_reg.business_item = rqst['business_item']
+                if len(rqst.rqst['dt_reg']) > 0:
+                    buss_reg.dt_reg = rqst['dt_reg']
+                buss_reg.save()
+        dt_payment = rqst['dt_payment']
+        if len(dt_payment) > 0:
+            str_dt_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(str_dt_now)
+            str_dt_now = str_dt_now[:8] + dt_payment + str_dt_now[10:]
+            print(str_dt_now)
+            customer.dt_payment = datetime.datetime.strptime(str_dt_now, '%Y-%m-%d %H:%M:%S')
+        customer.save()
+
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('update_customer', '509', e)
 
 
 @csrf_exempt
@@ -188,7 +325,7 @@ def reg_staff(request):
 def login(request):
     """
     로그인
-    http://0.0.0.0:8000/customer/login?id=thinking&pw=A~~~8282
+    http://0.0.0.0:8000/customer/login?id=temp_1&pw=A~~~8282
     POST
     	{
     		'id': 'thinking',
@@ -196,6 +333,12 @@ def login(request):
     	}
     response
     	STATUS 200
+        {
+            'co_id': '암호화된 소속회사 id',
+            'br_id': '암호화된 사업자 등록 정보 id',
+            'is_staff': 'YES', # 담당자?
+            'is_manage': 'NO' # 관리자?
+        }
     	STATUS 401
     		{'message':'id 나 비밀번호가 틀립니다.'}
     """
@@ -217,7 +360,15 @@ def login(request):
             response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
             response.status_code = 503
             return response
-        response = CRSHttpResponse()
+        staff = staffs[0]
+        customer = Customer.objects.get(id=staff.co_id)
+        result = {
+            'co_id': AES_ENCRYPT_BASE64(str(staff.co_id)),   # 소속회사 id
+            'br_id': AES_ENCRYPT_BASE64(str(customer.business_reg_id)),  # 사업자 등록 정보
+            'is_staff': 'YES' if staff.id == customer.staff_id else 'NO',    # 담당자?
+            'is_manage': 'YES' if staff.id == customer.manager_id else 'NO'    # 관리자?
+        }
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
         return response
     except Exception as e:
