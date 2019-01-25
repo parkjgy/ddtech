@@ -2,23 +2,19 @@
 #   encryption / decryption
 #
 
+import re
+
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 # log import
 from config.common import logSend
-from config.common import logHeader
-from config.common import logError
-
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie  # POST 에서 사용
 
 AESkey = "\x3B\x2F\x2A\x20\x4E\x36\x3F\x67\x2D\x6B\x3B\x2C\x3B\x6B\x50\x31\x29\x5A\x47\x6C\x49\x79\x4C\x5F\x5C\x5A\x2C\x67\x73\x3A\x50\x47"
 AESiv = "\x31\x47\x42\x75\x42\x7C\x6D\x31\x47\x7B\x22\x5F\x3B\x7B\x2D\x58"
 
 from Crypto.Cipher import AES
 from Crypto.Util.py3compat import *
-from Crypto import Random
 import base64
 
 
@@ -73,7 +69,7 @@ def AES_ENCRYPT(msg) -> bytes:
 
 # encrypt ( str or bytes ) return base64:str;
 def AES_ENCRYPT_BASE64(msg) -> str:
-    return base64.b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8')
+    return re.sub(r'(\s|\n)+', '', base64.b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8'))
 
 
 # decrypt ( bytes ) return bytes;
@@ -84,6 +80,7 @@ def AES_DECRYPT(msg) -> bytes:
 
 # decrypt ( base64:str ) return bytes;
 def AES_DECRYPT_BASE64(msg: str) -> str:
+    msg = re.sub(r'(\s|\n)+', '', msg)
     msg += '=' * (-len(msg) % 4)
     msg = base64.b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg).decode(encoding='UTF-8')
