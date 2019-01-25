@@ -69,7 +69,7 @@ def AES_ENCRYPT(msg) -> bytes:
 
 # encrypt ( str or bytes ) return base64:str;
 def AES_ENCRYPT_BASE64(msg) -> str:
-    return re.sub(r'(\s|\n)+', '', base64.b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8'))
+    return re.sub(r'(\s|\n)+', '', base64.urlsafe_b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8'))
 
 
 # decrypt ( bytes ) return bytes;
@@ -82,14 +82,14 @@ def AES_DECRYPT(msg) -> bytes:
 def AES_DECRYPT_BASE64(msg: str) -> str:
     msg = re.sub(r'(\s|\n)+', '', msg)
     msg += '=' * (-len(msg) % 4)
-    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+    msg = base64.urlsafe_b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg).decode(encoding='UTF-8')
 
 
 # decrypt ( base64:str ) return bytes;
 def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
     msg += '=' * (-len(msg) % 4)
-    msg = base64.b64decode(bytes(msg, encoding='utf-8'))
+    msg = base64.urlsafe_b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg)
 
 from urllib.parse   import quote
