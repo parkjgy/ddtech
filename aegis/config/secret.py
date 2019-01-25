@@ -92,7 +92,7 @@ def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
     msg = base64.b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg)
 
-
+from urllib.parse   import quote
 @csrf_exempt
 def testEncryptionStr(request):
     """
@@ -103,8 +103,8 @@ def testEncryptionStr(request):
     < plainText: 암호되지 않은 문서
     > cipherText: 암호화된 문서
     """
-    logSend('>>> testEncryptionStr: ' + request.META["QUERY_STRING"][10:])
-    _plainText = request.META["QUERY_STRING"][10:]
+    logSend('>>> testEncryptionStr: ' + request.GET["plaintext"])
+    _plainText = request.GET["plaintext"]
     # _plainText = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하'
 
     logSend(_plainText)
@@ -113,6 +113,7 @@ def testEncryptionStr(request):
     r += '</br>*** cipherText(bytes) = ' + _cipherText.hex()
     b64cipherText = AES_ENCRYPT_BASE64(_plainText)
     r += '</br>*** base64 cipherText = ' + b64cipherText
+    r += '</br>*** base64 cipherText URL Encoded = ' + quote(b64cipherText)
     plainText = AES_DECRYPT_BASE64(b64cipherText)
     r += '</br>*** replainText = ' + plainText
     logSend(plainText)
@@ -129,9 +130,9 @@ def testDecryptionStr(request):
     < cipherText: 암호화된 문서
     > plainText: 복호화된 문서
     """
-    logSend('>>> testDecryptionStr: ' + request.META["QUERY_STRING"][11:])
+    logSend('>>> testDecryptionStr: ' + request.GET["cipherText"])
 
-    _b64CipherText = request.META["QUERY_STRING"][11:]
+    _b64CipherText = request.GET["cipherText"]
     r = '*** base64 cipherText = ' + _b64CipherText
     plainText = AES_DECRYPT_BASE64(_b64CipherText)
     r += '</br>*** plainText = ' + plainText
