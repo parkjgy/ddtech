@@ -125,7 +125,7 @@ def exceptionError(funcName, code, e):
     print(funcName, ' >>> ', code, ' ERROR: ', e)
     logError(funcName, ' >>> ', code, ' ERROR: ', e)
     logSend(funcName, ' >>> ', code, ' ERROR: ', e)
-    result = {'message': str(e)}
+    result = {'msg': str(e)}
     response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     print(response)
     response.status_code = 503
