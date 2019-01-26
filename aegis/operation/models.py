@@ -20,8 +20,7 @@ class Staff(models.Model):
     position = models.CharField(max_length=33, default='') # 직위, 직책
     department = models.CharField(max_length=33, default='') # 소속, 부서
     pNo = models.CharField(max_length = 19) # 전화번호
-    pType = models.IntegerField(default=0) # 전화 종류
-    # 10:iPhone, 20:Android
+    pType = models.IntegerField(default=0) # 전화 종류 # 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
     email = models.CharField(max_length = 320, default='unknown') # 이메일
 

@@ -1,15 +1,23 @@
 # -*- encoding:utf-8-*-
 
 # Create your views here.
-from django.template import Context
-from django.conf import settings
 
+import datetime
+import json
 import logging
-#cron 과 충돌
+from datetime import timedelta
+
+from django.http import HttpResponse, JsonResponse
+
+# cron 과 충돌
 # from Crypto.Cipher import AES
 
 logger_log = logging.getLogger("aegis.log")
-def logSend(message):
+logger_error = logging.getLogger("aegis.error.log")
+logger_error.setLevel(logging.DEBUG)
+
+
+def logSend(*args):
     """앱에서 게시물은 요청한다.
 
     :param: id 게시물의 id 이다
@@ -19,43 +27,107 @@ def logSend(message):
     :returns: M: 실패 했을 때 메세지가 실려있다.
     :returns: R: json 양식으로된 게시물이다. {'title': '임신 중 ', 'text': '<!DOCTYPE html><html>...', 'published_date': '2018-10-04', 'author':'Thinking'}
     """
-    try :
-        logger_log.debug(message)
+    try:
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_log.debug(''.join(str_list))
     except Exception as e:
-        logger_error(str(e))
+        logger_error.error(str(e))
         return
+
 
 logger_header = logging.getLogger("aegis.header.log")
 
-def logHeader(message):
-   try :
-       logger_header.debug(message)
-   except Exception as e:
-       logger_log.debug(str(e))
-       return
 
-logger_error = logging.getLogger("aegis.error.log")
-logger_error.setLevel(logging.DEBUG)
+def logHeader(*args):
+    try:
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_header.debug(''.join(str_list))
+    except Exception as e:
+        logger_log.debug(str(e))
+        return
 
-def logError(message):
-   """
-   Yields
-   ------
-   err_code : int
-       Non-zero value indicates error code, or zero on success.
-   err_msg : str or None
-       Human readable error message, or None on success.  
-   """
-   try :
-       logger_error.debug(message)
-   except Exception as e:
-       logger_error(str(e))
-       return
 
-def cryptMessage(message):
-    #print "a"
-    return
+def logError(*args):
+    """
+    Yields
+    ------
+    err_code : int
+        Non-zero value indicates error code, or zero on success.
+    err_msg : str or None
+        Human readable error message, or None on success.
+    """
+    try:
+        str_list = []
+        for arg in args:
+            str_list.append(str(arg))
+        logger_error.debug(''.join(str_list))
+    except Exception as e:
+        logger_error.error(str(e))
+        return
 
-def decryptMessage(mesage):
-    #print "b"
-    return
+
+# Cross-Origin Read Allow Rule
+class CRSJsonResponse(JsonResponse):
+    def __init__(self, data, **kwargs):
+        super().__init__(data, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+        self["Access-Control-Max-Age"] = "1000"
+        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+
+
+class CRSHttpResponse(HttpResponse):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+        self["Access-Control-Max-Age"] = "1000"
+        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+
+
+# Requests library response redirect
+class ReqLibJsonResponse(JsonResponse):
+    def __init__(self, req_response, **kwargs):
+        super().__init__(req_response.json(), **kwargs)
+        self.status_code = req_response.status_code
+
+
+#  Requests library response redirect ( For Web.API )
+class CRSReqLibJsonResponse(CRSJsonResponse):
+    def __init__(self, req_response, **kwargs):
+        super().__init__(req_response.json(), **kwargs)
+        self.status_code = req_response.status_code
+
+
+def ValuesQuerySetToDict(vqs):
+    return [item for item in vqs]
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            if obj.utcoffset() is not None:
+                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
+                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
+            encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
+            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
+        else:
+            encoded_object = json.JSONEncoder.default(self, obj)
+            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
+        return encoded_object
+
+
+def exceptionError(funcName, code, e):
+    print(funcName, ' >>> ', code, ' ERROR: ', e)
+    logError(funcName, ' >>> ', code, ' ERROR: ', e)
+    logSend(funcName, ' >>> ', code, ' ERROR: ', e)
+    result = {'message': str(e)}
+    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    print(response)
+    response.status_code = 503
+    print(response.content)
+    return response

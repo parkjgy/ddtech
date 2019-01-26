@@ -23,8 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'd*)n0s&_3cufmn4x^&0_ny_pplg&1a4k1==r7cxronkfd$7no@'
 
-#ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', '192.168.219.55', '211.220.119.24', 'dev.ddtechi.com', '192.168.123.33', '61.78.188.250', 'dev1.ddtechi.com']
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', '192.168.219.55', '211.220.119.24', 'dev.ddtechi.com', '192.168.123.33',
+                 '61.78.188.250', 'dev1.ddtechi.com', '192.168.219.62']
 
 # Application definition
 
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'config.error_handler.ProcessExceptionMiddleware',
 ]
 
 CSRF_FAILURE_VIEW = "config.views.csrf_failure"
@@ -61,7 +63,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -95,14 +97,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
 # LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'ko'
 
-#TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
@@ -111,16 +112,15 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_ROOT = os.path.join(BASE_DIR, 'knowledge/static/')
+STATIC_ROOT = os.path.join(BASE_DIR, 'resources/static/')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'knowledge/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'resources/media/')
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -137,36 +137,36 @@ LOGGING = {
     },
     'handlers': {
         'default': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR + '/logs/aegis.log',
-            'maxBytes': 1024*1024*33, # 5 MB
+            'maxBytes': 1024 * 1024 * 33,  # 5 MB
             'backupCount': 5,
-            'formatter':'standard',
-        },  
+            'formatter': 'standard',
+        },
         'header_handler': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR + '/logs/aegis.header.log',
-            'maxBytes': 1024*1024*33, # 5 MB
+            'maxBytes': 1024 * 1024 * 33,  # 5 MB
             'backupCount': 5,
-            'formatter':'standard',
-        },  
+            'formatter': 'standard',
+        },
         'error_handler': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR + '/logs/aegis.error.log',
-            'maxBytes': 1024*1024*33, # 5 MB
+            'maxBytes': 1024 * 1024 * 33,  # 5 MB
             'backupCount': 5,
-            'formatter':'standard',
-        },  
+            'formatter': 'standard',
+        },
         'request_handler': {
-                'level':'DEBUG',
-                'class':'logging.handlers.RotatingFileHandler',
-                'filename': BASE_DIR + '/logs/django_request.log',
-                'maxBytes': 1024*1024*33, # 5 MB
-                'backupCount': 5,
-                'formatter':'standard',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR + '/logs/django_request.log',
+            'maxBytes': 1024 * 1024 * 33,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'standard',
         },
     },
     'loggers': {
@@ -186,12 +186,12 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
-        'django.request': { # Stop SQL debug from logging to main logger
+        'django.request': {  # Stop SQL debug from logging to main logger
             'handlers': ['default'],
             'level': 'DEBUG',
             'propagate': True
         },
-        'django.db.backends': { # Stop SQL debug from logging to main logger
+        'django.db.backends': {  # Stop SQL debug from logging to main logger
             'handlers': ['request_handler'],
             'level': 'DEBUG',
             'propagate': False

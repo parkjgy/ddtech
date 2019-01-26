@@ -81,11 +81,10 @@ class Staff(models.Model):
     login_pw = models.CharField(max_length=55, default='happy_day!!!') # 로그인 pw
     co_id = models.IntegerField() # 소속사 id
     co_name = models.CharField(max_length=127) # 소속사 이름
-    position = models.CharField(max_length=127) # 직위, 직책
-    department = models.CharField(max_length=127) # 소속, 부서
+    position = models.CharField(max_length=127, default='') # 직위, 직책
+    department = models.CharField(max_length=127, default='') # 소속, 부서
     pNo = models.CharField(max_length = 19) # 전화번호
-    pType = models.IntegerField(default=0) # 전화 종류
-    # 10:iPhone, 20:Android
+    pType = models.IntegerField(default=0) # 전화 종류 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
     email = models.CharField(max_length = 320) # 이메일
 """

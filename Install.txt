@@ -1,6 +1,7 @@
 export DJANGO_SETTINGS_MODULE=config.settings.development
 unset DJANGO_SETTINGS_MODULE
 
+pip install -r requirements.txt
 
 echo "# aegis_server" >> README.md
 git init
@@ -17,6 +18,8 @@ pip install django-filter
 pip install django-rest-swagger
 
 pip install mysqlclient
+	export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
+	brew install openssl
 
 pip install pycrypto
 
@@ -48,33 +51,34 @@ mysql> SELECT Host,User,authentication_string FROM mysql.user;
 
 (ddtenv) $ export DJANGO_SETTINGS_MODULE=config.settings.development
 (ddtenv) $ python manage.py makemigrations employee
-Migrations for 'employee':
-  employee/migrations/0001_initial.py
-    - Create model Beacon
-    - Create model Beacon_History
-    - Create model Employee
-    - Create model Pass
-    - Create model Passer
 (ddtenv) $ python manage.py makemigrations operation
-Migrations for 'operation':
-  operation/migrations/0001_initial.py
-    - Create model Beacon
-    - Create model Staff
-    - Create model Work_Place
 (ddtenv) $ python manage.py makemigrations customer
-Migrations for 'customer':
-  customer/migrations/0001_initial.py
-    - Create model Business_Registration
-    - Create model Customer
-    - Create model Employee
-    - Create model Staff
-    - Create model Work
-    - Create model Work_Place
 (ddtenv) $ python manage.py migrate
-Operations to perform:
-  Apply all migrations: admin, auth, contenttypes, customer, employee, operation, sessions
-Running migrations:
-  Applying customer.0001_initial... OK
-  Applying employee.0001_initial... OK
-  Applying operation.0001_initial... OK
-(ddtenv) $ 
+
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc"  -delete
+python manage.py showmigrations
+
+
+json_data = {
+		'passer_id' : 'qgf6YHf1z2Fx80DR8o/Lvg',
+		'dt' : '2018-01-21 08:25:30',
+		'is_in' : 1, # 0: out, 1 : in
+		'major' : 11001, # 11 (지역) 001(사업장)
+		'beacons' : [
+             {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+             {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+             {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+		]
+	}
+
+r = requests.post('http://0.0.0.0:8000/employee/pass_reg', json=json_data)
+
+json_data = {
+	'passer_id' : 'qgf6YHf1z2Fx80DR8o/Lvg',
+	'dt' : '2018-12-28 12:53:36',
+	'is_in' : 1, # 0: out, 1 : in
+} 
+
+r = requests.post('http://0.0.0.0:8000/employee/pass_verify', json=json_data)
+
