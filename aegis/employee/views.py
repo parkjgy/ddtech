@@ -34,7 +34,7 @@ def check_version(request):
         STATUS 200
         STATUS 503
         {
-            'message': '업그레이드가 필요합니다.'
+            'msg': '업그레이드가 필요합니다.'
             'url': 'http://...' # itune, google play update
         }
     """
@@ -49,7 +49,7 @@ def check_version(request):
 
         items = version.split('.')
         if (items[4]) == 0:
-            result = {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
+            result = {'msg': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
             response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
             print(response)
             response.status_code = 503
@@ -62,7 +62,7 @@ def check_version(request):
         print(dt_version)
         if dt_version < dt_check:
             print('dt_version < dt_check')
-            result = {'messge': '업그레이드가 필요합니다.',
+            result = {'msg': '업그레이드가 필요합니다.',
                       'url': 'http://...'  # itune, google play update
                       }
             response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
@@ -92,7 +92,7 @@ def passer_reg(request):
         STATUS 200
         STATUS 503
         {
-            'message': '양식이 잘못되었습니다.'
+            'msg': '양식이 잘못되었습니다.'
         }
     """
     try:
@@ -275,8 +275,8 @@ def pass_verify(request):
     #         # s.save()
     #         break
     #     elif x.dt_verify != '' :
-    #         print('--- message')
-    #         result = {'messge': '출근 전에 퇴근이 요청되었습니다.' if is_in else '퇴근 전에 출근이 요청되었습니다.'}
+    #         print('--- msg')
+    #         result = {'msg': '출근 전에 퇴근이 요청되었습니다.' if is_in else '퇴근 전에 출근이 요청되었습니다.'}
     #         response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     #         response.status_code = 503
     #         print(response)
