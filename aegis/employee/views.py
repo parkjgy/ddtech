@@ -20,6 +20,8 @@ import requests
 from datetime import datetime, timedelta
 import datetime
 
+from django.conf import settings
+
 
 def check_version(request):
     """
@@ -402,7 +404,7 @@ def reg_employee(request):
         rData = {
             'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
             'user_id': 'yuadocjon22',
-            'sender': '01024505942',
+            'sender': settings.SMS_SENDER_PN,
             'receiver': passer.pNo,
             'msg_type': 'SMS',
             'msg': '이지스 팩토리 앱 사용\n'

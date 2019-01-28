@@ -295,8 +295,8 @@ def reg_customer(request):
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
-        'sender': '01024505942',
-        'receiver': '01020736959',  # '01025573555',
+        'sender': settings.SMS_SENDER_PN,
+        'receiver': staff_pNo,  # '01025573555',
         'msg_type': 'SMS',
         'msg': '반갑습니다.\n'
                '\'이지스 팩토리\'예요~~\n'

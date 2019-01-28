@@ -23,3 +23,4 @@ DATABASES = {
 }
 
 CUSTOMER_URL = 'http://127.0.0.1:8000/customer/'
+SMS_SENDER_PN = '07042503340'
