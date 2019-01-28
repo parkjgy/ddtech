@@ -534,37 +534,237 @@ def list_staff(request):
 def reg_work_place(request):
     """
     사업장 등록
-    :param request:
-    :return:
+        주)	response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=임창베르디안&manager_id=1&order_id=1
+    POST
+        {
+            'staff_id':'암호화된 id', # 업무처리하는 직원
+            'name':'(주)효성 용연 1공장',	# 이름
+            'manager_id':'8382',	# 관리자 id
+            'order_id':'1899',	# 발주사 id
+        }
+    response
+        STATUS 200
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+        staff = Staff.objects.get(id=staff_id)
+
+        manager_id = rqst['manager_id']
+        manager = Staff.objects.get(id=manager_id)
+        order_id = rqst['order_id']
+        order = Customer.objects.get(id=order_id)
+        name = rqst['name']
+        new_work_place = Work_Place(
+            name = name,
+            place_name = name,
+            contractor_id = staff.co_id,
+            contractor_name = staff.co_name,
+            manager_id = manager.id,
+            manager_name = manager.name,
+            manager_pNo = manager.pNo,
+            manager_email = manager.email,
+            order_id = order.id,
+            order_name = order.name
+        )
+        new_work_place.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('reg_work_place', '509', e)
 
 
 def update_work_place(request):
     """
     사업장 수정
-    :param request:
-    :return:
+        주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/update_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_id=10&name=&manager_id=&order_id=
+    POST
+        {
+            'staff_id':'암호화된 id', # 업무처리하는 직원
+            'work_place_id':'사업장 id' # 수정할 사업장 id
+            'name':'(주)효성 용연 1공장',	# 이름
+            'manager_id':'8382',	# 관리자 id
+            'order_id':'1899',	# 발주사 id
+        }
+    response
+        STATUS 200
+        STATUS 503
+            {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+        staff = Staff.objects.get(id=staff_id)
+        work_place_id = rqst['work_place_id']
+        work_place = Work_Place.objects.get(id=work_place_id)
+        if work_place.contractor_id != staff.co_id:
+            result = {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 503
+            return response
+
+        manager_id = rqst['manager_id']
+        if len(manager_id) > 0:
+            manager = Staff.objects.get(id=manager_id)
+            work_place.manager_id = manager.id
+            work_place.manager_name = manager.name
+            work_place.manager_pNo = manager.pNo
+            work_place.manager_email = manager.email
+
+        order_id = rqst['order_id']
+        if len(order_id) > 0:
+            order = Customer.objects.get(id=order_id)
+            work_place.order_id = order.id
+            work_place.order_name = order.name
+
+        name = rqst['name']
+        if len(name) > 0:
+            work_place.name = name
+            work_place.place_name = name
+
+        work_place.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        print('<<< update_work_place', work_place.name)
+        return response
+    except Exception as e:
+        return exceptionError('update_work_place', '509', e)
 
 
 def list_work_place(request):
     """
     사업장 목록
-    :param request:
-    :return:
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/list_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    GET
+        staff_id      = 암호화된 id	 	# 업무처리하는 직원
+        name          = (주)효성 용연 1공장	# 이름
+        manager_name  = 선호			    # 관리자 이름
+        manager_phone = 3832	 	    # 관리자 전화번호
+        order_name    = 효성			    # 발주사 이름
+    response
+        STATUS 200
+        {
+            "work_places":
+                [ {"name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
+                  ......
+                ]}
+        STATUS 503
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+        staff = Staff.objects.get(id=staff_id)
+        name = rqst['name']
+        manager_name = rqst['manager_name']
+        manager_phone = rqst['manager_phone']
+        order_name = rqst['order_name']
+        work_places = Work_Place.objects.filter(contractor_id=staff.co_id,
+                                                name__contains=name,
+                                                manager_name__contains=manager_name,
+                                                manager_pNo__contains=manager_phone,
+                                                order_name__contains=order_name).values('name',
+                                                                                        'contractor_id',
+                                                                                        'contractor_name',
+                                                                                        'place_name',
+                                                                                        'manager_id',
+                                                                                        'manager_name',
+                                                                                        'manager_pNo',
+                                                                                        'manager_email',
+                                                                                        'order_id',
+                                                                                        'order_name')
+
+        arr_work_place = [work_place for work_place in work_places]
+        result = {'work_places': arr_work_place}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        print('<<< list_work_place')
+        return response
+    except Exception as e:
+        return exceptionError('list_work_place', '509', e)
 
 
 def reg_work(request):
     """
     사업장 업무 등록
-    :param request:
-    :return:
+        주)	response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_work?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=임창베르디안&manager_id=1&order_id=1
+    POST
+        {
+            'op_staff_id':'암호화된 id',   # 업무처리하는 직원
+            'name':'포장',
+            'work_place_id':1,        # 사업장 id
+            'type':'업무 형태',
+            'dt_begin':'2019-01-28',  # 업무 시작 날짜
+            'dt_end':'2019-02-28',    # 업무 종료 날짜
+            'staff_id':2,
+        }
+    response
+        STATUS 200
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        staff = Staff.objects.get(id=op_staff_id)
+
+        work_place_id = rqst['work_place_id']
+        work_place = Work_Place.objects.get(id=work_place_id)
+        staff_id = rqst['staff_id']
+        staff = Staff.objects.get(id=staff_id)
+        name = rqst['name']
+        type = rqst['type']
+        # dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d %H:%M:%S")
+        # dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d %H:%M:%S")
+        dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
+        dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
+        print(dt_begin, dt_end)
+        # new_work = Work(
+        #     name = name,
+        #     place_name = name,
+        #     contractor_id = staff.co_id,
+        #     contractor_name = staff.co_name,
+        #     manager_id = manager.id,
+        #     manager_name = manager.name,
+        #     manager_pNo = manager.pNo,
+        #     manager_email = manager.email,
+        #     order_id = order.id,
+        #     order_name = order.name
+        # )
+        # new_work_place.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('reg_work', '509', e)
 
 
 def update_work(request):

@@ -108,7 +108,7 @@ class Work_Place(models.Model):
     manager_pNo = models.CharField(max_length = 19) # 관리자 전화번호
     manager_email = models.CharField(max_length = 320) # 관리자 이메일
     order_id = models.IntegerField() # 발주사 id
-    order_name = models.IntegerField() # 발주사 상호
+    order_name = models.CharField(max_length=127) # 발주사 상호
 """
 업무 (사업장별)
 id
