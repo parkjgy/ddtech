@@ -261,9 +261,10 @@ def reg_customer(request):
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/reg_customer?is_not_first=YES&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
+            'is_not_first': 'YES',
             'customer_name': '대덕기공',
             'staff_name': '홍길동',
             'staff_pNo': '010-1111-2222',
@@ -279,19 +280,23 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
+    is_not_first=rqst['is_not_first']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
+        'is_not_first': is_not_first,
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
-
+    # print(response_customer.json())
+    response_customer_json = response_customer.json()
+    # print('아이디 ' + response_customer_json['login_id'] + '\n''비밀번호 ' + response_customer_json['login_pw'])
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -300,11 +305,10 @@ def reg_customer(request):
         'msg_type': 'SMS',
         'msg': '반갑습니다.\n'
                '\'이지스 팩토리\'예요~~\n'
-               '아이디 temp_id\n'
-               '비밀번호 happy_day!!!\n'
+               '아이디 ' + response_customer_json['login_id'] +'\n'
+               '비밀번호 ' + response_customer_json['login_pw']
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
-
     return CRSReqLibJsonResponse(response_customer)
 
 

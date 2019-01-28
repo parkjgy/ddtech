@@ -35,6 +35,7 @@ def reg_customer(request):
     http://0.0.0.0:8000/customer/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
+            'is_not_first': 'YES',
             'customer_name': '대덕기공',
             'staff_name': '홍길동',
             'staff_pNo': '010-1111-2222',
@@ -42,6 +43,13 @@ def reg_customer(request):
         }
     response
         STATUS 200
+            {
+                'msg': '정상처리되었습니다.',
+                'login_id': staff.login_id,
+                'login_pw': staff.login_pw
+            }
+        STATUS 503
+            {'msg': '등록되지 않았습니다.'}
     """
     try:
         if request.method == 'POST':
@@ -49,6 +57,7 @@ def reg_customer(request):
         else:
             rqst = request.GET
 
+        is_not_first = rqst['is_not_first']
         customer_name = rqst["customer_name"]
         staff_name = rqst["staff_name"]
         staff_pNo = rqst["staff_pNo"]
@@ -56,31 +65,39 @@ def reg_customer(request):
 
         print(customer_name, staff_name, staff_pNo, staff_email)
         customers = Customer.objects.filter(name=customer_name, staff_name=staff_name)
-        if len(customers) > 0:
-            staff = Staff.objects.get(id=customers[0].staff_id)
-            return REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED.to_response()
-        customer = Customer(
-            name=customer_name,
-            staff_name=staff_name,
-            staff_pNo=staff_pNo,
-            staff_email=staff_email
-        )
-        customer.save()
-        staff = Staff(
-            name=staff_name,
-            login_id='temp_' + str(customer.id),
-            login_pw='happy_day!!!',
-            co_id=customer.id,
-            co_name=customer.name,
-            pNo=staff_pNo,
-            email=staff_email
-        )
-        staff.save()
+        if is_not_first.upper() == 'YES':
+            if len(customers) == 0:
+                result = {'msg': '등록되지 않았습니다.'}
+                response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                response.status_code = 503
+                return CRSHttpResponse(response)
+            customer = customers[0]
+            staff = Staff.objects.get(id=customer.staff_id)
+        else:
+            if len(customers) > 0:
+                staff = Staff.objects.get(id=customers[0].staff_id)
+                return REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED.to_response()
+            customer = Customer(
+                name=customer_name,
+                staff_name=staff_name,
+                staff_pNo=staff_pNo,
+                staff_email=staff_email
+            )
+            customer.save()
+            staff = Staff(
+                name=staff_name,
+                login_id='temp_' + str(customer.id),
+                login_pw='happy_day!!!',
+                co_id=customer.id,
+                co_name=customer.name,
+                pNo=staff_pNo,
+                email=staff_email
+            )
+            staff.save()
+            customer.staff_id = str(staff.id)
+            customer.save()
         print('staff id = ', staff.id)
-        customer.staff_id = staff.id
-
-        print(customer_name, staff_name, staff_pNo, staff_email)
-        customer.save()
+        print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
 
         result = {'msg': '정상처리되었습니다.',
                   'login_id': staff.login_id,
@@ -465,6 +482,7 @@ def update_staff(request):
     except Exception as e:
         return exceptionError('update_staff', '509', e)
 
+
 def list_staff(request):
     """
     직원 list 요청
@@ -511,3 +529,93 @@ def list_staff(request):
         return response
     except Exception as e:
         return exceptionError('update_staff', '509', e)
+
+
+def reg_work_place(request):
+    """
+    사업장 등록
+    :param request:
+    :return:
+    """
+    return
+
+
+def update_work_place(request):
+    """
+    사업장 수정
+    :param request:
+    :return:
+    """
+    return
+
+
+def list_work_place(request):
+    """
+    사업장 목록
+    :param request:
+    :return:
+    """
+    return
+
+
+def reg_work(request):
+    """
+    사업장 업무 등록
+    :param request:
+    :return:
+    """
+    return
+
+
+def update_work(request):
+    """
+    사업장 업무 수정
+    :param request:
+    :return:
+    """
+    return
+
+
+def list_work(request):
+    """
+    사업장 업무 목록
+    :param request:
+    :return:
+    """
+    return
+
+
+def reg_employee(request):
+    """
+    근로자 등록
+    :param request:
+    :return:
+    """
+    return
+
+
+def update_employee(request):
+    """
+    근로자 수정
+    :param request:
+    :return:
+    """
+    return
+
+
+def list_employee(request):
+    """
+    근로자 목록
+    :param request:
+    :return:
+    """
+    return
+
+
+def report(request):
+    """
+    현장, 업무별 보고서
+    :param request:
+    :return:
+    """
+    return
