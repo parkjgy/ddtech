@@ -203,7 +203,7 @@ def update_customer(request):
                 response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
                 response.status_code = 200
                 return response
-        br_id.name = rqst['business_reg_id']
+        br_id = rqst['business_reg_id']
         if len(br_id) > 0:
             br_id = AES_DECRYPT_BASE64(rqst['business_reg_id'])
             buss_regs = Business_Registration.objects.filter(id=br_id)
