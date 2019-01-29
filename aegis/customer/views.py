@@ -712,7 +712,7 @@ def reg_work(request):
     """
     사업장 업무 등록
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=임창베르디안&manager_id=1&order_id=1
+    http://0.0.0.0:8000/customer/reg_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
     POST
         {
             'op_staff_id':'암호화된 id',   # 업무처리하는 직원
@@ -774,7 +774,7 @@ def update_work(request):
     사업장 업무 수정
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=10&name=&work_place_id=&type=&contractor_id=&dt_begin=&dt_end=&staff_id=
+    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
     POST
         {
             'op_staff_id':'암호화된 id',  # 업무처리하는 직원
@@ -791,6 +791,8 @@ def update_work(request):
         STATUS 200
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+        STATUS 509
+            {"msg": "??? matching query does not exist."} # ??? 을 찾을 수 없다.
     """
     try:
         if request.method == 'OPTIONS':
@@ -803,7 +805,7 @@ def update_work(request):
         op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
         Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
         work_id = rqst['work_id']
-        work = Work.objects.get(work_id)
+        work = Work.objects.get(id=work_id)
 
         name = rqst['name']
         if len(name) > 0:
@@ -828,10 +830,12 @@ def update_work(request):
         dt_begin = rqst['dt_begin']
         if len(dt_begin) > 0:
             work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
+            print(dt_begin, work.dt_begin)
 
         dt_end = rqst['dt_end']
         if len(dt_end) > 0:
-            work.dt_begin = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            print(dt_end, work.dt_end)
 
         staff_id = rqst['staff_id']
         if len(staff_id) > 0:
@@ -855,7 +859,7 @@ def list_work(request):
     사업장 업무 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg &name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    http://0.0.0.0:8000/customer/list_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
         op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
         work_place_name = 사업장 이름
@@ -867,12 +871,25 @@ def list_work(request):
         dt_end          = 해당 날짜에 이전에 끝나는 업무  #  없으면 1년 후까지
     response
         STATUS 200
-        {
-            "work_places":
-                [ {"name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
-                  ......
-                ]
-        }
+            {
+             	"works":
+             	[
+             		{   "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
         STATUS 503
     """
     try:
@@ -897,11 +914,13 @@ def list_work(request):
             dt_begin = datetime.datetime.now() - timedelta(days=365)
         else:
             dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+        print(dt_begin)
         str_dt_end = rqst['dt_end']
         if len(str_dt_end) == 0:
-            dt_end = datetime.datetime.now() - timedelta(days=365)
+            dt_end = datetime.datetime.now() + timedelta(days=365)
         else:
             dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+        print(dt_end)
         works = Work.objects.filter(name__contains=name,
                                     work_place_name__contains=work_place_name,
                                     type__contains=type,
@@ -921,9 +940,8 @@ def list_work(request):
                                                               'staff_name',
                                                               'staff_pNo',
                                                               'staff_email')
-
         arr_work = [work for work in works]
-        result = {'work_places': arr_work}
+        result = {'works': arr_work}
         response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
         print('<<< list_work_place')
@@ -935,10 +953,63 @@ def list_work(request):
 def reg_employee(request):
     """
     근로자 등록
-    :param request:
-    :return:
+        주)	response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_employee?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&phone_numbers[]=010-3333-5555&phone_numbers[]=010-5555-7777&phone_numbers[]=010-7777-9999
+    POST
+        {
+            'op_staff_id':'암호화된 id',   # 업무처리하는 직원
+            'work_id':'사업장 업무 id',
+            'phone_numbers':[   # 업무에 배치할 근로자들의 전화번호
+                '010-3333-5555', '010-5555-7777', '010-7777-8888', ...
+                ]
+        }
+    response
+        STATUS 200
+        STATUS 509
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
+
+        work_id = rqst['work_id']
+        work = Work.objects.get(id=work_id)
+
+        phones = rqst['phone_numbers']
+        print(phones)
+        # staff_id = rqst['staff_id']
+        # staff = Staff.objects.get(id=staff_id)
+        # name = rqst['name']
+        # type = rqst['type']
+        # dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
+        # dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
+        # print(dt_begin, dt_end)
+        # new_work = Work(
+        #     name=name,
+        #     work_place_id=work_place.id,
+        #     work_place_name=work_place.name,
+        #     type=type,
+        #     contractor_id=staff.co_id,
+        #     contractor_name=staff.co_name,
+        #     dt_begin=dt_begin,
+        #     dt_end=dt_end,
+        #     staff_id=staff.id,
+        #     staff_name=staff.name,
+        #     staff_pNo=staff.pNo,
+        #     staff_email=staff.email,
+        # )
+        # new_work.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('reg_work', '509', e)
 
 
 def update_employee(request):
