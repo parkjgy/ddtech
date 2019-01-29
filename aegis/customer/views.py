@@ -861,11 +861,10 @@ def list_work(request):
         work_place_name = 사업장 이름
         type            = 업무 형태
         contractor_name = 파견(도급)업체 이름
-        
-        name          = (주)효성 용연 1공장	# 이름
-        manager_name  = 선호			    # 관리자 이름
-        manager_phone = 3832	 	    # 관리자 전화번호
-        order_name    = 효성			    # 발주사 이름
+        staff_name      = 담당자 이름	    # 담당자가 관리하는 현장 업무를 볼때
+        staff_pNo       = 담당자 전화번호   # 담당자가 관리하는 현장 업무를 볼때
+        dt_begin        = 해당 날짜에 이후에 시작하는 업무 # 없으면 1년 전부터
+        dt_end          = 해당 날짜에 이전에 끝나는 업무  #  없으면 1년 후까지
     response
         STATUS 200
         {
@@ -888,26 +887,43 @@ def list_work(request):
         Staff.objects.get(id=op_staff_id)
 
         name = rqst['name']
-        manager_name = rqst['manager_name']
-        manager_phone = rqst['manager_phone']
-        order_name = rqst['order_name']
-        work_places = Work_Place.objects.filter(contractor_id=staff.co_id,
-                                                name__contains=name,
-                                                manager_name__contains=manager_name,
-                                                manager_pNo__contains=manager_phone,
-                                                order_name__contains=order_name).values('name',
-                                                                                        'contractor_id',
-                                                                                        'contractor_name',
-                                                                                        'place_name',
-                                                                                        'manager_id',
-                                                                                        'manager_name',
-                                                                                        'manager_pNo',
-                                                                                        'manager_email',
-                                                                                        'order_id',
-                                                                                        'order_name')
+        work_place_name = rqst['work_place_name']
+        type = rqst['type']
+        contractor_name = rqst['contractor_name']
+        staff_name = rqst['staff_name']
+        staff_pNo = rqst['staff_pNo']
+        str_dt_begin = rqst['dt_begin']
+        if len(str_dt_begin) == 0:
+            dt_begin = datetime.datetime.now() - timedelta(days=365)
+        else:
+            dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+        str_dt_end = rqst['dt_end']
+        if len(str_dt_end) == 0:
+            dt_end = datetime.datetime.now() - timedelta(days=365)
+        else:
+            dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+        works = Work.objects.filter(name__contains=name,
+                                    work_place_name__contains=work_place_name,
+                                    type__contains=type,
+                                    contractor_name__contains=contractor_name,
+                                    staff_name__contains=staff_name,
+                                    staff_pNo__contains=staff_pNo,
+                                    dt_begin__gt=dt_begin,
+                                    dt_end__lt=dt_end).values('name',
+                                                              'work_place_id',
+                                                              'work_place_name',
+                                                              'type',
+                                                              'contractor_id',
+                                                              'contractor_name',
+                                                              'dt_begin',
+                                                              'dt_end',
+                                                              'staff_id',
+                                                              'staff_name',
+                                                              'staff_pNo',
+                                                              'staff_email')
 
-        arr_work_place = [work_place for work_place in work_places]
-        result = {'work_places': arr_work_place}
+        arr_work = [work for work in works]
+        result = {'work_places': arr_work}
         response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
         print('<<< list_work_place')
