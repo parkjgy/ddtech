@@ -67,7 +67,7 @@ def reg_customer(request):
         customers = Customer.objects.filter(name=customer_name, staff_name=staff_name)
         if is_not_first.upper() == 'YES':
             if len(customers) == 0:
-                result = {'msg': '등록되지 않았습니다.'}
+                result = {'message': '등록되지 않았습니다.'}
                 response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
                 response.status_code = 503
                 return CRSHttpResponse(response)
@@ -99,7 +99,7 @@ def reg_customer(request):
         print('staff id = ', staff.id)
         print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
 
-        result = {'msg': '정상처리되었습니다.',
+        result = {'message': '정상처리되었습니다.',
                   'login_id': staff.login_id,
                   'login_pw': staff.login_pw}
         return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
