@@ -81,6 +81,7 @@ def check_version(request):
 def passer_reg(request):
     """
     출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
+    http://dev.ddtechi.com:8055/employee/passer_reg?pass_type=-1&phones[]=010-1111-2222&phones[]=010-2222-3333&phones[]=010-3333-4444&phones[]=010-4444-5555
     POST : json
         {
             'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자
@@ -96,23 +97,13 @@ def passer_reg(request):
         }
     """
     try:
-        logSend('--- /employee/passer_reg')
-        phone_numbers = []
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
-            pass_type = rqst['pass_type']
-            # rqst = {'phones': ["01025573555", "01074648939", "01020736959", "01054214410", "01047302499", "01024505942"]}
-            phones = rqst['phones']
-            for x in phones:
-                phone_numbers.append(x)
         else:
-            pass_type = -2
-            phone_numbers.append(request.GET["p1"])
-            phone_numbers.append(request.GET["p2"])
-            phone_numbers.append(request.GET["p3"])
-            phone_numbers.append(request.GET["p4"])
-            phone_numbers.append(request.GET["p5"])
-            phone_numbers.append(request.GET["p6"])
+            rqst = request.GET
+
+        pass_type = rqst['pass_type']
+        phone_numbers = rqst['phones']
 
         print(phone_numbers)
         for i in range(6):
@@ -123,16 +114,17 @@ def passer_reg(request):
             passer.save()
         response = HttpResponse(json.dumps(phone_numbers, cls=DateTimeEncoder))
         response.status_code = 200
+        logSend('<<< /employee/passer_reg')
         return response
     except Exception as e:
-        return exceptionError('passer_reg', '503', e)
+        return exceptionError('passer_reg', '509', e)
 
 
 @csrf_exempt
 def pass_reg(request):
     """
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001
+    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001&beacons[]=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -148,69 +140,72 @@ def pass_reg(request):
     response
         STATUS 200
     """
-    logSend('--- /employee/pass_reg')
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
+    try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
         cipher_passer_id = rqst['passer_id']
         dt = rqst['dt']
         is_in = rqst['is_in']
         major = rqst['major']
         beacons = rqst['beacons']
-    else:
-        cipher_passer_id = request.GET["passer_id"]
-        dt = request.GET["dt"]
-        is_in = request.GET["is_in"]
-        major = request.GET["major"]
-        # beacons = request.GET["beacons"]
-        beacons = [
-            {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-            {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-            {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
-            # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
-            # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-            # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-        ]
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    print(passer_id, dt, is_in, major)
-    print(beacons)
-    for i in range(len(beacons)):
-        beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
-        if len(beacon_list) > 0:
-            beacon = beacon_list[0]
-            beacon.dt_last = dt
-            beacon.save()
-        else:
-            # ?? 운영에서 관리하도록 바뀌어야하나?
-            beacon = Beacon(
-                uuid='12345678-0000-0000-0000-123456789012',
-                # 1234567890123456789012345678901234567890
+
+        if request.method == 'GET':
+            beacons = [
+                {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+                {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+                # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
+                # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+                # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+            ]
+
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        logSend('\t\t\t\t\t' + passer_id)
+        print(passer_id, dt, is_in, major)
+        print(beacons)
+        for i in range(len(beacons)):
+            beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
+            if len(beacon_list) > 0:
+                beacon = beacon_list[0]
+                beacon.dt_last = dt
+                beacon.save()
+            else:
+                # ?? 운영에서 관리하도록 바뀌어야하나?
+                beacon = Beacon(
+                    uuid='12345678-0000-0000-0000-123456789012',
+                    # 1234567890123456789012345678901234567890
+                    major=major,
+                    minor=beacons[i]['minor'],
+                    dt_last=dt
+                )
+                beacon.save()
+
+            beacon_history = Beacon_History(
                 major=major,
                 minor=beacons[i]['minor'],
-                dt_last=dt
+                passer_id=passer_id,
+                dt_begin=beacons[i]['dt_begin'],
+                RSSI_begin=beacons[i]['rssi']
             )
-            beacon.save()
+            beacon_history.save()
 
-        beacon_history = Beacon_History(
-            major=major,
-            minor=beacons[i]['minor'],
+        # logSend(is_in + str(is_in_verify(beacons)))
+        print(is_in, str(is_in_verify(beacons)))
+        new_pass = Pass(
             passer_id=passer_id,
-            dt_begin=beacons[i]['dt_begin'],
-            RSSI_begin=beacons[i]['rssi']
+            is_in=is_in,
+            dt_reg=dt
         )
-        beacon_history.save()
-
-    # logSend(is_in + str(is_in_verify(beacons)))
-    print(is_in, str(is_in_verify(beacons)))
-    new_pass = Pass(
-        passer_id=passer_id,
-        is_in=is_in,
-        dt_reg=dt
-    )
-    new_pass.save()
-    response = HttpResponse()
-    response.status_code = 200
-    return response
+        new_pass.save()
+        response = HttpResponse()
+        response.status_code = 200
+        logSend('<<< /employee/pass_reg')
+        return response
+    except Exception as e:
+        return exceptionError('pass_reg', '509', e)
 
 
 def is_in_verify(beacons):
@@ -240,31 +235,34 @@ def pass_verify(request):
     response
         STATUS 200
     """
-    logSend('--- /employee/pass_verify')
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
+    try:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
         cipher_passer_id = rqst['passer_id']
         dt = rqst['dt']
         is_in = rqst['is_in']
-    else:
-        cipher_passer_id = request.GET["passer_id"]
-        dt = request.GET["dt"]
-        is_in = request.GET["is_in"]
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    print(passer_id, dt, is_in)
-    dt = datetime.datetime.now()
-    # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-    # print(dt, str_dt)
-    new_pass = Pass(
-        passer_id=passer_id,
-        is_in=is_in,
-        dt_verify=dt
-    )
-    new_pass.save()
-    response = HttpResponse()
-    response.status_code = 200
-    return response
+
+        passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+        logSend('\t\t\t\t\t' + passer_id)
+        print(passer_id, dt, is_in)
+        dt = datetime.datetime.now()
+        # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+        # print(dt, str_dt)
+        new_pass = Pass(
+            passer_id=passer_id,
+            is_in=is_in,
+            dt_verify=dt
+        )
+        new_pass.save()
+        response = HttpResponse()
+        response.status_code = 200
+        logSend('<<< /employee/pass_verify')
+        return response
+    except Exception as e:
+        return exceptionError('beacon_verify', '509', e)
     # 가장 최근에 저장된 값부터 가져옮
     # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
     # for x in before_passes :
@@ -618,7 +616,6 @@ def generation_pass_history(request):
     1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
     2. 주어진 날짜의
     """
-    logSend('--- /employee/generation_pass_history')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -649,6 +646,7 @@ def generation_pass_history(request):
         employee.save()
         response = HttpResponse()
         response.status_code = 200
+        logSend('<<< /employee/generation_pass_history')
         return response
     except Exception as e:
         return exceptionError('exchange_info', '503', e)
@@ -672,7 +670,6 @@ def exchange_info(request):
     response
         STATUS 200
     """
-    logSend('--- /employee/exchange_info')
     try:
         if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
@@ -703,6 +700,7 @@ def exchange_info(request):
         employee.save()
         response = HttpResponse()
         response.status_code = 200
+        logSend('<<< /employee/exchange_info')
         return response
     except Exception as e:
         return exceptionError('exchange_info', '503', e)
