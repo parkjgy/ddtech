@@ -81,7 +81,7 @@ def check_version(request):
 def passer_reg(request):
     """
     출입자 등록 : 출입 대상자를 등록하는 기능 (파견업체나 출입관리를 희망하는 업체(발주사 포함)에서 사용)
-    http://dev.ddtechi.com:8055/employee/passer_reg?pass_type=-1&phones[]=010-1111-2222&phones[]=010-2222-3333&phones[]=010-3333-4444&phones[]=010-4444-5555
+    http://dev.ddtechi.com:8055/employee/passer_reg?pass_type=-1&phones=010-1111-2222&phones=010-2222-3333&phones=010-3333-4444&phones=010-4444-5555
     POST : json
         {
             'pass_type' : -2, # -1 : 일반 출입자, -2 : 출입만 관리되는 출입자
@@ -103,7 +103,10 @@ def passer_reg(request):
             rqst = request.GET
 
         pass_type = rqst['pass_type']
-        phone_numbers = rqst['phones']
+        if request.method == 'POST':
+            phone_numbers = rqst['phones']
+        else:
+            phone_numbers = rqst.getlist('phhones')
 
         print(phone_numbers)
         for i in range(6):
@@ -124,7 +127,7 @@ def passer_reg(request):
 def pass_reg(request):
     """
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001&beacons[]=
+    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001&beacons=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -290,7 +293,7 @@ def pass_verify(request):
 def beacon_verify(request):
     """
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
-    http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001&beacons[]=
+    http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001&beacons=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',

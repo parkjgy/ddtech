@@ -147,9 +147,15 @@ id
 push_token
 """
 class Employee(models.Model):
+    is_active = models.BooleanField(default=False) # 0 (NO) 근무 중이 아님, 1 (YES) 근무 중
+
+    dt_begin = models.DateTimeField(auto_now_add = True) # 근무 시작일
+    dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
+
+    work_id = models.IntegerField() # 업무 id
+    work_name = models.CharField(max_length=127) # 업무 이름
+    work_place_name = models.CharField(max_length=127) # 사업장 이름
+
     employee_id = models.IntegerField(default=-1) # 근로자 id
-    employee_name = models.CharField(max_length=127, default='unknown') # 담당자 이름
+    name = models.CharField(max_length=127, default='unknown') # 근로자 이름
     pNo = models.CharField(max_length = 19)
-    pType = models.IntegerField(default=0)
-    # 10:iPhone, 20:Android
-    push_token = models.CharField(max_length = 255, default='unknown')
