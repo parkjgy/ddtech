@@ -280,7 +280,7 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
-    is_not_first=rqst['is_not_first']
+    is_not_first = rqst['is_not_first']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
@@ -304,9 +304,9 @@ def reg_customer(request):
         'receiver': staff_pNo,  # '01025573555',
         'msg_type': 'SMS',
         'msg': '반갑습니다.\n'
-               '\'이지스 팩토리\'예요~~\n'
-               '아이디 ' + response_customer_json['login_id'] +'\n'
-               '비밀번호 ' + response_customer_json['login_pw']
+               '\'이지체크\'예요~~\n'
+               '아이디 ' + response_customer_json['login_id'] + '\n'
+                                                             '비밀번호 ' + response_customer_json['login_pw']
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     return CRSReqLibJsonResponse(response_customer)
