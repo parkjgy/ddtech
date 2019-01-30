@@ -861,7 +861,7 @@ def list_work(request):
         work_place_name = 사업장 이름
         type            = 업무 형태
         contractor_name = 파견(도급)업체 이름
-        
+
         name          = (주)효성 용연 1공장	# 이름
         manager_name  = 선호			    # 관리자 이름
         manager_phone = 3832	 	    # 관리자 전화번호
