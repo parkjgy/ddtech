@@ -406,7 +406,7 @@ def reg_employee(request):
             'sender': settings.SMS_SENDER_PN,
             'receiver': passer.pNo,
             'msg_type': 'SMS',
-            'msg': '이지스 팩토리 앱 사용\n'
+            'msg': '이지체크 앱 사용\n'
                    '인증번호[' + str(certificateNo) + ']입니다.'
         }
 
