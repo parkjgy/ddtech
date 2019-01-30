@@ -67,7 +67,7 @@ def reg_customer(request):
         customers = Customer.objects.filter(name=customer_name, staff_name=staff_name)
         if is_not_first.upper() == 'YES':
             if len(customers) == 0:
-                result = {'msg': '등록되지 않았습니다.'}
+                result = {'message': '등록되지 않았습니다.'}
                 response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
                 response.status_code = 503
                 return CRSHttpResponse(response)
@@ -99,7 +99,7 @@ def reg_customer(request):
         print('staff id = ', staff.id)
         print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
 
-        result = {'msg': '정상처리되었습니다.',
+        result = {'message': '정상처리되었습니다.',
                   'login_id': staff.login_id,
                   'login_pw': staff.login_pw}
         return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
@@ -203,7 +203,7 @@ def update_customer(request):
                 response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
                 response.status_code = 200
                 return response
-        br_id.name = rqst['business_reg_id']
+        br_id = rqst['business_reg_id']
         if len(br_id) > 0:
             br_id = AES_DECRYPT_BASE64(rqst['business_reg_id'])
             buss_regs = Business_Registration.objects.filter(id=br_id)
@@ -712,7 +712,7 @@ def reg_work(request):
     """
     사업장 업무 등록
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=임창베르디안&manager_id=1&order_id=1
+    http://0.0.0.0:8000/customer/reg_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
     POST
         {
             'op_staff_id':'암호화된 id',   # 업무처리하는 직원
@@ -764,6 +764,7 @@ def reg_work(request):
         new_work.save()
         response = CRSHttpResponse()
         response.status_code = 200
+        print('<<< reg_work')
         return response
     except Exception as e:
         return exceptionError('reg_work', '509', e)
@@ -774,7 +775,7 @@ def update_work(request):
     사업장 업무 수정
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=10&name=&work_place_id=&type=&contractor_id=&dt_begin=&dt_end=&staff_id=
+    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
     POST
         {
             'op_staff_id':'암호화된 id',  # 업무처리하는 직원
@@ -791,6 +792,8 @@ def update_work(request):
         STATUS 200
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+        STATUS 509
+            {"msg": "??? matching query does not exist."} # ??? 을 찾을 수 없다.(op_staff_id, work_id 를 찾을 수 없을 때)
     """
     try:
         if request.method == 'OPTIONS':
@@ -803,7 +806,7 @@ def update_work(request):
         op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
         Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
         work_id = rqst['work_id']
-        work = Work.objects.get(work_id)
+        work = Work.objects.get(id=work_id)
 
         name = rqst['name']
         if len(name) > 0:
@@ -828,10 +831,12 @@ def update_work(request):
         dt_begin = rqst['dt_begin']
         if len(dt_begin) > 0:
             work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
+            print(dt_begin, work.dt_begin)
 
         dt_end = rqst['dt_end']
         if len(dt_end) > 0:
-            work.dt_begin = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            print(dt_end, work.dt_end)
 
         staff_id = rqst['staff_id']
         if len(staff_id) > 0:
@@ -855,25 +860,39 @@ def list_work(request):
     사업장 업무 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg &name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    http://0.0.0.0:8000/customer/list_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
         op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
         work_place_name = 사업장 이름
         type            = 업무 형태
         contractor_name = 파견(도급)업체 이름
-
-        name          = (주)효성 용연 1공장	# 이름
-        manager_name  = 선호			    # 관리자 이름
-        manager_phone = 3832	 	    # 관리자 전화번호
-        order_name    = 효성			    # 발주사 이름
+        staff_name      = 담당자 이름	    # 담당자가 관리하는 현장 업무를 볼때
+        staff_pNo       = 담당자 전화번호   # 담당자가 관리하는 현장 업무를 볼때
+        dt_begin        = 해당 날짜에 이후에 시작하는 업무 # 없으면 1년 전부터
+        dt_end          = 해당 날짜에 이전에 끝나는 업무  #  없으면 1년 후까지
     response
         STATUS 200
-        {
-            "work_places":
-                [ {"name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
-                  ......
-                ]
-        }
+            {
+             	"works":
+             	[
+             		{
+             		    "id": 1,
+             		    "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
         STATUS 503
     """
     try:
@@ -888,59 +907,269 @@ def list_work(request):
         Staff.objects.get(id=op_staff_id)
 
         name = rqst['name']
-        manager_name = rqst['manager_name']
-        manager_phone = rqst['manager_phone']
-        order_name = rqst['order_name']
-        work_places = Work_Place.objects.filter(contractor_id=staff.co_id,
-                                                name__contains=name,
-                                                manager_name__contains=manager_name,
-                                                manager_pNo__contains=manager_phone,
-                                                order_name__contains=order_name).values('name',
-                                                                                        'contractor_id',
-                                                                                        'contractor_name',
-                                                                                        'place_name',
-                                                                                        'manager_id',
-                                                                                        'manager_name',
-                                                                                        'manager_pNo',
-                                                                                        'manager_email',
-                                                                                        'order_id',
-                                                                                        'order_name')
-
-        arr_work_place = [work_place for work_place in work_places]
-        result = {'work_places': arr_work_place}
+        work_place_name = rqst['work_place_name']
+        type = rqst['type']
+        contractor_name = rqst['contractor_name']
+        staff_name = rqst['staff_name']
+        staff_pNo = rqst['staff_pNo']
+        str_dt_begin = rqst['dt_begin']
+        if len(str_dt_begin) == 0:
+            dt_begin = datetime.datetime.now() - timedelta(days=365)
+        else:
+            dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+        print(dt_begin)
+        str_dt_end = rqst['dt_end']
+        if len(str_dt_end) == 0:
+            dt_end = datetime.datetime.now() + timedelta(days=365)
+        else:
+            dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+        print(dt_end)
+        works = Work.objects.filter(name__contains=name,
+                                    work_place_name__contains=work_place_name,
+                                    type__contains=type,
+                                    contractor_name__contains=contractor_name,
+                                    staff_name__contains=staff_name,
+                                    staff_pNo__contains=staff_pNo,
+                                    dt_begin__gt=dt_begin,
+                                    dt_end__lt=dt_end).values('name',
+                                                              'work_place_id',
+                                                              'work_place_name',
+                                                              'type',
+                                                              'contractor_id',
+                                                              'contractor_name',
+                                                              'dt_begin',
+                                                              'dt_end',
+                                                              'staff_id',
+                                                              'staff_name',
+                                                              'staff_pNo',
+                                                              'staff_email')
+        arr_work = [work for work in works]
+        result = {'works': arr_work}
         response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
-        print('<<< list_work_place')
+        print('<<< list_work')
         return response
     except Exception as e:
-        return exceptionError('list_work_place', '509', e)
+        return exceptionError('list_work', '509', e)
 
 
 def reg_employee(request):
     """
-    근로자 등록
-    :param request:
-    :return:
+    근로자 등록 - 업무별 전화번호 목록을 넣는 방식
+        주)	response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_employee?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
+    POST
+        {
+            'op_staff_id':'암호화된 id',   # 업무처리하는 직원
+            'work_id':'사업장 업무 id',
+            'phone_numbers':   # 업무에 배치할 근로자들의 전화번호
+            [
+                '010-3333-5555', '010-5555-7777', '010-7777-8888', ...
+            ]
+        }
+    response
+        STATUS 200
+        STATUS 509
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
+
+        work_id = rqst['work_id']
+        work = Work.objects.get(id=work_id)
+
+        phones = rqst.getlist('phone_numbers')
+        print(phones)
+        for phone in phones:
+            new_employee = Employee(
+                is_active = 0, # 근무 중 아님
+                dt_begin = work.dt_begin,
+                dt_end = work.dt_end,
+                work_id = work.id,
+                work_name = work.name,
+                work_place_name = work.work_place_name,
+                pNo = phone
+            )
+            new_employee.save()
+        #
+        # 근로자 서버로 근로자의 업무 의사와 답변을 요청
+        #
+        # request = http://...
+        response = CRSHttpResponse()
+        response.status_code = 200
+        print('<<< reg_work')
+        return response
+    except Exception as e:
+        return exceptionError('reg_work', '509', e)
 
 
 def update_employee(request):
     """
     근로자 수정
-    :param request:
-    :return:
+     - 근로자가 업무를 거부했거나
+     - 응답이 없어 업무에서 배제했거나
+     - 업무 예정기간보다 일찍 업무가 끌났을 때
+        주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
+    POST
+        {
+            'op_staff_id':'암호화된 id',  # 업무처리하는 직원
+            'work_id':10,               # 업무 id
+            'name':'포장',
+            'work_place_id':1,        # 사업장 id
+            'type':'업무 형태',
+            'contractor_id':'파견업체(도급업체) id',
+            'dt_begin':'2019-01-28',  # 업무 시작 날짜
+            'dt_end':'2019-02-28',    # 업무 종료 날짜
+            'staff_id':2,
+        }
+    response
+        STATUS 200
+        STATUS 503
+            {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+        STATUS 509
+            {"msg": "??? matching query does not exist."} # ??? 을 찾을 수 없다. (op_staff_id, work_id 를 찾을 수 없을 때)
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
+        work_id = rqst['work_id']
+        work = Work.objects.get(id=work_id)
+
+        name = rqst['name']
+        if len(name) > 0:
+            work.name = name
+
+        work_place_id = rqst['work_place_id']
+        if len(work_place_id) > 0:
+            work_place = Work_Place.objects.get(id=work_place_id)
+            work.work_place_id = work_place.id
+            work.work_place_name = work_place.name
+
+        type = rqst['type']
+        if len(type) > 0:
+            work.type = type
+
+        contractor_id = rqst['contractor_id']
+        if len(contractor_id) > 0:
+            contractor = Customer.objects.get(id=contractor_id)
+            work.contractor_id = contractor.id
+            work.contractor_name = contractor.name
+
+        dt_begin = rqst['dt_begin']
+        if len(dt_begin) > 0:
+            work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
+            print(dt_begin, work.dt_begin)
+
+        dt_end = rqst['dt_end']
+        if len(dt_end) > 0:
+            work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            print(dt_end, work.dt_end)
+
+        staff_id = rqst['staff_id']
+        if len(staff_id) > 0:
+            staff = Staff.objects.get(id=staff_id)
+            work.staff_id=staff.id
+            work.staff_name=staff.name
+            work.staff_pNo=staff.pNo
+            work.staff_email=staff.email
+
+        work.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        print('<<< update_employee', work.name)
+        return response
+    except Exception as e:
+        return exceptionError('update_employee', '509', e)
 
 
 def list_employee(request):
     """
     근로자 목록
-    :param request:
-    :return:
+      - 업무별 리스트
+      - option 에 따라 근로자 근태 내역 추가
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/list_employee?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&is_working_history=YES
+    GET
+        op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
+        work_id         = 업무 id
+        is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
+    response
+        STATUS 200
+            {
+            	"employees":
+            	[
+            		{
+            		    "id":42,
+            			"is_active": false,
+            			"dt_begin": "2019-01-30 15:35:39",
+            			"dt_end": "2019-01-26 00:00:00",
+            			"work_id": 1,
+            			"work_name": "비콘교체",
+            			"work_place_name": "대덕테크",
+            			"employee_id": -1,
+            			"name": "unknown",
+            			"pNo": "010-3333-5555"
+            		},
+            		......
+            	]
+            }
+    STATUS 503
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        Staff.objects.get(id=op_staff_id)
+
+        work_id = rqst['work_id']
+        Work.objects.get(id=work_id) # 업무 에러 확인용
+
+        employees = Employee.objects.filter(work_id=work_id).values('id',
+                                                                    'is_active',
+                                                                    'dt_begin',
+                                                                    'dt_end',
+                                                                    'work_id',
+                                                                    'work_name',
+                                                                    'work_place_name',
+                                                                    'employee_id',
+                                                                    'name',
+                                                                    'pNo')
+        arr_employee = [employee for employee in employees]
+        if rqst['is_working_history'].upper() == 'YES':
+            print('   >>> request: working history')
+            #
+            #
+            # 근로자 서버에 근태 내역 요청
+            #
+        result = {'employees': arr_employee}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        print('<<< list_employee')
+        return response
+    except Exception as e:
+        return exceptionError('list_employee', '509', e)
 
 
 def report(request):

@@ -19,7 +19,7 @@ class ProcessExceptionMiddleware(BaseMiddleware):
         print(stack_trace)
         logError(stack_trace)
         return HttpResponse(json.dumps(
-            {'msg': str(exception),
+            {'message': str(exception),
              'stack_trace': stack_trace}
         ), status=503)
 
