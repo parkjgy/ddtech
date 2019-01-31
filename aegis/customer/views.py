@@ -266,7 +266,7 @@ def list_customer(request):
     staff_pNo = rqst['staff_pNo']
     staff_email = rqst['staff_email']
 
-    customers = Customer.objects.filter().values('name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
+    customers = Customer.objects.filter().values('id', 'name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
                                                  'contractor_name', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = [customer for customer in customers]
@@ -495,7 +495,7 @@ def list_staff(request):
         login_pw = 요청직원 pw
     response
         STATUS 200
-            [{'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...', 'login_id'}, ...]
+            [{'id', 'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...', 'login_id'}, ...]
         STATUS 503
             {'message': '직원이 아닙니다.'}
     """
@@ -522,7 +522,7 @@ def list_staff(request):
             response.status_code = 503
             return response
 
-        staffs = Staff.objects.filter().values('name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
+        staffs = Staff.objects.filter().values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
         arr_staffs = [staff for staff in staffs]
         response = CRSHttpResponse(json.dumps(arr_staffs, cls=DateTimeEncoder))
         response.status_code = 200
@@ -663,7 +663,7 @@ def list_work_place(request):
         STATUS 200
         {
             "work_places":
-                [ {"name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
+                [ {"id", "name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
                   ......
                 ]
         }
@@ -687,7 +687,8 @@ def list_work_place(request):
                                                 name__contains=name,
                                                 manager_name__contains=manager_name,
                                                 manager_pNo__contains=manager_phone,
-                                                order_name__contains=order_name).values('name',
+                                                order_name__contains=order_name).values('id',
+                                                                                        'name',
                                                                                         'contractor_id',
                                                                                         'contractor_name',
                                                                                         'place_name',
@@ -832,11 +833,17 @@ def update_work(request):
         if len(dt_begin) > 0:
             work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
             print(dt_begin, work.dt_begin)
+            #
+            # 근로자 시간 변경?
+            #
 
         dt_end = rqst['dt_end']
         if len(dt_end) > 0:
             work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
             print(dt_end, work.dt_end)
+            #
+            # 근로자 시간 변경?
+            #
 
         staff_id = rqst['staff_id']
         if len(staff_id) > 0:
@@ -931,7 +938,8 @@ def list_work(request):
                                     staff_name__contains=staff_name,
                                     staff_pNo__contains=staff_pNo,
                                     dt_begin__gt=dt_begin,
-                                    dt_end__lt=dt_end).values('name',
+                                    dt_end__lt=dt_end).values('id',
+                                                              'name',
                                                               'work_place_id',
                                                               'work_place_name',
                                                               'type',
@@ -1023,13 +1031,10 @@ def update_employee(request):
         {
             'op_staff_id':'암호화된 id',  # 업무처리하는 직원
             'work_id':10,               # 업무 id
-            'name':'포장',
-            'work_place_id':1,        # 사업장 id
-            'type':'업무 형태',
-            'contractor_id':'파견업체(도급업체) id',
-            'dt_begin':'2019-01-28',  # 업무 시작 날짜
-            'dt_end':'2019-02-28',    # 업무 종료 날짜
-            'staff_id':2,
+            'employee_id':5,            # 필수
+            'dt_end':2019-02-01,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+            'is_active':'YES',          # YES: 업무 배정, NO: 업무 배제
+            'message':'업무 종료일이 변경되었거나 업무에 대한 응답이 없어 업무에서 뺐을 때 사유 전달'
         }
     response
         STATUS 200
@@ -1048,48 +1053,33 @@ def update_employee(request):
 
         op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
         Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
+
         work_id = rqst['work_id']
         work = Work.objects.get(id=work_id)
 
-        name = rqst['name']
-        if len(name) > 0:
-            work.name = name
-
-        work_place_id = rqst['work_place_id']
-        if len(work_place_id) > 0:
-            work_place = Work_Place.objects.get(id=work_place_id)
-            work.work_place_id = work_place.id
-            work.work_place_name = work_place.name
-
-        type = rqst['type']
-        if len(type) > 0:
-            work.type = type
-
-        contractor_id = rqst['contractor_id']
-        if len(contractor_id) > 0:
-            contractor = Customer.objects.get(id=contractor_id)
-            work.contractor_id = contractor.id
-            work.contractor_name = contractor.name
-
-        dt_begin = rqst['dt_begin']
-        if len(dt_begin) > 0:
-            work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
-            print(dt_begin, work.dt_begin)
+        employee_id = rqst['employee_id']
+        employee = Employee.objects.get(id=employee_id)
 
         dt_end = rqst['dt_end']
         if len(dt_end) > 0:
-            work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
-            print(dt_end, work.dt_end)
+            employee.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+            employee.is_active = 0 if employee.dt_end < datetime.datetime.now() else 1  # 업무 종료일이 오늘 이전이면 업무 종료
+            print(dt_end, employee.dt_end, datetime.datetime.now(), employee.is_active)
+            #
+            # to employee server : message,
+            #
 
-        staff_id = rqst['staff_id']
-        if len(staff_id) > 0:
-            staff = Staff.objects.get(id=staff_id)
-            work.staff_id=staff.id
-            work.staff_name=staff.name
-            work.staff_pNo=staff.pNo
-            work.staff_email=staff.email
+        is_active = rqst['is_active']
+        if is_active.upper() == 'YES':
+            employee.is_active = 1
+        elif is_active.upper() == 'NO':
+            employee.is_active = 0
 
-        work.save()
+        message = rqst['message']
+        #
+        # to employee server : message,
+        #
+        employee.save()
         response = CRSHttpResponse()
         response.status_code = 200
         print('<<< update_employee', work.name)
@@ -1174,8 +1164,92 @@ def list_employee(request):
 
 def report(request):
     """
-    현장, 업무별 보고서
-    :param request:
-    :return:
+    현장, 업무별 보고서 (관리자별(X), 요약(X))
+      - 요약 보고서
+      - 관리자별 보고서
+      - 사업장별 보고서
+      - 현장별 보고서
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&is_working_history=YES
+    GET
+        op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
+
+        manager_id      = 관리자 id    # 없으면 전체
+        work_place_id   = 사업장 id    # 없으면 전체
+        work_id         = 업무 id     # 없으면 전체
+
+    response
+        STATUS 200
+            {
+            "arr_work_place":
+            	[
+            	{
+            	"id": 1, "name": "\ub300\ub355\ud14c\ud06c", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\ub300\ub355\ud14c\ud06c", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		{
+            			"id": 1, "name": "\ube44\ucf58\uad50\uccb4", "type": "3\uad50\ub300", "staff_name": "\uc774\uc694\uc149", "staff_pNo": "01024505942", "arr_employee":
+            			[
+            				{
+            				"id": 42, "name": "unknown", "pNo": "010-3333-5555", "is_active": true, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-02-01 00:00:00"
+            				},
+            				{"id": 43, "name": "unknown", "pNo": "010-5555-7777", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				},
+            				{"id": 44, "name": "unknown", "pNo": "010-7777-9999", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				}
+            			]
+            		}
+            		]
+            	},
+            	{
+            	"id": 3, "name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		]
+            	}
+            	]
+            }
+        STATUS 503
     """
-    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
+        op_staff = Staff.objects.get(id=op_staff_id)
+
+        # manager_id = rqst['manager_id']
+        # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
+        work_place_id = rqst['work_place_id']
+        print(work_place_id)
+        if len(work_place_id) == 0:
+            work_places = Work_Place.objects.filter(contractor_id=op_staff.co_id).values('id', 'name', 'contractor_name', 'place_name', 'manager_name', 'manager_pNo', 'order_name')
+        else :
+            work_places = Work_Place.objects.filter(id=work_place_id).values('id', 'name', 'contractor_name', 'place_name', 'manager_name', 'manager_pNo', 'order_name')
+        arr_work_place = []
+        for work_place in work_places:
+            print('  ', work_place['name'])
+            works = Work.objects.filter(work_place_id=work_place['id']).values('id', 'name', 'type', 'staff_name', 'staff_pNo')
+            arr_work = []
+            for work in works:
+                print('    ', work['name'])
+                employees = Employee.objects.filter(work_id=work['id']).values('id', 'name', 'pNo', 'is_active', 'dt_begin', 'dt_end')
+                arr_employee = [employee for employee in employees]
+                work['arr_employee'] = arr_employee
+                arr_work.append(work)
+                for employee in employees:
+                    print('      ', employee['pNo'])
+            work_place['arr_work'] = arr_work
+            arr_work_place.append(work_place)
+        result = {'arr_work_place': arr_work_place}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        print('<<< report')
+        return response
+    except Exception as e:
+        return exceptionError('report', '509', e)
