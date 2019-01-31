@@ -1171,7 +1171,7 @@ def report(request):
       - 현장별 보고서
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/report?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&is_working_history=YES
+    http://0.0.0.0:8000/customer/report?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&manager_id=&work_place_id=&work_id=
     GET
         op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
 
