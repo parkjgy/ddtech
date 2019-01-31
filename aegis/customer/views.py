@@ -26,7 +26,6 @@ from .status_collection import *
 @csrf_exempt
 def reg_customer(request):
     """
-    /customer/reg_customer
     고객사를 등록한다.
     간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
