@@ -25,7 +25,8 @@ urlpatterns = [
     url(r'customer/report$', views.report, name='report'),
 
     url(r'customer/staff_version$', views.staff_version, name='staff_version'),
-    url(r'customer/staff_login$', views.staff_login, name='staff_login'),
+    url(r'customer/staff_foreground$', views.staff_foreground, name='staff_foreground'),
+    url(r'customer/staff_background$', views.staff_background, name='staff_background'),
     url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),
     url(r'customer/staff_request_certification_no$', views.staff_request_certification_no,
         name='staff_request_certification_no'),

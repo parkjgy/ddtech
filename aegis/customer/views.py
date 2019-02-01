@@ -1260,16 +1260,6 @@ def staff_version(request):
     :param request:
     :return:
     """
-    return
-
-
-def staff_login(request):
-    """
-    현장 소장 - 로그인
-    :param request:
-    :return:
-    """
-    return
     try:
         if request.method == 'OPTIONS':
             return CRSHttpResponse()
@@ -1285,6 +1275,23 @@ def staff_login(request):
     except Exception as e:
         return exceptionError('staff_login', '509', e)
 
+
+def staff_foreground(request):
+    """
+    현장 소장 - background to foreground action (push 등의 내용을 가져온다.)
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_background(request):
+        """
+        현장 소장 - foreground to background (서버로 전송할 내용이 있으면 전송하다.)
+        :param request:
+        :return:
+        """
+        return
 
 def staff_update_me(request):
     """
