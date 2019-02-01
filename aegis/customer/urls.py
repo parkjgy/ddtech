@@ -23,6 +23,19 @@ urlpatterns = [
     url(r'customer/update_employee$', views.update_employee, name='update_employee'),
     url(r'customer/list_employee$', views.list_employee, name='list_employee'),
     url(r'customer/report$', views.report, name='report'),
+
+    url(r'customer/staff_version$', views.staff_version, name='staff_version'),
+    url(r'customer/staff_login$', views.staff_login, name='staff_login'),
+    url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),
+    url(r'customer/staff_request_certification_no$', views.staff_request_certification_no,
+        name='staff_request_certification_no'),
+    url(r'customer/staff_verify_certification_no$', views.staff_verify_certification_no,
+        name='staff_verify_certification_no'),
+    url(r'customer/staff_reg_my_work$', views.staff_reg_my_work, name='staff_reg_my_work'),
+    url(r'customer/staff_update_my_work$', views.staff_update_my_work, name='staff_update_my_work'),
+    url(r'customer/staff_list_my_work$', views.staff_list_my_work, name='staff_list_my_work'),
+    url(r'customer/staff_work_list_employee$', views.staff_work_list_employee, name='staff_work_list_employee'),
+    url(r'customer/staff_work_update_employee$', views.staff_work_update_employee, name='staff_work_update_employee'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -1252,3 +1252,110 @@ def report(request):
         return response
     except Exception as e:
         return exceptionError('report', '509', e)
+
+
+def staff_version(request):
+    """
+    현장 소장 - 앱 버전 확인
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_login(request):
+    """
+    현장 소장 - 로그인
+    :param request:
+    :return:
+    """
+    return
+    try:
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+        result = {'staff_login': 'OK'}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        print('<<< staff_login')
+        return response
+    except Exception as e:
+        return exceptionError('staff_login', '509', e)
+
+
+def staff_update_me(request):
+    """
+    현장 소장 - 자기정보 update
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_request_certification_no(request):
+    """
+    현장 소장 - 인증번호 요청(처음 실행)
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_verify_certification_no(request):
+    """
+    현장 소장 - 인증번호 확인
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_reg_my_work(request):
+    """
+    현장 소장 - 담당 업무 등록
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_update_my_work(request):
+    """
+    현장 소장 - 담당 업무 내용 수정
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_list_my_work(request):
+    """
+    현장 소장 - 담당 업무 리스트
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_work_list_employee(request):
+    """
+    현장 소장 - 업무에 근무 중인 근로자 리스트(전일, 당일 근로 내역 포함)
+    :param request:
+    :return:
+    """
+    return
+
+
+def staff_work_update_employee(request):
+    """
+    현장 소장 - 업무에 근무 종인 근로자 내용 수정, 추가(지각, 외출, 조퇴, 특이사항)
+    :param request:
+    :return:
+    """
+    return
+
+
+# def staff_
