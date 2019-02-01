@@ -23,7 +23,7 @@ sudo service aegis-dev stop // Stop
 sudo service aegis-dev restart // Restart
 ```
 
-### Git의 Master의 변경 사항을 반영 
+### GitHub Master Branch의 변경 사항을 반영 
 ```
 cd ~/ddtech/aegis
 git reset --hard HEAD // local changed 가 존재할 경우
