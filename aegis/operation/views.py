@@ -257,22 +257,24 @@ def list_staff(request):
 def reg_customer(request):
     """
     고객사를 등록한다.
-    간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
-        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+    - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
+    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다. (회사 이름과 전화번호가 동일해야한다.)
+        주) 항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/reg_customer?is_not_first=YES&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
-            'is_not_first': 'YES',
-            'customer_name': '대덕기공',
+            're_sms': 'YES', # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
+            'customer_name': '대덕기공',    # 문자 재전송 필수
             'staff_name': '홍길동',
-            'staff_pNo': '010-1111-2222',
+            'staff_pNo': '010-1111-2222',   # 문자 재전송 필수
             'staff_email': 'id@daeducki.com'
         }
     response
         STATUS 200
     """
+    logSend('>>> operation/reg_customer')
+    print(">>> operation/reg_customer")
     if request.method == 'OPTIONS':
         return CRSHttpResponse()
     elif request.method == 'POST':
@@ -280,35 +282,38 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
-    is_not_first = rqst['is_not_first']
+    re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
-        'is_not_first': is_not_first,
+        're_sms': re_sms,
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
-    # print(response_customer.json())
-    response_customer_json = response_customer.json()
-    # print('아이디 ' + response_customer_json['login_id'] + '\n''비밀번호 ' + response_customer_json['login_pw'])
-    rData = {
-        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
-        'user_id': 'yuadocjon22',
-        'sender': settings.SMS_SENDER_PN,
-        'receiver': staff_pNo,  # '01025573555',
-        'msg_type': 'SMS',
-        'msg': '반갑습니다.\n'
-               '\'이지체크\'예요~~\n'
-               '아이디 ' + response_customer_json['login_id'] + '\n'
-                                                             '비밀번호 ' + response_customer_json['login_pw']
-    }
-    r = requests.post('https://apis.aligo.in/send/', data=rData)
+    print(response_customer.json())
+    if response_customer.status_code == 200:
+        response_customer_json = response_customer.json()
+        print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
+        rData = {
+            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+            'user_id': 'yuadocjon22',
+            'sender': settings.SMS_SENDER_PN,
+            'receiver': staff_pNo,  # '01025573555',
+            'msg_type': 'SMS',
+            'msg': '반갑습니다.\n'
+                   '\'이지체크\'예요~~\n'
+                   '아이디 ' + response_customer_json['login_id'] + '\n'
+                   '비밀번호 ' + response_customer_json['login_pw']
+        }
+        r = requests.post('https://apis.aligo.in/send/', data=rData)
+    logSend('<<< operation/reg_customer')
+    print('<<< operation/reg_customer')
     return CRSReqLibJsonResponse(response_customer)
 
 

@@ -31,10 +31,10 @@ def reg_customer(request):
     입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
-            'is_not_first': 'YES',
+            're_sms': 'NO',  # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
             'customer_name': '대덕기공',
             'staff_name': '홍길동',
             'staff_pNo': '010-1111-2222',
@@ -51,20 +51,25 @@ def reg_customer(request):
             {'msg': '등록되지 않았습니다.'}
     """
     try:
-        if request.method == 'POST':
+        logSend('>>> customer/reg_customer')
+        print('>>> customer/reg_customer')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
 
-        is_not_first = rqst['is_not_first']
+        re_sms = rqst['re_sms']
         customer_name = rqst["customer_name"]
         staff_name = rqst["staff_name"]
         staff_pNo = rqst["staff_pNo"]
         staff_email = rqst["staff_email"]
 
         print(customer_name, staff_name, staff_pNo, staff_email)
-        customers = Customer.objects.filter(name=customer_name, staff_name=staff_name)
-        if is_not_first.upper() == 'YES':
+        customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
+        print('   ...', len(customers))
+        if re_sms.upper() == 'YES':
             if len(customers) == 0:
                 result = {'message': '등록되지 않았습니다.'}
                 response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
@@ -101,9 +106,11 @@ def reg_customer(request):
         result = {'message': '정상처리되었습니다.',
                   'login_id': staff.login_id,
                   'login_pw': staff.login_pw}
+        logSend('<<< customer/reg_customer')
+        print('<<< customer/reg_customer')
         return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
     except Exception as e:
-        return exceptionError('reg_customer', 503, e)
+        return exceptionError('customer/reg_customer', 503, e)
 
 
 def update_customer(request):
@@ -278,6 +285,8 @@ def list_customer(request):
 def reg_staff(request):
     """
     고객사 직원을 등록한다.
+    - 차후 전화번호 변경 부분과 중복 처리가 필요함.
+    - 초기 pw 는 HappyDay365!!
         주)	response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_staff?staff_id=qgf6YHf1z2Fx80DR8o/Lvg&name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
     POST
@@ -324,7 +333,7 @@ def reg_staff(request):
         new_staff = Staff(
             name=name,
             login_id=login_id,
-            login_pw='aaa',
+            login_pw=AES_ENCRYPT_BASE64('HappyDay365!!'),
             co_id=staff.co_id,
             co_name=staff.co_name,
             position=position,
@@ -347,8 +356,8 @@ def login(request):
     http://0.0.0.0:8000/customer/login?id=temp_1&pw=A~~~8282
     POST
         {
-            'id': 'thinking',
-            'pw': 'a~~~8282'
+            'login_id': 'thinking', # 암호화된
+            'login_pw': 'a~~~8282'  # 암호화된
         }
     response
         STATUS 200
@@ -372,11 +381,11 @@ def login(request):
         else:
             rqst = request.GET
 
-        id = rqst['id']
-        pw = rqst['pw']
+        cipher_login_id = rqst['login_id']
+        cipher_login_pw = rqst['login_pw']
         print('---', id, pw)
 
-        staffs = Staff.objects.filter(login_id=id, login_pw=pw)
+        staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
         if len(staffs) == 0:
             result = {'message': 'id 나 비밀번호가 틀립니다.'}
             response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
@@ -408,7 +417,7 @@ def update_staff(request):
     		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
     		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
     		'before_pw': '기존 비밀번호',     # 필수
-    		'login_pw': '변경하려는 비밀번호',
+    		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
     		'name': '이름',
     		'position': '직책',
     		'department': '부서 or 소속',
@@ -1257,41 +1266,170 @@ def report(request):
 def staff_version(request):
     """
     현장 소장 - 앱 버전 확인
-    :param request:
-    :return:
+    http://0.0.0.0:8000/customer/staff_version?v=A.1.0.0.190111
+    GET
+        v=A.1.0.0.190111
+
+    response
+        STATUS 200
+        STATUS 503
+        {
+            'message': '업그레이드가 필요합니다.'
+            'url': 'http://...' # itune, google play update
+        }
+        STATUS 509
+        {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
     try:
+        logSend('--- /customer/check_version')
+        print("customer : check version")
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+            version = rqst['v']
+        else:
+            version = request.GET['v']
+
+        items = version.split('.')
+        if len(items[4]) == 0:
+            result = {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            print(response)
+            response.status_code = 509
+            print(response.content)
+            return response
+        ver_dt = items[4]
+        dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
+                                                '%Y-%m-%d %H:%M:%S')
+        dt_check = datetime.datetime.strptime('2019-01-12 00:00:00', '%Y-%m-%d %H:%M:%S')
+        print(dt_version)
+        if dt_version < dt_check:
+            print('dt_version < dt_check')
+            result = {'message': '업그레이드가 필요합니다.',
+                      'url': 'http://...'  # itune, google play update
+                      }
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            print(response)
+            response.status_code = 503
+        else:
+            result = {}
+            response = HttpResponse()
+        print(response.content)
+        return response
+    except Exception as e:
+        return exceptionError('check_version', '503', e)
+
+
+def staff_foreground(request):
+    """
+    현장 소장 - background to foreground action (push 등의 내용을 가져온다.)
+    - 로그인을 했었으면 id 로 로그인을 한다. (15분 후에는 login_id, login_pw 같이 보내야 한다.)
+    - 처음 로그인하면 id 는 비우고 login_id, login_pw 를 암호화 해서 보낸다.
+    - id, login_id, login_pw 는 앱 저장한다.
+    http://0.0.0.0:8000/customer/staff_foreground?v=A.1.0.0.190111
+    GET
+        id= 암호화된 id # 처음이거나 15분 이상 지났으면 login_id, login_pw 를 보낸다.
+        login_id=abc # 암호화 할 것
+        login_pw=password # 암호화 한 것
+    response
+        STATUS 200
+        {
+            'id':'암호화 된 id', # 처음 로그인할 때 한번만 온다.
+            'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
+            'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
+        }
+        STATUS 509
+            {'message': '로그인 아이디나 비밀번호가 틀립니다.'}
+    """
+    try:
+        logSend('>>> /customer/staff_foreground')
+        print("customer : staff_foreground")
         if request.method == 'OPTIONS':
             return CRSHttpResponse()
         elif request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
-        result = {'staff_login': 'OK'}
+
+        cipher_id = rqst['id']
+        cipher_login_id = rqst['login_id']
+        cipher_login_pw = rqst['login_pw']
+        result = {}
+        if len(cipher_id) > 0:
+            app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
+            if  datetime.datetime.now() > app_user.dt_app_login + datetime.timedelta(minutes=15):
+                if app_user.login_id != int(AES_DECRYPT_BASE64(cipher_login_id)) or app_user.login_pw != cipher_login_pw:
+                    result = {'message': '로그인 아이디나 비밀번호가 틀립니다.'}
+                    response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                    logSend('<<< /customer/staff_foreground : ' + result['message'])
+                    print('<<< /customer/staff_foreground : ' + result['message'])
+                    response.status_code = 509
+                    return response
+        else:
+            app_user = Staff.objects.get(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
+            result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
+
+        work_places = Work_Place.objects.filter(contractor_ir=app_user.co_id, manager_id=app_user.id).values('id', 'name')
+        if len(work_places) > 0:
+            arr_work_place = [work_place for work_place in work_places]
+            result['work_places'] = arr_work_place
+        works = Work.objects.filter(contractor_ir=app_user.co_id, staff_id=app_user.id).values('id', 'name')
+        if len(works) > 0:
+            arr_work = [work for work in works]
+            result['works'] = arr_work
         response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
-        print('<<< staff_login')
+        app_user.is_app_login = True
+        app_user.dt_app_login = datetime.datetime.now()
+        app_user.save()
+        logSend('<<< staff_foreground')
+        print('<<< staff_foreground')
         return response
     except Exception as e:
-        return exceptionError('staff_login', '509', e)
-
-
-def staff_foreground(request):
-    """
-    현장 소장 - background to foreground action (push 등의 내용을 가져온다.)
-    :param request:
-    :return:
-    """
-    return
+        return exceptionError('staff_foreground', '509', e)
 
 
 def staff_background(request):
-        """
-        현장 소장 - foreground to background (서버로 전송할 내용이 있으면 전송하다.)
-        :param request:
-        :return:
-        """
-        return
+    """
+    현장 소장 - foreground to background (서버로 전송할 내용이 있으면 전송하다.)
+    http://0.0.0.0:8000/customer/staff_background?v=A.1.0.0.190111
+    POST
+        id=암호화된 id
+    response
+        STATUS 200
+        STATUS 509
+            {'message': 'id 가 틀립니다.'}
+    """
+    try:
+        logSend('>>> /customer/staff_foreground')
+        print("customer : staff_foreground")
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        cipher_id = rqst['id']
+        result = {}
+        if len(cipher_id) > 0:
+            app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
+            app_user.is_app_login = False
+            app_user.dt_login = datetime.datetime.now()
+            app_user.save()
+
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 200
+        else:
+            result = {'message': 'id 가 틀립니다.'}
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 509
+
+        logSend('<<< staff_background' + result['message'])
+        print('<<< staff_background' + result['message'])
+        return response
+    except Exception as e:
+        return exceptionError('staff_foreground', '509', e)
+
 
 def staff_update_me(request):
     """
