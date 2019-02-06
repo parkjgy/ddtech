@@ -47,8 +47,10 @@ def reg_customer(request):
                 'login_id': staff.login_id,
                 'login_pw': staff.login_pw
             }
-        STATUS 503
-            {'msg': '등록되지 않았습니다.'}
+        STATUS 601
+            {'message': '등록되지 않았습니다.'}
+        STATUS 602
+            {'message', '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
     """
     try:
         logSend('>>> customer/reg_customer')
@@ -66,51 +68,60 @@ def reg_customer(request):
         staff_pNo = rqst["staff_pNo"]
         staff_email = rqst["staff_email"]
 
-        print(customer_name, staff_name, staff_pNo, staff_email)
         customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
-        print('   ...', len(customers))
         if re_sms.upper() == 'YES':
+            # 문자 재전송할 파견기업 확인
             if len(customers) == 0:
                 result = {'message': '등록되지 않았습니다.'}
-                response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-                response.status_code = 503
-                return CRSHttpResponse(response)
+                response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                response.status_code = 601
+                logSend('<<< customer/reg_customer')
+                print('<<< customer/reg_customer')
+                return response
             customer = customers[0]
             staff = Staff.objects.get(id=customer.staff_id)
         else:
+            # 파견기업 등록
             if len(customers) > 0:
-                staff = Staff.objects.get(id=customers[0].staff_id)
-                return REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED.to_response()
-            customer = Customer(
-                name=customer_name,
-                staff_name=staff_name,
-                staff_pNo=staff_pNo,
-                staff_email=staff_email
-            )
-            customer.save()
-            staff = Staff(
-                name=staff_name,
-                login_id='temp_' + str(customer.id),
-                login_pw='happy_day!!!',
-                co_id=customer.id,
-                co_name=customer.name,
-                pNo=staff_pNo,
-                email=staff_email
-            )
-            staff.save()
-            customer.staff_id = str(staff.id)
-            customer.save()
+                # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
+                result = {'message': '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
+                response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+                response.status_code = 602
+                logSend('<<< customer/reg_customer')
+                print('<<< customer/reg_customer')
+                return response
+            else:
+                customer = Customer(
+                    name=customer_name,
+                    staff_name=staff_name,
+                    staff_pNo=staff_pNo,
+                    staff_email=staff_email
+                )
+                customer.save()
+                staff = Staff(
+                    name=staff_name,
+                    login_id='temp_' + str(customer.id),
+                    login_pw=AES_ENCRYPT_BASE64('happy_day!!!'),
+                    co_id=customer.id,
+                    co_name=customer.name,
+                    pNo=staff_pNo,
+                    email=staff_email
+                )
+                staff.save()
+                customer.staff_id = str(staff.id)
+                customer.save()
         print('staff id = ', staff.id)
         print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
-
         result = {'message': '정상처리되었습니다.',
                   'login_id': staff.login_id,
                   'login_pw': staff.login_pw}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
         logSend('<<< customer/reg_customer')
         print('<<< customer/reg_customer')
-        return CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        return response
     except Exception as e:
-        return exceptionError('customer/reg_customer', 503, e)
+        return exceptionError('customer/reg_customer', 666, e)
 
 
 def update_customer(request):
@@ -1337,12 +1348,12 @@ def staff_foreground(request):
             'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
             'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
         }
-        STATUS 509
+        STATUS 603
             {'message': '로그인 아이디나 비밀번호가 틀립니다.'}
     """
     try:
         logSend('>>> /customer/staff_foreground')
-        print("customer : staff_foreground")
+        print('>>> customer/staff_foreground')
         if request.method == 'OPTIONS':
             return CRSHttpResponse()
         elif request.method == 'POST':
@@ -1362,7 +1373,7 @@ def staff_foreground(request):
                     response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
                     logSend('<<< /customer/staff_foreground : ' + result['message'])
                     print('<<< /customer/staff_foreground : ' + result['message'])
-                    response.status_code = 509
+                    response.status_code = 603
                     return response
         else:
             app_user = Staff.objects.get(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
@@ -1385,7 +1396,7 @@ def staff_foreground(request):
         print('<<< staff_foreground')
         return response
     except Exception as e:
-        return exceptionError('staff_foreground', '509', e)
+        return exceptionError('staff_foreground', '666', e)
 
 
 def staff_background(request):
@@ -1396,7 +1407,7 @@ def staff_background(request):
         id=암호화된 id
     response
         STATUS 200
-        STATUS 509
+        STATUS 604
             {'message': 'id 가 틀립니다.'}
     """
     try:
@@ -1422,45 +1433,242 @@ def staff_background(request):
         else:
             result = {'message': 'id 가 틀립니다.'}
             response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            response.status_code = 509
+            response.status_code = 604
 
         logSend('<<< staff_background' + result['message'])
         print('<<< staff_background' + result['message'])
         return response
     except Exception as e:
-        return exceptionError('staff_foreground', '509', e)
+        return exceptionError('staff_foreground', '666', e)
 
 
 def staff_update_me(request):
     """
     현장 소장 - 자기정보 update
-    :param request:
-    :return:
+    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+    		response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    POST
+    	{
+    		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
+    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+    		'before_pw': '기존 비밀번호',     # 필수
+    		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
+    		'name': '이름',
+    		'position': '직책',
+    		'department': '부서 or 소속',
+    		'phone_no': '전화번호',
+    		'phone_type': '전화 종류', # 10:iPhone, 20: Android
+    		'push_token': 'token',
+    		'email': 'id@ddtechi.com'
+    	}
+    response
+    	STATUS 200
+    	STATUS 604
+    		{'message': '비밀번호가 틀립니다.'}
     """
-    return
+    try:
+        logSend('>>> /customer/staff_update_me')
+        print('>>> /customer/staff_update_me')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        id = rqst['id']  # 암호화된 id
+        login_id = rqst['login_id']  # id 로 사용
+        before_pw = rqst['before_pw']  # 기존 비밀번호
+        login_pw = rqst['login_pw']  # 변경하려는 비밀번호
+        name = rqst['name']  # 이름
+        position = rqst['position']  # 직책
+        department = rqst['department']  # 부서 or 소속
+        phone_no = rqst['phone_no']  # 전화번호
+        phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
+        push_token = rqst['push_token']  # token
+        email = rqst['email']  # id@ddtechi.co
+        print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+
+        if len(phone_no) > 0:
+            phone_no = phone_no.replace('-', '')
+            phone_no = phone_no.replace(' ', '')
+            print(phone_no)
+
+        if len(id) > 0:
+            staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+        else:
+            staff = Staff.objects.get(login_id=login_id)
+        if before_pw != staff.login_pw:
+            result = {'message': '비밀번호가 틀립니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 604
+            return response
+
+        if len(login_pw) > 0:
+            staff.login_pw = login_pw
+        if len(name) > 0:
+            staff.name = name
+        if len(position) > 0:
+            staff.position = position
+        if len(department) > 0:
+            staff.department = department
+        if len(phone_no) > 0:
+            staff.pNo = phone_no
+        if len(phone_type) > 0:
+            staff.pType = phone_type
+        if len(push_token) > 0:
+            staff.push_token = push_token
+        if len(email) > 0:
+            staff.email = email
+        staff.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('staff_update_me', '666', e)
 
 
 def staff_request_certification_no(request):
     """
     현장 소장 - 인증번호 요청(처음 실행)
-    :param request:
-    :return:
+    SMS 로 인증 문자(6자리)를 보낸다.
+    http://0.0.0.0:8000/customer/staff_request_certification_no?phone_no=01025573555
+    POST : json
+    {
+        'phone_no' : '010-1111-2222'
+    }
+    response
+        STATUS 200
+        STATUS 605  # 필수 입력 항목이 비었다.
+            {'message': '전화번호가 없습니다.'}
+        STATUS 606  # 값이 잘못되어 있습니다.
+            {'message': '직원등록이 안 되어 있습니다.\n웹에서 전화번호가 틀리지 않았는지 확인해주세요.'}
     """
-    return
+    try:
+        logSend('>>> /customer/staff_request_certification_no')
+        print('>>> /customer/staff_request_certification_no')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        phone_no = rqst['phone_no']
+        if len(phone_no) == 0:
+            result = {'message': '전화번호가 없습니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 605
+            return response
+
+        phone_no = phone_no.replace('+82', '0')
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        # print(phone_no)
+        staffs = Staff.objects.filter(pNo=phone_no)
+        if len(staffs) == 0:
+            result = {'message': '직원등록이 안 되어 있습니다.\n웹에서 전화번호가 틀리지 않았는지 확인해주세요.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 606
+            return response
+
+        staff = staffs[0]
+
+        certificateNo = random.randint(100000, 999999)
+        staff.push_token = str(certificateNo)
+        staff.save()
+
+        rData = {
+            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+            'user_id': 'yuadocjon22',
+            'sender': settings.SMS_SENDER_PN,
+            'receiver': staff.pNo,
+            'msg_type': 'SMS',
+            'msg': '이지체크 앱 사용\n'
+                   '인증번호[' + str(certificateNo) + ']입니다.'
+        }
+
+        rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+        print(rSMS.status_code)
+        print(rSMS.headers['content-type'])
+        print(rSMS.text)
+        print(rSMS.json())
+        logSend(json.dumps(rSMS.json(), cls=DateTimeEncoder))
+        # rJson = rSMS.json()
+        # rJson['vefiry_no'] = str(certificateNo)
+
+        # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
+        response = HttpResponse()
+        response.status_code = 200
+        logSend('<<< /customer/staff_request_certification_no', phone_no)
+        print('<<< /customer/staff_request_certification_no', phone_no)
+        return response
+    except Exception as e:
+        return exceptionError('/customer/staff_request_certification_no', '666', e)
 
 
 def staff_verify_certification_no(request):
     """
     현장 소장 - 인증번호 확인
-    :param request:
-    :return:
+    근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
+    http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
+    POST
+        {
+            'phone_no' : '010-1111-2222'
+            'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화'
+            'phone_type' : 'A' # 안드로이드 폰
+            'push_token' : 'push token'
+        }
+    response
+        STATUS 607
+            {'message': '인증번호가 틀립니다.'}
+        STATUS 200
     """
-    return
+    try:
+        logSend('>>> /customer/staff_verify_certification_no')
+        print('>>> /customer/staff_verify_certification_no')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        phone_no = rqst['phone_no']
+        cipher_cn = rqst['cn']
+        phone_type = rqst['phone_type']
+        push_token = rqst['push_token']
+
+        if len(phone_type) > 0:
+            phone_no = phone_no.replace('-', '')
+            phone_no = phone_no.replace(' ', '')
+
+        staff = Staff.objects.get(pNo=phone_no)
+        cn = AES_DECRYPT_BASE64(cipher_cn)
+        if int(staff.push_token) != int(cn):
+            rMsg = {'message': '인증번호가 틀립니다.'}
+            response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
+            response.status_code = 607
+            print(response)
+            return response
+
+        staff.pType = 20 if phone_type == 'A' else 10
+        staff.push_token = push_token
+        staff.save()
+
+        response = HttpResponse()
+        response.status_code = 200
+        # print(response)
+        logSend('<<< /customer/staff_verify_certification_no')
+        return response
+    except Exception as e:
+        return exceptionError('<<< /customer/staff_verify_certification_no', '666', e)
 
 
 def staff_reg_my_work(request):
     """
-    현장 소장 - 담당 업무 등록
+    현장 소장 - 담당 업무 등록 (웹에서...)
     :param request:
     :return:
     """
@@ -1469,7 +1677,7 @@ def staff_reg_my_work(request):
 
 def staff_update_my_work(request):
     """
-    현장 소장 - 담당 업무 내용 수정
+    현장 소장 - 담당 업무 내용 수정(웹에서...)
     :param request:
     :return:
     """
@@ -1479,28 +1687,171 @@ def staff_update_my_work(request):
 def staff_list_my_work(request):
     """
     현장 소장 - 담당 업무 리스트
-    :param request:
-    :return:
+    http://0.0.0.0:8000/customer/staff_list_my_work?id=ryWQkNtiHgkUaY_SZ1o2uA
+    GET
+        id= 암호화된 id # 처음이거나 15분 이상 지났으면 login_id, login_pw 를 보낸다.
+    response
+        STATUS 200
+        {
+            'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
+            'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
+        }
     """
-    return
+    try:
+        logSend('>>> /customer/staff_list_my_work')
+        print('>>> customer/staff_list_my_work')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        cipher_id = rqst['id']
+        app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
+
+        result = {}
+        work_places = Work_Place.objects.filter(contractor_ir=app_user.co_id, manager_id=app_user.id).values('id', 'name')
+        if len(work_places) > 0:
+            arr_work_place = [work_place for work_place in work_places]
+            result['work_places'] = arr_work_place
+        works = Work.objects.filter(contractor_ir=app_user.co_id, staff_id=app_user.id).values('id', 'name')
+        if len(works) > 0:
+            arr_work = [work for work in works]
+            result['works'] = arr_work
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        logSend('<<< staff_list_my_work')
+        print('<<< staff_list_my_work')
+        return response
+    except Exception as e:
+        return exceptionError('staff_list_my_work', '666', e)
 
 
 def staff_work_list_employee(request):
     """
     현장 소장 - 업무에 근무 중인 근로자 리스트(전일, 당일 근로 내역 포함)
-    :param request:
-    :return:
+    http://0.0.0.0:8000/customer/staff_work_list_employee?id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=1
+    GET
+        id= 암호화된 id # 처음이거나 15분 이상 지났으면 login_id, login_pw 를 보낸다.
+        work_id= 업무에 근로중인 근로자
+    response
+        STATUS 200
+        {
+            'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
+            'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
+        }
     """
-    return
+    try:
+        logSend('>>> customer/staff_work_list_employee')
+        print('>>> customer/staff_work_list_employee')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        cipher_id = rqst['id']
+        app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
+
+        result = {}
+        work_id=rqst['work_id']
+        employees = Employee.objects.filter(work_id=work_id).values('is_active', 'dt_begin', 'dt_end', 'employee_id', 'name', 'pNo')
+        if len(employees) > 0:
+            arr_employee = [employees for employee in employees]
+            result['employees'] = arr_employee
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response.status_code = 200
+        logSend('<<< customer/staff_work_list_employee')
+        print('<<< customer/staff_work_list_employee')
+        return response
+    except Exception as e:
+        return exceptionError('customer/staff_work_list_employee', '666', e)
 
 
 def staff_work_update_employee(request):
     """
-    현장 소장 - 업무에 근무 종인 근로자 내용 수정, 추가(지각, 외출, 조퇴, 특이사항)
-    :param request:
-    :return:
+    현장 소장 - 업무에 근무 중인 근로자 내용 수정, 추가(지각, 외출, 조퇴, 특이사항)
+    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+    		response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    POST
+    	{
+    		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
+    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+    		'before_pw': '기존 비밀번호',     # 필수
+    		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
+    		'name': '이름',
+    		'position': '직책',
+    		'department': '부서 or 소속',
+    		'phone_no': '전화번호',
+    		'phone_type': '전화 종류', # 10:iPhone, 20: Android
+    		'push_token': 'token',
+    		'email': 'id@ddtechi.com'
+    	}
+    response
+    	STATUS 200
+    	STATUS 604
+    		{'message': '비밀번호가 틀립니다.'}
     """
-    return
+    try:
+        logSend('>>> customer/staff_update_me')
+        print('>>> customer/staff_update_me')
+        if request.method == 'OPTIONS':
+            return CRSHttpResponse()
+        elif request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
 
+        id = rqst['id']  # 암호화된 id
+        login_id = rqst['login_id']  # id 로 사용
+        before_pw = rqst['before_pw']  # 기존 비밀번호
+        login_pw = rqst['login_pw']  # 변경하려는 비밀번호
+        name = rqst['name']  # 이름
+        position = rqst['position']  # 직책
+        department = rqst['department']  # 부서 or 소속
+        phone_no = rqst['phone_no']  # 전화번호
+        phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
+        push_token = rqst['push_token']  # token
+        email = rqst['email']  # id@ddtechi.co
+        print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
 
-# def staff_
+        if len(phone_no) > 0:
+            phone_no = phone_no.replace('-', '')
+            phone_no = phone_no.replace(' ', '')
+            print(phone_no)
+
+        if len(id) > 0:
+            staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+        else:
+            staff = Staff.objects.get(login_id=login_id)
+        if before_pw != staff.login_pw:
+            result = {'message': '비밀번호가 틀립니다.'}
+            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response.status_code = 604
+            return response
+
+        if len(login_pw) > 0:
+            staff.login_pw = login_pw
+        if len(name) > 0:
+            staff.name = name
+        if len(position) > 0:
+            staff.position = position
+        if len(department) > 0:
+            staff.department = department
+        if len(phone_no) > 0:
+            staff.pNo = phone_no
+        if len(phone_type) > 0:
+            staff.pType = phone_type
+        if len(push_token) > 0:
+            staff.push_token = push_token
+        if len(email) > 0:
+            staff.email = email
+        staff.save()
+        response = CRSHttpResponse()
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return exceptionError('staff_update_me', '666', e)

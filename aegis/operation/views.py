@@ -81,6 +81,7 @@ def reg_staff(request):
 def login(request):
     """
     로그인
+    http://0.0.0.0:8000/operation/login?id=thinking&pw=a~~~8282
     POST
         {
             'id': 'thinking',
@@ -88,6 +89,7 @@ def login(request):
         }
     response
         STATUS 200
+            { 'you': '넌 이거야?'}
         STATUS 401
             {'message':'id 나 비밀번호가 틀립니다.'}
     """
@@ -103,12 +105,16 @@ def login(request):
         pw = rqst['pw']
 
         staffs = Staff.objects.filter(login_id=id, login_pw=pw)
-        if len(staffs) > 0:
+        if len(staffs) == 0:
             result = {'message': 'id 나 비밀번호가 틀립니다.'}
             response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
             response.status_code = 503
             return response
-        response = CRSHttpResponse()
+        staff = staffs[0]
+
+        request.session['id'] = staff.id
+        result = {}
+        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
         return response
     except Exception as e:
@@ -120,10 +126,9 @@ def update_staff(request):
     직원 정보를 수정한다.
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/update_staff?id=&login_id=thinking&before_pw=a~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/update_staff?login_id=thinking&before_pw=a~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
         {
-            'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
             'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
             'before_pw': '기존 비밀번호',     # 필수
             'login_pw': '변경하려는 비밀번호',
@@ -153,7 +158,8 @@ def update_staff(request):
         else:
             rqst = request.GET
 
-        id = rqst['id']  # 암호화된 id
+        print(request.session['id'])
+        _id = request.session['id']  # 암호화된 id
         login_id = rqst['login_id']  # id 로 사용
         before_pw = rqst['before_pw']  # 기존 비밀번호
         login_pw = rqst['login_pw']  # 변경하려는 비밀번호
@@ -164,15 +170,15 @@ def update_staff(request):
         phone_type = rqst['phone_type']  # 전화 종류    10:iPhone, 20: Android
         push_token = rqst['push_token']  # token
         email = rqst['email']  # id@ddtechi.co
-        print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+        print(_id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
 
         if len(phone_no) > 0:
             phone_no = phone_no.replace('-', '')
             phone_no = phone_no.replace(' ', '')
             print(phone_no)
 
-        if len(id) > 0:
-            staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+        if len(_id) > 0:
+            staff = Staff.objects.get(id=_id)
         else:
             staff = Staff.objects.get(login_id=login_id)
         if before_pw != staff.login_pw:
@@ -228,6 +234,10 @@ def list_staff(request):
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
+
+        print(request.session.keys())
+        for key in request.session.keys():
+            print(key, ':', request.session[key])
 
         id = rqst['id']  # 암호화된 id
         login_id = rqst['login_id']  # 암호화된 id
@@ -296,7 +306,7 @@ def reg_customer(request):
         'staff_email': staff_email
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
-    print(response_customer.json())
+    print('status', response_customer.status_code, response_customer.json())
     if response_customer.status_code == 200:
         response_customer_json = response_customer.json()
         print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
@@ -309,9 +319,15 @@ def reg_customer(request):
             'msg': '반갑습니다.\n'
                    '\'이지체크\'예요~~\n'
                    '아이디 ' + response_customer_json['login_id'] + '\n'
-                   '비밀번호 ' + response_customer_json['login_pw']
+                   '비밀번호 ' + AES_DECRYPT_BASE64(response_customer_json['login_pw'])
         }
         r = requests.post('https://apis.aligo.in/send/', data=rData)
+        print(r.json())
+    else:
+        response_json = response_customer.json()
+        response = CRSHttpResponse(json.dumps(response_json, cls=DateTimeEncoder))
+        response.status_code = response_customer.status_code
+
     logSend('<<< operation/reg_customer')
     print('<<< operation/reg_customer')
     return CRSReqLibJsonResponse(response_customer)

@@ -122,12 +122,10 @@ class DateTimeEncoder(json.JSONEncoder):
 
 
 def exceptionError(funcName, code, e):
-    print(funcName, ' >>> ', code, ' ERROR: ', e)
-    logError(funcName, ' >>> ', code, ' ERROR: ', e)
-    logSend(funcName, ' >>> ', code, ' ERROR: ', e)
+    print('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
+    logSend('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
+    logError('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
     result = {'message': str(e)}
     response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    print(response)
     response.status_code = 503
-    print(response.content)
     return response
