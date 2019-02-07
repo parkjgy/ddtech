@@ -72,25 +72,25 @@ def logError(*args):
         return
 
 
-# Cross-Origin Read Allow Rule
-class CRSJsonResponse(JsonResponse):
-    def __init__(self, data, **kwargs):
-        super().__init__(data, **kwargs)
-        self["Access-Control-Allow-Origin"] = "*"
-        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
-        self["Access-Control-Max-Age"] = "1000"
-        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-
-
-class CRSHttpResponse(HttpResponse):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["Access-Control-Allow-Origin"] = "*"
-        self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
-        self["Access-Control-Max-Age"] = "1000"
-        self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-
-
+# # Cross-Origin Read Allow Rule
+# class CRSJsonResponse(JsonResponse):
+#     def __init__(self, data, **kwargs):
+#         super().__init__(data, **kwargs)
+#         self["Access-Control-Allow-Origin"] = "*"
+#         self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+#         self["Access-Control-Max-Age"] = "1000"
+#         self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+#
+#
+# class CRSHttpResponse(HttpResponse):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self["Access-Control-Allow-Origin"] = "*"
+#         self["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
+#         self["Access-Control-Max-Age"] = "1000"
+#         self["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+#
+#
 # Requests library response redirect
 class ReqLibJsonResponse(JsonResponse):
     def __init__(self, req_response, **kwargs):
@@ -98,11 +98,11 @@ class ReqLibJsonResponse(JsonResponse):
         self.status_code = req_response.status_code
 
 
-#  Requests library response redirect ( For Web.API )
-class CRSReqLibJsonResponse(CRSJsonResponse):
-    def __init__(self, req_response, **kwargs):
-        super().__init__(req_response.json(), **kwargs)
-        self.status_code = req_response.status_code
+# #  Requests library response redirect ( For Web.API )
+# class CRSReqLibJsonResponse(CRSJsonResponse):
+#     def __init__(self, req_response, **kwargs):
+#         super().__init__(req_response.json(), **kwargs)
+#         self.status_code = req_response.status_code
 
 
 def ValuesQuerySetToDict(vqs):
@@ -123,6 +123,26 @@ class DateTimeEncoder(json.JSONEncoder):
         return encoded_object
 
 
+def func_begin_log(app_name, func_name):
+    """
+    호출하는 쪽에서 필수 : import inspect
+    """
+    log = '>>> ' + app_name + '/' + func_name
+    print(log)
+    logSend(log)
+    return
+
+
+def func_end_log(app_name, func_name):
+    """
+    호출하는 쪽에서 필수 : import inspect
+    """
+    log = '<<< ' + app_name + '/' + func_name
+    print(log)
+    logSend(log)
+    return
+
+
 def exceptionError(funcName, code, e):
     print('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
     logSend('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
@@ -140,4 +160,3 @@ def hash_SHA256(password):
     return hashed.hexdigest()
 
 
-# def 
