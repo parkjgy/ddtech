@@ -1,6 +1,7 @@
 import json
 
 from django.http import JsonResponse, HttpResponse
+from config.common import DateTimeEncoder
 
 
 class StatusCollection(object):
@@ -8,13 +9,19 @@ class StatusCollection(object):
         self.status = status
         self.message = message
 
-    def to_json_response(self):
-        resp = JsonResponse({"message": self.message})
+    def to_json_response(self, _body=None):
+        response_body = {"message": self.message}
+        if _body is not None and isinstance(_body, dict):
+            response_body.update(_body)
+        resp = JsonResponse(response_body)
         resp.status_code = self.status
         return resp
 
-    def to_response(self):
-        resp = HttpResponse(json.dumps({"message": self.message}))
+    def to_response(self, _body=None):
+        response_body = {"message": self.message}
+        if _body is not None and isinstance(_body, dict):
+            response_body.update(_body)
+        resp = HttpResponse(json.dumps(response_body, cls=DateTimeEncoder))
         resp.status_code = self.status
         return resp
 
