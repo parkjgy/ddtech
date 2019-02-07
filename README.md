@@ -45,7 +45,7 @@ export DJANGO_SETTINGS_MODULE=config.settings.development
 
 ### 특정 App의 Models의 Table이 깨진 경우
 ```
-# DB Data Export 후..
+# DB Data Export
 python manage.py migrate --fake APPNAME zero
 python manage.py migrate APPNAME
 # DB Data Import 
