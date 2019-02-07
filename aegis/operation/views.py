@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from config.status_collection import *
 
 from config.error_handler import *
+from config.decorator import *
 # from config.settings.base import CUSTOMER_URL
 
 # Operation
@@ -90,6 +91,7 @@ def reg_staff(request):
         return exceptionError('reg_staff', '509', e)
 
 
+@cross_origin_read_allow
 def login(request):
     """
     로그인
@@ -106,9 +108,7 @@ def login(request):
             {'message':'id 나 비밀번호가 틀립니다.'}
     """
     try:
-        if request.method == 'OPTIONS':
-            return CRSHttpResponse()
-        elif request.method == 'POST':
+        if request.method == 'POST':
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
@@ -119,14 +119,14 @@ def login(request):
         staffs = Staff.objects.filter(login_id=id, login_pw=pw)
         if len(staffs) == 0:
             result = {'message': 'id 나 비밀번호가 틀립니다.'}
-            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
             response.status_code = 503
             return response
         staff = staffs[0]
 
         request.session['id'] = staff.id
         result = {}
-        response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
+        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
         response.status_code = 200
         return response
     except Exception as e:
