@@ -3,12 +3,11 @@ from datetime import timedelta
 
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
-import json
 from django.conf import settings
 
-from config.common import logSend, logError
-from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
-from config.common import CRSHttpResponse, CRSReqLibJsonResponse
+from config.common import logSend
+from config.common import DateTimeEncoder, exceptionError
+from config.common import CRSHttpResponse
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 
@@ -20,7 +19,7 @@ from .models import Work_Place
 from .models import Work
 from .models import Employee
 
-from .status_collection import *
+from config.status_collection import *
 
 
 @csrf_exempt
@@ -381,8 +380,6 @@ def login(request):
             'is_staff': 'YES', # 담당자?
             'is_manage': 'NO' # 관리자?
         }
-    	STATUS 401
-    		{'message':'id 나 비밀번호가 틀립니다.'}
     """
     try:
         if request.method == 'OPTIONS':

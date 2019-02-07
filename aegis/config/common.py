@@ -9,6 +9,8 @@ from datetime import timedelta
 
 from django.http import HttpResponse, JsonResponse
 
+from Crypto.Hash import SHA256
+
 # cron 과 충돌
 # from Crypto.Cipher import AES
 
@@ -129,3 +131,13 @@ def exceptionError(funcName, code, e):
     response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
     response.status_code = 503
     return response
+
+
+def hash_SHA256(password):
+    add_solt_pw = 'ezcheck_' + password + '_best!'
+    hashed = SHA256.new()
+    hashed.update(add_solt_pw.encode('utf-8'))
+    return hashed.hexdigest()
+
+
+# def 

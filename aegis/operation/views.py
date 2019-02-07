@@ -4,6 +4,7 @@ from django.conf import settings
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 from config.common import CRSHttpResponse, CRSReqLibJsonResponse
+from config.common import hash_SHA256
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 
@@ -15,7 +16,9 @@ import requests
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from config.status_collection import *
 
+from config.error_handler import *
 # from config.settings.base import CUSTOMER_URL
 
 # Operation
@@ -24,26 +27,30 @@ from django.views.decorators.csrf import csrf_exempt
 # 2) request.method == REAL_METHOD:
 # 실제 사용할 데이터를 전송
 
-
 # try: 다음에 code = 'argument incorrect'
+
+import inspect
 
 
 def reg_staff(request):
     """
     운영 직원 등록
+    - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
     http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282
     POST
         {
             'pNo': '010-1111-2222',
             'id': 'thinking',
-            'pw': 'a~~~8282'
+            'pw': 'a~~~8282'    # SHA256
         }
     response
         STATUS 200
-        STATUS 503
-            {'message': '전화번호나 id 가 중복됩니다.'}
     """
     try:
+        func_name = inspect.stack()[0][3]
+        app_name = __package__.rsplit('.', 1)[-1]
+        print('>>> ' + app_name + '/' + func_name)
+        print(get_traceback_str())
         if request.method == 'OPTIONS':
             return CRSHttpResponse()
         elif request.method == 'POST':
@@ -52,22 +59,27 @@ def reg_staff(request):
             rqst = request.GET
 
         phone_no = rqst['pNo']
-        id = rqst['id']
+        id_ = rqst['id']
         pw = rqst['pw']
 
         phone_no = phone_no.replace('-', '')
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
 
-        staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
         if len(staffs) > 0:
-            result = {'message': '전화번호나 id 가 중복됩니다.'}
-            response = CRSHttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            response.status_code = 503
-            return response
+            # r = {'link':'http://'}
+            #
+            # print('...')
+            # response = REG_611_DUPLICATE_PHONE_NO_OR_ID
+            # print(response.status, response.message)
+            # r = response.to_json_response()
+            # print(r.status, r.message)
+            # return r
+            return REG_611_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
         new_staff = Staff(
             login_id=id,
-            login_pw=pw,
+            login_pw=hash_SHA256(pw),
             pNo=phone_no
         )
         new_staff.save()
