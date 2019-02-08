@@ -40,7 +40,7 @@ def reg_staff(request):
     """
     운영 직원 등록
     - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-    http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282
+    http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
     POST
         {
             'pNo': '010-1111-2222',
@@ -56,6 +56,18 @@ def reg_staff(request):
     else:
         rqst = request.GET
 
+    if rqst.get('master') is None:
+        worker_id = request.session['id']
+        worker = Staff.objects.get(id=worker_id)
+    else:
+        try:
+            if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+        except Exception as e:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+
     phone_no = rqst['pNo']
     id_ = rqst['id']
     pw = rqst['pw']
@@ -67,7 +79,7 @@ def reg_staff(request):
     staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
     if len(staffs) > 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'link':'http://0.0.0.0:8000/apiView'})
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
         login_id=id,
         login_pw=hash_SHA256(pw),
@@ -100,15 +112,13 @@ def login(request):
     else:
         rqst = request.GET
 
-    id = rqst['id']
+    id_ = rqst['id']
     pw = rqst['pw']
 
-    staffs = Staff.objects.filter(login_id=id, login_pw=pw)
+    staffs = Staff.objects.filter(login_id=id_, login_pw=pw)
     if len(staffs) == 0:
-        result = {'message': 'id 나 비밀번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
 
     request.session['id'] = staff.id
@@ -120,9 +130,11 @@ def login(request):
 def update_staff(request):
     """
     직원 정보를 수정한다.
+    - 로그인 되어 있지 않으면 수정할 수 없다.
+    - 로그인 한 사람과 대상 직원이 다르면 암호 초기화만 가능하다.
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/update_staff?login_id=thinking&before_pw=a~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/update_staff?login_id=thinking&before_pw=happy_day82&login_pw=&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
         {
             'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
@@ -138,13 +150,9 @@ def update_staff(request):
         }
     response
         STATUS 200
-        STATUS 503
-            {
-                'err': {
-                    'code': 301,
-                    'message': '기존 비밀번호가 틀립니다.'
-                }
-            }
+            {'message': '비밀번호가 초기화 되었습니다.'}
+        STATUS 531
+            {'message': '비밀번호가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -152,8 +160,9 @@ def update_staff(request):
     else:
         rqst = request.GET
 
-    print(request.session['id'])
-    _id = request.session['id']  # 암호화된 id
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
     login_id = rqst['login_id']  # id 로 사용
     before_pw = rqst['before_pw']  # 기존 비밀번호
     login_pw = rqst['login_pw']  # 변경하려는 비밀번호
@@ -164,25 +173,25 @@ def update_staff(request):
     phone_type = rqst['phone_type']  # 전화 종류    10:iPhone, 20: Android
     push_token = rqst['push_token']  # token
     email = rqst['email']  # id@ddtechi.co
-    print(_id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+    print(login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
 
     if len(phone_no) > 0:
         phone_no = phone_no.replace('-', '')
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
 
-    if len(_id) > 0:
-        staff = Staff.objects.get(id=_id)
-    else:
-        staff = Staff.objects.get(login_id=login_id)
-    if before_pw != staff.login_pw:
-        result = {'message': '비밀번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+    staff = Staff.objects.get(login_id=login_id)
+    if worker.id != staff.id:
+        staff.login_pw = hash_SHA256('happy_day82')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
+
+    if hash_SHA256(before_pw) != staff.login_pw:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_pw) > 0:
-        staff.login_pw = login_pw
+        staff.login_pw = hash_SHA256(login_pw)
     if len(name) > 0:
         staff.name = name
     if len(position) > 0:
@@ -208,11 +217,7 @@ def list_staff(request):
     직원 list 요청
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/list_staff?id=&login_id=thinking&login_pw=A~~~8282
-    GET
-        id = 요청직원 id
-        login_id = 요청직원 id
-        login_pw = 요청직원 pw
+    http://0.0.0.0:8000/operation/list_staff
     response
         STATUS 200
             {'staffs': [{'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...'}, ...]}
@@ -225,22 +230,27 @@ def list_staff(request):
     else:
         rqst = request.GET
 
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    # if rqst.get('master') is None:
+
     print(request.session.keys())
     for key in request.session.keys():
         print(key, ':', request.session[key])
 
-    id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # 암호화된 id
-    login_pw = rqst['login_pw']  # 암호화된 id
-    print(id, login_id)
-
-    if len(id) > 0:
-        staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    else:
-        staff = Staff.objects.get(login_id=login_id)
-    if login_pw != staff.login_pw:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_523_HAVE_NO_PERMISSION_TO_VIEW.to_json_response()
+    # id = rqst['id']  # 암호화된 id
+    # login_id = rqst['login_id']  # 암호화된 id
+    # login_pw = rqst['login_pw']  # 암호화된 id
+    # print(id, login_id)
+    #
+    # if len(id) > 0:
+    #     staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+    # else:
+    #     staff = Staff.objects.get(login_id=login_id)
+    # if login_pw != staff.login_pw:
+    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     return REG_523_HAVE_NO_PERMISSION_TO_VIEW.to_json_response()
 
     staffs = Staff.objects.filter().values('name', 'position', 'department', 'pNo', 'pType', 'email')
     arr_staff = [staff for staff in staffs]
