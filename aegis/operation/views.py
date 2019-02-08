@@ -120,8 +120,34 @@ def login(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
+    staff.is_login = True
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
 
     request.session['id'] = staff.id
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def logout(request):
+    """
+    로그아웃
+    http://0.0.0.0:8000/operation/logout
+    POST
+    response
+        STATUS 200
+            {'message':'이미 로그아웃되었습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.session['id'] is None:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['id'])
+    staff.is_login = False
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
+    request.session['id'] = None
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 

@@ -33,8 +33,9 @@ from config.status_collection import *
 def reg_customer(request):
     """
     고객사를 등록한다.
-    간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
+    - 고객사 담당자와 관리자는 처음에는 같은 사람이다.
+    - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
+    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
@@ -100,7 +101,10 @@ def reg_customer(request):
                 name=customer_name,
                 staff_name=staff_name,
                 staff_pNo=staff_pNo,
-                staff_email=staff_email
+                staff_email=staff_email,
+                manager_name=staff_name,
+                manager_pNo=staff_pNo,
+                manager_email=staff_email
             )
             customer.save()
             staff = Staff(
@@ -110,10 +114,13 @@ def reg_customer(request):
                 co_id=customer.id,
                 co_name=customer.name,
                 pNo=staff_pNo,
-                email=staff_email
+                email=staff_email,
+                is_site_owner=True,
+                is_manager=True
             )
             staff.save()
             customer.staff_id = str(staff.id)
+            customer.manager_id = str(staff.id)
             customer.save()
     print('staff id = ', staff.id)
     print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
@@ -122,10 +129,6 @@ def reg_customer(request):
               'login_pw': staff.login_pw} # 암호를 초기화(happy_day!!!)하기 때문에 필요없다.
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
-    # response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    # response.status_code = 200
-    # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    # return response
 
 
 @cross_origin_read_allow
@@ -136,14 +139,9 @@ def update_customer(request):
     	    id(staff_id, manager_id, ...) 가 잘못되면 ERROR 처리한다.
     	    담당자와 관리자가 바뀌면 로그아웃 한다.
     	    담당자나 관리자가 바뀔 때는 다른 값은 바꿀 수 없다.
-    http://0.0.0.0:8000/customer/update_customer?login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/update_customer?
     POST
     	{
-    		'id': '암호화된 id',           # 처리 직원 id 아래 login_id 와 둘 중의 하나는 필수
-    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
-    		'login_pw': '비밀번호',     # 필수
-    		'co_id': '암호화된 소속사 id', # 로그인 할 때 받음
-
             'staff_id': '서버에서 받은 암호화된 id', # 담당자를 변경할 때만 (담당자, 관리자만 변경 가능)
 
             'manager_id': '서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
@@ -162,8 +160,7 @@ def update_customer(request):
     	}
     response
     	STATUS 200
-    	STATUS 503
-    		{'message': '비밀번호가 틀립니다.'}
+    	STATUS 522
     		{'message': '담당자나 관리자만 변경 가능합니다.'}
     		{'message': '관리자만 변경 가능합니다.'}
     """
@@ -176,17 +173,11 @@ def update_customer(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    # id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # id 로 사용
-    login_pw = rqst['login_pw']  # 비밀번호
-    co_id = rqst['co_id']  # 소속사 id
-    print(id, login_id, login_pw, co_id)
-
     customer = Customer.objects.get(id=worker.contractor_id)
     print(customer.name)
     print(str(customer.staff_id))
     print(str(customer.manager_id))
-    if customer.staff_id != id and customer.manager_id != id:
+    if customer.staff_id != worker.id and customer.manager_id != worker.id:
         print('담당자나 관리자만 변경 가능합니다.')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
@@ -363,22 +354,23 @@ def reg_staff(request):
 def login(request):
     """
     로그인
-    http://0.0.0.0:8000/customer/login?id=temp_1&pw=A~~~8282
+    - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
+    http://0.0.0.0:8000/customer/login?login_id=Oxy4_-OXrHQMmjcOQF9mgw&login_pw=UxEQIRaJ8Sdg3vzHi3pr7Q
     POST
         {
-            'login_id': 'thinking', # 암호화된
-            'login_pw': 'a~~~8282'  # 암호화된
+            'login_id': 'Oxy4_-OXrHQMmjcOQF9mgw', # 암호화된 temp_1
+            'login_pw': 'UxEQIRaJ8Sdg3vzHi3pr7Q'  # 암호화된 A~~~8282
         }
     response
         STATUS 200
-        STATUS 401
-            {'message':'id 나 비밀번호가 틀립니다.'}
+        STATUS 530
+            {'message':'아이디나 비밀번호가 틀립니다.'}
     	STATUS 200
         {
             'co_id': '암호화된 소속회사 id',
             'br_id': '암호화된 사업자 등록 정보 id',
-            'is_staff': 'YES', # 담당자?
-            'is_manage': 'NO' # 관리자?
+            'is_site_owner': True,      # 담당자?
+            'is_manager': False         # 관리자?
         }
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -390,22 +382,50 @@ def login(request):
     cipher_login_id = rqst['login_id']
     cipher_login_pw = rqst['login_pw']
 
-    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
+    id_ = AES_DECRYPT_BASE64(cipher_login_id)
+    pw_ = AES_DECRYPT_BASE64(cipher_login_pw)
+    print(id_, pw_)
+    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=AES_DECRYPT_BASE64(cipher_login_pw))
     if len(staffs) == 0:
-        result = {'message': 'id 나 비밀번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
+    staff.dt_login = datetime.datetime.now()
+    staff.is_login = True
+    staff.save()
+    request.session['id'] = staff.id
+
     customer = Customer.objects.get(id=staff.co_id)
     result = {
         'co_id': AES_ENCRYPT_BASE64(str(staff.co_id)),   # 소속회사 id
         'br_id': AES_ENCRYPT_BASE64(str(customer.business_reg_id)),  # 사업자 등록 정보
-        'is_staff': 'YES' if staff.id == customer.staff_id else 'NO',    # 담당자?
-        'is_manage': 'YES' if staff.id == customer.manager_id else 'NO'    # 관리자?
+        'is_site_owner': staff.is_site_owner,   # 담당자인가?
+        'is_manager': staff.is_manager          # 관리자인가?
     }
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def logout(request):
+    """
+    로그아웃
+    http://0.0.0.0:8000/customer/logout
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.session['id'] is None:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['id'])
+    staff.is_login = False
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
+    request.session['id'] = None
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -512,6 +532,7 @@ def list_staff(request):
     else:
         rqst = request.GET
 
+    print(request.session['id'])
     id = rqst['id']  # 암호화된 id
     login_id = rqst['login_id']  # 암호화된 id
     login_pw = rqst['login_pw']  # 암호화된 id
