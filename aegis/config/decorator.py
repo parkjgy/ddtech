@@ -44,7 +44,7 @@ def token_to_session(function):
     """
     def wrap(request, *args, **kwargs):
         if 'HTTP_TOKEN' in request.META:
-            print(request.META['HTTP_TOKEN'])
+            # print(request.META['HTTP_TOKEN'])
             request.session = SessionStore(session_key=request.META['HTTP_TOKEN'])
         response = function(request, *args, **kwargs)
         return response
