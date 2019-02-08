@@ -1,5 +1,7 @@
 from django.http import HttpResponse
 
+from django.views.decorators.csrf import csrf_exempt
+
 
 def cross_origin_read_allow(function):
     def wrap(request, *args, **kwargs):
@@ -16,4 +18,4 @@ def cross_origin_read_allow(function):
 
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
-    return wrap
+    return csrf_exempt(wrap)
