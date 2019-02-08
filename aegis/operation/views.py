@@ -81,7 +81,7 @@ def reg_staff(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
-        login_id=id,
+        login_id=id_,
         login_pw=hash_SHA256(pw),
         pNo=phone_no
     )
@@ -115,7 +115,7 @@ def login(request):
     id_ = rqst['id']
     pw = rqst['pw']
 
-    staffs = Staff.objects.filter(login_id=id_, login_pw=pw)
+    staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
@@ -285,6 +285,9 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
     re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
@@ -296,7 +299,8 @@ def reg_customer(request):
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
-        'staff_email': staff_email
+        'staff_email': staff_email,
+        'worker_id': worker.id
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
     print('status', response_customer.status_code, response_customer.json())
@@ -314,7 +318,7 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 ' + AES_DECRYPT_BASE64(response_customer_json['login_pw'])
+               '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
 
@@ -343,6 +347,9 @@ def list_customer(request):
     else:
         rqst = request.GET
 
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
     staff_pNo = rqst['staff_pNo']
@@ -352,7 +359,8 @@ def list_customer(request):
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
-        'staff_email': staff_email
+        'staff_email': staff_email,
+        'worker_id': worker.id
     }
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer', params=json_data)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
