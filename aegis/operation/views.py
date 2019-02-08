@@ -1,4 +1,6 @@
 import json
+import datetime
+from datetime import timedelta
 from django.conf import settings
 
 from config.common import logSend, logError
@@ -125,6 +127,7 @@ def login(request):
     staff.save()
 
     request.session['id'] = staff.id
+    request.session.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
