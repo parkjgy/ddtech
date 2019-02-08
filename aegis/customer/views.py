@@ -60,7 +60,7 @@ def reg_customer(request):
         STATUS 543
             {'message', '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -309,7 +309,6 @@ def reg_staff(request):
     http://0.0.0.0:8000/customer/reg_staff?name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
     POST
         {
-            'staff_id':'암호화된 id',
             'name': '홍길동',
             'login_id': 'hong_geal_dong',
             'position': '부장',	   # option 비워서 보내도 됨
@@ -340,7 +339,6 @@ def reg_staff(request):
 
     phone_no = phone_no.replace('-', '')
     phone_no = phone_no.replace(' ', '')
-    print(phone_no)
 
     staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
     if len(staffs) > 0:
@@ -349,16 +347,15 @@ def reg_staff(request):
     new_staff = Staff(
         name=name,
         login_id=login_id,
-        login_pw=AES_ENCRYPT_BASE64('HappyDay365!!'),
-        co_id=staff.co_id,
-        co_name=staff.co_name,
+        login_pw=hash_SHA256('HappyDay365!!!'),
+        co_id=worker.co_id,
+        co_name=worker.co_name,
         position=position,
         department=department,
         pNo=phone_no,
         email=email
     )
     new_staff.save()
-    print('--- save')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -369,6 +366,8 @@ def login(request):
     로그인
     - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
     http://0.0.0.0:8000/customer/login?login_id=Oxy4_-OXrHQMmjcOQF9mgw&login_pw=UxEQIRaJ8Sdg3vzHi3pr7Q
+    http://0.0.0.0:8000/customer/login?login_id=ZhjnaxcmMf7nU4wbjb7OUg&login_pw=zprS0cPL2JZcCkA4e5XYNg
+    kms / HappyDay365!!!
     POST
         {
             'login_id': 'Oxy4_-OXrHQMmjcOQF9mgw', # 암호화된 temp_1
@@ -398,7 +397,7 @@ def login(request):
     id_ = AES_DECRYPT_BASE64(cipher_login_id)
     pw_ = AES_DECRYPT_BASE64(cipher_login_pw)
     print(id_, pw_)
-    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=AES_DECRYPT_BASE64(cipher_login_pw))
+    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=hash_SHA256(AES_DECRYPT_BASE64(cipher_login_pw)))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
@@ -449,7 +448,7 @@ def update_staff(request):
     - 자신의 정보만 수정할 수 있다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_staff?before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/update_staff?before_pw=A~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
     	{
     		'before_pw': '기존 비밀번호',     # 필수
@@ -497,7 +496,7 @@ def update_staff(request):
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_pw) > 0:
-        worker.login_pw = login_pw
+        worker.login_pw = hash_SHA256(login_pw)
     if len(name) > 0:
         worker.name = name
     if len(position) > 0:
