@@ -11,6 +11,7 @@ def cross_origin_read_allow(function):
         response["Access-Control-Allow-Methods"] = "GET, OPTIONS, POST"
         response["Access-Control-Max-Age"] = "1000"
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+        response["Access-Control-Allow-Credentials"] = True
         return response
 
     wrap.__doc__ = function.__doc__
