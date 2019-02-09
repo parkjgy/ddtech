@@ -5,3 +5,11 @@ __pycache__
 ddtenv
 #/static
 .DS_Store
+/aegis/.idea/
+.idea
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+aegis/aegis.iml
+aegis_server.iml
