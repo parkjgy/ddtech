@@ -77,8 +77,8 @@ push_token
 """
 class Staff(models.Model):
     name = models.CharField(max_length=127) # 이름
-    login_id = models.CharField(max_length=55, default='') # 로그인 id
-    login_pw = models.CharField(max_length=55, default='happy_day!!!') # 로그인 pw
+    login_id = models.CharField(max_length=128, default='') # 로그인 id
+    login_pw = models.CharField(max_length=128, default='happy_day!!!') # 로그인 pw
     co_id = models.IntegerField(default=-1) # 소속사 id
     co_name = models.CharField(max_length=127, default='unknown') # 소속사 이름
     position = models.CharField(max_length=127, default='') # 직위, 직책
@@ -91,6 +91,8 @@ class Staff(models.Model):
     dt_app_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_login = models.BooleanField(default=False) # 로그인이 되었는가?
     dt_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    is_site_owner = models.BooleanField(default=False) # 고객사 담당자 인가?
+    is_manager = models.BooleanField(default=False) # 고객사 관리자 인가?
 """
 사업장
 id

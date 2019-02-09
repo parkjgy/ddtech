@@ -33,8 +33,10 @@ from config.status_collection import *
 def reg_customer(request):
     """
     고객사를 등록한다.
-    간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
+    - 고객사 담당자와 관리자는 처음에는 같은 사람이다.
+    - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
+    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
+    * 서버 to 서버 통신 work_id 필요
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
@@ -53,16 +55,25 @@ def reg_customer(request):
                 'login_id': staff.login_id,
                 'login_pw': staff.login_pw
             }
-        STATUS 601
-            {'message': '등록되지 않았습니다.'}
-        STATUS 602
+        STATUS 541
+            {'message':'등록되어있지 않은 업체입니다.'}
+        STATUS 543
             {'message', '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    if rqst.get('work_id') is None:
+        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+        worker_id = rqst.get('work_id')
+        logSend('   from operation server : op staff id ' + worker_id)
+        print('   from operation server : op staff id ' + worker_id)
+    else:
+        worker_id = request.session['id']
+        worker = Staff.objects.get(id=worker_id)
 
     re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
@@ -74,71 +85,63 @@ def reg_customer(request):
     if re_sms.upper() == 'YES':
         # 문자 재전송할 파견기업 확인
         if len(customers) == 0:
-            result = {'message': '등록되지 않았습니다.'}
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            response.status_code = 601
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return response
+            return REG_541_NOT_REGISTERED.to_json_response({'message':'등록되어있지 않은 업체입니다.'})
         customer = customers[0]
         staff = Staff.objects.get(id=customer.staff_id)
+        staff.login_pw = hash_SHA256('happy_day!!!')
+        staff.save()
     else:
         # 파견기업 등록
         if len(customers) > 0:
             # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
-            result = {'message': '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            response.status_code = 602
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return response
+            return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
         else:
             customer = Customer(
                 name=customer_name,
                 staff_name=staff_name,
                 staff_pNo=staff_pNo,
-                staff_email=staff_email
+                staff_email=staff_email,
+                manager_name=staff_name,
+                manager_pNo=staff_pNo,
+                manager_email=staff_email
             )
             customer.save()
             staff = Staff(
                 name=staff_name,
                 login_id='temp_' + str(customer.id),
-                login_pw=AES_ENCRYPT_BASE64('happy_day!!!'),
+                login_pw=hash_SHA256('happy_day!!!'),
                 co_id=customer.id,
                 co_name=customer.name,
                 pNo=staff_pNo,
-                email=staff_email
+                email=staff_email,
+                is_site_owner=True,
+                is_manager=True
             )
             staff.save()
             customer.staff_id = str(staff.id)
+            customer.manager_id = str(staff.id)
             customer.save()
     print('staff id = ', staff.id)
     print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
     result = {'message': '정상처리되었습니다.',
               'login_id': staff.login_id,
-              'login_pw': staff.login_pw}
+              'login_pw': staff.login_pw} # 암호를 초기화(happy_day!!!)하기 때문에 필요없다.
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
-    # response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    # response.status_code = 200
-    # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    # return response
 
 
 @cross_origin_read_allow
 def update_customer(request):
     """
     고객사(협력사, 발주사) 정보 변경 (담당자, 관리자만 가능)
+    - 담당자나 관리자가 바뀌면 바로 로그아웃된다.
+    - 담당자나 관리자가 바뀔 때는 다른 값은 바꿀 수 없다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    	    id(staff_id, manager_id, ...) 가 잘못되면 ERROR 처리한다.
-    	    담당자와 관리자가 바뀌면 로그아웃 한다.
-    	    담당자나 관리자가 바뀔 때는 다른 값은 바꿀 수 없다.
-    http://0.0.0.0:8000/customer/update_customer?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/update_customer?
     POST
     	{
-    		'id': '암호화된 id',           # 처리 직원 id 아래 login_id 와 둘 중의 하나는 필수
-    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
-    		'login_pw': '비밀번호',     # 필수
-    		'co_id': '암호화된 소속사 id', # 로그인 할 때 받음
-
             'staff_id': '서버에서 받은 암호화된 id', # 담당자를 변경할 때만 (담당자, 관리자만 변경 가능)
 
             'manager_id': '서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
@@ -157,8 +160,7 @@ def update_customer(request):
     	}
     response
     	STATUS 200
-    	STATUS 503
-    		{'message': '비밀번호가 틀립니다.'}
+    	STATUS 522
     		{'message': '담당자나 관리자만 변경 가능합니다.'}
     		{'message': '관리자만 변경 가능합니다.'}
     """
@@ -168,19 +170,18 @@ def update_customer(request):
     else:
         rqst = request.GET
 
-    id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # id 로 사용
-    login_pw = rqst['login_pw']  # 비밀번호
-    co_id = rqst['co_id']  # 소속사 id
-    print(id, login_id, login_pw, co_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
 
-    customer = Customer.objects.get(id=AES_DECRYPT_BASE64(co_id))
-    # id 가 틀리면 위에서 에러가 나야한다.
-    id = AES_DECRYPT_BASE64(id)
-    print(id)
-    print(str(customer.staff_id.id))
+    customer = Customer.objects.get(id=worker.contractor_id)
+    print(customer.name)
+    print(str(customer.staff_id))
     print(str(customer.manager_id))
-    if customer.staff_id != id and customer.manager_id != id:
+    if not(worker.is_site_owner or worker.is_manager):
+        print('담당자나 관리자만 변경 가능합니다.')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
+    if customer.staff_id != worker.id and customer.manager_id != worker.id:
         print('담당자나 관리자만 변경 가능합니다.')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
@@ -193,12 +194,16 @@ def update_customer(request):
         customer.staff_pNo = staff.pNo
         customer.staff_email = staff.email
         customer.save()
+        staff.is_site_owner = True
+        staff.save()
+        worker.is_site_owner = False
+        worker.save()
         result = {'message': '담당자가 바뀌었습니다.\n로그아웃하십시요.'}
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_200_SUCCESS.to_json_response(result)
     manager_id = rqst['manager_id']
     if len(manager_id) > 0:
-        if customer.manager_id != id:
+        if worker.is_manager :
             manager_id = AES_DECRYPT_BASE64(manager_id)
             manager = Staff.objects.get(id=manager_id)
             customer.manager_id = manager.id
@@ -206,6 +211,10 @@ def update_customer(request):
             customer.manager_pNo = manager.pNo
             customer.manager_email = manager.email
             customer.save()
+            manager.is_manager = True
+            manager.save()
+            worker.is_manager = False
+            worker.save()
             result = {'message': '관리자가 바뀌었습니다.\n로그아웃하십시요.'}
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_200_SUCCESS.to_json_response(result)
@@ -251,6 +260,7 @@ def update_customer(request):
 def list_customer(request):
     """
     고객사 리스트를 요청한다.
+    * 서버 to 서버 통신 work_id 필요
     http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
         customer_name=대덕기공
@@ -265,6 +275,15 @@ def list_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    if rqst.get('work_id') is None:
+        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+        worker_id = rqst.get('work_id')
+        logSend('   from operation server : op staff id ' + worker_id)
+        print('   from operation server : op staff id ' + worker_id)
+    else:
+        worker_id = request.session['id']
+        worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
@@ -287,10 +306,9 @@ def reg_staff(request):
     - 차후 전화번호 변경 부분과 중복 처리가 필요함.
     - 초기 pw 는 HappyDay365!!
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_staff?staff_id=qgf6YHf1z2Fx80DR8o/Lvg&name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
+    http://0.0.0.0:8000/customer/reg_staff?name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
     POST
         {
-            'staff_id':'암호화된 id',
             'name': '홍길동',
             'login_id': 'hong_geal_dong',
             'position': '부장',	   # option 비워서 보내도 됨
@@ -300,6 +318,8 @@ def reg_staff(request):
         }
     response
         STATUS 200
+        STATUS 542
+            {'message':'전화번호나 아이디가 중복되었습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -307,8 +327,8 @@ def reg_staff(request):
     else:
         rqst = request.GET
 
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    staff = Staff.objects.get(id=staff_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
 
     name = rqst['name']
     login_id = rqst['login_id']
@@ -319,27 +339,23 @@ def reg_staff(request):
 
     phone_no = phone_no.replace('-', '')
     phone_no = phone_no.replace(' ', '')
-    print(phone_no)
 
     staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
     if len(staffs) > 0:
-        result = {'message': '전화번호나 id 가 중복됩니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
         name=name,
         login_id=login_id,
-        login_pw=AES_ENCRYPT_BASE64('HappyDay365!!'),
-        co_id=staff.co_id,
-        co_name=staff.co_name,
+        login_pw=hash_SHA256('HappyDay365!!!'),
+        co_id=worker.co_id,
+        co_name=worker.co_name,
         position=position,
         department=department,
         pNo=phone_no,
         email=email
     )
     new_staff.save()
-    print('--- save')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -348,22 +364,25 @@ def reg_staff(request):
 def login(request):
     """
     로그인
-    http://0.0.0.0:8000/customer/login?id=temp_1&pw=A~~~8282
+    - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
+    http://0.0.0.0:8000/customer/login?login_id=Oxy4_-OXrHQMmjcOQF9mgw&login_pw=UxEQIRaJ8Sdg3vzHi3pr7Q
+    http://0.0.0.0:8000/customer/login?login_id=ZhjnaxcmMf7nU4wbjb7OUg&login_pw=zprS0cPL2JZcCkA4e5XYNg
+    kms / HappyDay365!!!
     POST
         {
-            'login_id': 'thinking', # 암호화된
-            'login_pw': 'a~~~8282'  # 암호화된
+            'login_id': 'Oxy4_-OXrHQMmjcOQF9mgw', # 암호화된 temp_1
+            'login_pw': 'UxEQIRaJ8Sdg3vzHi3pr7Q'  # 암호화된 A~~~8282
         }
     response
         STATUS 200
-        STATUS 401
-            {'message':'id 나 비밀번호가 틀립니다.'}
+        STATUS 530
+            {'message':'아이디나 비밀번호가 틀립니다.'}
     	STATUS 200
         {
             'co_id': '암호화된 소속회사 id',
             'br_id': '암호화된 사업자 등록 정보 id',
-            'is_staff': 'YES', # 담당자?
-            'is_manage': 'NO' # 관리자?
+            'is_site_owner': True,      # 담당자?
+            'is_manager': False         # 관리자?
         }
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -375,35 +394,63 @@ def login(request):
     cipher_login_id = rqst['login_id']
     cipher_login_pw = rqst['login_pw']
 
-    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
+    id_ = AES_DECRYPT_BASE64(cipher_login_id)
+    pw_ = AES_DECRYPT_BASE64(cipher_login_pw)
+    print(id_, pw_)
+    staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=hash_SHA256(AES_DECRYPT_BASE64(cipher_login_pw)))
     if len(staffs) == 0:
-        result = {'message': 'id 나 비밀번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
+    staff.dt_login = datetime.datetime.now()
+    staff.is_login = True
+    staff.save()
+    request.session['id'] = staff.id
+    request.session.save()
+
     customer = Customer.objects.get(id=staff.co_id)
     result = {
         'co_id': AES_ENCRYPT_BASE64(str(staff.co_id)),   # 소속회사 id
         'br_id': AES_ENCRYPT_BASE64(str(customer.business_reg_id)),  # 사업자 등록 정보
-        'is_staff': 'YES' if staff.id == customer.staff_id else 'NO',    # 담당자?
-        'is_manage': 'YES' if staff.id == customer.manager_id else 'NO'    # 관리자?
+        'is_site_owner': staff.is_site_owner,   # 담당자인가?
+        'is_manager': staff.is_manager          # 관리자인가?
     }
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
+def logout(request):
+    """
+    로그아웃
+    http://0.0.0.0:8000/customer/logout
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.session['id'] is None:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['id'])
+    staff.is_login = False
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
+    request.session['id'] = None
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
 def update_staff(request):
     """
     직원 정보를 수정한다.
+    - 자신의 정보만 수정할 수 있다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_staff?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/update_staff?before_pw=A~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
     	{
-    		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
-    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
     		'before_pw': '기존 비밀번호',     # 필수
     		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
     		'name': '이름',
@@ -425,8 +472,9 @@ def update_staff(request):
     else:
         rqst = request.GET
 
-    id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # id 로 사용
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
     before_pw = rqst['before_pw']  # 기존 비밀번호
     login_pw = rqst['login_pw']  # 변경하려는 비밀번호
     name = rqst['name']  # 이름
@@ -436,40 +484,34 @@ def update_staff(request):
     phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
     push_token = rqst['push_token']  # token
     email = rqst['email']  # id@ddtechi.co
-    print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+    print(before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
 
     if len(phone_no) > 0:
         phone_no = phone_no.replace('-', '')
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
 
-    if len(id) > 0:
-        staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    else:
-        staff = Staff.objects.get(login_id=login_id)
-    if before_pw != staff.login_pw:
-        result = {'message': '비밀번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+    if hash_SHA256(before_pw) != worker.login_pw:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_pw) > 0:
-        staff.login_pw = login_pw
+        worker.login_pw = hash_SHA256(login_pw)
     if len(name) > 0:
-        staff.name = name
+        worker.name = name
     if len(position) > 0:
-        staff.position = position
+        worker.position = position
     if len(department) > 0:
-        staff.department = department
+        worker.department = department
     if len(phone_no) > 0:
-        staff.pNo = phone_no
+        worker.pNo = phone_no
     if len(phone_type) > 0:
-        staff.pType = phone_type
+        worker.pType = phone_type
     if len(push_token) > 0:
-        staff.push_token = push_token
+        worker.push_token = push_token
     if len(email) > 0:
-        staff.email = email
-    staff.save()
+        worker.email = email
+    worker.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -478,18 +520,14 @@ def update_staff(request):
 def list_staff(request):
     """
     직원 list 요청
+    - 차후 검색어 추가
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_staff?id=&login_id=temp_1&login_pw=A~~~8282
+    http://0.0.0.0:8000/customer/list_staff
     GET
-        id = 요청직원 id
-        login_id = 요청직원 id
-        login_pw = 요청직원 pw
     response
         STATUS 200
             {'staffs':[{'id', 'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...', 'login_id'}, ...]}
-        STATUS 503
-            {'message': '직원이 아닙니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -497,22 +535,10 @@ def list_staff(request):
     else:
         rqst = request.GET
 
-    id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # 암호화된 id
-    login_pw = rqst['login_pw']  # 암호화된 id
-    print(id, login_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
 
-    if len(id) > 0:
-        staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    else:
-        staff = Staff.objects.get(login_id=login_id)
-    if login_pw != staff.login_pw:
-        result = {'message': '직원이 아닙니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
-
-    staffs = Staff.objects.filter().values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
+    staffs = Staff.objects.filter(co_id=worker.contractor_id).values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
     arr_staff = [staff for staff in staffs]
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs':arr_staff})
@@ -523,7 +549,7 @@ def reg_work_place(request):
     """
     사업장 등록
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=임창베르디안&manager_id=1&order_id=1
+    http://0.0.0.0:8000/customer/reg_work_place?name=임창베르디안&manager_id=1&order_id=1
     POST
         {
             'staff_id':'암호화된 id', # 업무처리하는 직원
@@ -540,8 +566,8 @@ def reg_work_place(request):
     else:
         rqst = request.GET
 
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    staff = Staff.objects.get(id=staff_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
 
     manager_id = rqst['manager_id']
     manager = Staff.objects.get(id=manager_id)
@@ -571,10 +597,9 @@ def update_work_place(request):
     사업장 수정
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_id=10&name=&manager_id=&order_id=
+    http://0.0.0.0:8000/customer/update_work_place?work_place_id=10&name=&manager_id=&order_id=
     POST
         {
-            'staff_id':'암호화된 id', # 업무처리하는 직원
             'work_place_id':'사업장 id' # 수정할 사업장 id
             'name':'(주)효성 용연 1공장',	# 이름
             'manager_id':'8382',	# 관리자 id
@@ -591,15 +616,16 @@ def update_work_place(request):
     else:
         rqst = request.GET
 
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    staff = Staff.objects.get(id=staff_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    # staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+    # staff = Staff.objects.get(id=staff_id)
     work_place_id = rqst['work_place_id']
     work_place = Work_Place.objects.get(id=work_place_id)
-    if work_place.contractor_id != staff.co_id:
-        result = {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
-        response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+    if work_place.contractor_id != worker.co_id:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     manager_id = rqst['manager_id']
     if len(manager_id) > 0:
@@ -654,13 +680,14 @@ def list_work_place(request):
     else:
         rqst = request.GET
 
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    staff = Staff.objects.get(id=staff_id)
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
     name = rqst['name']
     manager_name = rqst['manager_name']
     manager_phone = rqst['manager_phone']
     order_name = rqst['order_name']
-    work_places = Work_Place.objects.filter(contractor_id=staff.co_id,
+    work_places = Work_Place.objects.filter(contractor_id=worker.co_id,
                                             name__contains=name,
                                             manager_name__contains=manager_name,
                                             manager_pNo__contains=manager_phone,
@@ -687,16 +714,15 @@ def reg_work(request):
     """
     사업장 업무 등록
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
+    http://0.0.0.0:8000/customer/reg_work?name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
     POST
         {
-            'op_staff_id':'암호화된 id',   # 업무처리하는 직원
             'name':'포장',
             'work_place_id':1,        # 사업장 id
             'type':'업무 형태',
             'dt_begin':'2019-01-28',  # 업무 시작 날짜
             'dt_end':'2019-02-28',    # 업무 종료 날짜
-            'staff_id':2,
+            'staff_id':2,             # 현장 소장
         }
     response
         STATUS 200
@@ -708,8 +734,8 @@ def reg_work(request):
     else:
         rqst = request.GET
 
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
 
     work_place_id = rqst['work_place_id']
     work_place = Work_Place.objects.get(id=work_place_id)
@@ -771,8 +797,6 @@ def update_work(request):
     else:
         rqst = request.GET
 
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
 
@@ -831,7 +855,7 @@ def list_work(request):
     사업장 업무 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    http://0.0.0.0:8000/customer/list_work?name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
         op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
         work_place_name = 사업장 이름
@@ -872,8 +896,8 @@ def list_work(request):
     else:
         rqst = request.GET
 
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id)
+    work_id = rqst['work_id']
+    work = Work.objects.get(id=work_id)
 
     name = rqst['name']
     work_place_name = rqst['work_place_name']
@@ -924,10 +948,9 @@ def reg_employee(request):
     """
     근로자 등록 - 업무별 전화번호 목록을 넣는 방식
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_employee?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
+    http://0.0.0.0:8000/customer/reg_employee?work_id=1&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
     POST
         {
-            'op_staff_id':'암호화된 id',   # 업무처리하는 직원
             'work_id':'사업장 업무 id',
             'phone_numbers':   # 업무에 배치할 근로자들의 전화번호
             [
@@ -943,9 +966,6 @@ def reg_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
 
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
@@ -980,10 +1000,9 @@ def update_employee(request):
      - 업무 예정기간보다 일찍 업무가 끌났을 때
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
+    http://0.0.0.0:8000/customer/update_work?work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
     POST
         {
-            'op_staff_id':'암호화된 id',  # 업무처리하는 직원
             'work_id':10,               # 업무 id
             'employee_id':5,            # 필수
             'dt_end':2019-02-01,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
@@ -1002,9 +1021,6 @@ def update_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id) # 등록여부를 확인하여 등록되지 않았으면 에러를 발생시킴
 
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
@@ -1044,9 +1060,8 @@ def list_employee(request):
       - option 에 따라 근로자 근태 내역 추가
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_employee?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&is_working_history=YES
+    http://0.0.0.0:8000/customer/list_employee?work_id=1&is_working_history=YES
     GET
-        op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
         work_id         = 업무 id
         is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
     response
@@ -1076,9 +1091,6 @@ def list_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    Staff.objects.get(id=op_staff_id)
 
     work_id = rqst['work_id']
     Work.objects.get(id=work_id) # 업무 에러 확인용
@@ -1117,8 +1129,6 @@ def report(request):
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/report?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&manager_id=&work_place_id=&work_id=
     GET
-        op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
-
         manager_id      = 관리자 id    # 없으면 전체
         work_place_id   = 사업장 id    # 없으면 전체
         work_id         = 업무 id     # 없으면 전체
@@ -1162,8 +1172,8 @@ def report(request):
     else:
         rqst = request.GET
 
-    op_staff_id = AES_DECRYPT_BASE64(rqst['op_staff_id'])
-    op_staff = Staff.objects.get(id=op_staff_id)
+    work_id = rqst['work_id']
+    Work.objects.get(id=work_id) # 업무 에러 확인용
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용

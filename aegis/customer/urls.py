@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'customer/list_customer$', views.list_customer, name='list_customer'),
     url(r'customer/reg_staff$', views.reg_staff, name='reg_staff'),
     url(r'customer/login$', views.login, name='login'),
+    url(r'customer/logout$', views.logout, name='logout'),
     url(r'customer/update_staff$', views.update_staff, name='update_staff'),
     url(r'customer/list_staff$', views.list_staff, name='list_staff'),
     url(r'customer/reg_work_place$', views.reg_work_place, name='reg_work_place'),
