@@ -53,7 +53,10 @@ urlpatterns = [
     url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
     url(r'employee/work_list$', views.work_list, name='work_list'),
     url(r'employee/exchange_info$', views.exchange_info, name='exchange_info'),
-    url(r'employee/beacon_verify$', views.beacon_verify, name='beacon_verify')
+    url(r'employee/beacon_verify$', views.beacon_verify, name='beacon_verify'),
+
+    url(r'employee/analysys$', views.analysys, name='analysys'),
+    url(r'employee/beacon_status$', views.beacon_status, name='beacon_status'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -1,14 +1,19 @@
 # log import
 import json
 import random
+import inspect
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import func_begin_log, func_end_log
+
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
+from config.status_collection import *
+from config.decorator import cross_origin_read_allow
 
 from .models import Beacon
 from .models import Beacon_History
@@ -260,6 +265,7 @@ def pass_verify(request):
             dt_verify=dt
         )
         new_pass.save()
+        before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
         response = HttpResponse()
         response.status_code = 200
         logSend('<<< /employee/pass_verify')
@@ -707,3 +713,102 @@ def exchange_info(request):
         return response
     except Exception as e:
         return exceptionError('exchange_info', '503', e)
+
+
+@cross_origin_read_allow
+def analysys(request):
+    """
+    출입, 출퇴근 결과 분석
+    http://0.0.0.0:8000/employee/analysys
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+            { 'you': '넌 이거야?'}
+        STATUS 401
+            {'message':'id 나 비밀번호가 틀립니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    arr_employee = [employee for employee in employees]
+    del employees
+
+    passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
+    dic_passer = {}
+    for passer in passers:
+        employee_id = passer['employee_id']
+        passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
+        dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
+    print(dic_passer, '\n', dic_passer[1]['name'])
+    del passers
+    del dic_employee
+
+    passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
+    for key in dic_passer:
+        dic_passer[key]['pass'] = []
+        for pass_ in passes:
+            if key == pass_['passer_id']:
+                new_pass = {'is_in': 'IN' if pass_['is_in'] == 1 else 'OUT',
+                            'dt_reg': pass_['dt_reg'],
+                            'dt_verify': pass_['dt_verify']}
+                dic_passer[key]['pass'].append(new_pass)
+
+    for pass_ in passes:
+        if not(pass_['dt_verify'] is None):
+            print(pass_['id'], pass_['passer_id'], pass_['is_in'], pass_['dt_reg'], pass_['dt_verify'])
+            passer_id = pass_['passer_id']
+            dt = pass_['dt_verify']
+            before_pass = Pass.objects.filter(passer_id=passer_id,
+                                              dt_reg__lt=dt).values('id',
+                                                                    'passer_id',
+                                                                    'is_in',
+                                                                    'dt_reg',
+                                                                    'dt_verify').order_by('-dt_reg').first()#[:5].last()
+
+            print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
+                  before_pass['dt_verify'])
+            # for pass__ in before_pass:
+            #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(dic_passer)
+
+
+@cross_origin_read_allow
+def beacon_status(request):
+    """
+    beacon 상태
+    http://0.0.0.0:8000/employee/beacon_status
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+            { 'you': '넌 이거야?'}
+        STATUS 401
+            {'message':'id 나 비밀번호가 틀립니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
+    arr_beacon = [beacon for beacon in beacons]
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
