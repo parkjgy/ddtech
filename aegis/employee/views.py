@@ -864,6 +864,7 @@ def rebuild_pass_history(request):
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history})
 
+
 @cross_origin_read_allow
 def beacon_status(request):
     """
@@ -882,6 +883,20 @@ def beacon_status(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    passers = Passer.objects.filter().values('id')
+    dic_passer = {}
+    for passer in passers:
+        dic_passer[passer['id']] = 'null'
+    passes = Pass.objects.filter()
+    for pass_ in passes:
+        print(pass_.passer_id)
+        try:
+            if dic_passer[pass_.passer_id] is None:
+                print('   >', pass_.id, pass_.is_in)
+        except Exception as e:
+            print('   >', str(e), pass_.id, pass_.is_in)
+            pass_.delete()
 
     beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
     arr_beacon = [beacon for beacon in beacons]
