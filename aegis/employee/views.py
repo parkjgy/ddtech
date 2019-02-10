@@ -831,7 +831,7 @@ def rebuild_pass_history(request):
             dt = pass_['dt_verify']
             before_pass = Pass.objects\
                 .filter(passer_id=passer_id,
-                        dt_reg__lt=dt)\
+                        dt_reg__lt=dt + datetime.timedelta(minutes=1))\
                 .values('id',
                         'passer_id',
                         'is_in',
