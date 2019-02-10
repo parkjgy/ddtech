@@ -839,6 +839,7 @@ def rebuild_pass_history(request):
                 .order_by('-dt_reg')\
                 .first()#[:5].last()
 
+            print('   ', before_pass['id'])
             print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
                   before_pass['dt_verify'])
             # for pass__ in before_pass:
