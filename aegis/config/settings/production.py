@@ -24,3 +24,4 @@ DATABASES = {
 }
 
 CUSTOMER_URL = 'http://dev.ddtechi.com:8055/customer/'
+SMS_SENDER_PN = '07042503340'

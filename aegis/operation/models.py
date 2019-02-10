@@ -14,15 +14,19 @@ push_token
 이메일
 """
 class Staff(models.Model):
-    login_id = models.CharField(max_length=55) # 로그인 id
-    login_pw = models.CharField(max_length=55) # 로그인 pw
-    name = models.CharField(max_length=127, default='unknown') # 이름
-    position = models.CharField(max_length=33, default='') # 직위, 직책
-    department = models.CharField(max_length=33, default='') # 소속, 부서
-    pNo = models.CharField(max_length = 19) # 전화번호
+    login_id = models.CharField(max_length=128) # 로그인 id
+    login_pw = models.CharField(max_length=128) # 로그인 pw
+    name = models.CharField(max_length=128, default='unknown') # 이름
+    position = models.CharField(max_length=64, default='') # 직위, 직책
+    department = models.CharField(max_length=64, default='') # 소속, 부서
+    pNo = models.CharField(max_length = 24) # 전화번호
     pType = models.IntegerField(default=0) # 전화 종류 # 10:iPhone, 20:Android
-    push_token = models.CharField(max_length = 255, default='unknown')
-    email = models.CharField(max_length = 320, default='unknown') # 이메일
+    push_token = models.CharField(max_length = 256, default='unknown')
+    email = models.CharField(max_length = 512, default='unknown') # 이메일
+    is_app_login = models.BooleanField(default=False) # 앱에서 로그인이 되었는가?
+    dt_app_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    is_login = models.BooleanField(default=False) # 로그인이 되었는가?
+    dt_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
 
 """
 사업장

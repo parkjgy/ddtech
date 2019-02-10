@@ -13,7 +13,7 @@ APK_FILE_PATH = os.path.join(settings.MEDIA_ROOT, "APK")
 
 
 def csrf_failure(request, reason=""):
-    return JsonResponse({"msg": "CSRF TOKEN ACCESS FAILURE"}, status=403)
+    return JsonResponse({"message": "CSRF TOKEN ACCESS FAILURE"}, status=403)
 
 
 # def api_view(request):
@@ -188,7 +188,7 @@ def api_apk_upload(request):
     from shutil import copyfile
     if request.method == "POST":
         if not bool(request.FILES):
-            return JsonResponse({"msg": "파일이 없습니다.", "status": -1})
+            return JsonResponse({"message": "파일이 없습니다.", "status": -1})
 
         p_version = request.POST['version']
         p_type = request.POST['type']
@@ -211,6 +211,6 @@ def api_apk_upload(request):
 
         with open(os.path.join(APK_FILE_PATH, desc_file_name), 'w') as desc_file:
             desc_file.write(json.dumps({"version": p_version, "apkLink": settings.MEDIA_URL + "APK/" + apk_file_name}))
-        return JsonResponse({"msg": "업로드 되었습니다.", "status": 0})
+        return JsonResponse({"message": "업로드 되었습니다.", "status": 0})
     else:
-        return JsonResponse({"msg": "", "status": -1})
+        return JsonResponse({"message": "", "status": -1})

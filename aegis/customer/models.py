@@ -77,16 +77,22 @@ push_token
 """
 class Staff(models.Model):
     name = models.CharField(max_length=127) # 이름
-    login_id = models.CharField(max_length=55, default='') # 로그인 id
-    login_pw = models.CharField(max_length=55, default='happy_day!!!') # 로그인 pw
-    co_id = models.IntegerField() # 소속사 id
-    co_name = models.CharField(max_length=127) # 소속사 이름
+    login_id = models.CharField(max_length=128, default='') # 로그인 id
+    login_pw = models.CharField(max_length=128, default='happy_day!!!') # 로그인 pw
+    co_id = models.IntegerField(default=-1) # 소속사 id
+    co_name = models.CharField(max_length=127, default='unknown') # 소속사 이름
     position = models.CharField(max_length=127, default='') # 직위, 직책
     department = models.CharField(max_length=127, default='') # 소속, 부서
-    pNo = models.CharField(max_length = 19) # 전화번호
+    pNo = models.CharField(max_length = 19, default='') # 전화번호
     pType = models.IntegerField(default=0) # 전화 종류 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='unknown')
-    email = models.CharField(max_length = 320) # 이메일
+    email = models.CharField(max_length = 320, default='') # 이메일
+    is_app_login = models.BooleanField(default=False) # 현장소장용 앱에서 로그인이 되었는가?
+    dt_app_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    is_login = models.BooleanField(default=False) # 로그인이 되었는가?
+    dt_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    is_site_owner = models.BooleanField(default=False) # 고객사 담당자 인가?
+    is_manager = models.BooleanField(default=False) # 고객사 관리자 인가?
 """
 사업장
 id
@@ -108,7 +114,7 @@ class Work_Place(models.Model):
     manager_pNo = models.CharField(max_length = 19) # 관리자 전화번호
     manager_email = models.CharField(max_length = 320) # 관리자 이메일
     order_id = models.IntegerField() # 발주사 id
-    order_name = models.IntegerField() # 발주사 상호
+    order_name = models.CharField(max_length=127) # 발주사 상호
 """
 업무 (사업장별)
 id
@@ -147,9 +153,15 @@ id
 push_token
 """
 class Employee(models.Model):
+    is_active = models.BooleanField(default=False) # 0 (NO) 근무 중이 아님, 1 (YES) 근무 중
+
+    dt_begin = models.DateTimeField(auto_now_add = True) # 근무 시작일
+    dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
+
+    work_id = models.IntegerField() # 업무 id
+    work_name = models.CharField(max_length=127) # 업무 이름
+    work_place_name = models.CharField(max_length=127) # 사업장 이름
+
     employee_id = models.IntegerField(default=-1) # 근로자 id
-    employee_name = models.CharField(max_length=127, default='unknown') # 담당자 이름
+    name = models.CharField(max_length=127, default='unknown') # 근로자 이름
     pNo = models.CharField(max_length = 19)
-    pType = models.IntegerField(default=0)
-    # 10:iPhone, 20:Android
-    push_token = models.CharField(max_length = 255, default='unknown')
