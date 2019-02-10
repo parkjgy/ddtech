@@ -727,9 +727,40 @@ def analysys(request):
         }
     response
         STATUS 200
-            { 'you': '넌 이거야?'}
-        STATUS 401
-            {'message':'id 나 비밀번호가 틀립니다.'}
+            {
+              "1": {
+                "name": "박종기",
+                "pNo": "01025573555",
+                "pass": [
+                  {
+                    "is_in": "IN",
+                    "dt_reg": "2019-02-06T08:25:00Z",
+                    "dt_verify": null
+                  },
+                  {
+                    "is_in": "IN",
+                    "dt_reg": null,
+                    "dt_verify": "2019-02-06T08:27:00Z"
+                  },
+                  {
+                    "is_in": "OUT",
+                    "dt_reg": "2019-02-07T17:33:00Z",
+                    "dt_verify": null
+                  },
+                  {
+                    "is_in": "OUT",
+                    "dt_reg": null,
+                    "dt_verify": "2019-02-07T17:35:00Z"
+                  }
+                ]
+              },
+              "2": {
+                "name": "곽명석",
+                "pNo": "01054214410",
+                "pass": []
+              },
+              "message": "정상적으로 처리되었습니다."
+            }
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -741,9 +772,10 @@ def analysys(request):
     dic_employee = {}
     for employee in employees:
         dic_employee[employee['id']] = employee['name']
-    arr_employee = [employee for employee in employees]
     del employees
-
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
     passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
     dic_passer = {}
     for passer in passers:
@@ -753,7 +785,9 @@ def analysys(request):
     print(dic_passer, '\n', dic_passer[1]['name'])
     del passers
     del dic_employee
-
+    """
+    dic_passer = {1:{"name":"박종기", "pNo":"01025573555"}, 2:{"name:"곽명석", "pNo": "01054214410"}}
+    """
     passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
     for key in dic_passer:
         dic_passer[key]['pass'] = []
@@ -763,27 +797,72 @@ def analysys(request):
                             'dt_reg': pass_['dt_reg'],
                             'dt_verify': pass_['dt_verify']}
                 dic_passer[key]['pass'].append(new_pass)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(dic_passer)
 
+
+@cross_origin_read_allow
+def rebuild_pass_history(request):
+    """
+    출퇴근 기록 다시 만들기
+    http://0.0.0.0:8000/employee/rebuild_pass_history
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
+
+    arr_pass_history = []
     for pass_ in passes:
         if not(pass_['dt_verify'] is None):
             print(pass_['id'], pass_['passer_id'], pass_['is_in'], pass_['dt_reg'], pass_['dt_verify'])
             passer_id = pass_['passer_id']
             dt = pass_['dt_verify']
-            before_pass = Pass.objects.filter(passer_id=passer_id,
-                                              dt_reg__lt=dt).values('id',
-                                                                    'passer_id',
-                                                                    'is_in',
-                                                                    'dt_reg',
-                                                                    'dt_verify').order_by('-dt_reg').first()#[:5].last()
+            before_pass = Pass.objects\
+                .filter(passer_id=passer_id,
+                        dt_reg__lt=dt)\
+                .values('id',
+                        'passer_id',
+                        'is_in',
+                        'dt_reg',
+                        'dt_verify')\
+                .order_by('-dt_reg')\
+                .first()#[:5].last()
 
             print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
                   before_pass['dt_verify'])
             # for pass__ in before_pass:
             #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
-
+            if pass_['is_in'] : # in 이면
+                pass_history = {'passer_id': passer_id,
+                                'action': 100,
+                                'dt_in': before_pass['dt_reg'],
+                                'dt_in_verify': pass_['dt_verify'],
+                                }
+                arr_pass_history.append(pass_history)
+            else:
+                if len(arr_pass_history) == 0:
+                    pass_history = {'passer_id': passer_id, 'action': 0}
+                else:
+                    pass_history = arr_pass_history[-1]
+                pass_history['action'] += 10
+                pass_history['dt_out'] = before_pass['dt_reg']
+                pass_history['dt_out_verify'] = pass_['dt_verify']
+                pass_history['minor'] = 0
+                arr_pass_history.append(pass_history)
+            print(arr_pass_history)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(dic_passer)
-
+    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history})
 
 @cross_origin_read_allow
 def beacon_status(request):
@@ -797,9 +876,6 @@ def beacon_status(request):
         }
     response
         STATUS 200
-            { 'you': '넌 이거야?'}
-        STATUS 401
-            {'message':'id 나 비밀번호가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
