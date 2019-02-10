@@ -5,6 +5,8 @@
 ```
 # /etc/systemd/system/aegis-dev.service
 [Unit]
+After=network-online.target
+Wants=network-online.target
 Description=Aegis Server Dev
 
 [Service]
