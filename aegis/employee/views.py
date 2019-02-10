@@ -860,7 +860,7 @@ def rebuild_pass_history(request):
                 pass_history['dt_out_verify'] = pass_['dt_verify']
                 pass_history['minor'] = 0
                 arr_pass_history.append(pass_history)
-            print(arr_pass_history)
+            print('------ ', len(arr_pass_history))
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history})
 
