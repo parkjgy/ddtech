@@ -5,6 +5,8 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
+from .error_handler import exception_handler
+
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 
@@ -18,7 +20,11 @@ def cross_origin_read_allow(function):
         if request.method == 'OPTIONS':
             response = HttpResponse()
         else:
-            response = function(request, *args, **kwargs)
+            try:
+                response = function(request, *args, **kwargs)
+            except Exception as e:
+                # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
+                response = exception_handler(request, e)
 
         if 'HTTP_ORIGIN' in request.META:
             response["Access-Control-Allow-Origin"] = request.META['HTTP_ORIGIN']
@@ -42,6 +48,7 @@ def token_to_session(function):
     """
     Web Client 에서 Header 에서 받은 Token 값으로 Session 으로 치환하는 Decorator
     """
+
     def wrap(request, *args, **kwargs):
         if 'HTTP_TOKEN' in request.META:
             # print(request.META['HTTP_TOKEN'])
