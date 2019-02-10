@@ -822,6 +822,7 @@ def rebuild_pass_history(request):
 
     passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
 
+    error_passes = []
     arr_pass_history = []
     for pass_ in passes:
         if not(pass_['dt_verify'] is None):
@@ -840,8 +841,8 @@ def rebuild_pass_history(request):
                 .first()#[:5].last()
 
             if before_pass is None:
+                error_passes.append(pass_)
                 continue
-            print('   ', before_pass['id'])
             print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
                   before_pass['dt_verify'])
             # for pass__ in before_pass:
@@ -864,8 +865,9 @@ def rebuild_pass_history(request):
                 pass_history['minor'] = 0
                 arr_pass_history.append(pass_history)
             print('------ ', len(arr_pass_history))
+    print(error_passes)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history})
+    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'error_passes': error_passes})
 
 
 @cross_origin_read_allow
