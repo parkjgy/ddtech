@@ -177,6 +177,7 @@ def updateEnv(request):
     """
     updateEnv (update environment) 환경 값을 변경한다.
     - 값이 없으면 처리하지 않는다.
+    - 안드로이드 업그레이드 설정 dt_android_upgrade=2019-02-12 15:00:00 이후에 업그레이드를 받게 한다.
     http://0.0.0.0:8000/operation/updateEnv?mi=qgf6YHf1z2Fx80DR8o_Lvg&dt_android_upgrade=2019-02-11 05:00:00&timeCheckServer=05:00:00
     POST
         {
