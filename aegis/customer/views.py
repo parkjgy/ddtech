@@ -69,8 +69,8 @@ def reg_customer(request):
     if rqst.get('worker_id') is not None:
         # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
         worker_id = rqst.get('worker_id')
-        logSend('   from operation server : op staff id ' + worker_id)
-        print('   from operation server : op staff id ' + worker_id)
+        logSend('   from operation server : op staff id ', worker_id)
+        print('   from operation server : op staff id ', worker_id)
     else:
         worker_id = request.session['id']
         worker = Staff.objects.get(id=worker_id)
