@@ -28,6 +28,7 @@ import datetime
 from django.conf import settings
 
 
+@cross_origin_read_allow
 def check_version(request):
     """
     앱 버전을 확인한다.
@@ -43,48 +44,34 @@ def check_version(request):
             'url': 'http://...' # itune, google play update
         }
     """
-    try:
-        logSend('--- /employee/check_version')
-        print("employee : check version")
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-            version = rqst['v']
-        else:
-            version = request.GET['v']
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
 
-        items = version.split('.')
-        if (items[4]) == 0:
-            result = {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            print(response)
-            response.status_code = 503
-            print(response.content)
-            return response
-        ver_dt = items[4]
-        dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
-                                                '%Y-%m-%d %H:%M:%S')
-        response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
-        print('status', response_operation.status_code, response_operation.json())
-        dt_android_upgrade = response_operation.json()['dt_update']
-        print(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
+    version = rqst['v']
 
-        dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
-        print(dt_version)
-        if dt_version < dt_check:
-            print('dt_version < dt_check')
-            result = {'message': '업그레이드가 필요합니다.',
-                      'url': 'http://...'  # itune, google play update
-                      }
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            print(response)
-            response.status_code = 503
-        else:
-            result = {}
-            response = HttpResponse()
-        print(response.content)
-        return response
-    except Exception as e:
-        return exceptionError('check_version', '503', e)
+    items = version.split('.')
+    if (items[4]) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
+    ver_dt = items[4]
+    dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
+                                            '%Y-%m-%d %H:%M:%S')
+    response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
+    print('status', response_operation.status_code, response_operation.json())
+    dt_android_upgrade = response_operation.json()['dt_update']
+    print(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
+
+    dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
+    print(dt_version)
+    if dt_version < dt_check:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
+                  })
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
 
 @csrf_exempt
