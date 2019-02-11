@@ -12,6 +12,7 @@ from config.common import hash_SHA256
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow
 
+from .models import Environment
 from .models import Staff
 from .models import Work_Place
 from .models import Beacon
@@ -35,6 +36,193 @@ from config.error_handler import *
 # try: 다음에 code = 'argument incorrect'
 
 import inspect
+
+
+# @cross_origin_read_allow
+class Env(object):
+    def __init__(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        self.is_running = False
+        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
+        str_dt_reload = strToday + '05:00:00'
+        self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
+        self.start()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def __del__(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        logSend(' <<< Environment class delete')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def loadEnvironment(self) :
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if len(Environment.objects.filter()) == 0:
+            newEnv = Environment(
+                dt=datetime.datetime.now() - timedelta(days=1),
+                manager_id=0,
+                dt_android_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
+                timeCheckServer="05:00:00",
+            )
+            newEnv.save()
+        note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
+        print(note)
+        logSend(note)
+        envs = Environment.objects.filter(dt__lt = self.dt_reload).order_by('-id')
+        note = '>>> no of environment = ' + str(len(envs))
+        print(note)
+        logSend(note)
+        """
+        i = 0
+        for envCell in envs :
+            logSend('   >>> ' + `i` + ' = ' + `envCell.id` + '' + `envCell.dt.strftime("%Y-%m-%d %H:%M:%S")`)
+            i = i + 1
+        """
+        self.curEnv = envs[0]
+        print('   Env: ')
+        print('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
+        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
+        str_dt_reload = strToday + self.curEnv.timeCheckServer
+        self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
+        if self.dt_reload < datetime.datetime.now() :  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
+            self.dt_reload = self.dt_reload + timedelta(days = 1)
+            logSend('       next load time + 24 hours')
+        print('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return
+
+    def start(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if not self.is_running:
+            self.loadEnvironment()
+            self.is_running = True
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def stop(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        self.is_running = False
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def current(self) :
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if self.dt_reload < datetime.datetime.now() :
+            self.is_running = False
+            self.loadEnvironment()
+            self.is_running = True
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return self.curEnv
+
+    def self(self) :
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return self
+
+
+env = Env()
+
+
+@cross_origin_read_allow
+@csrf_exempt
+def testEnv(request) :
+    """
+    http://0.0.0.0:8000/operation/testEnv
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    global env
+    result = {}
+    result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
+    result['timeCheckServer'] = env.current().timeCheckServer
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@csrf_exempt
+def currentEnv(request):
+    """
+    현재 환경 값을 요청한다.
+    currentEnv (current environment) 현재 환경 값을 요청한다.
+    http://0.0.0.0:8000/operation/currentEnv
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    envirenments = Environment.objects.filter().values('dt', 'timeCheckServer').order_by('-dt')
+    arrEnv = [env for env in envirenments]
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'env_list':arrEnv})
+
+
+@cross_origin_read_allow
+@csrf_exempt
+def updateEnv(request):
+    """
+    updateEnv (update environment) 환경 값을 변경한다.
+    - 값이 없으면 처리하지 않는다.
+    http://0.0.0.0:8000/operation/updateEnv?mi=qgf6YHf1z2Fx80DR8o_Lvg&dt_android_upgrade=2019-02-11 05:00:00&timeCheckServer=05:00:00
+    POST
+        {
+            'mi':'qgf6YHf1z2Fx80DR8o_Lvg',
+            'dt_android_upgrade': '2019-02-11 05:00:00',
+            'timeCheckServer': '05:00:00'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    global env
+    manager_id = AES_DECRYPT_BASE64(rqst["mi"])
+    dt_android_upgrade = rqst["dt_android_upgrade"]
+    timeCheckServer = rqst["timeCheckServer"]
+
+
+    Staff.objects.get(id=manager_id)
+    is_update = False
+    if len(str(dt_android_upgrade)) > 0 :
+        is_update = True
+    else :
+        dt_android_upgrade = env.current().dt_android_upgrade
+
+    if len(timeCheckServer) > 0 :
+        is_update = True
+    else :
+        timeCheckServer = env.current().timeCheckServer
+
+    if is_update :
+        env.stop()
+        newEnv = Environment(
+            dt = datetime.datetime.now(),
+            manager_id = manager_id,
+            dt_android_upgrade = datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
+            timeCheckServer = timeCheckServer,
+            )
+        newEnv.save()
+        env.start()
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -592,3 +780,28 @@ def detail_beacon(request):
     response = HttpResponse()
     response.status_code = 200
     return response
+
+
+@cross_origin_read_allow
+def dt_android_upgrade(request):
+    """
+    android 를 upgrade 할 날짜 시간 (
+    http://0.0.0.0:8000/operation/dt_android_upgrade
+    POST
+    response
+        STATUS 200
+            { 'dt_update':'2019-02-11' }
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # worker_id = request.session['id']
+    # worker = Staff.objects.get(id=worker_id)
+
+    global env
+    result = {'dt_update':env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)

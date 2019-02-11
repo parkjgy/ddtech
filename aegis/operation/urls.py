@@ -6,6 +6,10 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
+    url(r'operation/testEnv$', views.testEnv, name='testEnv'),
+    url(r'operation/currentEnv$', views.currentEnv, name='currentEnv'),
+    url(r'operation/updateEnv$', views.updateEnv, name='updateEnv'),
+
     url(r'operation/reg_staff$', views.reg_staff, name='reg_staff'),
     url(r'operation/login$', views.login, name='login'),
     url(r'operation/logout$', views.logout, name='logout'),
@@ -19,6 +23,7 @@ urlpatterns = [
     url(r'operation/list_work_place$', views.list_work_place, name='list_work_place'),
     url(r'operation/list_beacon$', views.list_beacon, name='list_beacon'),
     url(r'operation/detail_beacon$', views.detail_beacon, name='detail_beacon'),
+    url(r'operation/dt_android_upgrade', views.dt_android_upgrade, name='dt_android_upgrade'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

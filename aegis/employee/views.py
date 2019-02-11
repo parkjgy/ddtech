@@ -63,7 +63,12 @@ def check_version(request):
         ver_dt = items[4]
         dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
                                                 '%Y-%m-%d %H:%M:%S')
-        dt_check = datetime.datetime.strptime('2019-01-12 00:00:00', '%Y-%m-%d %H:%M:%S')
+        response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
+        print('status', response_operation.status_code, response_operation.json())
+        dt_android_upgrade = response_operation.json()['dt_update']
+        print(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
+
+        dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
         print(dt_version)
         if dt_version < dt_check:
             print('dt_version < dt_check')
@@ -925,3 +930,5 @@ def beacon_status(request):
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
+
+
