@@ -820,15 +820,15 @@ def rebuild_pass_history(request):
     else:
         rqst = request.GET
 
-    passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
+    passes = Pass.objects.filter()
 
     error_passes = []
     arr_pass_history = []
     for pass_ in passes:
-        if not(pass_['dt_verify'] is None):
-            print(pass_['id'], pass_['passer_id'], pass_['is_in'], pass_['dt_reg'], pass_['dt_verify'])
-            passer_id = pass_['passer_id']
-            dt = pass_['dt_verify']
+        if pass_.dt_reg is None:
+            print(pass_.id, pass_.passer_id, pass_.is_in, pass_.dt_verify.strftime("%Y-%m-%d %H:%M:%S"))
+            passer_id = pass_.passer_id
+            dt = pass_.dt_verify
             before_pass = Pass.objects\
                 .filter(passer_id=passer_id,
                         dt_reg__lt=dt + datetime.timedelta(minutes=1))\
@@ -837,35 +837,39 @@ def rebuild_pass_history(request):
                         'is_in',
                         'dt_reg',
                         'dt_verify')\
-                .order_by('-dt_reg')\
-                .first()#[:5].last()
-
-            if before_pass is None:
-                error_passes.append(pass_)
+                .order_by('dt_reg')\
+                [:3]
+            if len(before_pass) == 0:
+                error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
                 continue
-            print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
-                  before_pass['dt_verify'])
-            # for pass__ in before_pass:
-            #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
-            if pass_['is_in'] : # in 이면
-                pass_history = {'passer_id': passer_id,
-                                'action': 100,
-                                'dt_in': before_pass['dt_reg'],
-                                'dt_in_verify': pass_['dt_verify'],
-                                }
-                arr_pass_history.append(pass_history)
-            else:
-                if len(arr_pass_history) == 0:
-                    pass_history = {'passer_id': passer_id, 'action': 0}
-                else:
-                    pass_history = arr_pass_history[-1]
-                pass_history['action'] += 10
-                pass_history['dt_out'] = before_pass['dt_reg']
-                pass_history['dt_out_verify'] = pass_['dt_verify']
-                pass_history['minor'] = 0
-                arr_pass_history.append(pass_history)
-            print('------ ', len(arr_pass_history))
-    print(error_passes)
+            print(' #', len(before_pass), ': ', before_pass)
+            arr_pass_history.append(before_pass[0])
+            # arr_pass_history.append({'before_pass':before_pass})
+                # .first()#[:5].last()
+    #
+    #         print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
+    #               before_pass['dt_verify'])
+    #         # for pass__ in before_pass:
+    #         #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
+    #         if pass_['is_in'] : # in 이면
+    #             pass_history = {'passer_id': passer_id,
+    #                             'action': 100,
+    #                             'dt_in': before_pass['dt_reg'],
+    #                             'dt_in_verify': pass_['dt_verify'],
+    #                             }
+    #             arr_pass_history.append(pass_history)
+    #         else:
+    #             if len(arr_pass_history) == 0:
+    #                 pass_history = {'passer_id': passer_id, 'action': 0}
+    #             else:
+    #                 pass_history = arr_pass_history[-1]
+    #             pass_history['action'] += 10
+    #             pass_history['dt_out'] = before_pass['dt_reg']
+    #             pass_history['dt_out_verify'] = pass_['dt_verify']
+    #             pass_history['minor'] = 0
+    #             arr_pass_history.append(pass_history)
+    #         print('------ ', len(arr_pass_history))
+    print(len(arr_pass_history), len(error_passes))
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'error_passes': error_passes})
 
@@ -889,19 +893,32 @@ def beacon_status(request):
     else:
         rqst = request.GET
 
-    passers = Passer.objects.filter().values('id')
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter()
     dic_passer = {}
     for passer in passers:
-        dic_passer[passer['id']] = 'null'
+        if passer.employee_id == -1:
+            print('\t\t', passer.employee_id)
+        elif passer.employee_id in dic_employee:
+            print(passer.employee_id, dic_employee[passer.employee_id])
+        else:
+            print(passer.employee_id)
+            passer.employee_id = -1
+            passer.save()
+        dic_passer[passer.id] = passer.pNo
+    print(dic_passer)
     passes = Pass.objects.filter()
     for pass_ in passes:
-        print(pass_.passer_id)
-        try:
-            if dic_passer[pass_.passer_id] is None:
-                print('   >', pass_.id, pass_.is_in)
-        except Exception as e:
-            print('   >', str(e), pass_.id, pass_.is_in)
-            pass_.delete()
+        if not (pass_.passer_id in dic_passer):
+            print('   none passer', pass_.id, pass_.is_in)
+            # pass_.delete()
 
     beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
     arr_beacon = [beacon for beacon in beacons]
