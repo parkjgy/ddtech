@@ -73,7 +73,7 @@ def reg_customer(request):
         print('   from operation server : op staff id ', worker_id)
     else:
         worker_id = request.session['id']
-        if len(worker_id) == 0:
+        if worker_id is None:
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
@@ -174,7 +174,7 @@ def update_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -289,7 +289,7 @@ def list_customer(request):
         print('   from operation server : op staff id ' + worker_id)
     else:
         worker_id = request.session['id']
-        if len(worker_id) == 0:
+        if worker_id is None:
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
@@ -337,7 +337,7 @@ def reg_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -485,7 +485,7 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -551,7 +551,7 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -585,7 +585,7 @@ def reg_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -638,7 +638,7 @@ def update_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -705,7 +705,7 @@ def list_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -762,7 +762,7 @@ def reg_work(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -828,7 +828,7 @@ def update_work(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -932,7 +932,7 @@ def list_work(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -1009,7 +1009,7 @@ def reg_employee(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -1070,7 +1070,7 @@ def update_employee(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -1146,7 +1146,7 @@ def list_employee(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -1232,7 +1232,7 @@ def report(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)

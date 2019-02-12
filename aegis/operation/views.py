@@ -178,10 +178,9 @@ def updateEnv(request):
     updateEnv (update environment) 환경 값을 변경한다.
     - 값이 없으면 처리하지 않는다.
     - 안드로이드 업그레이드 설정 dt_android_upgrade=2019-02-12 15:00:00 이후에 업그레이드를 받게 한다.
-    http://0.0.0.0:8000/operation/updateEnv?mi=qgf6YHf1z2Fx80DR8o_Lvg&dt_android_upgrade=2019-02-11 05:00:00&timeCheckServer=05:00:00
+    http://0.0.0.0:8000/operation/updateEnv?dt_android_upgrade=2019-02-11 05:00:00&timeCheckServer=05:00:00
     POST
         {
-            'mi':'qgf6YHf1z2Fx80DR8o_Lvg',
             'dt_android_upgrade': '2019-02-11 05:00:00',
             'timeCheckServer': '05:00:00'
         }
@@ -195,33 +194,47 @@ def updateEnv(request):
         rqst = request.GET
 
     global env
-    manager_id = AES_DECRYPT_BASE64(rqst["mi"])
-    dt_android_upgrade = rqst["dt_android_upgrade"]
-    timeCheckServer = rqst["timeCheckServer"]
 
+    worker_id = request.session['id']
+    if worker_id is None:
+        print('403')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
+    if not(worker.id in [1, 2]):
+        print('524')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
-    Staff.objects.get(id=manager_id)
     is_update = False
-    if len(str(dt_android_upgrade)) > 0 :
-        is_update = True
-    else :
-        dt_android_upgrade = env.current().dt_android_upgrade
 
-    if len(timeCheckServer) > 0 :
-        is_update = True
+    dt_android_upgrade = rqst['dt_android_upgrade']
+    print(' 1 ', dt_android_upgrade)
+    print(' 2 ', env.current().dt_android_upgrade)
+    if len(dt_android_upgrade) == 0 :
+        dt_android_upgrade = env.current().dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S")
     else :
+        is_update = True
+    print(' 3 ', dt_android_upgrade)
+
+    timeCheckServer = rqst['timeCheckServer']
+    if len(timeCheckServer) == 0 :
         timeCheckServer = env.current().timeCheckServer
+    else :
+        is_update = True
 
+    print(dt_android_upgrade)
     if is_update :
         env.stop()
         newEnv = Environment(
             dt = datetime.datetime.now(),
-            manager_id = manager_id,
+            manager_id = worker.id,
             dt_android_upgrade = datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
             timeCheckServer = timeCheckServer,
             )
         newEnv.save()
         env.start()
+    print('200')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -249,7 +262,7 @@ def reg_staff(request):
 
     if rqst.get('master') is None:
         worker_id = request.session['id']
-        if len(worker_id) == 0:
+        if worker_id is None:
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
@@ -296,7 +309,6 @@ def login(request):
         }
     response
         STATUS 200
-            { 'you': '넌 이거야?'}
         STATUS 401
             {'message':'id 나 비밀번호가 틀립니다.'}
     """
@@ -308,9 +320,13 @@ def login(request):
 
     id_ = rqst['id']
     pw = rqst['pw']
+    # staff = Staff.objects.get(id=1)
+    # staff.login_pw = hash_SHA256(pw)
+    # staff.save()
 
     staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw))
     if len(staffs) == 0:
+        print('530')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
@@ -320,6 +336,7 @@ def login(request):
 
     request.session['id'] = staff.id
     request.session.save()
+    print('200')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -384,10 +401,9 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
-
     worker = Staff.objects.get(id=worker_id)
 
     login_id = rqst['login_id']  # id 로 사용
@@ -463,7 +479,7 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -520,7 +536,7 @@ def reg_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
@@ -585,7 +601,7 @@ def list_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if len(worker_id) == 0:
+    if worker_id is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
