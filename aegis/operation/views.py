@@ -164,11 +164,22 @@ def currentEnv(request):
     else:
         rqst = request.GET
 
-    envirenments = Environment.objects.filter().values('dt', 'timeCheckServer').order_by('-dt')
-    arrEnv = [env for env in envirenments]
-
+    envirenments = Environment.objects.filter().order_by('-dt')
+    array_env = []
+    for envirenment in envirenments:
+        new_env = {
+            'dt': envirenment.dt.strftime("%Y-%m-%d %H:%M:%S"),
+            'dt_android_upgrade':envirenment.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+            'timeCheckServer':envirenment.timeCheckServer
+        }
+        array_env.append(new_env)
+    current_env = {
+            'dt': env.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"),
+            'dt_android_upgrade':env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+            'timeCheckServer':env.curEnv.timeCheckServer
+        }
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'env_list':arrEnv})
+    return REG_200_SUCCESS.to_json_response({'current_env':current_env, 'env_list':array_env})
 
 
 @cross_origin_read_allow
