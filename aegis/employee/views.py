@@ -816,6 +816,7 @@ def rebuild_pass_history(request):
 
     error_passes = []
     arr_pass_history = []
+    long_interval_list = []
     for pass_ in passes:
         if pass_.dt_reg is None:
             print(pass_.id, pass_.passer_id, pass_.is_in, pass_.dt_verify.strftime("%Y-%m-%d %H:%M:%S"))
@@ -823,21 +824,38 @@ def rebuild_pass_history(request):
             dt = pass_.dt_verify
             before_pass = Pass.objects\
                 .filter(passer_id=passer_id,
-                        # dt_reg__lt=dt + datetime.timedelta(minutes=1)) \
                         dt_reg__lt = dt) \
                     .values('id',
                         'passer_id',
                         'is_in',
                         'dt_reg',
                         'dt_verify')\
-                .order_by('-dt_reg').first() #[:3]
+                .order_by('-dt_reg').last()
             if before_pass is None:
-                error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
-                continue
+                before_pass = Pass.objects \
+                    .filter(passer_id=passer_id,
+                            dt_reg__gte=dt) \
+                    .values('id',
+                            'passer_id',
+                            'is_in',
+                            'dt_reg',
+                            'dt_verify') \
+                    .order_by('dt_reg').first()
+                if before_pass is None:
+                    error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
+                    continue
             print('  ', before_pass['id'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
             before_pass['dt_verify'] = pass_.dt_verify
             before_pass['v_id'] = pass_.id
             arr_pass_history.append(before_pass)
+            # before_pass_dt_reg = datetime.datetime.strptime(before_pass['dt_reg'], "%Y-%m-%d %H:%M:%S")
+            before_pass_dt_reg = before_pass['dt_reg']
+            if before_pass_dt_reg < pass_.dt_verify :
+                time_interval = pass_.dt_verify - before_pass_dt_reg
+            else:
+                time_interval = before_pass_dt_reg - pass_.dt_verify
+            if time_interval.seconds > (60 * 60 * 12):
+                long_interval_list.append(before_pass)
             # arr_pass_history.append({'before_pass':before_pass})
                 # .first()#[:5].last()
     #
@@ -865,7 +883,7 @@ def rebuild_pass_history(request):
     #         print('------ ', len(arr_pass_history))
     print(len(arr_pass_history), len(error_passes))
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'error_passes': error_passes})
+    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'long_interval_list':long_interval_list, 'error_passes': error_passes})
 
 
 @cross_origin_read_allow
