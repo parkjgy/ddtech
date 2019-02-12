@@ -449,6 +449,7 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    print('---', worker_id)
     worker = Staff.objects.get(id=worker_id)
 
     # if rqst.get('master') is None:
@@ -457,24 +458,20 @@ def list_staff(request):
     for key in request.session.keys():
         print(key, ':', request.session[key])
 
-    # id = rqst['id']  # 암호화된 id
-    # login_id = rqst['login_id']  # 암호화된 id
-    # login_pw = rqst['login_pw']  # 암호화된 id
-    # print(id, login_id)
-    #
-    # if len(id) > 0:
-    #     staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    # else:
-    #     staff = Staff.objects.get(login_id=login_id)
-    # if login_pw != staff.login_pw:
-    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #     return REG_523_HAVE_NO_PERMISSION_TO_VIEW.to_json_response()
-
-    staffs = Staff.objects.filter().values('name', 'position', 'department', 'pNo', 'pType', 'email')
+    staffs = Staff.objects.filter()
     arr_staff = []
     for staff in staffs:
-        staff['is_worker'] = True if staff.id == worker.id else False
-        arr_staff.append(staff)
+        r_staff = {
+            'name':staff.name,
+            'position':staff.position,
+            'department':staff.department,
+            'pNo':staff.pNo,
+            'pType':staff.pType,
+            'email':staff.email,
+            'is_worker': True if staff.id == worker.id else False
+        }
+        arr_staff.append(r_staff)
+    print(arr_staff)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
@@ -546,7 +543,7 @@ def reg_customer(request):
     print(r.json())
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(r.json())
+    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
 
 
 @cross_origin_read_allow
