@@ -577,8 +577,8 @@ def reg_work_place(request):
     new_work_place = Work_Place(
         name = name,
         place_name = name,
-        contractor_id = staff.co_id,
-        contractor_name = staff.co_name,
+        contractor_id = worker.co_id,
+        contractor_name = worker.co_name,
         manager_id = manager.id,
         manager_name = manager.name,
         manager_pNo = manager.pNo,
