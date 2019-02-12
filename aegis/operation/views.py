@@ -349,13 +349,13 @@ def update_staff(request):
     """
     직원 정보를 수정한다.
     - 로그인 되어 있지 않으면 수정할 수 없다.
-    - 로그인 한 사람과 대상 직원이 다르면 암호 초기화만 가능하다.
+    - 로그인 한 사람과 대상 직원이 다르면 암호 초기화만 가능하다. (다음 버전에서)
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/operation/update_staff?login_id=thinking&before_pw=happy_day82&login_pw=&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
         {
-            'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+            'login_id': '변결할 id' # 중복되면 542
             'before_pw': '기존 비밀번호',     # 필수
             'login_pw': '변경하려는 비밀번호',
             'name': '이름',
@@ -371,6 +371,8 @@ def update_staff(request):
             {'message': '비밀번호가 초기화 되었습니다.'}
         STATUS 531
             {'message': '비밀번호가 틀립니다.'}
+        STATUS 542
+            {'message': '아이디가 중복됩니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -398,16 +400,21 @@ def update_staff(request):
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
 
-    staff = Staff.objects.get(login_id=login_id)
-    if worker.id != staff.id:
-        staff.login_pw = hash_SHA256('happy_day82')
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
+    staff = worker
+    # if worker.id != staff.id:
+    #     staff.login_pw = hash_SHA256('happy_day82')
+    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
 
     if hash_SHA256(before_pw) != staff.login_pw:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
+    if len(login_id) > 0:
+        if (Staff.objects.filter(login_id=login_id)) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디가 중복됩니다.'})
+        staff.login_id = login_id
     if len(login_pw) > 0:
         staff.login_pw = hash_SHA256(login_pw)
     if len(name) > 0:
