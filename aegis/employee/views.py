@@ -823,19 +823,21 @@ def rebuild_pass_history(request):
             dt = pass_.dt_verify
             before_pass = Pass.objects\
                 .filter(passer_id=passer_id,
-                        dt_reg__lt=dt + datetime.timedelta(minutes=1))\
-                .values('id',
+                        # dt_reg__lt=dt + datetime.timedelta(minutes=1)) \
+                        dt_reg__lt = dt) \
+                    .values('id',
                         'passer_id',
                         'is_in',
                         'dt_reg',
                         'dt_verify')\
-                .order_by('dt_reg')\
-                [:3]
-            if len(before_pass) == 0:
+                .order_by('-dt_reg').first() #[:3]
+            if before_pass is None:
                 error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
                 continue
-            print(' #', len(before_pass), ': ', before_pass)
-            arr_pass_history.append(before_pass[0])
+            print('  ', before_pass['id'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
+            before_pass['dt_verify'] = pass_.dt_verify
+            before_pass['v_id'] = pass_.id
+            arr_pass_history.append(before_pass)
             # arr_pass_history.append({'before_pass':before_pass})
                 # .first()#[:5].last()
     #

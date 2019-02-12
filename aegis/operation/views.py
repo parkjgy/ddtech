@@ -58,7 +58,7 @@ class Env(object):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if len(Environment.objects.filter()) == 0:
             newEnv = Environment(
-                dt=datetime.datetime.now() - timedelta(days=1),
+                dt=datetime.datetime.now() - timedelta(days=3),
                 manager_id=0,
                 dt_android_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
                 timeCheckServer="05:00:00",
@@ -471,7 +471,10 @@ def list_staff(request):
     #     return REG_523_HAVE_NO_PERMISSION_TO_VIEW.to_json_response()
 
     staffs = Staff.objects.filter().values('name', 'position', 'department', 'pNo', 'pType', 'email')
-    arr_staff = [staff for staff in staffs]
+    arr_staff = []
+    for staff in staffs:
+        staff['is_worker'] = True if staff.id == worker.id else False
+        arr_staff.append(staff)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
