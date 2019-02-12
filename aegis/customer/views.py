@@ -73,6 +73,9 @@ def reg_customer(request):
         print('   from operation server : op staff id ', worker_id)
     else:
         worker_id = request.session['id']
+        if len(worker_id) == 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
 
     re_sms = rqst['re_sms']
@@ -171,6 +174,9 @@ def update_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     customer = Customer.objects.get(id=worker.contractor_id)
@@ -283,6 +289,9 @@ def list_customer(request):
         print('   from operation server : op staff id ' + worker_id)
     else:
         worker_id = request.session['id']
+        if len(worker_id) == 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']
@@ -328,6 +337,9 @@ def reg_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     name = rqst['name']
@@ -473,6 +485,9 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     before_pw = rqst['before_pw']  # 기존 비밀번호
@@ -536,6 +551,9 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     staffs = Staff.objects.filter(co_id=worker.contractor_id).values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
@@ -567,6 +585,9 @@ def reg_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     manager_id = rqst['manager_id']
@@ -617,6 +638,9 @@ def update_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     # staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
@@ -681,6 +705,9 @@ def list_work_place(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     name = rqst['name']
@@ -735,6 +762,9 @@ def reg_work(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     work_place_id = rqst['work_place_id']
@@ -771,7 +801,7 @@ def update_work(request):
     사업장 업무 수정
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
+    http://0.0.0.0:8000/customer/update_work?work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
     POST
         {
             'op_staff_id':'암호화된 id',  # 업무처리하는 직원
@@ -796,6 +826,12 @@ def update_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
 
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
@@ -857,7 +893,6 @@ def list_work(request):
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_work?name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
-        op_staff_id     = 암호화된 id	 	# 업무처리하는 직원
         work_place_name = 사업장 이름
         type            = 업무 형태
         contractor_name = 파견(도급)업체 이름
@@ -895,6 +930,12 @@ def list_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
 
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
@@ -967,6 +1008,12 @@ def reg_employee(request):
     else:
         rqst = request.GET
 
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
+
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
 
@@ -1021,6 +1068,12 @@ def update_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
 
     work_id = rqst['work_id']
     work = Work.objects.get(id=work_id)
@@ -1092,6 +1145,12 @@ def list_employee(request):
     else:
         rqst = request.GET
 
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
+
     work_id = rqst['work_id']
     Work.objects.get(id=work_id) # 업무 에러 확인용
 
@@ -1127,7 +1186,7 @@ def report(request):
       - 현장별 보고서
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/report?op_staff_id=qgf6YHf1z2Fx80DR8o_Lvg&manager_id=&work_place_id=&work_id=
+    http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
     GET
         manager_id      = 관리자 id    # 없으면 전체
         work_place_id   = 사업장 id    # 없으면 전체
@@ -1171,6 +1230,12 @@ def report(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+    worker = Staff.objects.get(id=worker_id)
 
     work_id = rqst['work_id']
     Work.objects.get(id=work_id) # 업무 에러 확인용

@@ -249,6 +249,9 @@ def reg_staff(request):
 
     if rqst.get('master') is None:
         worker_id = request.session['id']
+        if len(worker_id) == 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_403_FORBIDDEN.to_json_response()
         worker = Staff.objects.get(id=worker_id)
     else:
         try:
@@ -381,6 +384,10 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
+
     worker = Staff.objects.get(id=worker_id)
 
     login_id = rqst['login_id']  # id 로 사용
@@ -456,7 +463,9 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    print('---', worker_id)
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     # if rqst.get('master') is None:
@@ -511,6 +520,9 @@ def reg_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     re_sms = rqst['re_sms']
@@ -573,6 +585,9 @@ def list_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
+    if len(worker_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']

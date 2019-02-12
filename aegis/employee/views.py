@@ -71,7 +71,7 @@ def check_version(request):
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
                   })
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
+    return REG_200_SUCCESS.to_json_response()
 
 
 @csrf_exempt
