@@ -352,7 +352,7 @@ def logout(request):
             {'message':'이미 로그아웃되었습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if 'id' in request.session and request.session['id'] is None:
+    if request.session is None or 'id' not in request.session:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['id'])
