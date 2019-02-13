@@ -18,7 +18,6 @@ def cross_origin_read_allow(function):
     """
 
     def wrap(request, *args, **kwargs):
-        print('2')
         if request.method == 'OPTIONS':
             response = HttpResponse()
         else:

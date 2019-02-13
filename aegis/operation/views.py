@@ -10,7 +10,7 @@ from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
-from config.decorator import cross_origin_read_allow
+from config.decorator import cross_origin_read_allow, session_is_none_403
 
 from .models import Environment
 from .models import Staff
@@ -183,6 +183,7 @@ def currentEnv(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 @csrf_exempt
 def updateEnv(request):
     """
@@ -207,10 +208,6 @@ def updateEnv(request):
     global env
 
     worker_id = request.session['id']
-    if worker_id is None:
-        print('403')
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
     if not(worker.id in [1, 2]):
         print('524')
@@ -557,6 +554,11 @@ def reg_customer(request):
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
+    if len(staff_pNo):
+        staff_pNo = staff_pNo.replace('-', '')
+        staff_pNo = staff_pNo.replace(' ', '')
+        print(staff_pNo)
+
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
@@ -594,6 +596,7 @@ def reg_customer(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 @csrf_exempt
 def list_customer(request):
     """
@@ -606,6 +609,26 @@ def list_customer(request):
         staff_email=id@daeducki.com
     response
         STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "customers": [
+                {
+                  "name": "대덕테크",						 # 고객사 상호
+                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
+                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
+                  "dt_accept": null,					 # 등록 승인일
+                  "type": "발주업체",						 # 발주업체 or 파견업체(도급업체) - 협력업체는 표시되지 않는다.
+                  "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
+                  "staff_name": "박종기",					 # 담당자
+                  "staff_pNo": "010-2557-3555",			 # 담당자 전화번호
+                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
+                  "manager_name": "",					 # 관리자
+                  "manager_pNo": "",					 # 관리자 전화번호
+                  "manager_email": "",					 # 관리자 이메일
+                  "dt_payment": null					 # 고객사 결제일
+                }
+              ]
+            }
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -613,9 +636,6 @@ def list_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if worker_id is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']
@@ -628,11 +648,26 @@ def list_customer(request):
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email,
-        'worker_id': worker.id
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer', params=json_data)
+    print(response_customer.json())
+    if response_customer.status_code != 200:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return ReqLibJsonResponse(response_customer)
+    arr_customer = response_customer.json()['customers']
+    print(arr_customer)
+    op_arr_customer = []
+    for customer in arr_customer:
+        op_customer = customer
+        del op_customer['id']
+        if op_customer['type'] == 12:
+            continue
+        op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
+        del op_customer['contractor_name']
+        op_arr_customer.append(op_customer)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return ReqLibJsonResponse(response_customer)
+    return REG_200_SUCCESS.to_json_response({'customers':op_arr_customer})
 
 
 @cross_origin_read_allow

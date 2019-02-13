@@ -267,14 +267,36 @@ def list_customer(request):
     """
     고객사 리스트를 요청한다.
     * 서버 to 서버 통신 work_id 필요
-    http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com&worker_id=
     GET
         customer_name=대덕기공
         staff_name=홍길동
         staff_pNo=010-1111-2222
         staff_email=id@daeducki.com
+        worker_id='AES_256_id' # 운영서버에서 요청할 때만 사용한다.
     response
         STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "customers": [
+                {
+                  "id": 1,								 # 고객사 id (보여주지 않는다.)
+                  "name": "대덕테크",						 # 고객사 상호
+                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
+                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
+                  "dt_accept": null,					 # 등록 승인일
+                  "type": 10,   						 # 10 : 발주업체, 11 : 파견업체(도급업체), 12 : 협력업체
+                  "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
+                  "staff_name": "박종기",					 # 담당자
+                  "staff_pNo": "01025573555",			 # 담당자 전화번호
+                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
+                  "manager_name": "",					 # 관리자
+                  "manager_pNo": "",					 # 관리자 전화번호
+                  "manager_email": "",					 # 관리자 이메일
+                  "dt_payment": null					 # 고객사 결제일
+                }
+              ]
+            }
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -284,7 +306,7 @@ def list_customer(request):
 
     if rqst.get('worker_id') is not None:
         # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-        worker_id = rqst.get('worker_id')
+        worker_id = AES_DECRYPT_BASE64(rqst.get('worker_id'))
         logSend('   from operation server : op staff id ' + worker_id)
         print('   from operation server : op staff id ' + worker_id)
     else:
@@ -302,7 +324,12 @@ def list_customer(request):
     customers = Customer.objects.filter().values('id', 'name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
                                                  'contractor_name', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
-    arr_customer = [customer for customer in customers]
+    arr_customer = []
+    for customer in customers:
+        customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
+        customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
+        customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
+        arr_customer.append(customer)
     result = {'customers': arr_customer}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
