@@ -618,7 +618,6 @@ def list_customer(request):
                   "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
                   "dt_accept": null,					 # 등록 승인일
                   "type": "발주업체",						 # 발주업체 or 파견업체(도급업체) - 협력업체는 표시되지 않는다.
-                  "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
                   "staff_name": "박종기",					 # 담당자
                   "staff_pNo": "010-2557-3555",			 # 담당자 전화번호
                   "staff_email": "thinking@ddtechi.com", # 담당자 이메일
