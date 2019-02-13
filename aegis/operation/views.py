@@ -505,6 +505,7 @@ def list_staff(request):
     arr_staff = []
     for staff in staffs:
         r_staff = {
+            'login_id':staff.login_id,
             'name':staff.name,
             'position':staff.position,
             'department':staff.department,
