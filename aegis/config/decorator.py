@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
 from .error_handler import exception_handler
+from .status_collection import REG_403_FORBIDDEN
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -17,6 +18,7 @@ def cross_origin_read_allow(function):
     """
 
     def wrap(request, *args, **kwargs):
+        print('2')
         if request.method == 'OPTIONS':
             response = HttpResponse()
         else:
@@ -53,6 +55,22 @@ def token_to_session(function):
         if 'HTTP_TOKEN' in request.META:
             # print(request.META['HTTP_TOKEN'])
             request.session = SessionStore(session_key=request.META['HTTP_TOKEN'])
+        response = function(request, *args, **kwargs)
+        return response
+
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap
+
+
+def session_is_none_403(function):
+    """
+    session 의 id 가 None 일 경우 혹, session 자체가 없는 경우 404 오류
+    """
+
+    def wrap(request, *args, **kwargs):
+        if request.session is None or 'id' not in request.session:
+            return REG_403_FORBIDDEN.to_json_response()
         response = function(request, *args, **kwargs)
         return response
 
