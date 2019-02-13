@@ -1,3 +1,5 @@
+import json
+
 from importlib import import_module
 
 from django.http import HttpResponse
@@ -79,7 +81,11 @@ def session_is_none_403(function):
     """
 
     def wrap(request, *args, **kwargs):
-        if request.session is None or 'id' not in request.session:
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+        if ('worker_id' not in rqst) and ((request.session is None) or ('id' not in request.session)):
             return REG_403_FORBIDDEN.to_json_response()
         response = function(request, *args, **kwargs)
         return response

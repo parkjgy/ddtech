@@ -103,12 +103,16 @@ def passer_reg(request):
         if request.method == 'POST':
             phone_numbers = rqst['phones']
         else:
-            phone_numbers = rqst.getlist('phhones')
+            phone_numbers = rqst.getlist('phones')
 
         print(phone_numbers)
         for i in range(6):
+            pNo = phone_numbers[i]
+            if len(pNo):
+                pNo = pNo.replace('-', '')
+                pNo = pNo.replace(' ', '')
             passer = Passer(
-                pNo=phone_numbers[i],
+                pNo=pNo,
                 employee_id=pass_type
             )
             passer.save()

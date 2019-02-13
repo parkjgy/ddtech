@@ -38,7 +38,6 @@ from config.error_handler import *
 import inspect
 
 
-# @cross_origin_read_allow
 class Env(object):
     def __init__(self):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -124,7 +123,6 @@ env = Env()
 
 
 @cross_origin_read_allow
-@csrf_exempt
 def testEnv(request) :
     """
     http://0.0.0.0:8000/operation/testEnv
@@ -148,7 +146,6 @@ def testEnv(request) :
 
 
 @cross_origin_read_allow
-@csrf_exempt
 def currentEnv(request):
     """
     현재 환경 값을 요청한다.
@@ -184,7 +181,6 @@ def currentEnv(request):
 
 @cross_origin_read_allow
 @session_is_none_403
-@csrf_exempt
 def updateEnv(request):
     """
     updateEnv (update environment) 환경 값을 변경한다.
@@ -248,6 +244,7 @@ def updateEnv(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def reg_staff(request):
     """
     운영 직원 등록
@@ -257,7 +254,7 @@ def reg_staff(request):
         {
             'pNo': '010-1111-2222',
             'id': 'thinking',
-            'pw': 'a~~~8282'    # SHA256
+            'pw': 'a~~~8282'    # AES 256
         }
     response
         STATUS 200
@@ -268,20 +265,15 @@ def reg_staff(request):
     else:
         rqst = request.GET
 
-    if rqst.get('master') is None:
-        worker_id = request.session['id']
-        if worker_id is None:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_403_FORBIDDEN.to_json_response()
-        worker = Staff.objects.get(id=worker_id)
-    else:
-        try:
-            if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-        except Exception as e:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+    # try:
+    #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+    #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+    # except Exception as e:
+    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
     phone_no = rqst['pNo']
     id_ = rqst['id']
@@ -373,6 +365,7 @@ def logout(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def update_staff(request):
     """
     직원 정보를 수정한다.
@@ -409,9 +402,6 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if worker_id is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     login_id = rqst['login_id']  # id 로 사용
@@ -468,6 +458,7 @@ def update_staff(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def list_staff(request):
     """
     직원 list 요청
@@ -487,9 +478,6 @@ def list_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if worker_id is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     # if rqst.get('master') is None:
@@ -518,7 +506,7 @@ def list_staff(request):
 
 
 @cross_origin_read_allow
-@csrf_exempt
+@session_is_none_403
 def reg_customer(request):
     """
     고객사를 등록한다.
@@ -545,9 +533,6 @@ def reg_customer(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    if worker_id is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_403_FORBIDDEN.to_json_response()
     worker = Staff.objects.get(id=worker_id)
 
     re_sms = rqst['re_sms']
@@ -557,7 +542,6 @@ def reg_customer(request):
     if len(staff_pNo):
         staff_pNo = staff_pNo.replace('-', '')
         staff_pNo = staff_pNo.replace(' ', '')
-        print(staff_pNo)
 
     staff_email = rqst["staff_email"]
 
@@ -567,15 +551,14 @@ def reg_customer(request):
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email,
-        'worker_id': worker.id
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
-    print('status', response_customer.status_code, response_customer.json())
     if response_customer.status_code != 200:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
-    print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
+    # print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -588,8 +571,7 @@ def reg_customer(request):
                '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
-
-    print(r.json())
+    # print(r.json())
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
@@ -670,6 +652,7 @@ def list_customer(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def update_work_place(request):
     """
     사업장 내용을 수정한다.
@@ -710,6 +693,7 @@ def update_work_place(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def update_beacon(request):
     """
     비콘 내용을 수정한다.
@@ -741,6 +725,7 @@ def update_beacon(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def list_work_place(request):
     """
     사업장 정보 리스트를 요청한다.
@@ -781,6 +766,7 @@ def list_work_place(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def list_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -822,6 +808,7 @@ def list_beacon(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def detail_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -868,6 +855,7 @@ def detail_beacon(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403
 def dt_android_upgrade(request):
     """
     android 를 upgrade 할 날짜 시간 (
