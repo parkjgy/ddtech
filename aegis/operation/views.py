@@ -352,14 +352,15 @@ def logout(request):
             {'message':'이미 로그아웃되었습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.session['id'] is None:
+    if 'id' in request.session and request.session['id'] is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['id'])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
     staff.save()
-    request.session['id'] = None
+    del request.session['id']
+    # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
