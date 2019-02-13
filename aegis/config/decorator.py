@@ -85,7 +85,8 @@ def session_is_none_403(function):
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
-        if ('worker_id' not in rqst) and ((request.session is None) or ('id' not in request.session)):
+        if ('worker_id' not in rqst) and (
+                request.session is None or 'id' not in request.session or request.session['id'] is None):
             return REG_403_FORBIDDEN.to_json_response()
         response = function(request, *args, **kwargs)
         return response
