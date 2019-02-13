@@ -856,7 +856,6 @@ def detail_beacon(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
 def dt_android_upgrade(request):
     """
     android 를 upgrade 할 날짜 시간 (
