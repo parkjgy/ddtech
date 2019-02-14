@@ -441,6 +441,29 @@ def login(request):
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
 
+
+@cross_origin_read_allow
+def logout(request):
+    """
+    로그아웃
+    http://0.0.0.0:8000/customer/logout
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.session is not None and 'id' not in request.session:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['id'])
+    staff.is_login = False
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
+    del request.session['id']
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
 @cross_origin_read_allow
 @session_is_none_403
 def update_staff(request):
@@ -545,28 +568,6 @@ def list_staff(request):
     arr_staff = [staff for staff in staffs]
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs':arr_staff})
-
-
-@cross_origin_read_allow
-def logout(request):
-    """
-    로그아웃
-    http://0.0.0.0:8000/customer/logout
-    POST
-    response
-        STATUS 200
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.session['id'] is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
-    staff = Staff.objects.get(id=request.session['id'])
-    staff.is_login = False
-    staff.dt_login = datetime.datetime.now()
-    staff.save()
-    request.session['id'] = None
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
