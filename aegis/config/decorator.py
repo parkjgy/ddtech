@@ -94,3 +94,35 @@ def session_is_none_403(function):
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
+
+
+def session_is_none_403_with_operation(function):
+    """
+    session 의 id 가 None 일 경우 혹, session 자체가 없는 경우 404 오류
+    - session 의 id 가 없는 경우 403 오류를 내는 decorator 정의
+    웹에서는 Header 의 Token 값을 선행 조건으로 사용하기 때문에, session_is_none_403 보다 선행적으로 cross_origin_read_allow 가 정의 되어야함.
+
+    EX )
+    올바른 예)
+    @cross_origin_read_allow
+    @session_is_none_403
+    def view_name(request):
+        ....
+
+    웹에 사용되지 않을 경우엔 cross_origin_read_allow 가 선행이 되지 않아도 무방.
+    """
+
+    def wrap(request, *args, **kwargs):
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+        if ('worker_id' not in rqst) and (
+                request.session is None or 'op_id' not in request.session or request.session['op_id'] is None):
+            return REG_403_FORBIDDEN.to_json_response()
+        response = function(request, *args, **kwargs)
+        return response
+
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap

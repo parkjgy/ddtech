@@ -10,7 +10,7 @@ from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
-from config.decorator import cross_origin_read_allow, session_is_none_403
+from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
 
 from .models import Environment
 from .models import Staff
@@ -180,7 +180,7 @@ def currentEnv(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def updateEnv(request):
     """
     updateEnv (update environment) 환경 값을 변경한다.
@@ -203,7 +203,9 @@ def updateEnv(request):
 
     global env
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
+    print(worker_id, worker_id[5:])
+
     worker = Staff.objects.get(id=worker_id)
     if not(worker.id in [1, 2]):
         print('524')
@@ -244,7 +246,7 @@ def updateEnv(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def reg_staff(request):
     """
     운영 직원 등록
@@ -265,7 +267,7 @@ def reg_staff(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
     # try:
     #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
@@ -319,12 +321,9 @@ def login(request):
         rqst = request.GET
 
     id_ = rqst['id']
-    pw = rqst['pw']
-    # staff = Staff.objects.get(id=1)
-    # staff.login_pw = hash_SHA256(pw)
-    # staff.save()
+    pw_ = rqst['pw']
 
-    staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw))
+    staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw_))
     if len(staffs) == 0:
         print('530')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -334,7 +333,8 @@ def login(request):
     staff.dt_login = datetime.datetime.now()
     staff.save()
 
-    request.session['id'] = staff.id
+    # 추후 0000은 permission 에 할당
+    request.session['op_id'] = 'O0000' + str(staff.id)
     request.session.save()
     print('200')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -352,21 +352,21 @@ def logout(request):
             {'message':'이미 로그아웃되었습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.session is None or 'id' not in request.session:
+    if request.session is None or 'op_id' not in request.session:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
-    staff = Staff.objects.get(id=request.session['id'])
+    staff = Staff.objects.get(id=request.session['op_id'][5:])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
     staff.save()
-    del request.session['id']
+    del request.session['op_id']
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def update_staff(request):
     """
     직원 정보를 수정한다.
@@ -402,7 +402,7 @@ def update_staff(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     login_id = rqst['login_id']  # id 로 사용
@@ -459,7 +459,7 @@ def update_staff(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def list_staff(request):
     """
     직원 list 요청
@@ -478,7 +478,7 @@ def list_staff(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     # if rqst.get('master') is None:
@@ -507,7 +507,7 @@ def list_staff(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def reg_customer(request):
     """
     고객사를 등록한다.
@@ -533,7 +533,7 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     re_sms = rqst['re_sms']
@@ -579,7 +579,7 @@ def reg_customer(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 @csrf_exempt
 def list_customer(request):
     """
@@ -617,7 +617,7 @@ def list_customer(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']
@@ -653,7 +653,7 @@ def list_customer(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def update_work_place(request):
     """
     사업장 내용을 수정한다.
@@ -694,7 +694,7 @@ def update_work_place(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def update_beacon(request):
     """
     비콘 내용을 수정한다.
@@ -726,7 +726,7 @@ def update_beacon(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def list_work_place(request):
     """
     사업장 정보 리스트를 요청한다.
@@ -767,7 +767,7 @@ def list_work_place(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def list_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -809,7 +809,7 @@ def list_beacon(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+@session_is_none_403_with_operation
 def detail_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -871,7 +871,7 @@ def dt_android_upgrade(request):
     else:
         rqst = request.GET
 
-    # worker_id = request.session['id']
+    # worker_id = request.session['op_id'][5:]
     # worker = Staff.objects.get(id=worker_id)
 
     global env
