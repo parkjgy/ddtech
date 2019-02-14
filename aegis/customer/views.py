@@ -418,11 +418,16 @@ def login(request):
     else:
         rqst = request.GET
 
+    # cipher_login_id = rqst['login_id']
+    # cipher_login_pw = rqst['login_pw']
+    #
+    # id_ = AES_DECRYPT_BASE64(cipher_login_id)
+    # pw_ = AES_DECRYPT_BASE64(cipher_login_pw)
     cipher_login_id = rqst['login_id']
     cipher_login_pw = rqst['login_pw']
 
-    id_ = AES_DECRYPT_BASE64(cipher_login_id)
-    pw_ = AES_DECRYPT_BASE64(cipher_login_pw)
+    id_ = rqst['login_id']
+    pw_ = rqst['login_pw']
     print(id_, pw_)
     staffs = Staff.objects.filter(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=hash_SHA256(AES_DECRYPT_BASE64(cipher_login_pw)))
     if len(staffs) == 0:
