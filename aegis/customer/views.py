@@ -393,7 +393,7 @@ def login(request):
     로그인
     - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
     http://0.0.0.0:8000/customer/login?login_id=Oxy4_-OXrHQMmjcOQF9mgw&login_pw=UxEQIRaJ8Sdg3vzHi3pr7Q
-    http://0.0.0.0:8000/customer/login?login_id=ZhjnaxcmMf7nU4wbjb7OUg&login_pw=zprS0cPL2JZcCkA4e5XYNg
+    http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=a~~~8282
     kms / HappyDay365!!!
     POST
         {
@@ -421,7 +421,7 @@ def login(request):
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
     print(login_id, login_pw)
-    staffs = Staff.objects.filter(login_id=login_id, login_pw=login_pw)
+    staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
