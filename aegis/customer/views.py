@@ -392,7 +392,6 @@ def login(request):
     """
     로그인
     - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
-    http://0.0.0.0:8000/customer/login?login_id=Oxy4_-OXrHQMmjcOQF9mgw&login_pw=UxEQIRaJ8Sdg3vzHi3pr7Q
     http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=a~~~8282
     kms / HappyDay365!!!
     POST
@@ -412,7 +411,7 @@ def login(request):
             'is_manager': False         # 관리자?
         }
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -442,29 +441,6 @@ def login(request):
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
 
-
-@cross_origin_read_allow
-def logout(request):
-    """
-    로그아웃
-    http://0.0.0.0:8000/customer/logout
-    POST
-    response
-        STATUS 200
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.session['id'] is None:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
-    staff = Staff.objects.get(id=request.session['id'])
-    staff.is_login = False
-    staff.dt_login = datetime.datetime.now()
-    staff.save()
-    request.session['id'] = None
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
-
-
 @cross_origin_read_allow
 @session_is_none_403
 def update_staff(request):
@@ -491,13 +467,14 @@ def update_staff(request):
     	STATUS 503
     		{'message': '비밀번호가 틀립니다.'}
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
 
     worker_id = request.session['id']
+    print(worker_id)
     worker = Staff.objects.get(id=worker_id)
 
     before_pw = rqst['before_pw']  # 기존 비밀번호
@@ -555,7 +532,7 @@ def list_staff(request):
         STATUS 200
             {'staffs':[{'id', 'name':'...', 'position':'...', 'department':'...', 'pNo':'...', 'pType':'...', 'email':'...', 'login_id'}, ...]}
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -564,10 +541,32 @@ def list_staff(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    staffs = Staff.objects.filter(co_id=worker.contractor_id).values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
+    staffs = Staff.objects.filter(co_id=worker.co_id).values('id', 'name', 'position', 'department', 'pNo', 'pType', 'email', 'login_id')
     arr_staff = [staff for staff in staffs]
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs':arr_staff})
+
+
+@cross_origin_read_allow
+def logout(request):
+    """
+    로그아웃
+    http://0.0.0.0:8000/customer/logout
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.session['id'] is None:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['id'])
+    staff.is_login = False
+    staff.dt_login = datetime.datetime.now()
+    staff.save()
+    request.session['id'] = None
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
