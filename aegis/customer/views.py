@@ -19,6 +19,7 @@ from config.decorator import cross_origin_read_allow, session_is_none_403
 
 # log import
 from .models import Customer
+from .models import Relationship
 from .models import Staff
 from .models import Business_Registration
 from .models import Work_Place
@@ -205,181 +206,6 @@ def list_customer_for_operation(request):
 
 @cross_origin_read_allow
 @session_is_none_403
-def reg_customer(request):
-    """
-    고객사를 등록한다.
-    - 고객사 담당자와 관리자는 처음에는 같은 사람이다.
-    - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
-    * 서버 to 서버 통신 work_id 필요
-        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-            response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
-    POST
-        {
-            're_sms': 'NO',  # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
-            'customer_name': '대덕기공',
-            'staff_name': '홍길동',
-            'staff_pNo': '010-1111-2222',
-            'staff_email': 'id@daeducki.com'
-        }
-    response
-        STATUS 200
-            {
-                'msg': '정상처리되었습니다.',
-                'login_id': staff.login_id,
-                'login_pw': staff.login_pw
-            }
-        STATUS 541
-            {'message':'등록되어있지 않은 업체입니다.'}
-        STATUS 543
-            {'message', '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.'}
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    if 'worker_id' in rqst:
-        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-        worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-        logSend('   from operation server : op staff id ', worker_id)
-        print('   from operation server : op staff id ', worker_id)
-    else:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
-
-    re_sms = rqst['re_sms']
-    customer_name = rqst["customer_name"]
-    staff_name = rqst["staff_name"]
-    staff_pNo = rqst["staff_pNo"]
-    staff_email = rqst["staff_email"]
-
-    customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
-    if re_sms.upper() == 'YES':
-        # 문자 재전송할 파견기업 확인
-        if len(customers) == 0:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_541_NOT_REGISTERED.to_json_response({'message':'등록되어있지 않은 업체입니다.'})
-        customer = customers[0]
-        staff = Staff.objects.get(id=customer.staff_id)
-        staff.login_pw = hash_SHA256('happy_day!!!')
-        staff.save()
-    else:
-        # 파견기업 등록
-        if len(customers) > 0:
-            # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
-        else:
-            customer = Customer(
-                name=customer_name,
-                staff_name=staff_name,
-                staff_pNo=staff_pNo,
-                staff_email=staff_email,
-                manager_name=staff_name,
-                manager_pNo=staff_pNo,
-                manager_email=staff_email
-            )
-            customer.save()
-            staff = Staff(
-                name=staff_name,
-                login_id='temp_' + str(customer.id),
-                login_pw=hash_SHA256('happy_day!!!'),
-                co_id=customer.id,
-                co_name=customer.name,
-                pNo=staff_pNo,
-                email=staff_email,
-                is_site_owner=True,
-                is_manager=True
-            )
-            staff.save()
-            customer.staff_id = str(staff.id)
-            customer.manager_id = str(staff.id)
-            customer.save()
-    print('staff id = ', staff.id)
-    print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
-    result = {'message': '정상처리되었습니다.',
-              'login_id': staff.login_id
-              }
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(result)
-
-
-@cross_origin_read_allow
-@session_is_none_403
-def list_customer(request):
-    """
-    <<<운영 서버용>>> 고객사 리스트를 요청한다.
-    * 서버 to 서버 통신 work_id 필요
-    http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com&worker_id=
-    GET
-        customer_name=대덕기공
-        staff_name=홍길동
-        staff_pNo=010-1111-2222
-        staff_email=id@daeducki.com
-        worker_id='AES_256_id' # 운영서버에서 요청할 때만 사용한다.
-    response
-        STATUS 200
-            {
-              "message": "정상적으로 처리되었습니다.",
-              "customers": [
-                {
-                  "id": 1,								 # 고객사 id (보여주지 않는다.)
-                  "name": "대덕테크",						 # 고객사 상호
-                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
-                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
-                  "dt_accept": null,					 # 등록 승인일
-                  "type": 10,   						 # 10 : 발주업체, 11 : 파견업체(도급업체), 12 : 협력업체
-                  "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
-                  "staff_name": "박종기",					 # 담당자
-                  "staff_pNo": "01025573555",			 # 담당자 전화번호
-                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
-                  "manager_name": "",					 # 관리자
-                  "manager_pNo": "",					 # 관리자 전화번호
-                  "manager_email": "",					 # 관리자 이메일
-                  "dt_payment": null					 # 고객사 결제일
-                }
-              ]
-            }
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    if 'worker_id' in rqst:
-        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-        worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-        logSend('   from operation server : op staff id ', worker_id)
-        print('   from operation server : op staff id ', worker_id)
-    else:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
-
-    customer_name = rqst['customer_name']
-    staff_name = rqst['staff_name']
-    staff_pNo = rqst['staff_pNo']
-    staff_email = rqst['staff_email']
-
-    customers = Customer.objects.filter().values('id', 'name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
-                                                 'contractor_name', 'staff_name', 'staff_pNo', 'staff_email',
-                                                 'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
-    arr_customer = []
-    for customer in customers:
-        customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
-        customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
-        customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
-        arr_customer.append(customer)
-    result = {'customers': arr_customer}
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(result)
-
-
-@cross_origin_read_allow
-@session_is_none_403
 def update_customer(request):
     """
     고객사(협력사, 발주사) 정보 변경 (담당자, 관리자만 가능)
@@ -411,7 +237,7 @@ def update_customer(request):
     		{'message': '담당자나 관리자만 변경 가능합니다.'}
     		{'message': '관리자만 변경 가능합니다.'}
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -502,6 +328,266 @@ def update_customer(request):
 
 @cross_origin_read_allow
 @session_is_none_403
+def reg_relationship(request):
+    """
+    고객사의 협력사나 발주사를 등록한다.
+    주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        사업자등록 정보를 넣을 때는 모두 들어와야 한다. - 사업자등록 정보의 상호만 들어오면 안되고 사업자등록번호등 모두가 들어와야한다.
+        response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_relationship?type=10&corp_name=(주)티에스엔지&staff_name=홍길동&staff_pNo=010-1111-2222&staff_email=id@daeducki.com
+    POST
+        {
+            'type': 10,      # 10 : 발주사, 12 : 협력사
+            'corp_name': '(주)티에스엔지',
+            'staff_name': '홍길동',
+            'staff_pNo': '010-1111-2222',
+            'staff_email': 'id@daeducki.com',
+
+            'manager_name': '유재석',            # 선택
+            'manager_pNo': '010-1111-4444',    # 선택
+            'manager_email': 'id@daeducki.com' # 선택
+
+            'name':'(주)티에스엔지',		    # 상호 - 선택
+            'regNo':'123-000000-12',	    # 사업자등록번호 - 선택
+            'ceoName':'홍길동',		 	    # 이름(대표자) - 선택
+            'address':'울산시 중구 봉월동 22',   # 사업장소재지 - 선택
+            'business_type':'서비스',		    # 업태 - 선택
+            'business_item':'정보통신',		# 종목 - 선택
+            'dt_reg':'2018-12-05',		 	# 사업자등록일 - 선택
+        }
+    response
+        STATUS 200
+        STATUS 544
+            {'message', '이미 등록되어 있습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    type = rqst['type']
+    corp_name = rqst['corp_name']
+
+    relationships = Relationship.objects.filter(contractor_id=worker.co_id, type=type, corp_name=corp_name)
+    if len(relationships) > 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_544_EXISTED.to_json_response()
+    staff_name = rqst['staff_name']
+    staff_pNo = rqst['staff_pNo']
+    staff_email = rqst['staff_email']
+    corp = Customer(
+        name=corp_name,
+        staff_name=staff_name,
+        staff_pNo=staff_pNo,
+        staff_email=staff_email,
+    )
+    if 'manager_name' in rqst:
+        corp.manager_name = rqst['manager_name']
+    if 'manager_pNo' in rqst:
+        corp.manager_pNo = rqst['manager_pNo']
+    if 'manager_email' in rqst:
+        corp.manager_email = rqst['manager_email']
+    corp.save()
+    relationship = Relationship(
+        contractor_id=worker.co_id,
+        type=type,
+        corp_id=corp.id,
+        corp_name=corp_name
+    )
+    relationship.save()
+    if 'name' in rqst:
+        business_registration = Business_Registration(
+            name=rqst['name'],
+            regNo=rqst['regNo'],
+            ceoName=rqst['ceoName'],
+            address=rqst['address'],
+            business_type=rqst['business_type'],
+            business_item=rqst['business_item'],
+            dt_reg=rqst['dt_reg'],
+            customer_id=corp.id
+        )
+        business_registration.save()
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def list_relationship(request):
+    """
+    발주사, 협력사 리스트를 요청한다.
+    http://0.0.0.0:8000/customer/list_relationship?is_partner=YES&is_orderer=YES
+    GET
+        is_partner=YES  # 협력사 리스트를 가져오는가?
+        is_orderer=YES  # 발주사 리스트를 가져오는가?
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "partners": [
+                {
+                  "name": "(주)티에스엔지",	 # 협력사 상호
+                  "id": "cipher_id",	 # 협력사 id (협력사 정보 수정시 사용)
+                },
+                ...
+              ]
+              "orderers": [
+                {
+                  "name": "(주)효성 용연공장",	# 발주사 상호
+                  "id": "cipher_id",		# 발주사 id (발주사 정보 수정시 사용)
+                },
+                ...
+              ]
+            }
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    types = []
+    if rqst['is_partner']:
+        types.append(12)
+    if rqst['is_orderer']:
+        types.append(10)
+    relationships = Relationship.objects.filter(contractor_id = worker.co_id, type__in = types)
+    partners = []
+    orderers = []
+    for relationship in relationships:
+        corp = {'name':relationship.corp_name,
+                'id':AES_ENCRYPT_BASE64(str(relationship.corp_id))
+                }
+        if relationship.type == 12:
+            partners.append(corp)
+        elif relationship.type == 10:
+            orderers.append(corp)
+    result = {'partners':partners, 'orderers':orderers}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def update_relationship(request):
+    """
+    고객사의 협력사의 정보를 수정한다.
+    주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        사업자등록 정보를 넣을 때는 모두 들어와야 한다. - 사업자등록 정보의 상호만 들어오면 안되고 사업자등록번호등 모두가 들어와야한다.
+        response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/update_relationship?corp_id=ryWQkNtiHgkUaY_SZ1o2uA&corp_name=(주)살구&staff_name=정소원&staff_pNo=010-7620-5918&staff_email=salgoo.ceo@gmail.com
+    POST
+        {
+            'corp_id': 'cipher_id',      # 발주사 or 협력사 id 의 암호화된 값
+            'corp_name': '(주)티에스엔지',
+            'staff_name': '홍길동',
+            'staff_pNo': '010-1111-2222',
+            'staff_email': 'id@daeducki.com',
+
+            'manager_name': '유재석',            # 선택
+            'manager_pNo': '010-1111-4444',    # 선택
+            'manager_email': 'id@daeducki.com' # 선택
+
+            'name':'(주)티에스엔지',		    # 상호 - 선택
+            'regNo':'123-000000-12',	    # 사업자등록번호 - 선택
+            'ceoName':'홍길동',		 	    # 이름(대표자) - 선택
+            'address':'울산시 중구 봉월동 22',   # 사업장소재지 - 선택
+            'business_type':'서비스',		    # 업태 - 선택
+            'business_item':'정보통신',		# 종목 - 선택
+            'dt_reg':'2018-12-05',		 	# 사업자등록일 - 선택
+        }
+    response
+        STATUS 200
+        STATUS 541
+            {'message', '등록된 업체가 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    corp_id = rqst['corp_id']
+    corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(corp_id))
+    if len(corps) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_541_EXISTED.to_json_response({'message':'등록된 업체가 없습니다.'})
+    corp = corps[0]
+    update = False
+    if 'corp_name' in rqst:
+        corp.corp_name = rqst['corp_name']
+        update = True
+    if 'staff_name' in rqst:
+        corp.staff_name = rqst['staff_name']
+        update = True
+    if 'staff_pNo' in rqst:
+        corp.staff_pNo = rqst['staff_pNo']
+        update = True
+    if 'staff_email' in rqst:
+        corp.staff_email = rqst['staff_email']
+        update = True
+    if 'manager_name' in rqst:
+        corp.manager_name = rqst['manager_name']
+        update = True
+    if 'manager_pNo' in rqst:
+        corp.manager_pNo = rqst['manager_pNo']
+        update = True
+    if 'manager_email' in rqst:
+        corp.manager_email = rqst['manager_email']
+        update = True
+    if update:
+        corp.save()
+
+    if 'name' in rqst:
+        business_registrations = Business_Registration.objects.filter(customer_id=corp.id)
+        if len(business_registrations) == 0:
+            business_registration = Business_Registration(
+                name=rqst['name'],
+                regNo=rqst['regNo'],
+                ceoName=rqst['ceoName'],
+                address=rqst['address'],
+                business_type=rqst['business_type'],
+                business_item=rqst['business_item'],
+                dt_reg=rqst['dt_reg'],
+                customer_id=corp.id
+            )
+            business_registration.save()
+        else:
+            business_registration = business_registrations[0]
+            if 'name' in rqst:
+                business_registration.name = rqst['name']
+            if 'regNo' in rqst:
+                business_registration.regNo = rqst['regNo']
+            if 'ceoName' in rqst:
+                business_registration.ceoName = rqst['ceoName']
+            if 'address' in rqst:
+                business_registration.address = rqst['address']
+            if 'business_type' in rqst:
+                business_registration.business_type = rqst['business_type']
+            if 'business_item' in rqst:
+                business_registration.business_item = rqst['business_item']
+            if 'dt_reg' in rqst:
+                business_registration.dt_reg = rqst['dt_reg']
+            if 'customer_id' in rqst:
+                business_registration.customer_id = rqst['customer_id']
+            business_registration.save()
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+@session_is_none_403
 def reg_staff(request):
     """
     고객사 직원을 등록한다.
@@ -567,7 +653,7 @@ def login(request):
     """
     로그인
     - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
-    http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=a~~~8282
+    http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=A~~~8282
     kms / HappyDay365!!!
     POST
         {

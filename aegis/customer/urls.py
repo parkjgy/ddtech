@@ -9,9 +9,11 @@ urlpatterns = [
     url(r'customer/reg_customer_for_operation$', views.reg_customer_for_operation, name='reg_customer_for_operation'),
     url(r'customer/list_customer_for_operation$', views.list_customer_for_operation, name='list_customer_for_operation'),
 
-    url(r'customer/reg_customer$', views.reg_customer, name='reg_customer'),
-    url(r'customer/list_customer$', views.list_customer, name='list_customer'),
     url(r'customer/update_customer$', views.update_customer, name='update_customer'),
+
+    url(r'customer/reg_relationship$', views.reg_relationship, name='reg_relationship'),
+    url(r'customer/list_relationship$', views.list_relationship, name='list_relationship'),
+    url(r'customer/update_relationship$', views.update_relationship, name='update_relationship'),
 
     url(r'customer/reg_staff$', views.reg_staff, name='reg_staff'),
     url(r'customer/login$', views.login, name='login'),

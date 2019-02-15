@@ -43,11 +43,13 @@ REG_550_CERTIFICATION_NO_IS_INCORRECT = StatusCollection(550, '인증번호가 �
 
 """
 등록
+이미 등록되어 있습니다.
 같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.
 전화번호나 아이디가 중복되었습니다.
 등록이 안되어 있습니다.
 등록에 실패했습니다.
 """
+REG_544_EXISTED = StatusCollection(543, '이미 등록되어 있습니다.')
 REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO = StatusCollection(543, '같은 상호와 담당자 전화번호로 등록된 업체가 있습니다.')
 REG_542_DUPLICATE_PHONE_NO_OR_ID = StatusCollection(542, '전화번호나 아이디가 중복되었습니다.')
 REG_541_NOT_REGISTERED = StatusCollection(541, '직원등록이 안되어 있습니다.')
