@@ -554,7 +554,7 @@ def reg_customer(request):
         'staff_email': staff_email,
         'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
-    response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
+    response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return ReqLibJsonResponse(response_customer)
@@ -632,7 +632,7 @@ def list_customer(request):
         'staff_email': staff_email,
         'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
-    response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer', params=json_data)
+    response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
     print(response_customer.json())
     if response_customer.status_code != 200:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
