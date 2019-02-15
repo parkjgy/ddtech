@@ -512,16 +512,15 @@ def reg_customer(request):
     """
     고객사를 등록한다.
     - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다. (회사 이름과 전화번호가 동일해야한다.)
+    - 담당자 전화번호로 SMS 에 id 와 pw 를 보낸다.
         주) 항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
-            're_sms': 'YES', # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
-            'customer_name': '대덕기공',    # 문자 재전송 필수
+            'customer_name': '대덕기공',
             'staff_name': '홍길동',
-            'staff_pNo': '010-1111-2222',   # 문자 재전송 필수
+            'staff_pNo': '010-1111-2222',
             'staff_email': 'id@daeducki.com'
         }
     response
@@ -536,7 +535,6 @@ def reg_customer(request):
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
-    re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
@@ -547,7 +545,6 @@ def reg_customer(request):
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
-        're_sms': re_sms,
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
@@ -580,7 +577,57 @@ def reg_customer(request):
 
 @cross_origin_read_allow
 @session_is_none_403_with_operation
-@csrf_exempt
+def sms_customer_staff(request):
+    """
+    고객사 담당자에게 문자로 id 와 pw 를 보낸다.
+    http://0.0.0.0:8000/operation/sms_customer_staff?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_pNo=010-2557-3555
+    POST
+        {
+            'staff_id': 'cipher_id'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    new_customer_data = {
+        'staff_id': rqst['staff_id'],
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
+    }
+    response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation', json=new_customer_data)
+    if response_customer.status_code != 200:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return ReqLibJsonResponse(response_customer)
+    response_customer_json = response_customer.json()
+    print('아이디 ' + response_customer_json['login_id'])
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        'receiver': rqst['staff_pNo'],  # '01025573555',
+        'msg_type': 'SMS',
+        'msg': '반갑습니다.\n'
+               '\'이지체크\'예요~~\n'
+               '아이디 ' + response_customer_json['login_id'] + '\n'
+               '비밀번호 happy_day!!!'
+    }
+    r = requests.post('https://apis.aligo.in/send/', data=rData)
+    logSend(r.json())
+    print(r.json())
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
 def list_customer(request):
     """
     고객사 리스트를 요청한다.
@@ -601,6 +648,7 @@ def list_customer(request):
                   "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
                   "dt_accept": null,					 # 등록 승인일
                   "type": "발주업체",						 # 발주업체 or 파견업체(도급업체) - 협력업체는 표시되지 않는다.
+                  "staff_id":"cipher_id",                # 암호화된 담당자 id (표시하지 않음.) - 담당자 pw 를 reset 할 때 사용
                   "staff_name": "박종기",					 # 담당자
                   "staff_pNo": "010-2557-3555",			 # 담당자 전화번호
                   "staff_email": "thinking@ddtechi.com", # 담당자 이메일

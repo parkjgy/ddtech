@@ -8,6 +8,7 @@ from django.conf import settings
 urlpatterns = [
     url(r'customer/reg_customer_for_operation$', views.reg_customer_for_operation, name='reg_customer_for_operation'),
     url(r'customer/list_customer_for_operation$', views.list_customer_for_operation, name='list_customer_for_operation'),
+    url(r'customer/sms_customer_staff_for_operation', views.sms_customer_staff_for_operation, name='sms_customer_staff_for_operation'),
 
     url(r'customer/update_customer$', views.update_customer, name='update_customer'),
 

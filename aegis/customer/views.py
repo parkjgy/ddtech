@@ -30,20 +30,17 @@ from config.status_collection import *
 
 
 @cross_origin_read_allow
-@session_is_none_403
 def reg_customer_for_operation(request):
     """
     <<<운영 서버용>>> 고객사를 등록한다.
     - 고객사 담당자와 관리자는 처음에는 같은 사람이다.
     - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다.
     * 서버 to 서버 통신 work_id 필요
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
-            're_sms': 'NO',  # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
             'customer_name': '대덕기공',
             'staff_name': '홍길동',
             'staff_pNo': '010-1111-2222',
@@ -67,63 +64,48 @@ def reg_customer_for_operation(request):
     else:
         rqst = request.GET
 
-    if 'worker_id' in rqst:
-        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-        worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-        logSend('   from operation server : op staff id ', worker_id)
-        print('   from operation server : op staff id ', worker_id)
-    else:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
+    logSend('   from operation server : op staff id ', worker_id)
+    print('   from operation server : op staff id ', worker_id)
 
-    re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
     staff_email = rqst["staff_email"]
 
     customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
-    if re_sms.upper() == 'YES':
-        # 문자 재전송할 파견기업 확인
-        if len(customers) == 0:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_541_NOT_REGISTERED.to_json_response({'message':'등록되어있지 않은 업체입니다.'})
-        customer = customers[0]
-        staff = Staff.objects.get(id=customer.staff_id)
-        staff.login_pw = hash_SHA256('happy_day!!!')
-        staff.save()
+    # 파견기업 등록
+    if len(customers) > 0:
+        # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
     else:
-        # 파견기업 등록
-        if len(customers) > 0:
-            # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
-        else:
-            customer = Customer(
-                name=customer_name,
-                staff_name=staff_name,
-                staff_pNo=staff_pNo,
-                staff_email=staff_email,
-                manager_name=staff_name,
-                manager_pNo=staff_pNo,
-                manager_email=staff_email
-            )
-            customer.save()
-            staff = Staff(
-                name=staff_name,
-                login_id='temp_' + str(customer.id),
-                login_pw=hash_SHA256('happy_day!!!'),
-                co_id=customer.id,
-                co_name=customer.name,
-                pNo=staff_pNo,
-                email=staff_email,
-                is_site_owner=True,
-                is_manager=True
-            )
-            staff.save()
-            customer.staff_id = str(staff.id)
-            customer.manager_id = str(staff.id)
-            customer.save()
+        customer = Customer(
+            name=customer_name,
+            staff_name=staff_name,
+            staff_pNo=staff_pNo,
+            staff_email=staff_email,
+            manager_name=staff_name,
+            manager_pNo=staff_pNo,
+            manager_email=staff_email
+        )
+        customer.save()
+        staff = Staff(
+            name=staff_name,
+            login_id='temp_' + str(customer.id),
+            login_pw=hash_SHA256('happy_day!!!'),
+            co_id=customer.id,
+            co_name=customer.name,
+            pNo=staff_pNo,
+            email=staff_email,
+            is_site_owner=True,
+            is_manager=True
+        )
+        staff.save()
+        customer.staff_id = str(staff.id)
+        customer.manager_id = str(staff.id)
+        customer.save()
     print('staff id = ', staff.id)
     print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
     result = {'message': '정상처리되었습니다.',
@@ -134,7 +116,51 @@ def reg_customer_for_operation(request):
 
 
 @cross_origin_read_allow
-@session_is_none_403
+def sms_customer_staff_for_operation(request):
+    """
+    <<<운영 서버용>>> 고객사 담당자의 id / pw 를 sms 로 보내기 위해 pw 를 초기화 한다.
+    * 서버 to 서버 통신 work_id 필요
+        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/sms_customer_for_operation?staff_id=&worker_id=
+    POST
+        {
+            'staff_id': 'cipher_id'  # 암호화된 직원 id
+            'worker_id': 'cipher_id'  # 운영직원 id
+        }
+    response
+        STATUS 200
+            {
+                'msg': '정상처리되었습니다.',
+                'login_id': staff.login_id,
+            }
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
+    logSend('   from operation server : op staff id ', worker_id)
+    print('   from operation server : op staff id ', worker_id)
+
+    staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
+    if len(staffs) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_541_NOT_REGISTERED.to_json_response()
+    staff = staffs[0]
+    staff.login_pw = hash_SHA256('happy_day!!!')
+    staff.save()
+    result = {'message': '정상처리되었습니다.',
+              'login_id': staff.login_id
+              }
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
 def list_customer_for_operation(request):
     """
     <<<운영 서버용>>> 고객사 리스트를 요청한다.
@@ -159,6 +185,7 @@ def list_customer_for_operation(request):
                   "dt_accept": null,					 # 등록 승인일
                   "type": 10,   						 # 10 : 발주업체, 11 : 파견업체(도급업체), 12 : 협력업체
                   "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
+                  "staff_id":"cipher_id",                # 암호화된 담당자 id (표시하지 않음.) - 담당자 pw 를 reset 할 때 사용
                   "staff_name": "박종기",					 # 담당자
                   "staff_pNo": "01025573555",			 # 담당자 전화번호
                   "staff_email": "thinking@ddtechi.com", # 담당자 이메일
@@ -176,14 +203,10 @@ def list_customer_for_operation(request):
     else:
         rqst = request.GET
 
-    if 'worker_id' in rqst:
-        # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-        worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-        logSend('   from operation server : op staff id ', worker_id)
-        print('   from operation server : op staff id ', worker_id)
-    else:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
+    logSend('   from operation server : op staff id ', worker_id)
+    print('   from operation server : op staff id ', worker_id)
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
@@ -191,13 +214,14 @@ def list_customer_for_operation(request):
     staff_email = rqst['staff_email']
 
     customers = Customer.objects.filter().values('id', 'name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
-                                                 'contractor_name', 'staff_name', 'staff_pNo', 'staff_email',
+                                                 'contractor_name', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
+        customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['id']))
         arr_customer.append(customer)
     result = {'customers': arr_customer}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
