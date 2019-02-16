@@ -25,7 +25,7 @@ from . import secret
 from . import views as confViews
 
 urlpatterns = [
-    url(r'^swagger-ui.html', get_swagger_view(title='Rest API Document')),
+    url(r'^swagger-ui', get_swagger_view(title='Rest API Document')),
     path('apiView', confViews.api_view),
     # path('apiView_beta', confViews.api_view_beta),
     path('admin/', admin.site.urls),
