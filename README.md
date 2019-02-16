@@ -5,6 +5,8 @@
 ```
 # /etc/systemd/system/aegis-dev.service
 [Unit]
+After=network-online.target
+Wants=network-online.target
 Description=Aegis Server Dev
 
 [Service]
@@ -51,3 +53,11 @@ python manage.py migrate APPNAME
 # DB Data Import 
 ```
 
+### makemigrations ERROR 처리방법
+```
+nano operation/views.py
+# env = Env() # 주석처리
+python manage.py makemigrations
+nano operation/views.py
+env = Env() # 주석해제 
+```

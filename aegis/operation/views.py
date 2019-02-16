@@ -1,7 +1,12 @@
 import json
 import datetime
 from datetime import timedelta
+
+import coreapi
 from django.conf import settings
+from rest_framework.decorators import api_view, schema
+from rest_framework.schemas import AutoSchema
+from rest_framework.views import APIView
 
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
@@ -10,8 +15,9 @@ from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
-from config.decorator import cross_origin_read_allow
+from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
 
+from .models import Environment
 from .models import Staff
 from .models import Work_Place
 from .models import Beacon
@@ -37,17 +43,159 @@ from config.error_handler import *
 import inspect
 
 
+class Env(object):
+    def __init__(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        self.is_running = False
+        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
+        str_dt_reload = strToday + '05:00:00'
+        self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
+        self.start()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def __del__(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        logSend(' <<< Environment class delete')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def loadEnvironment(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if len(Environment.objects.filter()) == 0:
+            newEnv = Environment(
+                dt=datetime.datetime.now() - timedelta(days=3),
+                manager_id=0,
+                dt_android_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
+                timeCheckServer="05:00:00",
+            )
+            newEnv.save()
+        note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
+        print(note)
+        logSend(note)
+        envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
+        note = '>>> no of environment = ' + str(len(envs))
+        print(note)
+        logSend(note)
+        """
+        i = 0
+        for envCell in envs :
+            logSend('   >>> ' + `i` + ' = ' + `envCell.id` + '' + `envCell.dt.strftime("%Y-%m-%d %H:%M:%S")`)
+            i = i + 1
+        """
+        self.curEnv = envs[0]
+        print('   Env: ')
+        print('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
+        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
+        str_dt_reload = strToday + self.curEnv.timeCheckServer
+        self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
+        if self.dt_reload < datetime.datetime.now():  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
+            self.dt_reload = self.dt_reload + timedelta(days=1)
+            logSend('       next load time + 24 hours')
+        print('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return
+
+    def start(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if not self.is_running:
+            self.loadEnvironment()
+            self.is_running = True
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def stop(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        self.is_running = False
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
+    def current(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if self.dt_reload < datetime.datetime.now():
+            self.is_running = False
+            self.loadEnvironment()
+            self.is_running = True
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return self.curEnv
+
+    def self(self):
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return self
+
+
+env = Env()
+
+
 @cross_origin_read_allow
-def reg_staff(request):
+def testEnv(request):
     """
-    운영 직원 등록
-    - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-    http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+    http://0.0.0.0:8000/operation/testEnv
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    global env
+    result = {}
+    result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
+    result['timeCheckServer'] = env.current().timeCheckServer
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def currentEnv(request):
+    """
+    현재 환경 값을 요청한다.
+    currentEnv (current environment) 현재 환경 값을 요청한다.
+    http://0.0.0.0:8000/operation/currentEnv
+    POST
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    envirenments = Environment.objects.filter().order_by('-dt')
+    array_env = []
+    for envirenment in envirenments:
+        new_env = {
+            'dt': envirenment.dt.strftime("%Y-%m-%d %H:%M:%S"),
+            'dt_android_upgrade': envirenment.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+            'timeCheckServer': envirenment.timeCheckServer
+        }
+        array_env.append(new_env)
+    current_env = {
+        'dt': env.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"),
+        'dt_android_upgrade': env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+        'timeCheckServer': env.curEnv.timeCheckServer
+    }
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
+def updateEnv(request):
+    """
+    updateEnv (update environment) 환경 값을 변경한다.
+    - 값이 없으면 처리하지 않는다.
+    - 안드로이드 업그레이드 설정 dt_android_upgrade=2019-02-12 15:00:00 이후에 업그레이드를 받게 한다.
+    http://0.0.0.0:8000/operation/updateEnv?dt_android_upgrade=2019-02-11 05:00:00&timeCheckServer=05:00:00
     POST
         {
-            'pNo': '010-1111-2222',
-            'id': 'thinking',
-            'pw': 'a~~~8282'    # SHA256
+            'dt_android_upgrade': '2019-02-11 05:00:00',
+            'timeCheckServer': '05:00:00'
         }
     response
         STATUS 200
@@ -58,38 +206,113 @@ def reg_staff(request):
     else:
         rqst = request.GET
 
-    if rqst.get('master') is None:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
-    else:
-        try:
-            if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-        except Exception as e:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+    global env
 
-    phone_no = rqst['pNo']
-    id_ = rqst['id']
-    pw = rqst['pw']
+    worker_id = request.session['op_id'][5:]
+    print(worker_id, worker_id[5:])
 
-    phone_no = phone_no.replace('-', '')
-    phone_no = phone_no.replace(' ', '')
-    print(phone_no)
-
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
-    if len(staffs) > 0:
+    worker = Staff.objects.get(id=worker_id)
+    if not (worker.id in [1, 2]):
+        print('524')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
-    new_staff = Staff(
-        login_id=id_,
-        login_pw=hash_SHA256(pw),
-        pNo=phone_no
-    )
-    new_staff.save()
+        return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
+
+    is_update = False
+
+    dt_android_upgrade = rqst['dt_android_upgrade']
+    print(' 1 ', dt_android_upgrade)
+    print(' 2 ', env.current().dt_android_upgrade)
+    if len(dt_android_upgrade) == 0:
+        dt_android_upgrade = env.current().dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        is_update = True
+    print(' 3 ', dt_android_upgrade)
+
+    timeCheckServer = rqst['timeCheckServer']
+    if len(timeCheckServer) == 0:
+        timeCheckServer = env.current().timeCheckServer
+    else:
+        is_update = True
+
+    print(dt_android_upgrade)
+    if is_update:
+        env.stop()
+        newEnv = Environment(
+            dt=datetime.datetime.now(),
+            manager_id=worker.id,
+            dt_android_upgrade=datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
+            timeCheckServer=timeCheckServer,
+        )
+        newEnv.save()
+        env.start()
+    print('200')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
+
+
+class OperationView(APIView):
+    staff_login_form = AutoSchema(manual_fields=[
+        coreapi.Field("pNo", required=True, location="form", type="string", description="partner number field",
+                      example="010-2557-3555"),
+        coreapi.Field("id", required=True, location="form", type="string", description="id field", example="thinking"),
+        coreapi.Field("pw", required=True, location="form", type="string", description="password field",
+                      example="a~~~8282")]
+    )
+
+    @api_view(['POST'])
+    @schema(staff_login_form)
+    @cross_origin_read_allow
+    @session_is_none_403_with_operation
+    def reg_staff(request):
+        """
+        운영 직원 등록
+        - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
+            http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+            POST
+                {
+                    'pNo': '010-1111-2222',
+                    'id': 'thinking',
+                    'pw': 'a~~~8282'    # AES 256
+                }
+            response
+                STATUS 200
+        """
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        worker_id = request.session['op_id'][5:]
+        worker = Staff.objects.get(id=worker_id)
+        # try:
+        #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+        #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+        # except Exception as e:
+        #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+
+        phone_no = rqst['pNo']
+        id_ = rqst['id']
+        pw = rqst['pw']
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
+        if len(staffs) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+        new_staff = Staff(
+            login_id=id_,
+            login_pw=hash_SHA256(pw),
+            pNo=phone_no
+        )
+        new_staff.save()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -104,7 +327,6 @@ def login(request):
         }
     response
         STATUS 200
-            { 'you': '넌 이거야?'}
         STATUS 401
             {'message':'id 나 비밀번호가 틀립니다.'}
     """
@@ -115,10 +337,11 @@ def login(request):
         rqst = request.GET
 
     id_ = rqst['id']
-    pw = rqst['pw']
+    pw_ = rqst['pw']
 
-    staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw))
+    staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw_))
     if len(staffs) == 0:
+        print('530')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
@@ -126,8 +349,10 @@ def login(request):
     staff.dt_login = datetime.datetime.now()
     staff.save()
 
-    request.session['id'] = staff.id
+    # 추후 0000은 permission 에 할당
+    request.session['op_id'] = 'O0000' + str(staff.id)
     request.session.save()
+    print('200')
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -143,30 +368,32 @@ def logout(request):
             {'message':'이미 로그아웃되었습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.session['id'] is None:
+    if request.session is None or 'op_id' not in request.session:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
-    staff = Staff.objects.get(id=request.session['id'])
+        return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
+    staff = Staff.objects.get(id=request.session['op_id'][5:])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
     staff.save()
-    request.session['id'] = None
+    del request.session['op_id']
+    # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def update_staff(request):
     """
     직원 정보를 수정한다.
     - 로그인 되어 있지 않으면 수정할 수 없다.
-    - 로그인 한 사람과 대상 직원이 다르면 암호 초기화만 가능하다.
+    - 로그인 한 사람과 대상 직원이 다르면 암호 초기화만 가능하다. (다음 버전에서)
         주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/operation/update_staff?login_id=thinking&before_pw=happy_day82&login_pw=&name=박종기&position=이사&department=개발&phone_no=&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
         {
-            'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+            'login_id': '변결할 id' # 중복되면 542
             'before_pw': '기존 비밀번호',     # 필수
             'login_pw': '변경하려는 비밀번호',
             'name': '이름',
@@ -182,6 +409,8 @@ def update_staff(request):
             {'message': '비밀번호가 초기화 되었습니다.'}
         STATUS 531
             {'message': '비밀번호가 틀립니다.'}
+        STATUS 542
+            {'message': '아이디가 중복됩니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -189,7 +418,7 @@ def update_staff(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     login_id = rqst['login_id']  # id 로 사용
@@ -209,16 +438,21 @@ def update_staff(request):
         phone_no = phone_no.replace(' ', '')
         print(phone_no)
 
-    staff = Staff.objects.get(login_id=login_id)
-    if worker.id != staff.id:
-        staff.login_pw = hash_SHA256('happy_day82')
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
+    staff = worker
+    # if worker.id != staff.id:
+    #     staff.login_pw = hash_SHA256('happy_day82')
+    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
 
     if hash_SHA256(before_pw) != staff.login_pw:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
+    if len(login_id) > 0:
+        if (Staff.objects.filter(login_id=login_id)) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디가 중복됩니다.'})
+        staff.login_id = login_id
     if len(login_pw) > 0:
         staff.login_pw = hash_SHA256(login_pw)
     if len(name) > 0:
@@ -241,6 +475,7 @@ def update_staff(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def list_staff(request):
     """
     직원 list 요청
@@ -259,7 +494,7 @@ def list_staff(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     # if rqst.get('master') is None:
@@ -268,41 +503,40 @@ def list_staff(request):
     for key in request.session.keys():
         print(key, ':', request.session[key])
 
-    # id = rqst['id']  # 암호화된 id
-    # login_id = rqst['login_id']  # 암호화된 id
-    # login_pw = rqst['login_pw']  # 암호화된 id
-    # print(id, login_id)
-    #
-    # if len(id) > 0:
-    #     staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    # else:
-    #     staff = Staff.objects.get(login_id=login_id)
-    # if login_pw != staff.login_pw:
-    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #     return REG_523_HAVE_NO_PERMISSION_TO_VIEW.to_json_response()
-
-    staffs = Staff.objects.filter().values('name', 'position', 'department', 'pNo', 'pType', 'email')
-    arr_staff = [staff for staff in staffs]
+    staffs = Staff.objects.filter()
+    arr_staff = []
+    for staff in staffs:
+        r_staff = {
+            'login_id': staff.login_id,
+            'name': staff.name,
+            'position': staff.position,
+            'department': staff.department,
+            'pNo': staff.pNo,
+            'pType': staff.pType,
+            'email': staff.email,
+            'is_worker': True if staff.id == worker.id else False
+        }
+        arr_staff.append(r_staff)
+    print(arr_staff)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
 
 @cross_origin_read_allow
-@csrf_exempt
+@session_is_none_403_with_operation
 def reg_customer(request):
     """
     고객사를 등록한다.
     - 간단한 내용만 넣어서 등록하고 나머지는 고객사 담당자가 추가하도록 한다.
-    - 입력한 전화번호로 SMS 에 id 와 pw 를 보낸다. (회사 이름과 전화번호가 동일해야한다.)
+    - 담당자 전화번호로 SMS 에 id 와 pw 를 보낸다.
         주) 항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/operation/reg_customer?re_sms=NO&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/operation/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     POST
         {
-            're_sms': 'YES', # 문자 재요청인지 여부 (YES : SMS 재요청, NO : 신규 등록)
-            'customer_name': '대덕기공',    # 문자 재전송 필수
+            'customer_name': '대덕기공',
             'staff_name': '홍길동',
-            'staff_pNo': '010-1111-2222',   # 문자 재전송 필수
+            'staff_pNo': '010-1111-2222',
             'staff_email': 'id@daeducki.com'
         }
     response
@@ -314,30 +548,31 @@ def reg_customer(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
-    re_sms = rqst['re_sms']
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
     staff_pNo = rqst["staff_pNo"]
+    if len(staff_pNo):
+        staff_pNo = staff_pNo.replace('-', '')
+        staff_pNo = staff_pNo.replace(' ', '')
+
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
-        're_sms': re_sms,
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email,
-        'worker_id': worker.id
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
-    response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer', json=new_customer_data)
-    print('status', response_customer.status_code, response_customer.json())
+    response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
-    print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
+    # print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -347,18 +582,69 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
-
-    print(r.json())
+    # print(r.json())
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(r.json())
+    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
 
 
 @cross_origin_read_allow
-@csrf_exempt
+@session_is_none_403_with_operation
+def sms_customer_staff(request):
+    """
+    고객사 담당자에게 문자로 id 와 pw 를 보낸다.
+    http://0.0.0.0:8000/operation/sms_customer_staff?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_pNo=010-2557-3555
+    POST
+        {
+            'staff_id': 'cipher_id'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    new_customer_data = {
+        'staff_id': rqst['staff_id'],
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
+    }
+    response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
+                                      json=new_customer_data)
+    if response_customer.status_code != 200:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return ReqLibJsonResponse(response_customer)
+    response_customer_json = response_customer.json()
+    print('아이디 ' + response_customer_json['login_id'])
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        'receiver': rqst['staff_pNo'],  # '01025573555',
+        'msg_type': 'SMS',
+        'msg': '반갑습니다.\n'
+               '\'이지체크\'예요~~\n'
+               '아이디 ' + response_customer_json['login_id'] + '\n'
+                                                             '비밀번호 happy_day!!!'
+    }
+    r = requests.post('https://apis.aligo.in/send/', data=rData)
+    logSend(r.json())
+    print(r.json())
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
 def list_customer(request):
     """
     고객사 리스트를 요청한다.
@@ -370,13 +656,33 @@ def list_customer(request):
         staff_email=id@daeducki.com
     response
         STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "customers": [
+                {
+                  "name": "대덕테크",						 # 고객사 상호
+                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
+                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
+                  "dt_accept": null,					 # 등록 승인일
+                  "type": "발주업체",						 # 발주업체 or 파견업체(도급업체) - 협력업체는 표시되지 않는다.
+                  "staff_id":"cipher_id",                # 암호화된 담당자 id (표시하지 않음.) - 담당자 pw 를 reset 할 때 사용
+                  "staff_name": "박종기",					 # 담당자
+                  "staff_pNo": "010-2557-3555",			 # 담당자 전화번호
+                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
+                  "manager_name": "",					 # 관리자
+                  "manager_pNo": "",					 # 관리자 전화번호
+                  "manager_email": "",					 # 관리자 이메일
+                  "dt_payment": null					 # 고객사 결제일
+                }
+              ]
+            }
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
 
-    worker_id = request.session['id']
+    worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     customer_name = rqst['customer_name']
@@ -389,14 +695,30 @@ def list_customer(request):
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email,
-        'worker_id': worker.id
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
-    response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer', params=json_data)
+    response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
+    print(response_customer.json())
+    if response_customer.status_code != 200:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return ReqLibJsonResponse(response_customer)
+    arr_customer = response_customer.json()['customers']
+    print(arr_customer)
+    op_arr_customer = []
+    for customer in arr_customer:
+        op_customer = customer
+        del op_customer['id']
+        if op_customer['type'] == 12:
+            continue
+        op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
+        del op_customer['contractor_name']
+        op_arr_customer.append(op_customer)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return ReqLibJsonResponse(response_customer)
+    return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def update_work_place(request):
     """
     사업장 내용을 수정한다.
@@ -437,6 +759,7 @@ def update_work_place(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def update_beacon(request):
     """
     비콘 내용을 수정한다.
@@ -468,6 +791,7 @@ def update_beacon(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def list_work_place(request):
     """
     사업장 정보 리스트를 요청한다.
@@ -508,6 +832,7 @@ def list_work_place(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def list_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -549,6 +874,7 @@ def list_beacon(request):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
 def detail_beacon(request):
     """
     beacon 정보 리스트를 요청한다.
@@ -592,3 +918,28 @@ def detail_beacon(request):
     response = HttpResponse()
     response.status_code = 200
     return response
+
+
+@cross_origin_read_allow
+def dt_android_upgrade(request):
+    """
+    android 를 upgrade 할 날짜 시간 (
+    http://0.0.0.0:8000/operation/dt_android_upgrade
+    POST
+    response
+        STATUS 200
+            { 'dt_update':'2019-02-11' }
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # worker_id = request.session['op_id'][5:]
+    # worker = Staff.objects.get(id=worker_id)
+
+    global env
+    result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)

@@ -15,13 +15,17 @@ class BaseMiddleware:
 
 class ProcessExceptionMiddleware(BaseMiddleware):
     def process_exception(self, request, exception):
-        stack_trace = get_traceback_str()
-        print(stack_trace)
-        logError(stack_trace)
-        return HttpResponse(json.dumps(
-            {'message': str(exception),
-             'stack_trace': stack_trace}
-        ), status=520)
+        return exception_handler(request, exception)
+
+
+def exception_handler(request, exception):
+    stack_trace = get_traceback_str()
+    print(stack_trace)
+    logError(stack_trace)
+    return HttpResponse(json.dumps(
+        {'message': str(exception),
+         'stack_trace': stack_trace}
+    ), status=520)
 
 
 def get_traceback_str():

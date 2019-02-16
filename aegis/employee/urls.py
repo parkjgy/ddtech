@@ -34,12 +34,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 # Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+# router = routers.DefaultRouter()
+# router.register(r'users', UserViewSet)
 
 urlpatterns = [
-    url(r'^api', include(router.urls)),
-    url(r'^swagger', schema_view),
+    # url(r'^api', include(router.urls)),
+    # url(r'^swagger', schema_view),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     # url(r'^api-auth', include('router.urls')),
@@ -56,6 +56,7 @@ urlpatterns = [
     url(r'employee/beacon_verify$', views.beacon_verify, name='beacon_verify'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),
+    url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),
     url(r'employee/beacon_status$', views.beacon_status, name='beacon_status'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
