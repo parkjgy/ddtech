@@ -13,21 +13,21 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
-from django.urls import include
+from django.conf import settings
 from django.conf.urls import url
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include
+from django.urls import path
+from rest_framework_swagger.views import get_swagger_view
 
 from . import secret
 from . import views as confViews
 
-from django.conf import settings
-
 urlpatterns = [
+    url(r'^swagger-ui.html', get_swagger_view(title='Rest API Document')),
     path('apiView', confViews.api_view),
     # path('apiView_beta', confViews.api_view_beta),
-
     path('admin/', admin.site.urls),
     path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
     path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
@@ -35,6 +35,7 @@ urlpatterns = [
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
+
     url(r'', include('operation.urls')),
     url(r'', include('customer.urls')),
 

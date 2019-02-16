@@ -1,99 +1,104 @@
-import json
 import datetime
-from datetime import timedelta
-from django.conf import settings
+import inspect
 
-from config.common import logSend, logError
-from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
-from config.common import HttpResponse, ReqLibJsonResponse
+import coreapi
+import requests
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from requests import Response
+from rest_framework import status
+from rest_framework.decorators import api_view, renderer_classes, schema
+from rest_framework.renderers import JSONRenderer
+from rest_framework.schemas import AutoSchema
+from rest_framework.views import APIView
+from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
+
+from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256
-# secret import
-from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow
-
-from .models import Staff
-from .models import Work_Place
-from .models import Beacon
-
-import requests
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-
+# secret import
+from config.secret import AES_DECRYPT_BASE64
 from config.status_collection import *
 
-from config.error_handler import *
-
 # from config.settings.base import CUSTOMER_URL
-
 # Operation
 # 1) request.method ='OPTIONS'
 # 서버에서 Cross-Site 관련 옵션들을 확인
 # 2) request.method == REAL_METHOD:
 # 실제 사용할 데이터를 전송
-
 # try: 다음에 code = 'argument incorrect'
+from operation.models import Staff
 
-import inspect
 
-
-@cross_origin_read_allow
-def reg_staff(request):
-    """
-    운영 직원 등록
-    - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-    http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
-    POST
-        {
-            'pNo': '010-1111-2222',
-            'id': 'thinking',
-            'pw': 'a~~~8282'    # SHA256
-        }
-    response
-        STATUS 200
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    if rqst.get('master') is None:
-        worker_id = request.session['id']
-        worker = Staff.objects.get(id=worker_id)
-    else:
-        try:
-            if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-        except Exception as e:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
-
-    phone_no = rqst['pNo']
-    id_ = rqst['id']
-    pw = rqst['pw']
-
-    phone_no = phone_no.replace('-', '')
-    phone_no = phone_no.replace(' ', '')
-    print(phone_no)
-
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
-    if len(staffs) > 0:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
-    new_staff = Staff(
-        login_id=id_,
-        login_pw=hash_SHA256(pw),
-        pNo=phone_no
+class OperationView(APIView):
+    staff_login_form = AutoSchema(manual_fields=[
+        coreapi.Field("pNo", required=True, location="form", type="string", description="username here"),
+        coreapi.Field("id", required=True, location="form", type="string", description="password field"),
+        coreapi.Field("pw", required=True, location="form", type="string", description="password field")]
     )
-    new_staff.save()
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
+
+    @api_view(['POST'])
+    @schema(staff_login_form)
+    @cross_origin_read_allow
+    def reg_staff(request):
+        """
+        운영 직원 등록
+        - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
+            http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+            POST
+                {
+                    'pNo': '010-1111-2222',
+                    'id': 'thinking',
+                    'pw': 'a~~~8282'    # SHA256
+                }
+            response
+                STATUS 200
+        """
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        if rqst.get('master') is None:
+            worker_id = request.session['id']
+            worker = Staff.objects.get(id=worker_id)
+        else:
+            try:
+                if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+                    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                    return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+            except Exception as e:
+                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+
+        phone_no = rqst['pNo']
+        id_ = rqst['id']
+        pw = rqst['pw']
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
+        if len(staffs) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+        new_staff = Staff(
+            login_id=id_,
+            login_pw=hash_SHA256(pw),
+            pNo=phone_no
+        )
+        new_staff.save()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response()
 
 
+@api_view(['POST'])
+@renderer_classes([OpenAPIRenderer, SwaggerUIRenderer, JSONRenderer])
 @cross_origin_read_allow
-def login(request):
+def login(self, request):
     """
     로그인
     http://0.0.0.0:8000/operation/login?id=thinking&pw=a~~~8282
@@ -132,6 +137,7 @@ def login(request):
     return REG_200_SUCCESS.to_json_response()
 
 
+@api_view(['GET', 'POST'])
 @cross_origin_read_allow
 def logout(request):
     """
@@ -145,7 +151,7 @@ def logout(request):
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.session['id'] is None:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+        return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['id'])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
@@ -347,7 +353,7 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
 
@@ -592,3 +598,30 @@ def detail_beacon(request):
     response = HttpResponse()
     response.status_code = 200
     return response
+
+
+class SwaggerSchemaView(APIView):
+    custom_schema = AutoSchema(manual_fields=[
+        coreapi.Field("username", required=True, location="form", type="string", description="username here"),
+        coreapi.Field("password", required=True, location="form", type="string", description="password field")]
+    )
+
+    @api_view(['POST'])
+    @schema(custom_schema)
+    def find_jambalaya(request, custom_schema):
+        """
+        Retrieve a *jambalaya* recipe by name or country of origin
+        ---
+        request_serializer: JambalayaQuerySerializer
+        response_serializer: JambalayaSerializer
+        """
+        if request.method == 'POST':
+            serializer = JambalayaQuerySerializer(data=request.DATA)
+            if serializer.data['name'] is not None:
+                j = Jambalaya.objects.filter(recipe__contains='name=%s' % serializer.data['name'])
+            else:
+                j = Jambalaya.objects.filter(recipe__contains="country=%s" % serializer.data['origin'])
+            serializer = JambalayaSerializer(j, many=True)
+            return Response(serializer.data)
+        else:
+            return Response("", status=status.HTTP_400_BAD_REQUEST)

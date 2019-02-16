@@ -199,6 +199,9 @@ LOGGING = {
     }
 }
 
+SWAGGER_SETTINGS = {
+    'JSON_EDITOR': True,
+}
 # try:
 #     from local_settings import *
 # except ImportError:
