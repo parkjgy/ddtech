@@ -1,0 +1,12 @@
+[Unit]
+After=network-online.target
+Wants=network-online.target
+Description=Aegis Server Dev
+
+[Service]
+Type=simple
+User=ddtechi
+ExecStart=/home/ddtechi/ddtech/ddtenv/bin/python /home/ddtechi/ddtech/aegis/manage.py runserver 0.0.0.0:8000 --settings=config.settings.development
+
+[Install]
+WantedBy=multi-user.target

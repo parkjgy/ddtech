@@ -1,14 +1,19 @@
 # log import
 import json
 import random
+import inspect
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import func_begin_log, func_end_log
+
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
+from config.status_collection import *
+from config.decorator import cross_origin_read_allow
 
 from .models import Beacon
 from .models import Beacon_History
@@ -23,6 +28,7 @@ import datetime
 from django.conf import settings
 
 
+@cross_origin_read_allow
 def check_version(request):
     """
     앱 버전을 확인한다.
@@ -38,43 +44,34 @@ def check_version(request):
             'url': 'http://...' # itune, google play update
         }
     """
-    try:
-        logSend('--- /employee/check_version')
-        print("employee : check version")
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-            version = rqst['v']
-        else:
-            version = request.GET['v']
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
 
-        items = version.split('.')
-        if (items[4]) == 0:
-            result = {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            print(response)
-            response.status_code = 503
-            print(response.content)
-            return response
-        ver_dt = items[4]
-        dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
-                                                '%Y-%m-%d %H:%M:%S')
-        dt_check = datetime.datetime.strptime('2019-01-12 00:00:00', '%Y-%m-%d %H:%M:%S')
-        print(dt_version)
-        if dt_version < dt_check:
-            print('dt_version < dt_check')
-            result = {'message': '업그레이드가 필요합니다.',
-                      'url': 'http://...'  # itune, google play update
-                      }
-            response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-            print(response)
-            response.status_code = 503
-        else:
-            result = {}
-            response = HttpResponse()
-        print(response.content)
-        return response
-    except Exception as e:
-        return exceptionError('check_version', '503', e)
+    version = rqst['v']
+
+    items = version.split('.')
+    if (items[4]) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
+    ver_dt = items[4]
+    dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
+                                            '%Y-%m-%d %H:%M:%S')
+    response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
+    print('status', response_operation.status_code, response_operation.json())
+    dt_android_upgrade = response_operation.json()['dt_update']
+    print(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
+
+    dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
+    print(dt_version)
+    if dt_version < dt_check:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
+                  })
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
 
 
 @csrf_exempt
@@ -106,12 +103,16 @@ def passer_reg(request):
         if request.method == 'POST':
             phone_numbers = rqst['phones']
         else:
-            phone_numbers = rqst.getlist('phhones')
+            phone_numbers = rqst.getlist('phones')
 
         print(phone_numbers)
         for i in range(6):
+            pNo = phone_numbers[i]
+            if len(pNo):
+                pNo = pNo.replace('-', '')
+                pNo = pNo.replace(' ', '')
             passer = Passer(
-                pNo=phone_numbers[i],
+                pNo=pNo,
                 employee_id=pass_type
             )
             passer.save()
@@ -260,6 +261,7 @@ def pass_verify(request):
             dt_verify=dt
         )
         new_pass.save()
+        before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
         response = HttpResponse()
         response.status_code = 200
         logSend('<<< /employee/pass_verify')
@@ -707,3 +709,237 @@ def exchange_info(request):
         return response
     except Exception as e:
         return exceptionError('exchange_info', '503', e)
+
+
+@cross_origin_read_allow
+def analysys(request):
+    """
+    출입, 출퇴근 결과 분석
+    http://0.0.0.0:8000/employee/analysys
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+            {
+              "1": {
+                "name": "박종기",
+                "pNo": "01025573555",
+                "pass": [
+                  {
+                    "is_in": "IN",
+                    "dt_reg": "2019-02-06T08:25:00Z",
+                    "dt_verify": null
+                  },
+                  {
+                    "is_in": "IN",
+                    "dt_reg": null,
+                    "dt_verify": "2019-02-06T08:27:00Z"
+                  },
+                  {
+                    "is_in": "OUT",
+                    "dt_reg": "2019-02-07T17:33:00Z",
+                    "dt_verify": null
+                  },
+                  {
+                    "is_in": "OUT",
+                    "dt_reg": null,
+                    "dt_verify": "2019-02-07T17:35:00Z"
+                  }
+                ]
+              },
+              "2": {
+                "name": "곽명석",
+                "pNo": "01054214410",
+                "pass": []
+              },
+              "message": "정상적으로 처리되었습니다."
+            }
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
+    dic_passer = {}
+    for passer in passers:
+        employee_id = passer['employee_id']
+        passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
+        dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
+    print(dic_passer, '\n', dic_passer[1]['name'])
+    del passers
+    del dic_employee
+    """
+    dic_passer = {1:{"name":"박종기", "pNo":"01025573555"}, 2:{"name:"곽명석", "pNo": "01054214410"}}
+    """
+    passes = Pass.objects.filter().values('id', 'passer_id', 'is_in', 'dt_reg', 'dt_verify')
+    for key in dic_passer:
+        dic_passer[key]['pass'] = []
+        for pass_ in passes:
+            if key == pass_['passer_id']:
+                new_pass = {'is_in': 'IN' if pass_['is_in'] == 1 else 'OUT',
+                            'dt_reg': pass_['dt_reg'],
+                            'dt_verify': pass_['dt_verify']}
+                dic_passer[key]['pass'].append(new_pass)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(dic_passer)
+
+
+@cross_origin_read_allow
+def rebuild_pass_history(request):
+    """
+    출퇴근 기록 다시 만들기
+    http://0.0.0.0:8000/employee/rebuild_pass_history
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    passes = Pass.objects.filter()
+
+    error_passes = []
+    arr_pass_history = []
+    long_interval_list = []
+    for pass_ in passes:
+        if pass_.dt_reg is None:
+            print(pass_.id, pass_.passer_id, pass_.is_in, pass_.dt_verify.strftime("%Y-%m-%d %H:%M:%S"))
+            passer_id = pass_.passer_id
+            dt = pass_.dt_verify
+            before_pass = Pass.objects\
+                .filter(passer_id=passer_id,
+                        dt_reg__lt = dt) \
+                    .values('id',
+                        'passer_id',
+                        'is_in',
+                        'dt_reg',
+                        'dt_verify')\
+                .order_by('-dt_reg').last()
+            if before_pass is None:
+                before_pass = Pass.objects \
+                    .filter(passer_id=passer_id,
+                            dt_reg__gte=dt) \
+                    .values('id',
+                            'passer_id',
+                            'is_in',
+                            'dt_reg',
+                            'dt_verify') \
+                    .order_by('dt_reg').first()
+                if before_pass is None:
+                    error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
+                    continue
+            print('  ', before_pass['id'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
+            before_pass['dt_verify'] = pass_.dt_verify
+            before_pass['v_id'] = pass_.id
+            arr_pass_history.append(before_pass)
+            # before_pass_dt_reg = datetime.datetime.strptime(before_pass['dt_reg'], "%Y-%m-%d %H:%M:%S")
+            before_pass_dt_reg = before_pass['dt_reg']
+            if before_pass_dt_reg < pass_.dt_verify :
+                time_interval = pass_.dt_verify - before_pass_dt_reg
+            else:
+                time_interval = before_pass_dt_reg - pass_.dt_verify
+            if time_interval.seconds > (60 * 60 * 12):
+                long_interval_list.append(before_pass)
+            # arr_pass_history.append({'before_pass':before_pass})
+                # .first()#[:5].last()
+    #
+    #         print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
+    #               before_pass['dt_verify'])
+    #         # for pass__ in before_pass:
+    #         #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
+    #         if pass_['is_in'] : # in 이면
+    #             pass_history = {'passer_id': passer_id,
+    #                             'action': 100,
+    #                             'dt_in': before_pass['dt_reg'],
+    #                             'dt_in_verify': pass_['dt_verify'],
+    #                             }
+    #             arr_pass_history.append(pass_history)
+    #         else:
+    #             if len(arr_pass_history) == 0:
+    #                 pass_history = {'passer_id': passer_id, 'action': 0}
+    #             else:
+    #                 pass_history = arr_pass_history[-1]
+    #             pass_history['action'] += 10
+    #             pass_history['dt_out'] = before_pass['dt_reg']
+    #             pass_history['dt_out_verify'] = pass_['dt_verify']
+    #             pass_history['minor'] = 0
+    #             arr_pass_history.append(pass_history)
+    #         print('------ ', len(arr_pass_history))
+    print(len(arr_pass_history), len(error_passes))
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'long_interval_list':long_interval_list, 'error_passes': error_passes})
+
+
+@cross_origin_read_allow
+def beacon_status(request):
+    """
+    beacon 상태
+    http://0.0.0.0:8000/employee/beacon_status
+    POST
+        {
+            'id': 'thinking',
+            'pw': 'a~~~8282'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter()
+    dic_passer = {}
+    for passer in passers:
+        if passer.employee_id == -1:
+            print('\t\t', passer.employee_id)
+        elif passer.employee_id in dic_employee:
+            print(passer.employee_id, dic_employee[passer.employee_id])
+        else:
+            print(passer.employee_id)
+            passer.employee_id = -1
+            passer.save()
+        dic_passer[passer.id] = passer.pNo
+    print(dic_passer)
+    passes = Pass.objects.filter()
+    for pass_ in passes:
+        if not (pass_.passer_id in dic_passer):
+            print('   none passer', pass_.id, pass_.is_in)
+            # pass_.delete()
+
+    beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
+    arr_beacon = [beacon for beacon in beacons]
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
+
+
