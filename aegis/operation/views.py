@@ -1,7 +1,12 @@
 import json
 import datetime
 from datetime import timedelta
+
+import coreapi
 from django.conf import settings
+from rest_framework.decorators import api_view, schema
+from rest_framework.schemas import AutoSchema
+from rest_framework.views import APIView
 
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
@@ -53,7 +58,7 @@ class Env(object):
         logSend(' <<< Environment class delete')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
-    def loadEnvironment(self) :
+    def loadEnvironment(self):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if len(Environment.objects.filter()) == 0:
             newEnv = Environment(
@@ -66,7 +71,7 @@ class Env(object):
         note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
         print(note)
         logSend(note)
-        envs = Environment.objects.filter(dt__lt = self.dt_reload).order_by('-id')
+        envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
         note = '>>> no of environment = ' + str(len(envs))
         print(note)
         logSend(note)
@@ -84,8 +89,8 @@ class Env(object):
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + self.curEnv.timeCheckServer
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
-        if self.dt_reload < datetime.datetime.now() :  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
-            self.dt_reload = self.dt_reload + timedelta(days = 1)
+        if self.dt_reload < datetime.datetime.now():  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
+            self.dt_reload = self.dt_reload + timedelta(days=1)
             logSend('       next load time + 24 hours')
         print('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
         print('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -104,16 +109,16 @@ class Env(object):
         self.is_running = False
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
-    def current(self) :
+    def current(self):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        if self.dt_reload < datetime.datetime.now() :
+        if self.dt_reload < datetime.datetime.now():
             self.is_running = False
             self.loadEnvironment()
             self.is_running = True
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return self.curEnv
 
-    def self(self) :
+    def self(self):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return self
@@ -123,7 +128,7 @@ env = Env()
 
 
 @cross_origin_read_allow
-def testEnv(request) :
+def testEnv(request):
     """
     http://0.0.0.0:8000/operation/testEnv
     POST
@@ -166,17 +171,17 @@ def currentEnv(request):
     for envirenment in envirenments:
         new_env = {
             'dt': envirenment.dt.strftime("%Y-%m-%d %H:%M:%S"),
-            'dt_android_upgrade':envirenment.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
-            'timeCheckServer':envirenment.timeCheckServer
+            'dt_android_upgrade': envirenment.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+            'timeCheckServer': envirenment.timeCheckServer
         }
         array_env.append(new_env)
     current_env = {
-            'dt': env.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"),
-            'dt_android_upgrade':env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
-            'timeCheckServer':env.curEnv.timeCheckServer
-        }
+        'dt': env.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"),
+        'dt_android_upgrade': env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
+        'timeCheckServer': env.curEnv.timeCheckServer
+    }
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'current_env':current_env, 'env_list':array_env})
+    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
 
 
 @cross_origin_read_allow
@@ -207,7 +212,7 @@ def updateEnv(request):
     print(worker_id, worker_id[5:])
 
     worker = Staff.objects.get(id=worker_id)
-    if not(worker.id in [1, 2]):
+    if not (worker.id in [1, 2]):
         print('524')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
@@ -217,27 +222,27 @@ def updateEnv(request):
     dt_android_upgrade = rqst['dt_android_upgrade']
     print(' 1 ', dt_android_upgrade)
     print(' 2 ', env.current().dt_android_upgrade)
-    if len(dt_android_upgrade) == 0 :
+    if len(dt_android_upgrade) == 0:
         dt_android_upgrade = env.current().dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S")
-    else :
+    else:
         is_update = True
     print(' 3 ', dt_android_upgrade)
 
     timeCheckServer = rqst['timeCheckServer']
-    if len(timeCheckServer) == 0 :
+    if len(timeCheckServer) == 0:
         timeCheckServer = env.current().timeCheckServer
-    else :
+    else:
         is_update = True
 
     print(dt_android_upgrade)
-    if is_update :
+    if is_update:
         env.stop()
         newEnv = Environment(
-            dt = datetime.datetime.now(),
-            manager_id = worker.id,
-            dt_android_upgrade = datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
-            timeCheckServer = timeCheckServer,
-            )
+            dt=datetime.datetime.now(),
+            manager_id=worker.id,
+            dt_android_upgrade=datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
+            timeCheckServer=timeCheckServer,
+        )
         newEnv.save()
         env.start()
     print('200')
@@ -245,58 +250,69 @@ def updateEnv(request):
     return REG_200_SUCCESS.to_json_response()
 
 
-@cross_origin_read_allow
-@session_is_none_403_with_operation
-def reg_staff(request):
-    """
-    운영 직원 등록
-    - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-    http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
-    POST
-        {
-            'pNo': '010-1111-2222',
-            'id': 'thinking',
-            'pw': 'a~~~8282'    # AES 256
-        }
-    response
-        STATUS 200
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    worker_id = request.session['op_id'][5:]
-    worker = Staff.objects.get(id=worker_id)
-    # try:
-    #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-    #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-    # except Exception as e:
-    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
-
-    phone_no = rqst['pNo']
-    id_ = rqst['id']
-    pw = rqst['pw']
-
-    phone_no = phone_no.replace('-', '')
-    phone_no = phone_no.replace(' ', '')
-    print(phone_no)
-
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
-    if len(staffs) > 0:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
-    new_staff = Staff(
-        login_id=id_,
-        login_pw=hash_SHA256(pw),
-        pNo=phone_no
+class OperationView(APIView):
+    staff_login_form = AutoSchema(manual_fields=[
+        coreapi.Field("pNo", required=True, location="form", type="string", description="partner number field",
+                      example="010-2557-3555"),
+        coreapi.Field("id", required=True, location="form", type="string", description="id field", example="thinking"),
+        coreapi.Field("pw", required=True, location="form", type="string", description="password field",
+                      example="a~~~8282")]
     )
-    new_staff.save()
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
+
+    @api_view(['POST'])
+    @schema(staff_login_form)
+    @cross_origin_read_allow
+    @session_is_none_403_with_operation
+    def reg_staff(request):
+        """
+        운영 직원 등록
+        - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
+            http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+            POST
+                {
+                    'pNo': '010-1111-2222',
+                    'id': 'thinking',
+                    'pw': 'a~~~8282'    # AES 256
+                }
+            response
+                STATUS 200
+        """
+        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        if request.method == 'POST':
+            rqst = json.loads(request.body.decode("utf-8"))
+        else:
+            rqst = request.GET
+
+        worker_id = request.session['op_id'][5:]
+        worker = Staff.objects.get(id=worker_id)
+        # try:
+        #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+        #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+        # except Exception as e:
+        #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+
+        phone_no = rqst['pNo']
+        id_ = rqst['id']
+        pw = rqst['pw']
+
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+        staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
+        if len(staffs) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+        new_staff = Staff(
+            login_id=id_,
+            login_pw=hash_SHA256(pw),
+            pNo=phone_no
+        )
+        new_staff.save()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -354,7 +370,7 @@ def logout(request):
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.session is None or 'op_id' not in request.session:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message':'이미 로그아웃되었습니다.'})
+        return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['op_id'][5:])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
@@ -491,13 +507,13 @@ def list_staff(request):
     arr_staff = []
     for staff in staffs:
         r_staff = {
-            'login_id':staff.login_id,
-            'name':staff.name,
-            'position':staff.position,
-            'department':staff.department,
-            'pNo':staff.pNo,
-            'pType':staff.pType,
-            'email':staff.email,
+            'login_id': staff.login_id,
+            'name': staff.name,
+            'position': staff.position,
+            'department': staff.department,
+            'pNo': staff.pNo,
+            'pType': staff.pType,
+            'email': staff.email,
             'is_worker': True if staff.id == worker.id else False
         }
         arr_staff.append(r_staff)
@@ -566,7 +582,7 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     # print(r.json())
@@ -601,7 +617,8 @@ def sms_customer_staff(request):
         'staff_id': rqst['staff_id'],
         'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
-    response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation', json=new_customer_data)
+    response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
+                                      json=new_customer_data)
     if response_customer.status_code != 200:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return ReqLibJsonResponse(response_customer)
@@ -616,7 +633,7 @@ def sms_customer_staff(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     logSend(r.json())
@@ -697,7 +714,7 @@ def list_customer(request):
         del op_customer['contractor_name']
         op_arr_customer.append(op_customer)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response({'customers':op_arr_customer})
+    return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
 
 
 @cross_origin_read_allow
@@ -923,6 +940,6 @@ def dt_android_upgrade(request):
     # worker = Staff.objects.get(id=worker_id)
 
     global env
-    result = {'dt_update':env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
+    result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)

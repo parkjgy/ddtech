@@ -34,12 +34,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 # Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+# router = routers.DefaultRouter()
+# router.register(r'users', UserViewSet)
 
 urlpatterns = [
-    url(r'^api', include(router.urls)),
-    url(r'^swagger', schema_view),
+    # url(r'^api', include(router.urls)),
+    # url(r'^swagger', schema_view),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     # url(r'^api-auth', include('router.urls')),
