@@ -20,6 +20,7 @@ from .models import Beacon_History
 from .models import Employee
 from .models import Pass
 from .models import Passer
+from .models import Pass_History
 
 import requests
 from datetime import datetime, timedelta
@@ -116,7 +117,7 @@ def passer_reg(request):
     return REG_200_SUCCESS.to_json_response()
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def pass_reg(request):
     """
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
@@ -217,7 +218,7 @@ def is_in_verify(beacons):
     return in_count > out_count
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def pass_verify(request):
     """
     출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
@@ -244,7 +245,8 @@ def pass_verify(request):
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
     logSend('\t\t\t\t\t' + passer_id)
     print(passer_id, dt, is_in)
-    dt = datetime.datetime.now()
+    # dt = datetime.datetime.now()
+    dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
     # print(dt, str_dt)
     new_pass = Pass(
@@ -279,7 +281,7 @@ def pass_verify(request):
     # return response
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def beacon_verify(request):
     """
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
@@ -351,7 +353,7 @@ def beacon_verify(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def reg_employee(request):
     """
     근로자를 등록한다.
@@ -413,7 +415,7 @@ def reg_employee(request):
     return REG_200_SUCCESS.to_json_response()
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def verify_employee(request):
     """
     근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
@@ -506,7 +508,7 @@ def verify_employee(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def work_list(request):
     """
     근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
@@ -583,6 +585,7 @@ def work_list(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
+@cross_origin_read_allow
 def generation_pass_history(request):
     """
     출입 기록에서 일자별 출퇴근 기록을 만든다.
@@ -622,7 +625,7 @@ def generation_pass_history(request):
     return REG_200_SUCCESS.to_json_response()
 
 
-@csrf_exempt
+@cross_origin_read_allow
 def exchange_info(request):
     """
     근로자 정보 변경 : 근로자의 정보를 변경한다.
@@ -670,6 +673,30 @@ def exchange_info(request):
     employee.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
+
+
+def get_dic_passer():
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
+    dic_passer = {}
+    for passer in passers:
+        employee_id = passer['employee_id']
+        passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
+        dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
+    print(dic_passer, '\n', dic_passer[1]['name'])
+    del passers
+    del dic_employee
+    """
+    dic_passer = {1:{"name":"박종기", "pNo":"01025573555"}, 2:{"name:"곽명석", "pNo": "01054214410"}}
+    """
+    return dic_passer
 
 
 @cross_origin_read_allow
@@ -787,9 +814,11 @@ def rebuild_pass_history(request):
             print(pass_.id, pass_.passer_id, pass_.is_in, pass_.dt_verify.strftime("%Y-%m-%d %H:%M:%S"))
             passer_id = pass_.passer_id
             dt = pass_.dt_verify
+            # 출퇴근버튼 눌린 시간 이전 출입시간 검색
             before_pass = Pass.objects\
                 .filter(passer_id=passer_id,
-                        dt_reg__lt = dt) \
+                        dt_reg__lt = dt,
+                        dt_reg__gt = dt - datetime.timedelta(minutes=30)) \
                     .values('id',
                         'passer_id',
                         'is_in',
@@ -797,9 +826,11 @@ def rebuild_pass_history(request):
                         'dt_verify')\
                 .order_by('-dt_reg').first()
             if before_pass is None:
+                # 출퇴근버튼 눌린 시간 이후 출입시간 검색
                 before_pass = Pass.objects \
                     .filter(passer_id=passer_id,
-                            dt_reg__gte=dt) \
+                            dt_reg__gte=dt,
+                            dt_reg__lt=dt + datetime.timedelta(minutes=30)) \
                     .values('id',
                             'passer_id',
                             'is_in',
@@ -807,45 +838,55 @@ def rebuild_pass_history(request):
                             'dt_verify') \
                     .order_by('dt_reg').first()
                 if before_pass is None:
-                    error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
-                    continue
-            print('  ', before_pass['id'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
-            before_pass['dt_verify'] = pass_.dt_verify
-            before_pass['v_id'] = pass_.id
-            arr_pass_history.append(before_pass)
+                    # error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
+                    # continue
+                    before_pass = {'id':-1,
+                                   'passer_id':passer_id,
+                                   'is_in':pass_.is_in,
+                                   'dt_reg':None,
+                                   'dt_verify':None}
+            # print('  ', before_pass['id'], before_pass['is_in'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
+
+            # before_pass['dt_verify'] = pass_.dt_verify
+            # before_pass['v_id'] = pass_.id
+            # arr_pass_history.append(before_pass)
             # before_pass_dt_reg = datetime.datetime.strptime(before_pass['dt_reg'], "%Y-%m-%d %H:%M:%S")
             before_pass_dt_reg = before_pass['dt_reg']
-            if before_pass_dt_reg < pass_.dt_verify :
-                time_interval = pass_.dt_verify - before_pass_dt_reg
-            else:
-                time_interval = before_pass_dt_reg - pass_.dt_verify
-            if time_interval.seconds > (60 * 60 * 12):
-                long_interval_list.append(before_pass)
-            # arr_pass_history.append({'before_pass':before_pass})
-                # .first()#[:5].last()
+            # if before_pass_dt_reg < pass_.dt_verify :
+            #     time_interval = pass_.dt_verify - before_pass_dt_reg
+            # else:
+            #     time_interval = before_pass_dt_reg - pass_.dt_verify
+            # if time_interval.seconds > (60 * 60 * 12):
+            #     long_interval_list.append(before_pass)
+
     #
     #         print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
     #               before_pass['dt_verify'])
     #         # for pass__ in before_pass:
     #         #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
-    #         if pass_['is_in'] : # in 이면
-    #             pass_history = {'passer_id': passer_id,
-    #                             'action': 100,
-    #                             'dt_in': before_pass['dt_reg'],
-    #                             'dt_in_verify': pass_['dt_verify'],
-    #                             }
-    #             arr_pass_history.append(pass_history)
-    #         else:
-    #             if len(arr_pass_history) == 0:
-    #                 pass_history = {'passer_id': passer_id, 'action': 0}
-    #             else:
-    #                 pass_history = arr_pass_history[-1]
-    #             pass_history['action'] += 10
-    #             pass_history['dt_out'] = before_pass['dt_reg']
-    #             pass_history['dt_out_verify'] = pass_['dt_verify']
-    #             pass_history['minor'] = 0
-    #             arr_pass_history.append(pass_history)
-    #         print('------ ', len(arr_pass_history))
+            if pass_.is_in: # in 이면
+                pass_history = Pass_History(
+                    passer_id=passer_id,
+                    action=100,
+                    dt_in=before_pass['dt_reg'],
+                    dt_in_verify=pass_.dt_verify,
+                    minor=0
+                )
+                pass_history.save()
+            else:
+                last_pass = Pass_History.objects.filter(passer_id=passer_id).last()
+                if last_pass is None:
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        action=100,
+                        dt_in=None,
+                        dt_in_verify=None
+                    )
+                pass_history.action += 10
+                pass_history.dt_out = before_pass['dt_reg']
+                pass_history.dt_out_verify = pass_.dt_verify
+                pass_history.minor = 0
+                pass_history.save()
     print(len(arr_pass_history), len(error_passes))
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'long_interval_list':long_interval_list, 'error_passes': error_passes})
@@ -869,6 +910,32 @@ def beacon_status(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    dic_passer = get_dic_passer()
+    pass_histories = Pass_History.objects.filter()
+    arr_pass_histories = []
+    for pass_history in pass_histories:
+        ph = pass_history
+        print(ph.dt_in_verify)
+        dt = ph.dt_in_verify + datetime.timedelta(hours=9)
+        print(dt)
+        ph.dt_in_verify = dt
+        # ph.dt_in = ph.dt_in + datetime.timedelta(hours=9)
+        # ph.dt_in_verify = ph.dt_in_verify + datetime.timedelta(hours=9)
+        # ph.dt_out = ph.dt_out + datetime.timedelta(hours=9)
+        # ph.dt_out_verify = ph.dt_out_verify + datetime.timedelta(hours=9)
+        view_ph = {'passer':dic_passer[ph.passer_id]['name'],
+                   'action':ph.action,
+                   'dt_in': '...' if ph.dt_in is None else ph.dt_in.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_in_verify': '...' if ph.dt_in_verify is None else ph.dt_in_verify.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_out': '...' if ph.dt_out is None else ph.dt_out.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_out_verify': '...' if ph.dt_out_verify is None else ph.dt_out_verify.strftime("%Y-%m-%d %H:%M:%S"),
+                   'minor':0
+                   }
+        arr_pass_histories.append(view_ph)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'pass_histories': arr_pass_histories})
+
 
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
