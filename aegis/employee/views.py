@@ -916,14 +916,14 @@ def beacon_status(request):
     arr_pass_histories = []
     for pass_history in pass_histories:
         ph = pass_history
-        print(ph.dt_in_verify)
-        dt = ph.dt_in_verify + datetime.timedelta(hours=9)
-        print(dt)
-        ph.dt_in_verify = dt
-        # ph.dt_in = ph.dt_in + datetime.timedelta(hours=9)
-        # ph.dt_in_verify = ph.dt_in_verify + datetime.timedelta(hours=9)
-        # ph.dt_out = ph.dt_out + datetime.timedelta(hours=9)
-        # ph.dt_out_verify = ph.dt_out_verify + datetime.timedelta(hours=9)
+        if ph.dt_in is not None:
+            ph.dt_in += datetime.timedelta(hours=9)
+        if ph.dt_in_verify is not None:
+        	ph.dt_in_verify += datetime.timedelta(hours=9)
+        if ph.dt_out is not None:
+        	ph.dt_out += datetime.timedelta(hours=9)
+        if ph.dt_out_verify is not None:
+        	ph.dt_out_verify += datetime.timedelta(hours=9)
         view_ph = {'passer':dic_passer[ph.passer_id]['name'],
                    'action':ph.action,
                    'dt_in': '...' if ph.dt_in is None else ph.dt_in.strftime("%Y-%m-%d %H:%M:%S"),
