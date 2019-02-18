@@ -949,16 +949,17 @@ def reg_work_place(request):
     """
     사업장 등록
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work_place?name=임창베르디안&manager_id=1&order_id=1
+    http://0.0.0.0:8000/customer/reg_work_place?name=임창베르디안&manager_id=&order_id=
     POST
         {
-            'staff_id':'암호화된 id', # 업무처리하는 직원
             'name':'(주)효성 용연 1공장',	# 이름
-            'manager_id':'8382',	# 관리자 id
-            'order_id':'1899',	# 발주사 id
+            'manager_id':'관리자 id',	# 관리자 id (암호화되어 있음)
+            'order_id':'발주사 id',	# 발주사 id (암호화되어 있음)
         }
     response
         STATUS 200
+        STATUS 422
+            {'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -969,11 +970,15 @@ def reg_work_place(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    manager_id = rqst['manager_id']
-    manager = Staff.objects.get(id=manager_id)
-    order_id = rqst['order_id']
-    order = Customer.objects.get(id=order_id)
     name = rqst['name']
+    manager_id = rqst['manager_id']
+    order_id = rqst['order_id']
+    if len(name) == 0 or len(manager_id) == 0 or len(order_id) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
+
+    manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
+    order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
     new_work_place = Work_Place(
         name = name,
         place_name = name,
@@ -996,15 +1001,17 @@ def reg_work_place(request):
 def update_work_place(request):
     """
     사업장 수정
+    - 변경 가능 내용: 사업장 이름, 관리자, 발주사
+    - 관리자와 발주사는 선택을 먼저하고 선택된 id 로 변경한다.
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/update_work_place?work_place_id=10&name=&manager_id=&order_id=
+    http://0.0.0.0:8000/customer/update_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_id=&order_id=
     POST
         {
-            'work_place_id':'사업장 id' # 수정할 사업장 id
+            'work_place_id':'사업장 id' # 수정할 사업장 id (암호화되어 있음)
             'name':'(주)효성 용연 1공장',	# 이름
-            'manager_id':'8382',	# 관리자 id
-            'order_id':'1899',	# 발주사 id
+            'manager_id':'관리자 id',	# 관리자 id (암호화되어 있음)
+            'order_id':'발주사 id',	# 발주사 id (암호화되어 있음)
         }
     response
         STATUS 200
@@ -1030,7 +1037,7 @@ def update_work_place(request):
 
     manager_id = rqst['manager_id']
     if len(manager_id) > 0:
-        manager = Staff.objects.get(id=manager_id)
+        manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
         work_place.manager_id = manager.id
         work_place.manager_name = manager.name
         work_place.manager_pNo = manager.pNo
@@ -1038,7 +1045,7 @@ def update_work_place(request):
 
     order_id = rqst['order_id']
     if len(order_id) > 0:
-        order = Customer.objects.get(id=order_id)
+        order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
         work_place.order_id = order.id
         work_place.order_name = order.name
 
@@ -1059,21 +1066,43 @@ def list_work_place(request):
     사업장 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_work_place?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    http://0.0.0.0:8000/customer/list_work_place?name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
-        staff_id      = 암호화된 id	 	# 업무처리하는 직원
         name          = (주)효성 용연 1공장	# 이름
         manager_name  = 선호			    # 관리자 이름
         manager_phone = 3832	 	    # 관리자 전화번호
         order_name    = 효성			    # 발주사 이름
     response
         STATUS 200
-        {
-            "work_places":
-                [ {"id", "name": "대덕테크", "contractor_id": 1, "contractor_name": "대덕테크", "place_name": "대덕테크", "manager_id": 1, "manager_name": "박종기", "manager_pNo": "01025573555", "manager_email": "thinking@ddtechi.com", "order_id": 1, "order_name": "대덕기공"}
-                  ......
-                ]
-        }
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "work_places": [
+                {
+                  "id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                  "name": "대덕테크",
+                  "contractor_name": "대덕테크",
+                  "place_name": "대덕테크",
+                  "manager_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                  "manager_name": "박종기",
+                  "manager_pNo": "01025573555",
+                  "manager_email": "thinking@ddtechi.com",
+                  "order_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                  "order_name": "대덕테크"
+                },
+                {
+                  "id": "ryWQkNtiHgkUaY_SZ1o2uA",
+                  "name": "임창베르디안",
+                  "contractor_name": "대덕테크",
+                  "place_name": "임창베르디안",
+                  "manager_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                  "manager_name": "박종기",
+                  "manager_pNo": "01025573555",
+                  "manager_email": "thinking@ddtechi.com",
+                  "order_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                  "order_name": "대덕테크"
+                }
+              ]
+            }
         STATUS 503
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -1095,7 +1124,6 @@ def list_work_place(request):
                                             manager_pNo__contains=manager_phone,
                                             order_name__contains=order_name).values('id',
                                                                                     'name',
-                                                                                    'contractor_id',
                                                                                     'contractor_name',
                                                                                     'place_name',
                                                                                     'manager_id',
@@ -1105,7 +1133,12 @@ def list_work_place(request):
                                                                                     'order_id',
                                                                                     'order_name')
 
-    arr_work_place = [work_place for work_place in work_places]
+    arr_work_place = []
+    for work_place in work_places:
+        work_place['id'] = AES_ENCRYPT_BASE64(str(work_place['id']))
+        work_place['manager_id'] = AES_ENCRYPT_BASE64(str(work_place['manager_id']))
+        work_place['order_id'] = AES_ENCRYPT_BASE64(str(work_place['order_id']))
+        arr_work_place.append(work_place)
     result = {'work_places': arr_work_place}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
