@@ -763,7 +763,7 @@ def login(request):
     """
     로그인
     - 담당자나 관리자가 아니면 회사 정보 편집이 안되어야한다.
-    http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=A~~~8282
+    http://0.0.0.0:8000/customer/login?login_id=temp_1&login_pw=happy_day!!!
     kms / HappyDay365!!!
     POST
         {
@@ -774,22 +774,28 @@ def login(request):
         STATUS 200
             {
               "message": "정상적으로 처리되었습니다.",
-              "is_site_owner": false,
-              "is_manager": false,
-              "corp_name": "대덕테크",
-              "staff_name": "정소원",
-              "staff_pNo": "010-7620-5918",
-              "staff_email": "salgoo.ceo@gmail.com",
-              "manager_name": "",
-              "manager_pNo": "",
-              "manager_email": "",
-              "name": null,
-              "regNo": null,
-              "ceoName": null,
-              "address": null,
-              "business_type": null,
-              "business_item": null,
-              "dt_reg": null
+              "staff_permisstion": {
+                "is_site_owner": false,
+                "is_manager": false
+              },
+              "company_general": {
+                "corp_name": "대덕테크",
+                "staff_name": "정소원",
+                "staff_pNo": "010-7620-5918",
+                "staff_email": "salgoo.ceo@gmail.com",
+                "manager_name": "",
+                "manager_pNo": "",
+                "manager_email": ""
+              },
+              "business_registration": {
+                "name": null,
+                "regNo": null,
+                "ceoName": null,
+                "address": null,
+                "business_type": null,
+                "business_item": null,
+                "dt_reg": null
+              }
             }
         STATUS 530
             {'message':'아이디나 비밀번호가 틀립니다.'}
@@ -830,38 +836,44 @@ def login(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     customer = customers[0]
-    result = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
-              'is_manager': staff.is_manager,  # 관리자인가?
-              'corp_name': customer.name,
-              'staff_name': customer.staff_name,
-              'staff_pNo': customer.staff_pNo,
-              'staff_email': customer.staff_email,
-              'manager_name': customer.manager_name,
-              'manager_pNo': customer.manager_pNo,
-              'manager_email': customer.manager_email,
-              }
+    staff_permission = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
+                        'is_manager': staff.is_manager,  # 관리자인가?
+                        }
+    company_general = {'corp_name': customer.name,
+                       'staff_name': customer.staff_name,
+                       'staff_pNo': customer.staff_pNo,
+                       'staff_email': customer.staff_email,
+                       'manager_name': customer.manager_name,
+                       'manager_pNo': customer.manager_pNo,
+                       'manager_email': customer.manager_email,
+                       }
 
     business_registrations = Business_Registration.objects.filter(customer_id=customer.id)
     if len(business_registrations) > 0:
         business_registration = business_registrations[0]
-        result['name'] = business_registration.name  # 상호
-        result['regNo'] = business_registration.regNo  # 사업자등록번호
-        result['ceoName'] = business_registration.ceoName  # 성명(대표자)
-        result['address'] = business_registration.address  # 사업장소재지
-        result['business_type'] = business_registration.business_type  # 업태
-        result['business_item'] = business_registration.business_item  # 종목
-        result['dt_reg'] = business_registration.dt_reg  # 사업자등록일
+        business_registration = {'name': business_registration.name,  # 상호
+                                 'regNo': business_registration.regNo,  # 사업자등록번호
+                                 'ceoName': business_registration.ceoName,  # 성명(대표자)
+                                 'address': business_registration.address,  # 사업장소재지
+                                 'business_type': business_registration.business_type,  # 업태
+                                 'business_item': business_registration.business_item,  # 종목
+                                 'dt_reg': business_registration.dt_reg.strftime('%Y-%m-%d')  # 사업자등록일
+                                 }
     else:
-        result['name'] = None  # 상호
-        result['regNo'] = None  # 사업자등록번호
-        result['ceoName'] = None  # # 성명(대표자)
-        result['address'] = None  # 사업장소재지
-        result['business_type'] = None  # 업태
-        result['business_item'] = None  # 종목
-        result['dt_reg'] = None  # 사업자등록일
+        business_registration = {'name':None,  # 상호
+                                 'regNo':None,  # 사업자등록번호
+                                 'ceoName':None,  # 성명(대표자)
+                                 'address':None,  # 사업장소재지
+                                 'business_type':None,  # 업태
+                                 'business_item':None,  # 종목
+                                 'dt_reg':None  # 사업자등록일
+                                 }
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response({'staff_permisstion':staff_permission,
+                                             'company_general':company_general,
+                                             'business_registration':business_registration
+                                             })
 
 
 @cross_origin_read_allow
