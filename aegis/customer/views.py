@@ -500,6 +500,92 @@ def list_relationship(request):
 
 @cross_origin_read_allow
 @session_is_none_403
+def detail_relationship(request):
+    """
+    발주사, 협력사 상세 정보를 요청한다.
+    http://0.0.0.0:8000/customer/detail_relationship?corp_id=ryWQkNtiHgkUaY_SZ1o2uA
+    GET
+        relationship_id=ryWQkNtiHgkUaY_SZ1o2uA  # 발주사 협력사 id (암호화 된 값)
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "detail_relationship": {
+                "type": 12,
+                "type_name": "협력사",
+                "corp_id": "ryWQkNtiHgkUaY_SZ1o2uA",
+                "corp_name": "주식회사 살구",
+                "staff_name": "정소원",
+                "staff_pNo": "010-7620-5918",
+                "staff_email": "salgoo.ceo@gmail.com",
+                "manager_name": "",
+                "manager_pNo": "",
+                "manager_email": "",
+                "name": null,
+                "regNo": null,
+                "ceoName": null,
+                "address": null,
+                "business_type": null,
+                "business_item": null,
+                "dt_reg": null
+              }
+            }
+        STATUS 541
+            {'message', '등록된 업체가 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    corp_id = rqst['corp_id']
+    corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(corp_id))
+    if len(corps) == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
+    corp = corps[0]
+
+    detail_relationship = {'type':corp.type,
+                           'type_name': '발주사' if corp.type == 10 else '협력사',
+                           'corp_id':corp_id,
+                           'corp_name':corp.name,
+                           'staff_name': corp.staff_name,
+                           'staff_pNo': corp.staff_pNo,
+                           'staff_email': corp.staff_email,
+                           'manager_name': corp.manager_name,
+                           'manager_pNo': corp.manager_pNo,
+                           'manager_email': corp.manager_email,
+                           }
+
+    business_registrations = Business_Registration.objects.filter(customer_id=corp.id)
+    if len(business_registrations) > 0:
+        business_registration = business_registrations[0]
+        detail_relationship['name'] = business_registration.name  # 상호
+        detail_relationship['regNo'] = business_registration.regNo  # 사업자등록번호
+        detail_relationship['ceoName'] = business_registration.ceoName  # 성명(대표자)
+        detail_relationship['address'] = business_registration.address  # 사업장소재지
+        detail_relationship['business_type'] = business_registration.business_type  # 업태
+        detail_relationship['business_item'] = business_registration.business_item  # 종목
+        detail_relationship['dt_reg'] = business_registration.dt_reg  # 사업자등록일
+    else:
+        detail_relationship['name'] = None  # 상호
+        detail_relationship['regNo'] = None  # 사업자등록번호
+        detail_relationship['ceoName'] = None  # # 성명(대표자)
+        detail_relationship['address'] = None  # 사업장소재지
+        detail_relationship['business_type'] = None  # 업태
+        detail_relationship['business_item'] = None  # 종목
+        detail_relationship['dt_reg'] = None  # 사업자등록일
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'detail_relationship':detail_relationship})
+
+
+@cross_origin_read_allow
+@session_is_none_403
 def update_relationship(request):
     """
     고객사의 협력사의 정보를 수정한다.
@@ -545,7 +631,7 @@ def update_relationship(request):
     corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(corp_id))
     if len(corps) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_541_EXISTED.to_json_response({'message':'등록된 업체가 없습니다.'})
+        return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     corp = corps[0]
     update = False
     if 'corp_name' in rqst:
@@ -704,7 +790,9 @@ def login(request):
 
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
-    print(login_id, login_pw)
+    print(login_id, login_pw, hash_SHA256(login_pw))
+    staff = Staff.objects.get(id=1)
+    print(staff.login_id, staff.login_pw)
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
