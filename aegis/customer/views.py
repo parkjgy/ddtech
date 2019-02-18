@@ -13,7 +13,7 @@ from config.common import DateTimeEncoder, exceptionError
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log
 # secret import
-from config.common import hash_SHA256
+from config.common import hash_SHA256, no_only_phone_no
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -38,9 +38,10 @@ def reg_customer_for_operation(request):
     * 서버 to 서버 통신 work_id 필요
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/reg_customer_for_operation?worker_id=qgf6YHf1z2Fx80DR8o_Lvg&customer_name=주식회사 담&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=parkjgy@daam.co.kr
     POST
         {
+            'worker_id': 'cipher_id'  # 운영직원 id
             'customer_name': '대덕기공',
             'staff_name': '홍길동',
             'staff_pNo': '010-1111-2222',
@@ -71,7 +72,7 @@ def reg_customer_for_operation(request):
 
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
-    staff_pNo = rqst["staff_pNo"]
+    staff_pNo = no_only_phone_no(rqst["staff_pNo"])
     staff_email = rqst["staff_email"]
 
     customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
@@ -82,7 +83,7 @@ def reg_customer_for_operation(request):
         return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
     else:
         customer = Customer(
-            name=customer_name,
+            corp_name=customer_name,
             staff_name=staff_name,
             staff_pNo=staff_pNo,
             staff_email=staff_email,
@@ -96,7 +97,7 @@ def reg_customer_for_operation(request):
             login_id='temp_' + str(customer.id),
             login_pw=hash_SHA256('happy_day!!!'),
             co_id=customer.id,
-            co_name=customer.name,
+            co_name=customer.corp_name,
             pNo=staff_pNo,
             email=staff_email,
             is_site_owner=True,
@@ -122,11 +123,11 @@ def sms_customer_staff_for_operation(request):
     * 서버 to 서버 통신 work_id 필요
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/sms_customer_for_operation?staff_id=&worker_id=
+    http://0.0.0.0:8000/customer/sms_customer_staff_for_operation?worker_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_id=qgf6YHf1z2Fx80DR8o_Lvg
     POST
         {
-            'staff_id': 'cipher_id'  # 암호화된 직원 id
             'worker_id': 'cipher_id'  # 운영직원 id
+            'staff_id': 'cipher_id'  # 암호화된 직원 id
         }
     response
         STATUS 200
@@ -165,35 +166,36 @@ def list_customer_for_operation(request):
     """
     <<<운영 서버용>>> 고객사 리스트를 요청한다.
     * 서버 to 서버 통신 work_id 필요
-    http://0.0.0.0:8000/customer/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com&worker_id=
+    http://0.0.0.0:8000/customer/list_customer_for_operation?worker_id=qgf6YHf1z2Fx80DR8o_Lvg&customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
+        worker_id='AES_256_id' # 운영 서버 직원 id
         customer_name=대덕기공
         staff_name=홍길동
         staff_pNo=010-1111-2222
         staff_email=id@daeducki.com
-        worker_id='AES_256_id' # 운영서버에서 요청할 때만 사용한다.
     response
         STATUS 200
             {
               "message": "정상적으로 처리되었습니다.",
               "customers": [
                 {
-                  "id": 1,								 # 고객사 id (보여주지 않는다.)
-                  "name": "대덕테크",						 # 고객사 상호
-                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
-                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
-                  "dt_accept": null,					 # 등록 승인일
-                  "type": 10,   						 # 10 : 발주업체, 11 : 파견업체(도급업체), 12 : 협력업체
-                  "contractor_name": "",				 # 파견업체 상호 (협력사일 경우 만 있음)
-                  "staff_id":"cipher_id",                # 암호화된 담당자 id (표시하지 않음.) - 담당자 pw 를 reset 할 때 사용
-                  "staff_name": "박종기",					 # 담당자
-                  "staff_pNo": "01025573555",			 # 담당자 전화번호
-                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
-                  "manager_name": "",					 # 관리자
-                  "manager_pNo": "",					 # 관리자 전화번호
-                  "manager_email": "",					 # 관리자 이메일
-                  "dt_payment": null					 # 고객사 결제일
-                }
+                  "id": "qgf6YHf1z2Fx80DR8o_Lvg==",
+                  "name": "대덕테크",
+                  "contract_no": "",
+                  "dt_reg": "2019-01-17 08:09:08",
+                  "dt_accept": null,
+                  "type": 10,
+                  "contractor_name": "",
+                  "staff_id": "_w8ZzqmpBf5xvsE2VPY2XzaY9zmregZXSKFBR-4cOts=",
+                  "staff_name": "박종기",
+                  "staff_pNo": "01025573555",
+                  "staff_email": "thinking@ddtechi.com",
+                  "manager_name": "이요셉",
+                  "manager_pNo": "01024505942",
+                  "manager_email": "hello@ddtechi.com",
+                  "dt_payment": "2019-02-25 02:24:27"
+                },
+                ......
               ]
             }
     """
@@ -210,14 +212,15 @@ def list_customer_for_operation(request):
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
-    staff_pNo = rqst['staff_pNo']
+    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
 
-    customers = Customer.objects.filter().values('id', 'name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
+    customers = Customer.objects.filter().values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type',
                                                  'contractor_name', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
+        customer['id'] = AES_ENCRYPT_BASE64(str(customer['id']))
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
@@ -273,7 +276,7 @@ def update_customer(request):
     worker = Staff.objects.get(id=worker_id)
 
     customer = Customer.objects.get(id=worker.co_id)
-    print(customer.name)
+    print(customer.corp_name)
     print(str(customer.staff_id))
     print(str(customer.manager_id))
     if not(worker.is_site_owner or worker.is_manager):
@@ -352,44 +355,45 @@ def update_customer(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'manager_id 가 잘못된 값입니다.'})
 
-    is_update_business_registration = False
-    new_business_registration = {}
-    for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
-        print('key', key)
-        if key in rqst:
-            print('     value', rqst[key])
-            if len(rqst[key]) > 0:
-                new_business_registration[key] = rqst[key]
-                if key == 'dt_reg':
-                    # dt = rqst[key]
-                    # new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") + datetime.timedelta(hours=9)
-                    new_business_registration[key] = datetime.datetime.now()
-            else:
-                new_business_registration[key] = ''
-            is_update_business_registration = True
-    if is_update_business_registration:
-        print(new_business_registration)
-        if customer.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
-            business_regs = Business_Registration.objects.filter(id=customer.business_reg_id)
-            if len(business_regs) > 0:
-                business_reg = business_regs[0]
-                for key in new_business_registration.keys():
-                    business_reg.__dict__[key] = new_business_registration[key]
-                print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
-                           not x.startswith('_')])
-                business_reg.save()
-            else:
-                logError('사업자 등록정보 id 가 잘못되었음', customer.name, customer.id)
-                print('사업자 등록정보 id 가 잘못되었음', customer.name, customer.id)
-        else:
-            business_reg = Business_Registration(customer_id=customer.id)
-            for key in new_business_registration.keys():
-                business_reg.__dict__[key] = new_business_registration[key]
-            print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
-            business_reg.save()
-
-            customer.business_reg_id = business_reg.id
-            customer.save()
+    # 사업자 등록증 내용 변경 or 새로 만들기
+    update_business_registration(rqst, customer)
+    # is_update_business_registration = False
+    # new_business_registration = {}
+    # for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
+    #     print('key', key)
+    #     if key in rqst:
+    #         print('     value', rqst[key])
+    #         if len(rqst[key]) > 0:
+    #             new_business_registration[key] = rqst[key]
+    #             if key == 'dt_reg':
+    #                 dt = rqst[key]
+    #                 new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") # + datetime.timedelta(hours=9)
+    #         else:
+    #             new_business_registration[key] = ''
+    #         is_update_business_registration = True
+    # if is_update_business_registration:
+    #     print(new_business_registration)
+    #     if customer.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
+    #         business_regs = Business_Registration.objects.filter(id=customer.business_reg_id)
+    #         if len(business_regs) > 0:
+    #             business_reg = business_regs[0]
+    #             for key in new_business_registration.keys():
+    #                 business_reg.__dict__[key] = new_business_registration[key]
+    #             print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+    #                        not x.startswith('_')])
+    #             business_reg.save()
+    #         else:
+    #             logError('사업자 등록정보 id 가 잘못되었음', customer.corp_name, customer.id)
+    #             print('사업자 등록정보 id 가 잘못되었음', customer.corp_name, customer.id)
+    #     else:
+    #         business_reg = Business_Registration(customer_id=customer.id)
+    #         for key in new_business_registration.keys():
+    #             business_reg.__dict__[key] = new_business_registration[key]
+    #         print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+    #         business_reg.save()
+    #
+    #         customer.business_reg_id = business_reg.id
+    #         customer.save()
 
     if 'dt_payment' in rqst:
         dt_payment = rqst['dt_payment']
@@ -456,10 +460,10 @@ def reg_relationship(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_544_EXISTED.to_json_response()
     staff_name = rqst['staff_name']
-    staff_pNo = rqst['staff_pNo']
+    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
     corp = Customer(
-        name=corp_name,
+        corp_name=corp_name,
         staff_name=staff_name,
         staff_pNo=staff_pNo,
         staff_email=staff_email,
@@ -467,7 +471,7 @@ def reg_relationship(request):
     if 'manager_name' in rqst:
         corp.manager_name = rqst['manager_name']
     if 'manager_pNo' in rqst:
-        corp.manager_pNo = rqst['manager_pNo']
+        corp.manager_pNo = no_only_phone_no(rqst['manager_pNo'])
     if 'manager_email' in rqst:
         corp.manager_email = rqst['manager_email']
     corp.save()
@@ -478,18 +482,10 @@ def reg_relationship(request):
         corp_name=corp_name
     )
     relationship.save()
-    if 'name' in rqst:
-        business_registration = Business_Registration(
-            name=rqst['name'],
-            regNo=rqst['regNo'],
-            ceoName=rqst['ceoName'],
-            address=rqst['address'],
-            business_type=rqst['business_type'],
-            business_item=rqst['business_item'],
-            dt_reg=rqst['dt_reg'],
-            customer_id=corp.id
-        )
-        business_registration.save()
+
+    # 사업자 등록증 처리
+    update_business_registration(rqst, corp)
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -688,67 +684,74 @@ def update_relationship(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     corp = corps[0]
-    update = False
-    if 'corp_name' in rqst:
-        corp.name = rqst['corp_name']
-        update = True
-    if 'staff_name' in rqst:
-        corp.staff_name = rqst['staff_name']
-        update = True
-    if 'staff_pNo' in rqst:
-        corp.staff_pNo = rqst['staff_pNo']
-        update = True
-    if 'staff_email' in rqst:
-        corp.staff_email = rqst['staff_email']
-        update = True
-    if 'manager_name' in rqst:
-        corp.manager_name = rqst['manager_name']
-        update = True
-    if 'manager_pNo' in rqst:
-        corp.manager_pNo = rqst['manager_pNo']
-        update = True
-    if 'manager_email' in rqst:
-        corp.manager_email = rqst['manager_email']
-        update = True
-    if update:
+    is_update_corp = False
+    for key in ['corp_name', 'staff_name', 'staff_pNo', 'staff_email', 'manager_name', 'manager_pNo', 'manager_email']:
+        print('key', key)
+        if key in rqst:
+            print('     value', rqst[key])
+            if len(rqst[key]) > 0:
+                corp.__dict__[key] = no_only_phone_no(rqst[key]) if 'pNo' in key else rqst[key]
+            else:
+                corp.__dict__[key] = ''
+            is_update_corp = True
+    if is_update_corp:
+        print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
         corp.save()
 
-    if 'name' in rqst:
-        business_registrations = Business_Registration.objects.filter(customer_id=corp.id)
-        if len(business_registrations) == 0:
-            business_registration = Business_Registration(
-                name=rqst['name'],
-                regNo=rqst['regNo'],
-                ceoName=rqst['ceoName'],
-                address=rqst['address'],
-                business_type=rqst['business_type'],
-                business_item=rqst['business_item'],
-                dt_reg=rqst['dt_reg'],
-                customer_id=corp.id
-            )
-            business_registration.save()
-        else:
-            business_registration = business_registrations[0]
-            if 'name' in rqst:
-                business_registration.name = rqst['name']
-            if 'regNo' in rqst:
-                business_registration.regNo = rqst['regNo']
-            if 'ceoName' in rqst:
-                business_registration.ceoName = rqst['ceoName']
-            if 'address' in rqst:
-                business_registration.address = rqst['address']
-            if 'business_type' in rqst:
-                business_registration.business_type = rqst['business_type']
-            if 'business_item' in rqst:
-                business_registration.business_item = rqst['business_item']
-            if 'dt_reg' in rqst:
-                business_registration.dt_reg = rqst['dt_reg']
-            if 'customer_id' in rqst:
-                business_registration.customer_id = rqst['customer_id']
-            business_registration.save()
+    # 사업자 등록증 내용 변경 or 새로 만들기
+    update_business_registration(rqst, corp)
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
+
+
+def update_business_registration(rqst, corp):
+    """
+    사업자 등록증 신규 등록이나 내용 변경
+    :param rqst: 호출 함수의 파라미터
+    :param corp: 고객사(수요기업, 파견업체)
+    :return: none
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    is_update_business_registration = False
+    new_business_registration = {}
+    for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
+        print('key', key)
+        if key in rqst:
+            print('     value', rqst[key])
+            if len(rqst[key]) > 0:
+                new_business_registration[key] = rqst[key]
+                if key == 'dt_reg':
+                    dt = rqst[key]
+                    new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") # + datetime.timedelta(hours=9)
+            else:
+                new_business_registration[key] = ''
+            is_update_business_registration = True
+    if is_update_business_registration:
+        print(new_business_registration)
+        if corp.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
+            business_regs = Business_Registration.objects.filter(id=corp.business_reg_id)
+            if len(business_regs) > 0:
+                business_reg = business_regs[0]
+                for key in new_business_registration.keys():
+                    business_reg.__dict__[key] = new_business_registration[key]
+                print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+                           not x.startswith('_')])
+                business_reg.save()
+            else:
+                logError('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
+                print('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
+        else:
+            business_reg = Business_Registration(customer_id=corp.id)
+            for key in new_business_registration.keys():
+                business_reg.__dict__[key] = new_business_registration[key]
+            print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+            business_reg.save()
+
+            corp.business_reg_id = business_reg.id
+            corp.save()
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return
 
 
 @cross_origin_read_allow
@@ -787,11 +790,8 @@ def reg_staff(request):
     login_id = rqst['login_id']
     position = rqst['position']
     department = rqst['department']
-    phone_no = rqst['pNo']
+    phone_no = no_only_phone_no(rqst['pNo'])
     email = rqst['email']
-
-    phone_no = phone_no.replace('-', '')
-    phone_no = phone_no.replace(' ', '')
 
     staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
     if len(staffs) > 0:
@@ -894,14 +894,14 @@ def login(request):
     staff_permission = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
                         'is_manager': staff.is_manager,  # 관리자인가?
                         }
-    company_general = {'corp_name': customer.name,
+    company_general = {'corp_name': customer.corp_name,
                        'staff_name': customer.staff_name,
                        'staff_pNo': customer.staff_pNo,
                        'staff_email': customer.staff_email,
                        'manager_name': customer.manager_name,
                        'manager_pNo': customer.manager_pNo,
                        'manager_email': customer.manager_email,
-                       'dt_payment':customer.dt_payment
+                       'dt_payment':customer.dt_payment.strftime('%d')
                        }
 
     business_registrations = Business_Registration.objects.filter(customer_id=customer.id)
@@ -995,7 +995,7 @@ def update_staff(request):
     name = rqst['name']  # 이름
     position = rqst['position']  # 직책
     department = rqst['department']  # 부서 or 소속
-    phone_no = rqst['phone_no']  # 전화번호
+    phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호
     phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
     push_token = rqst['push_token']  # token
     email = rqst['email']  # id@ddtechi.co
@@ -1236,7 +1236,7 @@ def list_work_place(request):
 
     name = rqst['name']
     manager_name = rqst['manager_name']
-    manager_phone = rqst['manager_phone']
+    manager_phone = no_only_phone_no(rqst['manager_phone'])
     order_name = rqst['order_name']
     work_places = Work_Place.objects.filter(contractor_id=worker.co_id,
                                             name__contains=name,
@@ -1467,7 +1467,7 @@ def list_work(request):
     type = rqst['type']
     contractor_name = rqst['contractor_name']
     staff_name = rqst['staff_name']
-    staff_pNo = rqst['staff_pNo']
+    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     str_dt_begin = rqst['dt_begin']
     if len(str_dt_begin) == 0:
         dt_begin = datetime.datetime.now() - timedelta(days=365)

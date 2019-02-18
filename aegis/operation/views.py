@@ -294,12 +294,11 @@ class OperationView(APIView):
         #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
         phone_no = rqst['pNo']
+        if len(phone_no) > 0:
+            phone_no = phone_no.replace('-', '')
+            phone_no = phone_no.replace(' ', '')
         id_ = rqst['id']
         pw = rqst['pw']
-
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
-        print(phone_no)
 
         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
         if len(staffs) > 0:
@@ -561,11 +560,11 @@ def reg_customer(request):
     staff_email = rqst["staff_email"]
 
     new_customer_data = {
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id)),
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
-        'staff_email': staff_email,
-        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
+        'staff_email': staff_email
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
@@ -614,8 +613,8 @@ def sms_customer_staff(request):
     worker = Staff.objects.get(id=worker_id)
 
     new_customer_data = {
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id)),
         'staff_id': rqst['staff_id'],
-        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
                                       json=new_customer_data)
@@ -660,20 +659,21 @@ def list_customer(request):
               "message": "정상적으로 처리되었습니다.",
               "customers": [
                 {
-                  "name": "대덕테크",						 # 고객사 상호
-                  "contract_no": "",					 # 계약서 번호 (대덕테크와 고객간 계약서)
-                  "dt_reg": "2019-01-17 08:09:08",		 # 등록날짜
-                  "dt_accept": null,					 # 등록 승인일
-                  "type": "발주업체",						 # 발주업체 or 파견업체(도급업체) - 협력업체는 표시되지 않는다.
-                  "staff_id":"cipher_id",                # 암호화된 담당자 id (표시하지 않음.) - 담당자 pw 를 reset 할 때 사용
-                  "staff_name": "박종기",					 # 담당자
-                  "staff_pNo": "010-2557-3555",			 # 담당자 전화번호
-                  "staff_email": "thinking@ddtechi.com", # 담당자 이메일
-                  "manager_name": "",					 # 관리자
-                  "manager_pNo": "",					 # 관리자 전화번호
-                  "manager_email": "",					 # 관리자 이메일
-                  "dt_payment": null					 # 고객사 결제일
-                }
+                  "name": "대덕테크",
+                  "contract_no": "",
+                  "dt_reg": "2019-01-17 08:09:08",
+                  "dt_accept": null,
+                  "type": "발주업체",
+                  "staff_id": "_w8ZzqmpBf5xvsE2VPY2XzaY9zmregZXSKFBR-4cOts=",
+                  "staff_name": "박종기",
+                  "staff_pNo": "01025573555",
+                  "staff_email": "thinking@ddtechi.com",
+                  "manager_name": "이요셉",
+                  "manager_pNo": "01024505942",
+                  "manager_email": "hello@ddtechi.com",
+                  "dt_payment": "2019-02-25 02:24:27"
+                },
+                ......
               ]
             }
     """
@@ -691,11 +691,11 @@ def list_customer(request):
     staff_email = rqst['staff_email']
 
     json_data = {
+        'worker_id': AES_ENCRYPT_BASE64(str(worker.id)),
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
         'staff_email': staff_email,
-        'worker_id': AES_ENCRYPT_BASE64(str(worker.id))
     }
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
     print(response_customer.json())
@@ -722,8 +722,8 @@ def list_customer(request):
 def update_work_place(request):
     """
     사업장 내용을 수정한다.
-        주)    항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-            response 는 추후 추가될 예정이다.
+    주)  항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        response 는 추후 추가될 예정이다.
     POST
         {
             'id': '암호화된 id',

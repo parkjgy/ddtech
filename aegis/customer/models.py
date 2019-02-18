@@ -3,16 +3,16 @@ from django.db import models
 # Create your models here.
 class Customer(models.Model):
     """
-    고객사
+    고객사(수요기업, 파견업체, 도급업체)
     """
-    name = models.CharField(max_length = 255, default = 'Not_Enter') # 암호화 한다.
-    contract_no = models.CharField(max_length=33, default='') # 계약서 번호
+    corp_name = models.CharField(max_length = 255, default = 'Not_Enter') # 암호화 한다.
+    contract_no = models.CharField(max_length=33, blank=True) # 계약서 번호
     dt_reg = models.DateTimeField(auto_now_add = True) # 등록 일
     dt_accept = models.DateTimeField(null=True, blank=True) # 승인 일
     type = models.IntegerField(default=10) # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
 
-    contractor_id = models.IntegerField(default=-1) # 파견업체, 도급업체 id
-    contractor_name = models.CharField(max_length=127, default='') # 파견업체, 도급업체 이름
+    # contractor_id = models.IntegerField(default=-1) # 파견업체, 도급업체 id
+    # contractor_name = models.CharField(max_length=127, default='') # 파견업체, 도급업체 이름
 
     staff_id = models.IntegerField(default=-1) # 담당자 id
     staff_name = models.CharField(max_length=127) # 담당자 이름

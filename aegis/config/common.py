@@ -160,3 +160,15 @@ def hash_SHA256(password):
     return hashed.hexdigest()
 
 
+def no_only_phone_no(phone_no):
+    """
+    전화번호에서 '-'와 space 를 제거한다.
+    :param phone_no: 010-1111 2222
+    :return: 01011112222
+    """
+    if len(phone_no) > 0:
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+    return phone_no
+
+
