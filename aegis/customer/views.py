@@ -361,8 +361,9 @@ def update_customer(request):
             if len(rqst[key]) > 0:
                 new_business_registration[key] = rqst[key]
                 if key == 'dt_reg':
-                    dt = rqst[key]
-                    new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") + datetime.timedelta(hours=9)
+                    # dt = rqst[key]
+                    # new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") + datetime.timedelta(hours=9)
+                    new_business_registration[key] = datetime.datetime.now()
             else:
                 new_business_registration[key] = ''
             is_update_business_registration = True
