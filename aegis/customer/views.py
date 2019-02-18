@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 from django.conf import settings
 
-from config.common import logSend
+from config.common import logSend, logError
 from config.common import DateTimeEncoder, exceptionError
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log
@@ -243,8 +243,6 @@ def update_customer(request):
 
             'manager_id': '서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
 
-            'business_reg_id': '서버에서 받은 암호화된 id', # 사업자 등록 정보 (담당자, 관리자만 변경 가능)
-
             'name': '상호',
             'regNo': '123-00-12345', # 사업자등록번호
             'ceoName': '대표자', # 성명
@@ -257,6 +255,10 @@ def update_customer(request):
     	}
     response
     	STATUS 200
+    	    {'message': '담당자가 바뀌어 로그아웃되었습니다.'}
+    	STATUS 422
+    	    {'message': 'staff_id 가 잘못된 값입니다.'}  # 자신을 선택했을 때 포함
+    	    {'message': 'manager_id 가 잘못된 값입니다.'} # 자신을 선택했을 때 포함
     	STATUS 522
     		{'message': '담당자나 관리자만 변경 가능합니다.'}
     		{'message': '관리자만 변경 가능합니다.'}
@@ -270,7 +272,7 @@ def update_customer(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    customer = Customer.objects.get(id=worker.contractor_id)
+    customer = Customer.objects.get(id=worker.co_id)
     print(customer.name)
     print(str(customer.staff_id))
     print(str(customer.manager_id))
@@ -282,69 +284,121 @@ def update_customer(request):
         print('담당자나 관리자만 변경 가능합니다.')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
-    staff_id = rqst['staff_id']
-    if len(staff_id) > 0:
-        staff_id = AES_DECRYPT_BASE64(staff_id)
-        staff = Staff.objects.get(id=staff_id)
-        customer.staff_id = staff.id
-        customer.staff_name = staff.name
-        customer.staff_pNo = staff.pNo
-        customer.staff_email = staff.email
-        customer.save()
-        staff.is_site_owner = True
-        staff.save()
-        worker.is_site_owner = False
-        worker.save()
+    if 'staff_id' in rqst:
+        print('staff_id 있음')
+        staff_id = rqst['staff_id']
+        if len(staff_id) > 0:
+            print('staff_id 값이 있음')
+            # staff_id 복호화에서 에러나면 처리 방법이 없음.
+            staff_id = AES_DECRYPT_BASE64(staff_id)
+            # 로그인 직원과 담당자가 같은면 처리 안함
+            print(worker_id, staff_id)
+            if str(staff_id) != str(worker_id):
+                staffs = Staff.objects.filter(id=staff_id)
+                if len(staffs) > 0:
+                    staff = staffs[0]
+                    customer.staff_id = staff.id
+                    customer.staff_name = staff.name
+                    customer.staff_pNo = staff.pNo
+                    customer.staff_email = staff.email
+                    customer.save()
+                    staff.is_site_owner = True
+                    staff.save()
+
+                    worker.is_site_owner = False
+                    worker.is_login = False
+                    worker.dt_login = datetime.datetime.now()
+                    worker.save()
+                    del request.session['id']
+
+                    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                    return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌었습니다.\n로그아웃하십시요.'})
-    manager_id = rqst['manager_id']
-    if len(manager_id) > 0:
-        if worker.is_manager :
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'staff_id 가 잘못된 값입니다.'})
+
+    if 'manager_id' in rqst:
+        print('manager_id 있음')
+        manager_id = rqst['manager_id']
+        if len(manager_id) > 0:
+            print('manager_id 값이 있음')
+            # staff_id 복호화에서 에러나면 처리 방법이 없음.
             manager_id = AES_DECRYPT_BASE64(manager_id)
-            manager = Staff.objects.get(id=manager_id)
-            customer.manager_id = manager.id
-            customer.manager_name = manager.name
-            customer.manager_pNo = manager.pNo
-            customer.manager_email = manager.email
-            customer.save()
-            manager.is_manager = True
-            manager.save()
-            worker.is_manager = False
-            worker.save()
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_200_SUCCESS.to_json_response({'message': '관리자가 바뀌었습니다.\n로그아웃하십시요.'})
+            # 로그인 직원과 담당자가 같은면 처리 안함
+            print(worker_id, manager_id)
+            if str(manager_id) != str(worker_id):
+                managers = Staff.objects.filter(id=manager_id)
+                if len(managers) > 0:
+                    if worker.is_manager:
+                        manager = managers[0]
+                        customer.manager_id = manager.id
+                        customer.manager_name = manager.name
+                        customer.manager_pNo = manager.pNo
+                        customer.manager_email = manager.email
+                        customer.save()
+                        manager.is_manager = True
+                        manager.save()
+
+                        worker.is_manager = False
+                        worker.is_login = False
+                        worker.dt_login = datetime.datetime.now()
+                        worker.save()
+                        del request.session['id']
+
+                        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                        return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
+                    else:
+                        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                        return REG_521_MODIFY_MANAGER_ONLY.to_json_response()
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'manager_id 가 잘못된 값입니다.'})
+
+    is_update_business_registration = False
+    new_business_registration = {}
+    for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
+        print('key', key)
+        if key in rqst:
+            print('     value', rqst[key])
+            if len(rqst[key]) > 0:
+                new_business_registration[key] = rqst[key]
+                if key == 'dt_reg':
+                    dt = rqst[key]
+                    new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") + datetime.timedelta(hours=9)
+            else:
+                new_business_registration[key] = ''
+            is_update_business_registration = True
+    if is_update_business_registration:
+        print(new_business_registration)
+        if customer.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
+            business_regs = Business_Registration.objects.filter(id=customer.business_reg_id)
+            if len(business_regs) > 0:
+                business_reg = business_regs[0]
+                for key in new_business_registration.keys():
+                    business_reg.__dict__[key] = new_business_registration[key]
+                print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+                           not x.startswith('_')])
+                business_reg.save()
+            else:
+                logError('사업자 등록정보 id 가 잘못되었음', customer.name, customer.id)
+                print('사업자 등록정보 id 가 잘못되었음', customer.name, customer.id)
         else:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_521_MODIFY_MANAGER_ONLY.to_json_response()
-    br_id = rqst['business_reg_id']
-    if len(br_id) > 0:
-        br_id = AES_DECRYPT_BASE64(rqst['business_reg_id'])
-        buss_regs = Business_Registration.objects.filter(id=br_id)
-        if len(buss_regs) > 0:
-            buss_reg = buss_regs[0]
-            if len(rqst.rqst['name']) > 0:
-                buss_reg.name = rqst['name']
-            if len(rqst.rqst['regNo']) > 0:
-                buss_reg.regNo = rqst['regNo']
-            if len(rqst.rqst['ceoName']) > 0:
-                buss_reg.ceoName = rqst['ceoName']
-            if len(rqst.rqst['address']) > 0:
-                buss_reg.address = rqst['address']
-            if len(rqst.rqst['business_type']) > 0:
-                buss_reg.business_type = rqst['business_type']
-            if len(rqst.rqst['business_item']) > 0:
-                buss_reg.business_item = rqst['business_item']
-            if len(rqst.rqst['dt_reg']) > 0:
-                buss_reg.dt_reg = rqst['dt_reg']
-            buss_reg.save()
-    dt_payment = rqst['dt_payment']
-    if len(dt_payment) > 0:
-        str_dt_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(str_dt_now)
-        str_dt_now = str_dt_now[:8] + dt_payment + str_dt_now[10:]
-        print(str_dt_now)
-        customer.dt_payment = datetime.datetime.strptime(str_dt_now, '%Y-%m-%d %H:%M:%S')
-    customer.save()
+            business_reg = Business_Registration(customer_id=customer.id)
+            for key in new_business_registration.keys():
+                business_reg.__dict__[key] = new_business_registration[key]
+            print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+            business_reg.save()
+
+            customer.business_reg_id = business_reg.id
+            customer.save()
+
+    if 'dt_payment' in rqst:
+        dt_payment = rqst['dt_payment']
+        if len(dt_payment) > 0:
+            str_dt_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(str_dt_now)
+            str_dt_now = str_dt_now[:8] + dt_payment + str_dt_now[10:]
+            print(str_dt_now)
+            customer.dt_payment = datetime.datetime.strptime(str_dt_now, '%Y-%m-%d %H:%M:%S')
+        customer.save()
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
@@ -710,7 +764,7 @@ def reg_staff(request):
             'name': '홍길동',
             'login_id': 'hong_geal_dong',
             'position': '부장',	   # option 비워서 보내도 됨
-            'department': '관리부',	# option 비원서 보내도 됨
+            'department': '관리부',	# option 비워서 보내도 됨
             'pNo': '010-1111-2222', # '-'를 넣어도 삭제되어 저장 됨
             'email': 'id@daeducki.com',
         }
@@ -772,31 +826,31 @@ def login(request):
         }
     response
         STATUS 200
-            {
-              "message": "정상적으로 처리되었습니다.",
-              "staff_permisstion": {
-                "is_site_owner": false,
-                "is_manager": false
-              },
-              "company_general": {
-                "corp_name": "대덕테크",
-                "staff_name": "정소원",
-                "staff_pNo": "010-7620-5918",
-                "staff_email": "salgoo.ceo@gmail.com",
-                "manager_name": "",
-                "manager_pNo": "",
-                "manager_email": ""
-              },
-              "business_registration": {
-                "name": null,
-                "regNo": null,
-                "ceoName": null,
-                "address": null,
-                "business_type": null,
-                "business_item": null,
-                "dt_reg": null
-              }
-            }
+        {
+          "message": "정상적으로 처리되었습니다.",
+          "staff_permisstion": {
+            "is_site_owner": false,
+            "is_manager": false
+          },
+          "company_general": {
+            "corp_name": "대덕테크",
+            "staff_name": "정소원",
+            "staff_pNo": "010-7620-5918",
+            "staff_email": "salgoo.ceo@gmail.com",
+            "manager_name": "",
+            "manager_pNo": "",
+            "manager_email": ""
+          },
+          "business_registration": {
+            "name": null,
+            "regNo": null,
+            "ceoName": null,
+            "address": null,
+            "business_type": null,
+            "business_item": null,
+            "dt_reg": null
+          }
+        }
         STATUS 530
             {'message':'아이디나 비밀번호가 틀립니다.'}
     	STATUS 200
@@ -846,6 +900,7 @@ def login(request):
                        'manager_name': customer.manager_name,
                        'manager_pNo': customer.manager_pNo,
                        'manager_email': customer.manager_email,
+                       'dt_payment':customer.dt_payment
                        }
 
     business_registrations = Business_Registration.objects.filter(customer_id=customer.id)
