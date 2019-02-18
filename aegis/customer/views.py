@@ -603,7 +603,7 @@ def detail_relationship(request):
     detail_relationship = {'type':corp.type,
                            'type_name': '발주사' if corp.type == 10 else '협력사',
                            'corp_id':corp_id,
-                           'corp_name':corp.name,
+                           'corp_name':corp.corp_name,
                            'staff_name': corp.staff_name,
                            'staff_pNo': corp.staff_pNo,
                            'staff_email': corp.staff_email,
