@@ -110,7 +110,8 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+# If you set this to False, Django will not use timezone-aware datetimes. https://jupiny.com/2016/10/05/model-datetimefield-in-korean/
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
