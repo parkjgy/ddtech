@@ -720,10 +720,12 @@ def update_business_registration(rqst, corp):
         if key in rqst:
             print('     value', rqst[key])
             if len(rqst[key]) > 0:
-                new_business_registration[key] = rqst[key]
                 if key == 'dt_reg':
+                    logSend(key, rqst[key])
                     dt = rqst[key]
                     new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") # + datetime.timedelta(hours=9)
+                else:
+                    new_business_registration[key] = rqst[key]
             else:
                 new_business_registration[key] = ''
             is_update_business_registration = True
