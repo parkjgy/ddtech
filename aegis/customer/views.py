@@ -901,7 +901,7 @@ def login(request):
                        'manager_name': customer.manager_name,
                        'manager_pNo': customer.manager_pNo,
                        'manager_email': customer.manager_email,
-                       'dt_payment':customer.dt_payment.strftime('%d')
+                       'dt_payment': None if customer.dt_payment is None else customer.dt_payment.strftime('%d')
                        }
 
     business_registrations = Business_Registration.objects.filter(customer_id=customer.id)
