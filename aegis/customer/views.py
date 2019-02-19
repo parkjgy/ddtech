@@ -621,7 +621,7 @@ def detail_relationship(request):
         detail_relationship['address'] = business_registration.address  # 사업장소재지
         detail_relationship['business_type'] = business_registration.business_type  # 업태
         detail_relationship['business_item'] = business_registration.business_item  # 종목
-        detail_relationship['dt_reg'] = business_registration.dt_reg.strftime('%Y-%m-%d')  # 사업자등록일
+        detail_relationship['dt_reg'] =  None if business_registration.dt_reg is None else business_registration.dt_reg.strftime('%Y-%m-%d')  # 사업자등록일
     else:
         detail_relationship['name'] = None  # 상호
         detail_relationship['regNo'] = None  # 사업자등록번호
@@ -931,7 +931,7 @@ def login(request):
                                  'address': business_registration.address,  # 사업장소재지
                                  'business_type': business_registration.business_type,  # 업태
                                  'business_item': business_registration.business_item,  # 종목
-                                 'dt_reg': business_registration.dt_reg.strftime('%Y-%m-%d')  # 사업자등록일
+                                 'dt_reg': None if business_registration.dt_reg is None else business_registration.dt_reg.strftime('%Y-%m-%d') # 사업자등록일
                                  }
     else:
         business_registration = {'name':None,  # 상호
