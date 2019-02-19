@@ -50,7 +50,7 @@ class Business_Registration(models.Model):
     address = models.CharField(max_length=1024, blank=True) # 사업장소재지
     business_type = models.CharField(max_length=1024, blank=True) # 업태
     business_item = models.CharField(max_length=1024, blank=True) # 종목
-    dt_reg = models.DateTimeField(auto_now_add = False, blank=True) # 사업자등록일
+    dt_reg = models.DateTimeField(null=True, blank=True) # 사업자등록일
 
 
 class Staff(models.Model):

@@ -749,7 +749,8 @@ def update_business_registration(rqst, corp):
                 logError('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
                 print('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
         else:
-            business_reg = Business_Registration(customer_id=corp.id)
+            business_reg = Business_Registration(customer_id=corp.id,
+                                                 dt_reg=None)
             for key in new_business_registration.keys():
                 business_reg.__dict__[key] = new_business_registration[key]
             logSend('new', [(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
