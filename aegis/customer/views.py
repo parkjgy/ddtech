@@ -1112,7 +1112,7 @@ def reg_work_place(request):
         manager_pNo = manager.pNo,
         manager_email = manager.email,
         order_id = order.id,
-        order_name = order.name
+        order_name = order.corp_name
     )
     new_work_place.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1156,8 +1156,7 @@ def update_work_place(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_place_id = rqst['work_place_id']
-    work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(work_place_id))
+    work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
     if work_place.contractor_id != worker.co_id:
         logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1180,7 +1179,7 @@ def update_work_place(request):
         if len(orders) == 1:
             order = orders[0]
             work_place.order_id = order.id
-            work_place.order_name = order.name
+            work_place.order_name = order.corp_name
             is_update_order = True
 
     is_update_name = False
@@ -1291,12 +1290,13 @@ def reg_work(request):
     http://0.0.0.0:8000/customer/reg_work?name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
     POST
         {
-            'name':'포장',
-            'work_place_id':1,        # 사업장 id
-            'type':'업무 형태',
-            'dt_begin':'2019-01-28',  # 업무 시작 날짜
-            'dt_end':'2019-02-28',    # 업무 종료 날짜
-            'staff_id':2,             # 현장 소장
+            'name':         '포장',
+            'work_place_id':'암호화된 사업장 id',
+            'type':         '업무 형태',
+            'dt_begin':     '2019-01-28',           # 업무 시작 날짜
+            'dt_end':       '2019-02-28',           # 업무 종료 날짜
+            'staff_id':     '암호화된 현장 소장 id',
+            'partner_id':   '암호화된 협력업체 id'       # 고객사 id 를 기본으로 한다.
         }
     response
         STATUS 200
@@ -1311,24 +1311,31 @@ def reg_work(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_place_id = rqst['work_place_id']
-    work_place = Work_Place.objects.get(id=work_place_id)
-    staff_id = rqst['staff_id']
-    staff = Staff.objects.get(id=staff_id)
-    name = rqst['name']
-    type = rqst['type']
-    dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
-    dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
-    print(dt_begin, dt_end)
+    is_empty = False
+    blanks = []
+    for key in ['name', 'work_place_id', 'type', 'dt_begin', 'dt_end', 'staff_id', 'partner_id']:
+        if key in rqst:
+            if len(rqst[key]) == 0:
+                blanks.append(key)
+                is_empty = True
+        else:
+            blanks.append(key)
+            is_empty = True
+    if is_empty:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'}, {'blanks':blanks})
+    work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
+    staff = Staff.objects.get(id=AES_DECRYPT_BASE64(rqst['staff_id']))
+    contractor = Customer.objects.get(id=AES_DECRYPT_BASE64(rqst['partner_id']))
     new_work = Work(
-        name=name,
+        name=rqst['name'],
         work_place_id=work_place.id,
         work_place_name=work_place.name,
-        type=type,
-        contractor_id=staff.co_id,
-        contractor_name=staff.co_name,
-        dt_begin=dt_begin,
-        dt_end=dt_end,
+        type=rqst['type'],
+        contractor_id=contractor.id,
+        contractor_name=contractor.corp_name,
+        dt_begin=datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
+        dt_end=datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d"),
         staff_id=staff.id,
         staff_name=staff.name,
         staff_pNo=staff.pNo,
@@ -1349,22 +1356,19 @@ def update_work(request):
     http://0.0.0.0:8000/customer/update_work?work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
     POST
         {
-            'op_staff_id':'암호화된 id',  # 업무처리하는 직원
-            'work_id':10,               # 업무 id
-            'name':'포장',
-            'work_place_id':1,        # 사업장 id
-            'type':'업무 형태',
-            'contractor_id':'파견업체(도급업체) id',
-            'dt_begin':'2019-01-28',  # 업무 시작 날짜
-            'dt_end':'2019-02-28',    # 업무 종료 날짜
-            'staff_id':2,
+            'work_id':      '암호화된 업무 id',
+            'name':         '포장',
+            'work_place_id':'암호화된 사업장 id',
+            'type':         '업무 형태',
+            'dt_begin':     '2019-01-28',           # 업무 시작 날짜
+            'dt_end':       '2019-02-28',           # 업무 종료 날짜
+            'staff_id':     '암호화된 현장 소장 id',
+            'partner_id':   '암호화된 협력업체 id'       # 고객사 id 를 기본으로 한다.
         }
     response
         STATUS 200
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
-        STATUS 509
-            {"msg": "??? matching query does not exist."} # ??? 을 찾을 수 없다.(op_staff_id, work_id 를 찾을 수 없을 때)
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -1375,56 +1379,76 @@ def update_work(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_id = rqst['work_id']
-    work = Work.objects.get(id=work_id)
+    work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
+    # if work.contractor_id != worker.co_id:
+    #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
-    name = rqst['name']
-    if len(name) > 0:
-        work.name = name
+    is_update_name = False
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        work.name = rqst['name']
+        is_update_name = True
 
-    work_place_id = rqst['work_place_id']
-    if len(work_place_id) > 0:
-        work_place = Work_Place.objects.get(id=work_place_id)
-        work.work_place_id = work_place.id
-        work.work_place_name = work_place.name
+    is_update_type = False
+    if ('type' in rqst) and (len(rqst['type']) > 0):
+        work.type = rqst['type']
+        is_update_type = True
 
-    type = rqst['type']
-    if len(type) > 0:
-        work.type = type
-
-    contractor_id = rqst['contractor_id']
-    if len(contractor_id) > 0:
-        contractor = Customer.objects.get(id=contractor_id)
-        work.contractor_id = contractor.id
-        work.contractor_name = contractor.name
-
-    dt_begin = rqst['dt_begin']
-    if len(dt_begin) > 0:
-        work.dt_begin = datetime.datetime.strptime(dt_begin, "%Y-%m-%d")
-        print(dt_begin, work.dt_begin)
+    is_update_dt_begin = False
+    if ('dt_begin' in rqst) and (len(rqst['dt_begin']) > 0):
+        work.dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
         #
         # 근로자 시간 변경?
         #
+        is_update_dt_begin = True
 
-    dt_end = rqst['dt_end']
-    if len(dt_end) > 0:
-        work.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
-        print(dt_end, work.dt_end)
+    is_update_dt_end = False
+    if ('dt_end' in rqst) and (len(rqst['dt_end']) > 0):
+        work.dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
         #
         # 근로자 시간 변경?
         #
+        is_update_dt_end = True
 
-    staff_id = rqst['staff_id']
-    if len(staff_id) > 0:
-        staff = Staff.objects.get(id=staff_id)
-        work.staff_id=staff.id
-        work.staff_name=staff.name
-        work.staff_pNo=staff.pNo
-        work.staff_email=staff.email
+    is_update_work_place = False
+    if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
+        work_places = Work_Place.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
+        if len(work_places) == 1:
+            work_place = work_places[0]
+            work.work_place_id = work_place.id
+            work.work_place_name = work_place.name
+            is_update_work_place = True
+
+    is_update_partner = False
+    if ('partner_id' in rqst) and (len(rqst['partner_id']) > 0):
+        partners = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['partner_id']))
+        if len(partners) == 1:
+            partner = partners[0]
+            work.contractor_id = partner.id
+            work.contractor_name = partner.name
+            is_update_partner = True
+
+    is_update_staff = False
+    if ('staff_id' in rqst) and (len(rqst['staff_id']) > 0):
+        staffs = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
+        if len(staffs) == 1:
+            staff = staffs[0]
+            work.staff_id = staff.id
+            work.staff_name = staff.name
+            work.staff_pNo = staff.pNo
+            work.staff_email = staff.email
+            is_update_staff = True
 
     work.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'is_update_type':is_update_type,
+                                             'is_update_dt_begin':is_update_dt_begin,
+                                             'is_update_dt_end':is_update_dt_end,
+                                             'is_update_work_place':is_update_work_place,
+                                             'is_update_partner':is_update_partner,
+                                             'is_update_staff':is_update_staff,
+                                             'is_update_name':is_update_name})
 
 
 @cross_origin_read_allow
@@ -1438,7 +1462,7 @@ def list_work(request):
     GET
         work_place_name = 사업장 이름
         type            = 업무 형태
-        contractor_name = 파견(도급)업체 이름
+        contractor_name = 파견(도급)업체 or 협력업체 이름
         staff_name      = 담당자 이름	    # 담당자가 관리하는 현장 업무를 볼때
         staff_pNo       = 담당자 전화번호   # 담당자가 관리하는 현장 업무를 볼때
         dt_begin        = 해당 날짜에 이후에 시작하는 업무 # 없으면 1년 전부터
@@ -1476,9 +1500,6 @@ def list_work(request):
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
-
-    work_id = rqst['work_id']
-    work = Work.objects.get(id=work_id)
 
     name = rqst['name']
     work_place_name = rqst['work_place_name']
