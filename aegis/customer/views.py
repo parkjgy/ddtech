@@ -357,43 +357,6 @@ def update_customer(request):
 
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, customer)
-    # is_update_business_registration = False
-    # new_business_registration = {}
-    # for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
-    #     print('key', key)
-    #     if key in rqst:
-    #         print('     value', rqst[key])
-    #         if len(rqst[key]) > 0:
-    #             new_business_registration[key] = rqst[key]
-    #             if key == 'dt_reg':
-    #                 dt = rqst[key]
-    #                 new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") # + datetime.timedelta(hours=9)
-    #         else:
-    #             new_business_registration[key] = ''
-    #         is_update_business_registration = True
-    # if is_update_business_registration:
-    #     print(new_business_registration)
-    #     if customer.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
-    #         business_regs = Business_Registration.objects.filter(id=customer.business_reg_id)
-    #         if len(business_regs) > 0:
-    #             business_reg = business_regs[0]
-    #             for key in new_business_registration.keys():
-    #                 business_reg.__dict__[key] = new_business_registration[key]
-    #             print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
-    #                        not x.startswith('_')])
-    #             business_reg.save()
-    #         else:
-    #             logError('사업자 등록정보 id 가 잘못되었음', customer.corp_name, customer.id)
-    #             print('사업자 등록정보 id 가 잘못되었음', customer.corp_name, customer.id)
-    #     else:
-    #         business_reg = Business_Registration(customer_id=customer.id)
-    #         for key in new_business_registration.keys():
-    #             business_reg.__dict__[key] = new_business_registration[key]
-    #         print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
-    #         business_reg.save()
-    #
-    #         customer.business_reg_id = business_reg.id
-    #         customer.save()
 
     if 'dt_payment' in rqst:
         dt_payment = rqst['dt_payment']
@@ -529,9 +492,9 @@ def list_relationship(request):
     worker = Staff.objects.get(id=worker_id)
 
     types = []
-    if rqst['is_partner']:
+    if rqst['is_partner'].upper() == 'YES':
         types.append(12)
-    if rqst['is_orderer']:
+    if rqst['is_orderer'].upper() == 'YES':
         types.append(10)
     relationships = Relationship.objects.filter(contractor_id = worker.co_id, type__in = types)
     partners = []
@@ -686,19 +649,19 @@ def update_relationship(request):
     corp = corps[0]
     is_update_corp = False
     for key in ['corp_name', 'staff_name', 'staff_pNo', 'staff_email', 'manager_name', 'manager_pNo', 'manager_email']:
-        print('key', key)
+        # print('key', key)
         if key in rqst:
-            print('     value', rqst[key])
+            # print('     value', rqst[key])
             if len(rqst[key]) > 0:
                 corp.__dict__[key] = no_only_phone_no(rqst[key]) if 'pNo' in key else rqst[key]
             else:
                 corp.__dict__[key] = ''
             is_update_corp = True
     if is_update_corp:
-        print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
+        # print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
         corp.save()
-
         if 'corp_name' in rqst:
+            # 협력업체나 발주사 상호가 바뀌면 relationship 에 반영
             relationships = Relationship.objects.filter(corp_id=corp.id)
             if len(relationships) > 0:
                 relationship = relationships[0]
@@ -723,15 +686,15 @@ def update_business_registration(rqst, corp):
     is_update_business_registration = False
     new_business_registration = {}
     for key in ['name', 'regNo', 'ceoName', 'address', 'business_type', 'business_item', 'dt_reg']:
-        logSend('key:', key)
-        print('key', key)
+        # logSend('key:', key)
+        # print('key', key)
         if key in rqst:
-            print('value:', rqst[key])
-            print('     value', rqst[key])
+            # print('value:', rqst[key])
+            # print('     value', rqst[key])
             if len(rqst[key]) > 0:
                 if key == 'dt_reg':
-                    logSend(key, rqst[key])
-                    print(key, rqst[key])
+                    # logSend(key, rqst[key])
+                    # print(key, rqst[key])
                     dt = rqst[key]
                     new_business_registration[key] = datetime.datetime.strptime(dt[:10], "%Y-%m-%d") # + datetime.timedelta(hours=9)
                 else:
@@ -740,30 +703,27 @@ def update_business_registration(rqst, corp):
                 new_business_registration[key] = None
             is_update_business_registration = True
     if is_update_business_registration:
-        print(corp.business_reg_id, new_business_registration)
-        logSend(corp.business_reg_id, new_business_registration)
+        # print(corp.business_reg_id, new_business_registration)
+        # logSend(corp.business_reg_id, new_business_registration)
         if corp.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
             business_regs = Business_Registration.objects.filter(id=corp.business_reg_id)
             if len(business_regs) > 0:
                 business_reg = business_regs[0]
                 for key in new_business_registration.keys():
                     business_reg.__dict__[key] = new_business_registration[key]
-                logSend('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
-                           not x.startswith('_')])
-                print('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
-                           not x.startswith('_')])
+                # logSend('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+                # print('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
                 business_reg.save()
             else:
-                logError('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
-                print('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
+                logError('ERROR : 사업자 등록정보 id 가 잘못되었음', corp.name, corp.id, __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                # print('사업자 등록정보 id 가 잘못되었음', corp.name, corp.id)
         else:
             business_reg = Business_Registration(customer_id=corp.id,
                                                  dt_reg=None)
             for key in new_business_registration.keys():
                 business_reg.__dict__[key] = new_business_registration[key]
-            logSend('new', [(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
-                     not x.startswith('_')])
-            print('new', [(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+            # logSend('new', [(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+            # print('new', [(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
             business_reg.save()
 
             corp.business_reg_id = business_reg.id
@@ -890,9 +850,9 @@ def login(request):
 
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
-    print(login_id, login_pw, hash_SHA256(login_pw))
+    # print(login_id, login_pw, hash_SHA256(login_pw))
     staff = Staff.objects.get(id=1)
-    print(staff.login_id, staff.login_pw)
+    # print(staff.login_id, staff.login_pw)
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -978,11 +938,13 @@ def update_staff(request):
     """
     직원 정보를 수정한다.
     - 자신의 정보만 수정할 수 있다.
+    - login id, pw 가 바뀌면 로그아웃된다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/update_staff?before_pw=A~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
     	{
+    	    'new_login_id': '변경하고 싶은 id',
     		'before_pw': '기존 비밀번호',     # 필수
     		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
     		'name': '이름',
@@ -995,8 +957,15 @@ def update_staff(request):
     	}
     response
     	STATUS 200
-    	STATUS 503
+    	STATUS 403  # login id, pw 가 바뀌어 로그아웃처리되었다.
+    	    {'message':'로그아웃되었습니다.\n다시 로그인해주세요.'}
+    	STATUS 531
     		{'message': '비밀번호가 틀립니다.'}
+            {'message':'비밀번호는 8자 이상으로 만들어야 합니다.'}
+            {'message':'영문, 숫자, 특수문자가 모두 포합되어야 합니다.'}
+    	STATUS 542
+    	    {'message':'아이디는 5자 이상으로 만들어야 합니다.'}
+    	    {'message':'아이디가 중복됩니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1005,46 +974,62 @@ def update_staff(request):
         rqst = request.GET
 
     worker_id = request.session['id']
-    print(worker_id)
     worker = Staff.objects.get(id=worker_id)
 
-    before_pw = rqst['before_pw']  # 기존 비밀번호
-    login_pw = rqst['login_pw']  # 변경하려는 비밀번호
-    name = rqst['name']  # 이름
-    position = rqst['position']  # 직책
-    department = rqst['department']  # 부서 or 소속
-    phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호
-    phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
-    push_token = rqst['push_token']  # token
-    email = rqst['email']  # id@ddtechi.co
-    print(before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
-
-    if len(phone_no) > 0:
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
-        print(phone_no)
-
-    if hash_SHA256(before_pw) != worker.login_pw:
+    parameter = {}
+    for x in rqst.keys():
+        parameter[x] = rqst[x]
+    print(parameter)
+    # 새로운 id 중복 여부 확인
+    if 'new_login_id' in parameter:
+        new_login_id = parameter['new_login_id']  # 기존 비밀번호
+        if len(new_login_id) < 5: # id 글자수 5자 이상으로 제한
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디는 5자 이상으로 만들어야 합니다.'})
+        duplicate_staffs = Staff.objects.filter(login_id=new_login_id)
+        if len(duplicate_staffs) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디가 중복됩니다.'})
+        parameter['login_id'] = new_login_id
+        del parameter['new_login_id']
+    print(parameter)
+    # 비밀번호 확인
+    if not ('before_pw' in parameter) or len(parameter['before_pw']) == 0 or hash_SHA256(parameter['before_pw']) != worker.login_pw:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
-    if len(login_pw) > 0:
-        worker.login_pw = hash_SHA256(login_pw)
-    if len(name) > 0:
-        worker.name = name
-    if len(position) > 0:
-        worker.position = position
-    if len(department) > 0:
-        worker.department = department
-    if len(phone_no) > 0:
-        worker.pNo = phone_no
-    if len(phone_type) > 0:
-        worker.pType = phone_type
-    if len(push_token) > 0:
-        worker.push_token = push_token
-    if len(email) > 0:
-        worker.email = email
-    worker.save()
+    print(parameter)
+    # 새로운 pw 8자 이상, alphabet, number, 특수문자 포함여부 확인
+    if 'login_pw' in parameter:
+        login_pw = parameter['login_pw']
+        if len(login_pw) < 8: # id 글자수 8자 이상으로 제한
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'비밀번호는 8자 이상으로 만들어야 합니다.'})
+        # alphabet, number, 특수문자 포함여부 확인
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'영문, 숫자, 특수문자가 모두 포합되어야 합니다.'})
+        parameter['login_pw'] = hash_SHA256(login_pw)
+
+    print(parameter)
+    if 'phone_no' in parameter:
+        parameter['phone_no'] = no_only_phone_no(parameter['phone_no'])
+    is_update_worker = False
+    for key in ['login_id', 'login_pw', 'name', 'position', 'department', 'phone_no', 'phone_type', 'push_token', 'email']:
+        print('key', key)
+        if key in parameter:
+            print('     value', parameter[key])
+            worker.__dict__[key] = None if len(parameter[key]) == 0 else parameter[key]
+            is_update_worker = True
+    if is_update_worker:
+        print([(x, worker.__dict__[x]) for x in Staff().__dict__.keys() if not x.startswith('_')])
+        if ('login_id' in parameter) or ('login_pw' in parameter):
+            worker.is_login = False
+            worker.dt_login = datetime.datetime.now()
+            worker.save()
+            del request.session['id']
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_403_FORBIDDEN.to_json_response()
+        worker.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -1141,6 +1126,7 @@ def update_work_place(request):
     사업장 수정
     - 변경 가능 내용: 사업장 이름, 관리자, 발주사
     - 관리자와 발주사는 선택을 먼저하고 선택된 id 로 변경한다.
+    - 값이 비었거나 조회 검색되지 않으면 무시됨
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/update_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg&name=&manager_id=&order_id=
@@ -1153,6 +1139,11 @@ def update_work_place(request):
         }
     response
         STATUS 200
+            {
+             'is_update_manager':is_update_manager,
+             'is_update_order':is_update_order,
+             'is_update_name':is_update_name
+             }
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
     """
@@ -1165,36 +1156,45 @@ def update_work_place(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    # staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    # staff = Staff.objects.get(id=staff_id)
     work_place_id = rqst['work_place_id']
-    work_place = Work_Place.objects.get(id=work_place_id)
+    work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(work_place_id))
     if work_place.contractor_id != worker.co_id:
+        logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
-    manager_id = rqst['manager_id']
-    if len(manager_id) > 0:
-        manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
-        work_place.manager_id = manager.id
-        work_place.manager_name = manager.name
-        work_place.manager_pNo = manager.pNo
-        work_place.manager_email = manager.email
+    is_update_manager = False
+    if ('manager_id' in rqst) and (len(rqst['manager_id']) > 0):
+        managers = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['manager_id']))
+        if len(managers) == 1:
+            manager = managers[0]
+            work_place.manager_id = manager.id
+            work_place.manager_name = manager.name
+            work_place.manager_pNo = manager.pNo
+            work_place.manager_email = manager.email
+            is_update_manager = True
 
-    order_id = rqst['order_id']
-    if len(order_id) > 0:
-        order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
-        work_place.order_id = order.id
-        work_place.order_name = order.name
+    is_update_order = False
+    if ('order_id' in rqst) and (len(rqst['order_id']) > 0):
+        orders = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['order_id']))
+        if len(orders) == 1:
+            order = orders[0]
+            work_place.order_id = order.id
+            work_place.order_name = order.name
+            is_update_order = True
 
-    name = rqst['name']
-    if len(name) > 0:
+    is_update_name = False
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        name = rqst['name']
         work_place.name = name
         work_place.place_name = name
+        is_update_name = True
 
     work_place.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'is_update_manager':is_update_manager,
+                                             'is_update_order':is_update_order,
+                                             'is_update_name':is_update_name})
 
 
 @cross_origin_read_allow

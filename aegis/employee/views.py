@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 from config.common import func_begin_log, func_end_log
+from config.common import no_only_phone_no
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -103,16 +104,13 @@ def passer_reg(request):
         phone_numbers = rqst.getlist('phones')
 
     print(phone_numbers)
-    for i in range(6):
-        pNo = phone_numbers[i]
-        if len(pNo):
-            pNo = pNo.replace('-', '')
-            pNo = pNo.replace(' ', '')
+    for phone_no in phone_numbers:
         passer = Passer(
-            pNo=pNo,
+            pNo=no_only_phone_no(phone_no),
             employee_id=pass_type
         )
-    passer.save()
+        print([(x, passer.__dict__[x]) for x in Passer().__dict__.keys() if not x.startswith('_')])
+        passer.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 

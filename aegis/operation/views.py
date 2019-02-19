@@ -12,7 +12,7 @@ from config.common import logSend, logError
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 from config.common import HttpResponse, ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import hash_SHA256
+from config.common import hash_SHA256, no_only_phone_no
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
@@ -293,10 +293,7 @@ class OperationView(APIView):
         #     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
-        phone_no = rqst['pNo']
-        if len(phone_no) > 0:
-            phone_no = phone_no.replace('-', '')
-            phone_no = phone_no.replace(' ', '')
+        phone_no = no_only_phone_no(rqst['pNo'])
         id_ = rqst['id']
         pw = rqst['pw']
 
@@ -426,16 +423,11 @@ def update_staff(request):
     name = rqst['name']  # 이름
     position = rqst['position']  # 직책
     department = rqst['department']  # 부서 or 소속
-    phone_no = rqst['phone_no']  # 전화번호
+    phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호
     phone_type = rqst['phone_type']  # 전화 종류    10:iPhone, 20: Android
     push_token = rqst['push_token']  # token
     email = rqst['email']  # id@ddtechi.co
     print(login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
-
-    if len(phone_no) > 0:
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
-        print(phone_no)
 
     staff = worker
     # if worker.id != staff.id:
@@ -552,10 +544,7 @@ def reg_customer(request):
 
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
-    staff_pNo = rqst["staff_pNo"]
-    if len(staff_pNo):
-        staff_pNo = staff_pNo.replace('-', '')
-        staff_pNo = staff_pNo.replace(' ', '')
+    staff_pNo = no_only_phone_no(rqst["staff_pNo"])
 
     staff_email = rqst["staff_email"]
 
@@ -687,7 +676,7 @@ def list_customer(request):
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
-    staff_pNo = rqst['staff_pNo']
+    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
 
     json_data = {
