@@ -732,17 +732,17 @@ def update_business_registration(rqst, corp):
                 new_business_registration[key] = None
             is_update_business_registration = True
     if is_update_business_registration:
-        print(new_business_registration)
-        logSend(new_business_registration)
+        print(corp.business_reg_id, new_business_registration)
+        logSend(corp.business_reg_id, new_business_registration)
         if corp.business_reg_id > 0:  # 고객사(수요기업, 파견사)에 사업자 등록정보가 저장되어 있으면
             business_regs = Business_Registration.objects.filter(id=corp.business_reg_id)
             if len(business_regs) > 0:
                 business_reg = business_regs[0]
                 for key in new_business_registration.keys():
                     business_reg.__dict__[key] = new_business_registration[key]
-                logSend([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+                logSend('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
                            not x.startswith('_')])
-                print([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+                print('update',[(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
                            not x.startswith('_')])
                 business_reg.save()
             else:
@@ -752,9 +752,9 @@ def update_business_registration(rqst, corp):
             business_reg = Business_Registration(customer_id=corp.id)
             for key in new_business_registration.keys():
                 business_reg.__dict__[key] = new_business_registration[key]
-            logSend([(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
+            logSend('new', [(x, business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if
                      not x.startswith('_')])
-            print([(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
+            print('new', [(x,business_reg.__dict__[x]) for x in Business_Registration().__dict__.keys() if not x.startswith('_')])
             business_reg.save()
 
             corp.business_reg_id = business_reg.id
