@@ -1290,9 +1290,9 @@ def reg_work(request):
     http://0.0.0.0:8000/customer/reg_work?name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
     POST
         {
-            'name':         '포장',
+            'name':         '포장',                  # 생산, 포장, 경비, 미화 등
             'work_place_id':'암호화된 사업장 id',
-            'type':         '업무 형태',
+            'type':         '업무 형태',              # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
             'dt_begin':     '2019-01-28',           # 업무 시작 날짜
             'dt_end':       '2019-02-28',           # 업무 종료 날짜
             'staff_id':     '암호화된 현장 소장 id',
