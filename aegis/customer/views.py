@@ -698,6 +698,13 @@ def update_relationship(request):
         print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
         corp.save()
 
+        if 'corp_name' in rqst:
+            relationships = Relationship.objects.filter(corp_id=corp.id)
+            if len(relationships) > 0:
+                relationship = relationships[0]
+                relationship.corp_name = rqst['corp_name']
+                relationship.save()
+
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, corp)
 

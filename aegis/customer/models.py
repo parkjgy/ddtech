@@ -44,12 +44,12 @@ class Business_Registration(models.Model):
     사업자 등록 자료
     """
     customer_id = models.IntegerField(default=-1) # 고객 id
-    name = models.CharField(max_length=127, blank=True) # 상호
-    regNo = models.CharField(max_length=127, blank=True) # 사업자등록번호
-    ceoName = models.CharField(max_length=127, blank=True) # 성명(대표자)
-    address = models.CharField(max_length=1024, blank=True) # 사업장소재지
-    business_type = models.CharField(max_length=1024, blank=True) # 업태
-    business_item = models.CharField(max_length=1024, blank=True) # 종목
+    name = models.CharField(max_length=127, null=True) # 상호
+    regNo = models.CharField(max_length=127, null=True) # 사업자등록번호
+    ceoName = models.CharField(max_length=127, null=True) # 성명(대표자)
+    address = models.CharField(max_length=1024, null=True) # 사업장소재지
+    business_type = models.CharField(max_length=1024, null=True) # 업태
+    business_item = models.CharField(max_length=1024, null=True) # 종목
     dt_reg = models.DateTimeField(null=True, blank=True) # 사업자등록일
 
 
