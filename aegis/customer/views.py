@@ -724,8 +724,9 @@ def update_business_registration(rqst, corp):
             if len(rqst[key]) > 0:
                 if key == 'dt_reg':
                     logSend(key, rqst[key])
+                    print(key, rqst[key])
                     dt = rqst[key]
-                    new_business_registration[key] = datetime.datetime.strptime(dt, "%Y-%m-%d") # + datetime.timedelta(hours=9)
+                    new_business_registration[key] = datetime.datetime.strptime(dt[:10], "%Y-%m-%d") # + datetime.timedelta(hours=9)
                 else:
                     new_business_registration[key] = rqst[key]
             else:
