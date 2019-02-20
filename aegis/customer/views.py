@@ -1034,9 +1034,70 @@ def update_staff(request):
             return REG_403_FORBIDDEN.to_json_response()
         worker.save()
     #
-    # 영항 받는 곳 update : Work
+    # 영항 받는 곳 update : Customer, Work_Place, Work - name, pNo, email
     #
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        customers = Customer.objects.filter(staff_id=worker.id)
+        for customer in customers:
+            customer.staff_name = rqst['name']
+            customer.save()
 
+        customers = Customer.objects.filter(manager_id=worker.id)
+        for customer in customers:
+            customer.manager_name = rqst['name']
+            customer.save()
+
+        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        for work_place in work_places:
+            work_place.manager_name = rqst['name']
+            work_place.save()
+
+        works = Work.objects.filter(staff_id=worker.id)
+        for work in works:
+            work.staff_name = rqst['name']
+            work.save()
+
+    if ('phone_no' in rqst) and (len(rqst['phone_no']) > 0):
+        customers = Customer.objects.filter(staff_id=worker.id)
+        for customer in customers:
+            customer.staff_pNo = rqst['phone_no']
+            customer.save()
+
+        customers = Customer.objects.filter(manager_id=worker.id)
+        for customer in customers:
+            customer.manager_pNo = rqst['phone_no']
+            customer.save()
+
+        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        for work_place in work_places:
+            work_place.manager_pNo = rqst['phone_no']
+            work_place.save()
+
+        works = Work.objects.filter(staff_id=worker.id)
+        for work in works:
+            work.staff_pNo = rqst['phone_no']
+            work.save()
+
+    if ('email' in rqst) and (len(rqst['email']) > 0):
+        customers = Customer.objects.filter(staff_id=worker.id)
+        for customer in customers:
+            customer.staff_email = rqst['email']
+            customer.save()
+
+        customers = Customer.objects.filter(manager_id=worker.id)
+        for customer in customers:
+            customer.manager_email = rqst['email']
+            customer.save()
+
+        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        for work_place in work_places:
+            work_place.manager_email = rqst['email']
+            work_place.save()
+
+        works = Work.objects.filter(staff_id=worker.id)
+        for work in works:
+            work.staff_email = rqst['email']
+            work.save()
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
