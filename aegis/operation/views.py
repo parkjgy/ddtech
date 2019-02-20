@@ -700,7 +700,6 @@ def list_customer(request):
         if op_customer['type'] == 12:
             continue
         op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
-        del op_customer['contractor_name']
         op_arr_customer.append(op_customer)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
