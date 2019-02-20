@@ -1504,7 +1504,7 @@ def update_work(request):
         if len(partners) == 1:
             partner = partners[0]
             work.contractor_id = partner.id
-            work.contractor_name = partner.name
+            work.contractor_name = partner.corp_name
             is_update_partner = True
 
     is_update_staff = False
