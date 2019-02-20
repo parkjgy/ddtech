@@ -1543,7 +1543,11 @@ def list_work_from_work_place(request):
                                                              'staff_name',
                                                              'staff_pNo',
                                                              'staff_email')
-    arr_work = [work for work in works]
+    arr_work = []
+    for work in works:
+        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
+        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        arr_work.append(work)
     result = {'works': arr_work}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
@@ -1637,7 +1641,11 @@ def list_work(request):
                                                           'staff_name',
                                                           'staff_pNo',
                                                           'staff_email')
-    arr_work = [work for work in works]
+    arr_work = []
+    for work in works:
+        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
+        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        arr_work.append(work)
     result = {'works': arr_work}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
