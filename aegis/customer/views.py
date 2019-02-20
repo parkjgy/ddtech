@@ -2067,7 +2067,7 @@ def report_of_manager(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    work_places = Work_Place.objects.filter(manager_id=worker.id
+    work_places = Work_Place.objects.filter(conttractor_id=work.co_id
                                             ).values('id',
                                                      'name',
                                                      'place_name',
@@ -2121,33 +2121,21 @@ def report_all(request):
     response
         STATUS 200
             {
-            "arr_work_place":
-            	[
-            	{
-            	"id": 1, "name": "\ub300\ub355\ud14c\ud06c", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\ub300\ub355\ud14c\ud06c", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
-            	"arr_work":
-            		[
-            		{
-            			"id": 1, "name": "\ube44\ucf58\uad50\uccb4", "type": "3\uad50\ub300", "staff_name": "\uc774\uc694\uc149", "staff_pNo": "01024505942", "arr_employee":
-            			[
-            				{
-            				"id": 42, "name": "unknown", "pNo": "010-3333-5555", "is_active": true, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-02-01 00:00:00"
-            				},
-            				{"id": 43, "name": "unknown", "pNo": "010-5555-7777", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
-            				},
-            				{"id": 44, "name": "unknown", "pNo": "010-7777-9999", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
-            				}
-            			]
-            		}
-            		]
-            	},
-            	{
-            	"id": 3, "name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
-            	"arr_work":
-            		[
-            		]
-            	}
-            	]
+              "arr_work_place": [
+                {
+                  "id": 1,
+                  "name": "효성용연 1공장",
+                  "place_name": "효성용연 1공장 정문 밖",
+                  "manager_name": "홍길동",
+                  "manager_pNo": "01025573555",
+                  "order_name": "(주)효성 1공장",
+                  "summary": {
+                    "인원": 99,
+                    "지각": 15,
+                    "결근": 5
+                  }
+                }
+              ]
             }
         STATUS 503
     """
@@ -2165,16 +2153,14 @@ def report_all(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    work_places = Work_Place.objects.filter(contractor_id=worker.co_id
+    work_places = Work_Place.objects.filter(conttractor_id=work.co_id
                                             ).values('id',
                                                      'name',
-                                                     'contractor_name',
                                                      'place_name',
                                                      'manager_name',
                                                      'manager_pNo',
                                                      'order_name'
                                                      )
-
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
@@ -2185,23 +2171,19 @@ def report_all(request):
                                              'staff_name',
                                              'staff_pNo'
                                              )
-        arr_work = []
+        no_employees = 0
+        no_absent = 0
+        no_late = 0
         for work in works:
-            print('    ', work['name'])
-            employees = Employee.objects.filter(work_id=work['id']
-                                                ).values('id',
-                                                         'name',
-                                                         'pNo',
-                                                         'is_active',
-                                                         'dt_begin',
-                                                         'dt_end'
-                                                         )
-            arr_employee = [employee for employee in employees]
-            work['arr_employee'] = arr_employee
-            arr_work.append(work)
-            for employee in employees:
-                print('      ', employee['pNo'])
-        work_place['arr_work'] = arr_work
+            employees = Employee.objects.filter(work_id=work['id'])
+            print('    ', work['name'], work['type'], work['type'], work['staff_name'], work['staff_pNo'], len(employees))
+            no_employees += len(employees)
+            no_late += 3
+            no_absent += 1
+        work_place['summary'] = {u'인원':no_employees,
+                                 u'지각':no_late,
+                                 u'결근':no_absent
+                                 }
         arr_work_place.append(work_place)
     result = {'arr_work_place': arr_work_place}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
