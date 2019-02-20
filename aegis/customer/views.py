@@ -1453,6 +1453,88 @@ def update_work(request):
 
 @cross_origin_read_allow
 @session_is_none_403
+def list_work_from_work_place(request):
+    """
+    사업장 업무 목록
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/list_work?work_place_id
+    GET
+        work_place_id   = cipher 사업장 id
+        dt_begin        = 과거 업무를 찾을 때 (optional) 2019/2/20 미구현
+        dt_end          = 과거 업무를 찾을 때 (optional)
+    response
+        STATUS 200
+            {
+             	"works":
+             	[
+             		{
+             		    "id": 1,
+             		    "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
+        STATUS 503
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    work_place_id = rqst['work_place_id']
+    # if ('dt_begin' in rqst) and ('dt_end' in rqst):
+    #     # 추후에 작업
+    # if len(str_dt_begin) == 0:
+    #     dt_begin = datetime.datetime.now() - timedelta(days=365)
+    # else:
+    #     dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+    # print(dt_begin)
+    # str_dt_end = rqst['dt_end']
+    # if len(str_dt_end) == 0:
+    #     dt_end = datetime.datetime.now() + timedelta(days=365)
+    # else:
+    #     dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+    # print(dt_end)
+    dt_today = datetime.datetime.now()
+    works = Work.objects.filter(work_place_id=work_place_id,
+                                dt_end=None,
+                                dt_end__gte=dt_today).values('id',
+                                                             'name',
+                                                             'work_place_id',
+                                                             'work_place_name',
+                                                             'type',
+                                                             'contractor_id',
+                                                             'contractor_name',
+                                                             'dt_begin',
+                                                             'dt_end',
+                                                             'staff_id',
+                                                             'staff_name',
+                                                             'staff_pNo',
+                                                             'staff_email')
+    arr_work = [work for work in works]
+    result = {'works': arr_work}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
 def list_work(request):
     """
     사업장 업무 목록

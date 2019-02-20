@@ -29,6 +29,7 @@ urlpatterns = [
 
     url(r'customer/reg_work$', views.reg_work, name='reg_work'),
     url(r'customer/update_work$', views.update_work, name='update_work'),
+    url(r'customer/list_work_from_work_place$', views.list_work_from_work_place, name='list_work_from_work_place'),
     url(r'customer/list_work$', views.list_work, name='list_work'),
 
     url(r'customer/reg_employee$', views.reg_employee, name='reg_employee'),
