@@ -1512,7 +1512,7 @@ def list_work_from_work_place(request):
     #     dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
     # print(dt_end)
     dt_today = datetime.datetime.now()
-    works = Work.objects.filter(work_place_id=work_place_id,
+    works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
                                 dt_end=None,
                                 dt_end__gte=dt_today).values('id',
                                                              'name',
