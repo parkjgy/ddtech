@@ -2166,11 +2166,6 @@ def report_all(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    # work_id = rqst['work_id']
-    # Work.objects.get(id=work_id) # 업무 에러 확인용
-
-    # manager_id = rqst['manager_id']
-    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
     work_places = Work_Place.objects.filter(contractor_id=worker.co_id
                                             ).values('id',
                                                      'name',
@@ -2212,15 +2207,12 @@ def report_all(request):
 @session_is_none_403
 def report_of_staff(request):
     """
-    현장 담당자 본인 것만 표시
+    담당자 기준의 업무 보고서 - 담당자가 맡고 있는 업무에 투입된 근로자 리스트
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
     GET
-        manager_id      = 관리자 id    # 없으면 전체
-        work_place_id   = 사업장 id    # 없으면 전체
-        work_id         = 업무 id     # 없으면 전체
-
+        staff_id = 관리자 id # 없으면 로그인 한 사람이 현장 소장인 곳 보고서
     response
         STATUS 200
             {
@@ -2256,12 +2248,10 @@ def report_of_staff(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    # work_id = rqst['work_id']
-    # Work.objects.get(id=work_id) # 업무 에러 확인용
-
-    # manager_id = rqst['manager_id']
-    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    works = Work.objects.filter(staff_id=worker_id, dt_end__gt=datetime.datetime.now())
+    if ('staff_id' in rqst) or (len(rqst['staff_id']) == 0):
+        works = Work.objects.filter(staff_id=worker_id, dt_end__gt=datetime.datetime.now())
+    else:
+        works = Work.objects.filter(staff_id=AES_ENCRYPT_BASE64(rqst['staff_id']), dt_end__gt=datetime.datetime.now())
     arr_work = []
     for work in works:
         print(work['name'], work['work_place_name'], work['contractor_name'], work['type'], work['staff_name'], work['staff_pNo'])
