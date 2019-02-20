@@ -695,6 +695,7 @@ def list_customer(request):
     print(arr_customer)
     op_arr_customer = []
     for customer in arr_customer:
+        print(customer['corp_name'], customer['name'])
         customer['name'] = customer['corp_name']
         op_customer = customer
         del op_customer['id']
