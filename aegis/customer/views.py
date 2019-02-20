@@ -2073,13 +2073,8 @@ def report_of_manager(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    # work_id = rqst['work_id']
-    # Work.objects.get(id=work_id) # 업무 에러 확인용
-
-    # manager_id = rqst['manager_id']
-    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
     if ('manager_id' in rqst) or (len(rqst['manage_id']) == 0):
-        work_places = Work_Place.objects.filter(conttractor_id=worker.co_id,
+        work_places = Work_Place.objects.filter(contractor_id=worker.co_id,
                                                 ).values('id',
                                                          'name',
                                                          'place_name',
