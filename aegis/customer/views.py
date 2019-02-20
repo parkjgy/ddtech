@@ -1511,7 +1511,7 @@ def update_work(request):
 
     is_update_staff = False
     if ('staff_id' in rqst) and (len(rqst['staff_id']) > 0):
-        staffs = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
+        staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
         if len(staffs) == 1:
             staff = staffs[0]
             work.staff_id = staff.id
@@ -2040,18 +2040,29 @@ def report_of_manager(request):
     response
         STATUS 200
             {
-            "arr_work_place":
-            	[
-            	{
-            	"id": 1, "name": "효성용연 1공장", "place_name": "효성용연 1공장 정문 밖", "manager_name": "홍길동", "manager_pNo": "01025573555", "order_name": "(주)효성 1공장",
-            	"arr_work":
-            		[
-            		{'업무':'조립', '형태':'주간', '담당':'유재석', '전화':'01011112222', '인원':'5', '지각':'3', '결근':1},
-            		......
-            		]
-            	},
-            	......
-            	}
+              "arr_work_place": [
+                {
+                  "id": 1,
+                  "name": "효성용연 1공장",
+                  "place_name": "효성용연 1공장 정문 밖",
+                  "manager_name": "홍길동",
+                  "manager_pNo": "01025573555",
+                  "order_name": "(주)효성 1공장",
+                  "arr_work": [
+                    {
+                      "업무": "조립",
+                      "형태": "주간",
+                      "담당": "유재석",
+                      "전화": "01011112222",
+                      "인원": "5",
+                      "지각": "3",
+                      "결근": 1
+                    },
+                    ......
+                  ]
+                },
+                ......
+              ]
             }
         STATUS 503
     """
@@ -2189,6 +2200,100 @@ def report_all(request):
                                  }
         arr_work_place.append(work_place)
     result = {'arr_work_place': arr_work_place}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_of_staff(request):
+    """
+    현장 담당자 본인 것만 표시
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
+    GET
+        manager_id      = 관리자 id    # 없으면 전체
+        work_place_id   = 사업장 id    # 없으면 전체
+        work_id         = 업무 id     # 없으면 전체
+
+    response
+        STATUS 200
+            {
+            "arr_work_place":
+            	[
+            	{
+            	"id": 1, "name": "\ub300\ub355\ud14c\ud06c", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\ub300\ub355\ud14c\ud06c", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		{
+            			"id": 1, "name": "\ube44\ucf58\uad50\uccb4", "type": "3\uad50\ub300", "staff_name": "\uc774\uc694\uc149", "staff_pNo": "01024505942", "arr_employee":
+            			[
+            				{
+            				"id": 42, "name": "unknown", "pNo": "010-3333-5555", "is_active": true, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-02-01 00:00:00"
+            				},
+            				{"id": 43, "name": "unknown", "pNo": "010-5555-7777", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				},
+            				{"id": 44, "name": "unknown", "pNo": "010-7777-9999", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				}
+            			]
+            		}
+            		]
+            	},
+            	{
+            	"id": 3, "name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		]
+            	}
+            	]
+            }
+        STATUS 503
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    # work_id = rqst['work_id']
+    # Work.objects.get(id=work_id) # 업무 에러 확인용
+
+    # manager_id = rqst['manager_id']
+    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
+    works = Work.objects.filter(staff_id=worker_id, dt_end__gt=datetime.datetime.now())
+    arr_work = []
+    for work in works:
+        print(work['name'], work['work_place_name'], work['contractor_name'], work['type'], work['staff_name'], work['staff_pNo'])
+        work = {'name': work['name'],
+                'work_place_name': work['work_place_name'],
+                'contractor_name': work['contractor_name'],
+                'type': work['type'],
+                'staff_name': work['staff_name'],
+                'staff_pNo': work['staff_pNo']
+                }
+        employees = Employee.objects.filter(work_id=work['id'],
+                                                ).values('id',
+                                                         'name',
+                                                         'pNo',
+                                                         'is_active',
+                                                         # 'dt_begin_beacon',
+                                                         # 'dt_end_beacon',
+                                                         # 'dt_begin_touch',
+                                                         # 'dt_begin_touch',
+                                                         # 'x',
+                                                         # 'y'
+                                                         )
+        arr_employee = []
+        for employee in employees:
+            employee['id'] = AES_ENCRYPT_BASE64(str(employee.id))
+            arr_employee.append(employee)
+        work['arr_employee'] = arr_employee
+        arr_work.append('arr_employee')
+    result = {'arr_work': arr_work}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
 
