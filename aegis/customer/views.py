@@ -660,6 +660,9 @@ def update_relationship(request):
     if is_update_corp:
         # print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
         corp.save()
+        #
+        # 영향 받는 곳 update : Customer, Work_Place
+        #
         if 'corp_name' in rqst:
             # 협력업체나 발주사 상호가 바뀌면 relationship 에 반영
             relationships = Relationship.objects.filter(corp_id=corp.id)
@@ -1030,6 +1033,23 @@ def update_staff(request):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker.save()
+    #
+    # 영향 받는 곳 update : Customer, Work_Place, Work
+    #
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        works = Customer.objects.filter(staff_id=work_place.id)
+        for work in works:
+            work.work_place_name = rqst['name']
+            work.save()
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        works = Work.objects.filter(work_place_id=work_place.id)
+        for work in works:
+            work.work_place_name = rqst['name']
+            work.save()
+
+
+
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -1190,6 +1210,15 @@ def update_work_place(request):
         is_update_name = True
 
     work_place.save()
+    #
+    # 영항 받는 곳 update : Work
+    #
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        works = Work.objects.filter(work_place_id=work_place.id)
+        for work in works:
+            work.work_place_name = rqst['name']
+            work.save()
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'is_update_manager':is_update_manager,
                                              'is_update_order':is_update_order,
@@ -1513,7 +1542,7 @@ def list_work_from_work_place(request):
     # print(dt_end)
     dt_today = datetime.datetime.now()
     works = Work.objects.filter(work_place_id=work_place_id,
-                                dt_end=None,
+                                # dt_end=None,
                                 dt_end__gte=dt_today).values('id',
                                                              'name',
                                                              'work_place_id',
