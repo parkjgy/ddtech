@@ -695,14 +695,15 @@ def list_customer(request):
     print(arr_customer)
     op_arr_customer = []
     for customer in arr_customer:
-        print(customer['corp_name'], customer['name'])
         customer['name'] = customer['corp_name']
+        print(customer['corp_name'], customer['name'])
         op_customer = customer
         del op_customer['id']
         if op_customer['type'] == 12:
             continue
         op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
         op_arr_customer.append(op_customer)
+    logSend(op_arr_customer)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
 
