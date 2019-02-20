@@ -1033,23 +1033,6 @@ def update_staff(request):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker.save()
-    #
-    # 영향 받는 곳 update : Customer, Work_Place, Work
-    #
-    if ('name' in rqst) and (len(rqst['name']) > 0):
-        works = Customer.objects.filter(staff_id=work_place.id)
-        for work in works:
-            work.work_place_name = rqst['name']
-            work.save()
-    if ('name' in rqst) and (len(rqst['name']) > 0):
-        works = Work.objects.filter(work_place_id=work_place.id)
-        for work in works:
-            work.work_place_name = rqst['name']
-            work.save()
-
-
-
-
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -1210,15 +1193,6 @@ def update_work_place(request):
         is_update_name = True
 
     work_place.save()
-    #
-    # 영항 받는 곳 update : Work
-    #
-    if ('name' in rqst) and (len(rqst['name']) > 0):
-        works = Work.objects.filter(work_place_id=work_place.id)
-        for work in works:
-            work.work_place_name = rqst['name']
-            work.save()
-
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'is_update_manager':is_update_manager,
                                              'is_update_order':is_update_order,
