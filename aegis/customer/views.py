@@ -1023,7 +1023,7 @@ def update_staff(request):
         print('key', key)
         if key in parameter:
             print('     value', parameter[key])
-            worker.__dict__[key] = None if len(parameter[key]) == 0 else parameter[key]
+            worker.__dict__[key] = '' if len(parameter[key]) == 0 else parameter[key]
             is_update_worker = True
     if is_update_worker:
         print([(x, worker.__dict__[x]) for x in Staff().__dict__.keys() if not x.startswith('_')])
