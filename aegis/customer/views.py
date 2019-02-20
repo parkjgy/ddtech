@@ -2031,11 +2031,9 @@ def report_of_manager(request):
     현장, 관리자별 보고서
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
+    http://0.0.0.0:8000/customer/report?manager_id=
     GET
-        manager_id      = 관리자 id    # 없으면 전체
-        work_place_id   = 사업장 id    # 없으면 전체
-        work_id         = 업무 id     # 없으면 전체
+        manager_id = 관리자 id  # 값이 없으면 모두
 
     response
         STATUS 200
@@ -2080,14 +2078,25 @@ def report_of_manager(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    work_places = Work_Place.objects.filter(conttractor_id=work.co_id
-                                            ).values('id',
-                                                     'name',
-                                                     'place_name',
-                                                     'manager_name',
-                                                     'manager_pNo',
-                                                     'order_name'
-                                                     )
+    if ('manager_id' in rqst) or (len(rqst['manage_id']) == 0):
+        work_places = Work_Place.objects.filter(conttractor_id=worker.co_id,
+                                                ).values('id',
+                                                         'name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
+    else:
+        work_places = Work_Place.objects.filter(conttractor_id=worker.co_id,
+                                                manager_id=AES_DECRYPT_BASE64(rqst['manager_id'])
+                                                ).values('id',
+                                                         'name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
