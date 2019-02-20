@@ -1607,10 +1607,10 @@ def list_work_from_work_place(request):
                                                              'staff_email')
     arr_work = []
     for work in works:
-        work['id'] = AES_ENCRYPT_BASE64(work['id'])
-        work['work_place_id'] = AES_ENCRYPT_BASE64(work['work_place_id'])
-        work['contractor_id'] = AES_ENCRYPT_BASE64(work['contractor_id'])
-        work['staff_id'] = AES_ENCRYPT_BASE64(work['staff_id'])
+        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
+        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
+        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
+        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
         arr_work.append(work)
@@ -1967,20 +1967,168 @@ def report(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    work_place_id = rqst['work_place_id']
-    print(work_place_id)
-    if len(work_place_id) == 0:
-        work_places = Work_Place.objects.filter(contractor_id=worker.co_id).values('id', 'name', 'contractor_name', 'place_name', 'manager_name', 'manager_pNo', 'order_name')
+    if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
+        # 정해진 사업장 의 정보
+        work_places = Work_Place.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_place_id'])
+                                                ).values('id',
+                                                         'name',
+                                                         'contractor_name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
     else :
-        work_places = Work_Place.objects.filter(id=work_place_id).values('id', 'name', 'contractor_name', 'place_name', 'manager_name', 'manager_pNo', 'order_name')
+        # 모든 사업장
+        work_places = Work_Place.objects.filter(contractor_id=worker.co_id
+                                                ).values('id',
+                                                         'name',
+                                                         'contractor_name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
-        works = Work.objects.filter(work_place_id=work_place['id']).values('id', 'name', 'type', 'staff_name', 'staff_pNo')
+        works = Work.objects.filter(work_place_id=work_place['id']
+                                    ).values('id',
+                                             'name',
+                                             'type',
+                                             'staff_name',
+                                             'staff_pNo'
+                                             )
         arr_work = []
         for work in works:
             print('    ', work['name'])
-            employees = Employee.objects.filter(work_id=work['id']).values('id', 'name', 'pNo', 'is_active', 'dt_begin', 'dt_end')
+            employees = Employee.objects.filter(work_id=work['id']
+                                                ).values('id',
+                                                         'name',
+                                                         'pNo',
+                                                         'is_active',
+                                                         'dt_begin',
+                                                         'dt_end'
+                                                         )
+            arr_employee = [employee for employee in employees]
+            work['arr_employee'] = arr_employee
+            arr_work.append(work)
+            for employee in employees:
+                print('      ', employee['pNo'])
+        work_place['arr_work'] = arr_work
+        arr_work_place.append(work_place)
+    result = {'arr_work_place': arr_work_place}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_of_manager(request):
+    """
+    현장, 업무별 보고서 (관리자별(X), 요약(X))
+      - 요약 보고서
+      - 관리자별 보고서
+      - 사업장별 보고서
+      - 현장별 보고서
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
+    GET
+        manager_id      = 관리자 id    # 없으면 전체
+        work_place_id   = 사업장 id    # 없으면 전체
+        work_id         = 업무 id     # 없으면 전체
+
+    response
+        STATUS 200
+            {
+            "arr_work_place":
+            	[
+            	{
+            	"id": 1, "name": "\ub300\ub355\ud14c\ud06c", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\ub300\ub355\ud14c\ud06c", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		{
+            			"id": 1, "name": "\ube44\ucf58\uad50\uccb4", "type": "3\uad50\ub300", "staff_name": "\uc774\uc694\uc149", "staff_pNo": "01024505942", "arr_employee":
+            			[
+            				{
+            				"id": 42, "name": "unknown", "pNo": "010-3333-5555", "is_active": true, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-02-01 00:00:00"
+            				},
+            				{"id": 43, "name": "unknown", "pNo": "010-5555-7777", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				},
+            				{"id": 44, "name": "unknown", "pNo": "010-7777-9999", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
+            				}
+            			]
+            		}
+            		]
+            	},
+            	{
+            	"id": 3, "name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
+            	"arr_work":
+            		[
+            		]
+            	}
+            	]
+            }
+        STATUS 503
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    # work_id = rqst['work_id']
+    # Work.objects.get(id=work_id) # 업무 에러 확인용
+
+    # manager_id = rqst['manager_id']
+    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
+    if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
+        # 정해진 사업장 의 정보
+        work_places = Work_Place.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_place_id'])
+                                                ).values('id',
+                                                         'name',
+                                                         'contractor_name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
+    else :
+        # 모든 사업장
+        work_places = Work_Place.objects.filter(contractor_id=worker.co_id
+                                                ).values('id',
+                                                         'name',
+                                                         'contractor_name',
+                                                         'place_name',
+                                                         'manager_name',
+                                                         'manager_pNo',
+                                                         'order_name'
+                                                         )
+    arr_work_place = []
+    for work_place in work_places:
+        print('  ', work_place['name'])
+        works = Work.objects.filter(work_place_id=work_place['id']
+                                    ).values('id',
+                                             'name',
+                                             'type',
+                                             'staff_name',
+                                             'staff_pNo'
+                                             )
+        arr_work = []
+        for work in works:
+            print('    ', work['name'])
+            employees = Employee.objects.filter(work_id=work['id']
+                                                ).values('id',
+                                                         'name',
+                                                         'pNo',
+                                                         'is_active',
+                                                         'dt_begin',
+                                                         'dt_end'
+                                                         )
             arr_employee = [employee for employee in employees]
             work['arr_employee'] = arr_employee
             arr_work.append(work)
