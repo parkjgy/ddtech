@@ -1428,6 +1428,7 @@ def reg_work(request):
 def update_work(request):
     """
     사업장 업무 수정
+    - 사업장의 각 업무는 기간이 지나면 다시 등록해서 사용해야 한다.
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/update_work?work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
@@ -1606,6 +1607,10 @@ def list_work_from_work_place(request):
                                                              'staff_email')
     arr_work = []
     for work in works:
+        work['id'] = AES_ENCRYPT_BASE64(work['id'])
+        work['work_place_id'] = AES_ENCRYPT_BASE64(work['work_place_id'])
+        work['contractor_id'] = AES_ENCRYPT_BASE64(work['contractor_id'])
+        work['staff_id'] = AES_ENCRYPT_BASE64(work['staff_id'])
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
         arr_work.append(work)
@@ -1704,6 +1709,10 @@ def list_work(request):
                                                           'staff_email')
     arr_work = []
     for work in works:
+        work['id'] = AES_ENCRYPT_BASE64(work['id'])
+        work['work_place_id'] = AES_ENCRYPT_BASE64(work['work_place_id'])
+        work['contractor_id'] = AES_ENCRYPT_BASE64(work['contractor_id'])
+        work['staff_id'] = AES_ENCRYPT_BASE64(work['staff_id'])
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
         arr_work.append(work)
