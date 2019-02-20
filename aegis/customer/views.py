@@ -2026,11 +2026,90 @@ def report(request):
 @session_is_none_403
 def report_of_manager(request):
     """
-    현장, 업무별 보고서 (관리자별(X), 요약(X))
-      - 요약 보고서
-      - 관리자별 보고서
-      - 사업장별 보고서
-      - 현장별 보고서
+    현장, 관리자별 보고서
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
+    GET
+        manager_id      = 관리자 id    # 없으면 전체
+        work_place_id   = 사업장 id    # 없으면 전체
+        work_id         = 업무 id     # 없으면 전체
+
+    response
+        STATUS 200
+            {
+            "arr_work_place":
+            	[
+            	{
+            	"id": 1, "name": "효성용연 1공장", "place_name": "효성용연 1공장 정문 밖", "manager_name": "홍길동", "manager_pNo": "01025573555", "order_name": "(주)효성 1공장",
+            	"arr_work":
+            		[
+            		{'업무':'조립', '형태':'주간', '담당':'유재석', '전화':'01011112222', '인원':'5', '지각':'3', '결근':1},
+            		......
+            		]
+            	},
+            	......
+            	}
+            }
+        STATUS 503
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    # work_id = rqst['work_id']
+    # Work.objects.get(id=work_id) # 업무 에러 확인용
+
+    # manager_id = rqst['manager_id']
+    # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
+    work_places = Work_Place.objects.filter(manager_id=worker.id
+                                            ).values('id',
+                                                     'name',
+                                                     'place_name',
+                                                     'manager_name',
+                                                     'manager_pNo',
+                                                     'order_name'
+                                                     )
+    arr_work_place = []
+    for work_place in work_places:
+        print('  ', work_place['name'])
+        works = Work.objects.filter(work_place_id=work_place['id']
+                                    ).values('id',
+                                             'name',
+                                             'type',
+                                             'staff_name',
+                                             'staff_pNo'
+                                             )
+        arr_work = []
+        for work in works:
+            employees = Employee.objects.filter(work_id=work['id'])
+            print('    ', work['name'], work['type'], work['type'], work['staff_name'], work['staff_pNo'], len(employees))
+            summary = {u'업무':work['name'],
+                       u'형태': work['type'],
+                       u'담당': work['staff_name'],
+                       u'전화': work['staff_pNo'],
+                       u'인원': len(employees),
+                       u'지각': 3,
+                       u'결근': 1,
+                       }
+            arr_work.append(summary)
+        work_place['arr_work'] = arr_work
+        arr_work_place.append(work_place)
+    result = {'arr_work_place': arr_work_place}
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_all(request):
+    """
+    모든 사업장 현장
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/report?manager_id=&work_place_id=&work_id=
@@ -2086,28 +2165,16 @@ def report_of_manager(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
-        # 정해진 사업장 의 정보
-        work_places = Work_Place.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_place_id'])
-                                                ).values('id',
-                                                         'name',
-                                                         'contractor_name',
-                                                         'place_name',
-                                                         'manager_name',
-                                                         'manager_pNo',
-                                                         'order_name'
-                                                         )
-    else :
-        # 모든 사업장
-        work_places = Work_Place.objects.filter(contractor_id=worker.co_id
-                                                ).values('id',
-                                                         'name',
-                                                         'contractor_name',
-                                                         'place_name',
-                                                         'manager_name',
-                                                         'manager_pNo',
-                                                         'order_name'
-                                                         )
+    work_places = Work_Place.objects.filter(contractor_id=worker.co_id
+                                            ).values('id',
+                                                     'name',
+                                                     'contractor_name',
+                                                     'place_name',
+                                                     'manager_name',
+                                                     'manager_pNo',
+                                                     'order_name'
+                                                     )
+
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
