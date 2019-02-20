@@ -876,7 +876,7 @@ def login(request):
     staff_permission = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
                         'is_manager': staff.is_manager,  # 관리자인가?
                         }
-    company_general = {'co_id':AES_ENCRYPT_BASE64(customer.id),
+    company_general = {'co_id':AES_ENCRYPT_BASE64(str(customer.id)),
                        'corp_name': customer.corp_name,
                        'staff_name': customer.staff_name,
                        'staff_pNo': customer.staff_pNo,
@@ -2136,7 +2136,8 @@ def report_all(request):
                     "지각": 15,
                     "결근": 5
                   }
-                }
+                },
+                ......
               ]
             }
         STATUS 503
