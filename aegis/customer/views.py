@@ -1033,6 +1033,11 @@ def update_staff(request):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_403_FORBIDDEN.to_json_response()
         worker.save()
+    #
+    # 영항 받는 곳 update : Work
+    #
+
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -1191,6 +1196,14 @@ def update_work_place(request):
         work_place.name = name
         work_place.place_name = name
         is_update_name = True
+    #
+    # 영항 받는 곳 update : Work
+    #
+    if ('name' in rqst) and (len(rqst['name']) > 0):
+        works = Work.objects.filter(work_place_id=work_place.id)
+        for work in works:
+            work.work_place_name = rqst['name']
+            work.save()
 
     work_place.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
