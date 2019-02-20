@@ -2167,7 +2167,7 @@ def report_all(request):
 
     # manager_id = rqst['manager_id']
     # manager = Staff.objects.get(id=manager_id) # 관리자 에러 확인용
-    work_places = Work_Place.objects.filter(conttractor_id=worker.co_id
+    work_places = Work_Place.objects.filter(contractor_id=worker.co_id
                                             ).values('id',
                                                      'name',
                                                      'place_name',
