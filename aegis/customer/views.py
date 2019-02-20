@@ -2224,33 +2224,26 @@ def report_of_staff(request):
     response
         STATUS 200
             {
-            "arr_work_place":
-            	[
-            	{
-            	"id": 1, "name": "\ub300\ub355\ud14c\ud06c", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\ub300\ub355\ud14c\ud06c", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
-            	"arr_work":
-            		[
-            		{
-            			"id": 1, "name": "\ube44\ucf58\uad50\uccb4", "type": "3\uad50\ub300", "staff_name": "\uc774\uc694\uc149", "staff_pNo": "01024505942", "arr_employee":
-            			[
-            				{
-            				"id": 42, "name": "unknown", "pNo": "010-3333-5555", "is_active": true, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-02-01 00:00:00"
-            				},
-            				{"id": 43, "name": "unknown", "pNo": "010-5555-7777", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
-            				},
-            				{"id": 44, "name": "unknown", "pNo": "010-7777-9999", "is_active": false, "dt_begin": "2019-01-30 15:35:39", "dt_end": "2019-01-26 	00:00:00"
-            				}
-            			]
-            		}
-            		]
-            	},
-            	{
-            	"id": 3, "name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "contractor_name": "\ub300\ub355\ud14c\ud06c", "place_name": "\uc784\ucc3d\ubca0\ub974\ub514\uc548", "manager_name": "\ubc15\uc885\uae30", "manager_pNo": "01025573555", "order_name": "\ub300\ub355\ud14c\ud06c",
-            	"arr_work":
-            		[
-            		]
-            	}
-            	]
+              "arr_work": [
+                {
+                  "work_place_name": "효성 1공장",
+                  "name": "조립",
+                  "contractor_name": "대덕기공",
+                  "type": "주간",
+                  "staff_name": "홍길동",
+                  "staff_pNo": "010-1111-2222",
+                  "arr_employee": [
+                    {
+                      "id": "암호화된 id",
+                      "name": "강호동",
+                      "pNo": "010-3333-7777",
+                      "is_active": "근무중"
+                    },
+                    ......
+                  ]
+                },
+                ......
+              ]
             }
         STATUS 503
     """
@@ -2272,8 +2265,8 @@ def report_of_staff(request):
     arr_work = []
     for work in works:
         print(work['name'], work['work_place_name'], work['contractor_name'], work['type'], work['staff_name'], work['staff_pNo'])
-        work = {'name': work['name'],
-                'work_place_name': work['work_place_name'],
+        work = {'work_place_name': work['work_place_name'],
+                'name': work['name'],
                 'contractor_name': work['contractor_name'],
                 'type': work['type'],
                 'staff_name': work['staff_name'],
@@ -2294,6 +2287,7 @@ def report_of_staff(request):
         arr_employee = []
         for employee in employees:
             employee['id'] = AES_ENCRYPT_BASE64(str(employee.id))
+            employee['is_active'] = '' if employee['is_active'] == 0 else '근무중'
             arr_employee.append(employee)
         work['arr_employee'] = arr_employee
         arr_work.append('arr_employee')
