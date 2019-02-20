@@ -815,6 +815,7 @@ def login(request):
             "is_manager": false
           },
           "company_general": {
+            "co_id": '암호화된 소속사 id' # 업무에서 고객사와 협력업체를 선택할 때 사용
             "corp_name": "대덕테크",
             "staff_name": "정소원",
             "staff_pNo": "010-7620-5918",
@@ -875,7 +876,8 @@ def login(request):
     staff_permission = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
                         'is_manager': staff.is_manager,  # 관리자인가?
                         }
-    company_general = {'corp_name': customer.corp_name,
+    company_general = {'co_id':AES_ENCRYPT_BASE64(customer.id),
+                       'corp_name': customer.corp_name,
                        'staff_name': customer.staff_name,
                        'staff_pNo': customer.staff_pNo,
                        'staff_email': customer.staff_email,
@@ -1373,7 +1375,7 @@ def reg_work(request):
             'dt_begin':     '2019-01-28',           # 업무 시작 날짜
             'dt_end':       '2019-02-28',           # 업무 종료 날짜
             'staff_id':     '암호화된 현장 소장 id',
-            'partner_id':   '암호화된 협력업체 id'       # 고객사 id 를 기본으로 한다.
+            'partner_id':   '암호화된 협력업체 id'
         }
     response
         STATUS 200
