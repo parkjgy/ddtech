@@ -91,6 +91,9 @@ class Work_Place(models.Model):
     order_id = models.IntegerField() # 발주사 id
     order_name = models.CharField(max_length=127) # 발주사 상호
 
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
 
 class Work(models.Model):
     """
@@ -99,7 +102,7 @@ class Work(models.Model):
     name = models.CharField(max_length=127) # 이름
     work_place_id = models.IntegerField() # 사업장 id
     work_place_name = models.CharField(max_length=127) # 사업장 이름
-    type = models.CharField(max_length=127) # 업무 형태
+    type = models.CharField(max_length=127) # 업무 형태 (주간, 야간, 3교대, 2교대, ...)
     contractor_id = models.IntegerField() # 파견업체, 도급업체 id
     contractor_name = models.CharField(max_length=127) # 파견업체, 도급업체 이름
 
@@ -122,9 +125,18 @@ class Employee(models.Model):
     dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
 
     work_id = models.IntegerField() # 업무 id
-    work_name = models.CharField(max_length=127) # 업무 이름
-    work_place_name = models.CharField(max_length=127) # 사업장 이름
 
-    employee_id = models.IntegerField(default=-1) # 근로자 id
-    name = models.CharField(max_length=127, default='unknown') # 근로자 이름
+    employee_id = models.IntegerField(default=-1) # 출입 서버의 근로자 id
+    name = models.CharField(max_length=127, default='성함을 넣어주세요.') # 근로자 이름
     pNo = models.CharField(max_length = 19)
+
+    dt_begin_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 출근시간
+    dt_end_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 퇴근시간
+
+    dt_begin_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 출근시간
+    dt_end_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 퇴근시간
+
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
+
