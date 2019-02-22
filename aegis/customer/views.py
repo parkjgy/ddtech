@@ -1750,9 +1750,6 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_id = rqst['work_id']
-    work = Work.objects.get(id=work_id)
-
     phones = rqst.getlist('phone_numbers')
     print(phones)
     for phone in phones:
@@ -1761,8 +1758,6 @@ def reg_employee(request):
             dt_begin = work.dt_begin,
             dt_end = work.dt_end,
             work_id = work.id,
-            work_name = work.name,
-            work_place_name = work.work_place_name,
             pNo = phone
         )
         new_employee.save()
@@ -1781,7 +1776,7 @@ def update_employee(request):
     근로자 수정
      - 근로자가 업무를 거부했거나
      - 응답이 없어 업무에서 배제했거나
-     - 업무 예정기간보다 일찍 업무가 끌났을 때
+     - 업무 예정기간보다 일찍 업무가 끝났을 때
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/update_employee?

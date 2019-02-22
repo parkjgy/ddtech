@@ -354,9 +354,8 @@ def beacon_verify(request):
 @cross_origin_read_allow
 def reg_employee(request):
     """
-    근로자를 등록한다.
-    근로자 앱을 처음 실행시킬 때 사용한다.
-    SMS 로 인증 문자(6자리)를 보낸다.
+    근로자를 등록한다. - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
+    - SMS 로 인증 문자(6자리)를 보낸다.
     http://0.0.0.0:8000/employee/reg_employee?phone_no=01025573555
     POST : json
     {
