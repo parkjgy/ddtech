@@ -19,6 +19,7 @@ from config.decorator import cross_origin_read_allow
 from .models import Beacon
 from .models import Beacon_History
 from .models import Employee
+from .models import Notification_Work
 from .models import Pass
 from .models import Passer
 from .models import Pass_History
@@ -72,6 +73,217 @@ def check_version(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
                   })
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def reg_employee_for_customer(request):
+    """
+    <<<고객 서버용>>> 고객사에서 보낸 업무 배정 알림
+    http://0.0.0.0:8000/employee/reg_employee_for_customer?work_id=1&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
+    POST : json
+        {
+          "work_id":1,
+          "work_place_name": "효성1공장",
+          "work_name_type": "경비(주간)",
+          "dt_begin": "2019/03/04",
+          "dt_end": "2019/03/31",
+          "dt_answer_deadline": 2019-03-03 19:00:00,
+          "staff_name": "이수용",
+          "staff_phone": "01099993333",
+          "phones": [
+            "01025573555",
+            "01022223333",
+            "01033334444",
+            "01044445555"
+          ]
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    print(rqst["work_id"])
+    print(rqst["work_place_name"])
+    print(rqst["work_name_type"])
+    print(rqst["dt_begin"])
+    print(rqst["dt_end"])
+    print(rqst["dt_answer_deadline"])
+    print(rqst["staff_name"])
+    print(rqst["staff_phone"])
+
+    # pass_type = rqst['pass_type']
+    if request.method == 'POST':
+        phone_numbers = rqst['phones']
+    else:
+        phone_numbers = rqst.getlist('phones')
+
+    print(phone_numbers)
+
+    msg = '이지체크\n'\
+          '새로운 업무를 앱에서 확인해주세요.\n'\
+          '앱은 홈페이지에서...\n'\
+          'http://0.0.0.0:8000/app'
+
+    print(len(msg))
+
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        # 'receiver': phone_numbers[i],
+        'msg_type': 'SMS',
+        'msg': msg,
+        'testmode_yn': 'Y'
+    }
+
+    phones_state = {}
+    for i in range(len(phone_numbers)):
+        rData['receiver'] = phone_numbers[i]
+        rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+        # print(rSMS.json())
+        if int(rSMS.json()['result_code']) < 0:
+            phones_state[phone_numbers[i]] = -101 # 전화번호 에러로 문자를 보낼 수 없음.
+        else:
+            find_passers = Passer.objects.filter(pNo=phone_numbers[i])
+            phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+            new_notification = Notification_Work(
+                work_id=rqst["work_id"],
+                employee_id= phones_state[phone_numbers[i]],
+                employee_pNo=phone_numbers[i],
+                work_place_name=rqst["work_place_name"],
+                work_name_type=rqst["work_name_type"],
+                begin=rqst["dt_begin"],
+                end=rqst["dt_end"],
+                dt_answer_deadline=rqst["dt_answer_deadline"],
+                staff_name=rqst["staff_name"],
+                staff_pNo=rqst["staff_phone"],
+            )
+            new_notification.save()
+    for key in phones_state.keys():
+        print(key, phones_state[key])
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':phones_state})
+
+
+@cross_origin_read_allow
+def notification_list(request):
+    """
+    foreground request 새로운 업무 알림: 앱이 foreground 상태가 될 때 가져와서 선택할 수 있도록 표시한다.
+    http://dev.ddtechi.com:8055/employee/notification_list?passer_id=qgf6YHf1z2Fx80DR8o_Lvg
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'  # 암호화된 값임
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "notifications": [
+                {
+                  "id": "qgf6YHf1z2Fx80DR8o_Lvg==",
+                  "work_place_name": "효성1공장",
+                  "work_name_type": "경비(주)간",
+                  "begin": "2019/03/04",
+                  "end": "2019/03/31",
+                  "dt_answer_deadline": "2019-03-03 19:00:00",
+                  "staff_name": "이수용",
+                  "staff_pNo": "01099993333"
+                }
+              ]
+            }
+
+            효성 용연 1공장
+            생산(주간)
+            2019/03/04 ~ 2019/03/31
+            응답 시한: 2019-03-03 19:00:00
+            - 담당: 이수용 [전화] [문자]
+
+            work_place_name  효성 용연 1공장
+            work_name (type)  생산(주간)
+            begin ~ end
+            응답 시한: dt_answer_deadline
+            - 담당: staff_name [staff_phone_no] [staff_phone_no]
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
+    if len(passers) != 1:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
+    passer = passers[0]
+    dt_today = datetime.datetime.now()
+    print(passer.pNo)
+    notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today) \
+        .values('id',
+                # 'work_id',
+                # 'employee_id',
+                # 'employee_pNo',
+                'work_place_name',
+                'work_name_type',
+                'begin',
+                'end',
+                'dt_answer_deadline',
+                'staff_name',
+                'staff_pNo'
+                )
+    print(notification_list)
+    arr_notification = []
+    for notification in notification_list:
+        notification['id'] = AES_ENCRYPT_BASE64(str(notification['id']))
+        notification['dt_answer_deadline'] = notification['dt_answer_deadline'].strftime("%Y-%m-%d %H:%M:%S")
+        arr_notification.append(notification)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'notifications':arr_notification})
+
+
+@cross_origin_read_allow
+def notification_accept(request):
+    """
+    새로운 업무에 대한 응답
+    http://dev.ddtechi.com:8055/employee/notification_accept?passer_id=qgf6YHf1z2Fx80DR8o_Lvg&notification_id=qgf6YHf1z2Fx80DR8o_Lvg&is_accept=0
+    POST : json
+        {
+            'passer_id' : '서버로 받아 저장해둔 출입자 id',  # 암호화된 값임
+            'notification_id': 'cipher id',
+            'is_accept': 0       # 1 : 업무 수락, 0 : 업무 거부
+        }
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'알 수 없는 사용자입니다.'}
+            {'message':'알 수 없는 알림입니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
+    if len(passers) != 1:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
+    passer = passers[0]
+
+    notifications = Notification_Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['notification_id']))
+    if len(notifications) != 1:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
+    notification = notifications[0]
+    #
+    # to customer server
+    # 근로자가 수락/거부했음
+    #
+    # 근로자 정보 update
+    #
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 

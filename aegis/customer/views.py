@@ -1750,6 +1750,8 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    work = Work.objects.get(id=work_id)
     phones = rqst.getlist('phone_numbers')
     print(phones)
     for phone in phones:

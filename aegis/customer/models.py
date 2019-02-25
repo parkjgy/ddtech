@@ -119,7 +119,8 @@ class Employee(models.Model):
     """
     근로자 (업무별)
     """
-    is_active = models.BooleanField(default=False) # 0 (NO) 근무 중이 아님, 1 (YES) 근무 중
+    is_accept_work = models.BooleanField(null=True, blank=True) # null : 선택하지 않음, True: 업무에 승락, False: 업무를 거부
+    is_active = models.BooleanField(default=False) # 0 (False) 근무 중이 아님, 1 (True) 근무 중
 
     dt_begin = models.DateTimeField(auto_now_add = True) # 근무 시작일
     dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일

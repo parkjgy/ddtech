@@ -45,6 +45,10 @@ urlpatterns = [
     # url(r'^api-auth', include('router.urls')),
     # url(r'^beacon_test_d3$', views.beaconTestD3, name = 'beaconTestD3'),
     url(r'employee/check_version$', views.check_version, name='check_version'),
+    url(r'employee/reg_employee_for_customer$', views.reg_employee_for_customer, name='reg_employee_for_customer'),
+    url(r'employee/notification_list$', views.notification_list, name='notification_list'),
+    url(r'employee/notification_accept$', views.notification_accept, name='notification_accept'),
+
     url(r'employee/passer_reg$', views.passer_reg, name='passer_reg'),
 
     url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),

@@ -13,6 +13,19 @@ class Employee(models.Model):
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
 
 
+class Notification_Work(models.Model):
+    work_id = models.IntegerField(default=-1) # 업무 id
+    employee_id = models.IntegerField(default=-1) # 해당 근로자 id
+    employee_pNo = models.CharField(max_length = 19) # 해당 근로자 전화번호
+    work_place_name = models.CharField(max_length=127) # 사업장 이름
+    work_name_type = models.CharField(max_length=255) # 업무 이름
+    begin = models.CharField(max_length=127) # 근무 시작 날짜
+    end = models.CharField(max_length=127) # 근무 종료 날짜
+    dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
+    staff_name = models.CharField(max_length=127) # 담당자 이름
+    staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
+
+
 class Passer(models.Model):
     """
     출입자
@@ -25,8 +38,8 @@ class Passer(models.Model):
     pNo = models.CharField(max_length = 19)
     pType = models.IntegerField(default = 0)        # 0:unkown, 10:iPhone, 20:Android
     push_token = models.CharField(max_length = 255, default='')
-    employee_id = models.IntegerField(default = -1) # 차후 개인정보를 분리했을 때 개인정보 id (email, pNo, email, pw, name, dt_reg)
-    alert_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
+    employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자
+    notification_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
     cn = models.IntegerField(default = 0)           # 인증 문자
 
 
