@@ -603,7 +603,7 @@ def sms_customer_staff(request):
 
     new_customer_data = {
         'worker_id': AES_ENCRYPT_BASE64(str(worker.id)),
-        'staff_id': rqst['staff_id'],
+        'staff_id': AES_ENCRYPT_BASE64(rqst['staff_id']),
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
                                       json=new_customer_data)
