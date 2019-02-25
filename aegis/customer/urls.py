@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'customer/list_work$', views.list_work, name='list_work'),
 
     url(r'customer/reg_employee$', views.reg_employee, name='reg_employee'),
+    url(r'customer/employee_work_accept_for_employee$', views.employee_work_accept_for_employee, name='employee_work_accept_for_employee'),
     url(r'customer/update_employee$', views.update_employee, name='update_employee'),
     url(r'customer/list_employee$', views.list_employee, name='list_employee'),
 

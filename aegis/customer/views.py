@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 from django.conf import settings
 
 from config.common import logSend, logError
+from config.common import ReqLibJsonResponse
 from config.common import DateTimeEncoder, exceptionError
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log
@@ -1726,9 +1727,10 @@ def list_work(request):
 @session_is_none_403
 def reg_employee(request):
     """
-    근로자 등록 - 업무별 전화번호 목록을 넣는 방식
+    근로자 등록 - 업무 선택 >> 전화번호 목록 입력 >> [등록 SMS 안내 발송]
+    response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_employee?work_id=1&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
+    http://0.0.0.0:8000/customer/reg_employee?work_id=qgf6YHf1z2Fx80DR8o_Lvg&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
     POST
         {
             'work_id':'사업장 업무 id',
@@ -1739,7 +1741,16 @@ def reg_employee(request):
         }
     response
         STATUS 200
-        STATUS 509
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "duplicate_pNo": [
+                "010-2557-3555",
+                "010-3333-99999",
+                "010-3333-5555",
+                "010-5555-7777",
+                "010-7777-9999"
+              ]
+            }
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -1752,9 +1763,21 @@ def reg_employee(request):
 
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     work = Work.objects.get(id=work_id)
-    phones = rqst.getlist('phone_numbers')
-    print(phones)
+    if request.method == 'POST':
+        phones = rqst['phone_numbers']
+    else:
+        phones = rqst.getlist('phone_numbers')
+    phones = [no_only_phone_no(pNo) for pNo in phones]
+
+    duplicate_pNo = []
+    sms_pNo = []
+    arr_employee = []
     for phone in phones:
+        if len(Employee.objects.filter(work_id=work.id, pNo=phone)) > 0:
+            # 이미 SMS 등록된 전화번호를 걸러낸다.
+            duplicate_pNo.append(phone)
+            continue
+        sms_pNo.append(phone)
         new_employee = Employee(
             is_active = 0, # 근무 중 아님
             dt_begin = work.dt_begin,
@@ -1763,10 +1786,93 @@ def reg_employee(request):
             pNo = phone
         )
         new_employee.save()
+        arr_employee.append(new_employee)
+    print('duplicat pNo', duplicate_pNo)
+
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
     #
-    # request = http://...
+    new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
+                         "work_place_name": work.work_place_name,
+                         "work_name_type": work.name + ' (' + work.type + ')',
+                         "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
+                         "dt_end": work.dt_end.strftime('%Y/%m/%d'),
+                         "dt_answer_deadline": (work.dt_end - datetime.timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S'), # work.dt_deadline,
+                         "staff_name": work.staff_name,
+                         "staff_phone": work.staff_pNo,
+                         "phones": sms_pNo
+                         }
+    print(new_employee_data)
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
+    print(response_employee)
+    if response_employee.status_code != 200:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return ReqLibJsonResponse(response_employee)
+
+    sms_result = response_employee.json()
+    print(sms_result)
+    for employee in arr_employee:
+        employee.employee_id = sms_result[employee.pNo]
+        employee.save()
+
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'duplicate_pNo':duplicate_pNo})
+
+
+@cross_origin_read_allow
+def employee_work_accept_for_employee(request):
+    """
+    <<<근로자 서버용>>> 근로자가 업무 수락/거부했을 때 고객서버가 처리할 일
+    * 서버 to 서버 통신 work_id 필요
+        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/employee_work_accept_for_employee?worker_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_id=qgf6YHf1z2Fx80DR8o_Lvg
+    POST
+        {
+            'worker_id': 'cipher_id'  # 운영직원 id
+            'work_id':'암호화된 work_id',
+            'employee_name':employee.name,
+            'employee_pNo':01011112222,
+            'is_accept':True
+        }
+    response
+        STATUS 200
+            {
+                'msg': '정상처리되었습니다.',
+                'login_id': staff.login_id,
+            }
+        STATUS 542
+            {'message':'파견사 측에 근로자 정보가 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
+    logSend('   from operation server : op staff id ', worker_id)
+    print('   from operation server : op staff id ', worker_id)
+
+    print(rqst['work_id'])
+    print(rqst['employee_name'])
+    print(rqst['employee_pNo'])
+    print(rqst['is_accept'])
+
+    work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
+    employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
+    if len(employees) != 1:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'파견사 측에 근로자 정보가 없습니다.'})
+
+    employee = employees[0]
+    employee.employee_id = rqst['employee_id']
+    employee.name = rqst['employee_name']
+    employee.is_accept_work = rqst['is_accept']
+    print(employee)
+    employee.save()
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -1858,14 +1964,15 @@ def list_employee(request):
             			"work_id": 1,
             			"work_name": "비콘교체",
             			"work_place_name": "대덕테크",
-            			"employee_id": -1,
+            			"employee_id": -1,  # -101 잘못된 전화번호, -1 아직 앱을 설치하지 않음. 1 < 근로자 서버의 근로자 id
             			"name": "unknown",
             			"pNo": "010-3333-5555"
             		},
             		......
             	]
             }
-    STATUS 503
+            * employee_id= -101 잘못된 전화번호, -1 아직 앱을 설치하지 않음. 1 < 근로자 서버의 근로자 id
+        STATUS 503
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':

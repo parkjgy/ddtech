@@ -25,4 +25,5 @@ DATABASES = {
 
 CUSTOMER_URL = 'http://dev.ddtechi.com:8055/customer/'
 OPERATION_URL = 'http://dev.ddtechi.com:8055/operation/'
+EMPLOYEE_URL = 'http://dev.ddtechi.com:8055/employee/'
 SMS_SENDER_PN = '07042503340'

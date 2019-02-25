@@ -11,20 +11,33 @@ class Employee(models.Model):
     name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
+    work_id = models.IntegerField(default=-1)  # employee server work id
+    work_id_2 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
 
 
 class Notification_Work(models.Model):
-    work_id = models.IntegerField(default=-1) # 업무 id
+    """
+    근로자 앱이 처음 시작될 때 배정받은 업무가 있는지 저장하고 있는 table
+    """
+    work_id = models.IntegerField()  # employee server work id
+    customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
     employee_id = models.IntegerField(default=-1) # 해당 근로자 id
     employee_pNo = models.CharField(max_length = 19) # 해당 근로자 전화번호
+    dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
+
+
+class Work(models.Model):
+    """
+    고객 서버로 부터 받은 업무 내역
+    - 사용: Notification_Work, Employee
+    """
+    customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
     work_place_name = models.CharField(max_length=127) # 사업장 이름
     work_name_type = models.CharField(max_length=255) # 업무 이름
     begin = models.CharField(max_length=127) # 근무 시작 날짜
     end = models.CharField(max_length=127) # 근무 종료 날짜
-    dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
     staff_name = models.CharField(max_length=127) # 담당자 이름
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
-
 
 class Passer(models.Model):
     """
