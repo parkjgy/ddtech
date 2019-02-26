@@ -31,6 +31,42 @@ from config.status_collection import *
 
 
 @cross_origin_read_allow
+def table_reset_and_clear_for_operation(request):
+    """
+    <<<운영 서버용>>> 고객 서버 데이터 리셋 & 클리어
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    Customer.objects.all().delete()
+    Relationship.objects.all().delete()
+    Business_Registration.objects.all().delete()
+    Staff.objects.all().delete()
+    Work_Place.objects.all().delete()
+    Work.objects.all().delete()
+    Employee.objects.all().delete()
+
+    result = {'message': 'customer tables deleted\n$ python manage.py sqlsequencereset customer'}
+    logSend(result['message'])
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
 def reg_customer_for_operation(request):
     """
     <<<운영 서버용>>> 고객사를 등록한다.
@@ -76,7 +112,7 @@ def reg_customer_for_operation(request):
     staff_pNo = no_only_phone_no(rqst["staff_pNo"])
     staff_email = rqst["staff_email"]
 
-    customers = Customer.objects.filter(name=customer_name, staff_pNo=staff_pNo)
+    customers = Customer.objects.filter(corp_name=customer_name, staff_pNo=staff_pNo)
     # 파견기업 등록
     if len(customers) > 0:
         # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
@@ -148,6 +184,7 @@ def sms_customer_staff_for_operation(request):
     logSend('   from operation server : op staff id ', worker_id)
     print('   from operation server : op staff id ', worker_id)
 
+    print(rqst['staff_id'], AES_DECRYPT_BASE64(rqst['staff_id']))
     staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -224,7 +261,7 @@ def list_customer_for_operation(request):
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
-        customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['id']))
+        customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['staff_id']))
         arr_customer.append(customer)
     result = {'customers': arr_customer}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -236,7 +273,9 @@ def list_customer_for_operation(request):
 def update_customer(request):
     """
     고객사(협력사, 발주사) 정보 변경 (담당자, 관리자만 가능)
-    - 담당자나 관리자가 바뀌면 바로 로그아웃된다.
+    - 담당자가 담당자를 바꾸면 로그아웃된다.
+    - 관리자가 관리자를 바뀌면 바로 로그아웃된다.
+    - 관리자가 담당자를 바꾸었을 때는 로그아웃하지 않는다.
     - 담당자나 관리자가 바뀔 때는 다른 값은 바꿀 수 없다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     http://0.0.0.0:8000/customer/update_customer?
@@ -308,6 +347,11 @@ def update_customer(request):
                     staff.is_site_owner = True
                     staff.save()
 
+                    if customer.manager_id == worker.id:
+                        # 관리자가 담당자를 바꾸었기 때문에 로그아웃하지 않는다.
+                        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                        return REG_200_SUCCESS.to_json_response()
+
                     worker.is_site_owner = False
                     worker.is_login = False
                     worker.dt_login = datetime.datetime.now()
@@ -348,7 +392,7 @@ def update_customer(request):
                         del request.session['id']
 
                         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-                        return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
+                        return REG_200_SUCCESS.to_json_response({'message': '관리자가 바뀌어 로그아웃되었습니다.'})
                     else:
                         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
                         return REG_521_MODIFY_MANAGER_ONLY.to_json_response()
@@ -517,7 +561,7 @@ def list_relationship(request):
 def detail_relationship(request):
     """
     발주사, 협력사 상세 정보를 요청한다.
-    http://0.0.0.0:8000/customer/detail_relationship?corp_id=ryWQkNtiHgkUaY_SZ1o2uA
+    http://0.0.0.0:8000/customer/detail_relationship?relationship_id=ryWQkNtiHgkUaY_SZ1o2uA
     GET
         relationship_id=ryWQkNtiHgkUaY_SZ1o2uA  # 발주사 협력사 id (암호화 된 값)
     response
@@ -556,8 +600,7 @@ def detail_relationship(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    corp_id = rqst['corp_id']
-    corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(corp_id))
+    corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['relationship_id']))
     if len(corps) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
@@ -565,7 +608,7 @@ def detail_relationship(request):
 
     detail_relationship = {'type':corp.type,
                            'type_name': '발주사' if corp.type == 10 else '협력사',
-                           'corp_id':corp_id,
+                           'corp_id':rqst['relationship_id'],
                            'corp_name':corp.corp_name,
                            'staff_name': corp.staff_name,
                            'staff_pNo': corp.staff_pNo,
@@ -774,7 +817,7 @@ def reg_staff(request):
     phone_no = no_only_phone_no(rqst['pNo'])
     email = rqst['email']
 
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=id)
+    staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
     if len(staffs) > 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
@@ -854,9 +897,7 @@ def login(request):
 
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
-    # print(login_id, login_pw, hash_SHA256(login_pw))
-    staff = Staff.objects.get(id=1)
-    # print(staff.login_id, staff.login_pw)
+
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -956,8 +997,6 @@ def update_staff(request):
     		'position': '직책',
     		'department': '부서 or 소속',
     		'phone_no': '전화번호',
-    		'phone_type': '전화 종류', # 10:iPhone, 20: Android
-    		'push_token': 'token',
     		'email': 'id@ddtechi.com'
     	}
     response
@@ -1171,6 +1210,11 @@ def reg_work_place(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
 
+    list_work_place = Work_Place.objects.filter(name=name)
+    if len(list_work_place) > 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_540_REGISTRATION_FAILED.to_json_response({'message':'같은 이름의 사업장이 있습니다.\n꼭 같은 이름의 사업장이 필요하면\n다른 이름으로 등록 후 이름을 바꾸십시요.'})
+
     manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
     order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
     new_work_place = Work_Place(
@@ -1280,6 +1324,8 @@ def update_work_place(request):
 def list_work_place(request):
     """
     사업장 목록
+    - 빈 값이어도 키는 있어야 한다.
+    - 파라미터는 검색에 사용됨으로 "" (빈 문자) 를 사용하고 null 를 사용하지 않는다.
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_work_place?name=&manager_name=종기&manager_phone=3555&order_name=대덕
@@ -1379,7 +1425,10 @@ def reg_work(request):
         }
     response
         STATUS 200
-        STATUS 509
+        STATUS 422
+            {'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'}
+        STATUS 544
+
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -1402,7 +1451,17 @@ def reg_work(request):
             is_empty = True
     if is_empty:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'}, {'blanks':blanks})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'})
+    works = Work.objects.filter(name=rqst['name'],
+                                type=rqst['type'],
+                                work_place_id=AES_DECRYPT_BASE64(rqst['work_place_id']),
+                                staff_id=AES_DECRYPT_BASE64(rqst['staff_id']),
+                                contractor_id=AES_DECRYPT_BASE64(rqst['partner_id']),
+                                )
+    if len(works) > 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
+
     work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
     staff = Staff.objects.get(id=AES_DECRYPT_BASE64(rqst['staff_id']))
     contractor = Customer.objects.get(id=AES_DECRYPT_BASE64(rqst['partner_id']))
@@ -1430,6 +1489,8 @@ def reg_work(request):
 def update_work(request):
     """
     사업장 업무 수정
+    - 업무 항목은 지울 수 없기 때문에 blank("")가 오면 수정하지 않는다.
+    - key (예: name) 가 없으면 수정하지 않는다.
     - 사업장의 각 업무는 기간이 지나면 다시 등록해서 사용해야 한다.
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
             response 는 추후 추가될 예정이다.
@@ -1626,10 +1687,12 @@ def list_work_from_work_place(request):
 def list_work(request):
     """
     사업장 업무 목록
+    - 검색 값은 없으면 blank ("")로 보낸다.
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_work?name=&manager_name=종기&manager_phone=3555&order_name=대덕
     GET
+        name            = 업무 이름
         work_place_name = 사업장 이름
         type            = 업무 형태
         contractor_name = 파견(도급)업체 or 협력업체 이름
@@ -1711,10 +1774,10 @@ def list_work(request):
                                                           'staff_email')
     arr_work = []
     for work in works:
-        work['id'] = AES_ENCRYPT_BASE64(work['id'])
-        work['work_place_id'] = AES_ENCRYPT_BASE64(work['work_place_id'])
-        work['contractor_id'] = AES_ENCRYPT_BASE64(work['contractor_id'])
-        work['staff_id'] = AES_ENCRYPT_BASE64(work['staff_id'])
+        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
+        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
+        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
+        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
         arr_work.append(work)
@@ -1730,10 +1793,11 @@ def reg_employee(request):
     근로자 등록 - 업무 선택 >> 전화번호 목록 입력 >> [등록 SMS 안내 발송]
     response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_employee?work_id=qgf6YHf1z2Fx80DR8o_Lvg&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
+    http://0.0.0.0:8000/customer/reg_employee?work_id=qgf6YHf1z2Fx80DR8o_Lvg&dt_answer_deadline=2019-03-01 19:00:00&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
     POST
         {
             'work_id':'사업장 업무 id',
+            'dt_answer_deadline':2019-03-01 19:00:00  # 업무 수락/거부 답변 시한
             'phone_numbers':   # 업무에 배치할 근로자들의 전화번호
             [
                 '010-3333-5555', '010-5555-7777', '010-7777-8888', ...
@@ -1761,6 +1825,7 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
+    print(rqst['work_id'])
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     work = Work.objects.get(id=work_id)
     if request.method == 'POST':
@@ -1797,7 +1862,7 @@ def reg_employee(request):
                          "work_name_type": work.name + ' (' + work.type + ')',
                          "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
                          "dt_end": work.dt_end.strftime('%Y/%m/%d'),
-                         "dt_answer_deadline": (work.dt_end - datetime.timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S'), # work.dt_deadline,
+                         "dt_answer_deadline": rqst['dt_answer_deadline'],
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,
                          "phones": sms_pNo
@@ -1809,7 +1874,7 @@ def reg_employee(request):
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return ReqLibJsonResponse(response_employee)
 
-    sms_result = response_employee.json()
+    sms_result = response_employee.json()['result']
     print(sms_result)
     for employee in arr_employee:
         employee.employee_id = sms_result[employee.pNo]
@@ -1983,7 +2048,7 @@ def list_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_id = rqst['work_id']
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     Work.objects.get(id=work_id) # 업무 에러 확인용
 
     employees = Employee.objects.filter(work_id=work_id).values('id',
@@ -1991,8 +2056,6 @@ def list_employee(request):
                                                                 'dt_begin',
                                                                 'dt_end',
                                                                 'work_id',
-                                                                'work_name',
-                                                                'work_place_name',
                                                                 'employee_id',
                                                                 'name',
                                                                 'pNo')

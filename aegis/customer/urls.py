@@ -6,6 +6,8 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
+    url(r'customer/table_reset_and_clear_for_operation$', views.table_reset_and_clear_for_operation,
+        name='table_reset_and_clear_for_operation'),
     url(r'customer/reg_customer_for_operation$', views.reg_customer_for_operation, name='reg_customer_for_operation'),
     url(r'customer/list_customer_for_operation$', views.list_customer_for_operation, name='list_customer_for_operation'),
     url(r'customer/sms_customer_staff_for_operation', views.sms_customer_staff_for_operation, name='sms_customer_staff_for_operation'),

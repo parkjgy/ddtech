@@ -169,35 +169,35 @@ def reg_employee_for_customer(request):
         'testmode_yn': 'Y'
     }
 
-    # 이전에 SMS 를 보낸적있는 전화번호 제외
-    for j in range(len(phone_numbers) - 1, -1, -1):
-        notification_list = Notification_Work.objects.filter(customer_work_id=rqst["customer_work_id"], employee_pNo=phone_numbers[j])
-        if len(notification_list) > 0:
-            del phone_numbers[j]
-    #     print(j, phone_numbers)
-    # print(phone_numbers)
-
     phones_state = {}
     for i in range(len(phone_numbers)):
-        rData['receiver'] = phone_numbers[i]
-        rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-        logSend('SMS result', rSMS.json())
-        # print(rSMS.json())
-        if int(rSMS.json()['result_code']) < 0:
-            phones_state[phone_numbers[i]] = -101 # 전화번호 에러로 문자를 보낼 수 없음.
-        else:
+        notification_list = Notification_Work.objects.filter(customer_work_id=rqst["customer_work_id"], employee_pNo=phone_numbers[i])
+        if len(notification_list) > 0:
+            # 이전에 SMS 를 보낸적있는 전화번호는 전화번호 출입자가 저장하고 있는 근로자 id 만 확인해서 보낸다.
             find_passers = Passer.objects.filter(pNo=phone_numbers[i])
             phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
-            new_notification = Notification_Work(
-                work_id = work.id,
-                customer_work_id=rqst["customer_work_id"],
-                employee_id= phones_state[phone_numbers[i]],
-                employee_pNo=phone_numbers[i],
-                dt_answer_deadline=rqst["dt_answer_deadline"],
-            )
-            new_notification.save()
-    # for key in phones_state.keys():
-    #     print(key, phones_state[key])
+        else:
+            # SMS 를 보낸다.
+            rData['receiver'] = phone_numbers[i]
+            rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+            logSend('SMS result', rSMS.json())
+            print(rSMS.json())
+            if int(rSMS.json()['result_code']) < 0:
+                # 전화번호 에러로 문자를 보낼 수 없음.
+                phones_state[phone_numbers[i]] = -101
+            else:
+                # SMS 를 보냈으면 전화번호의 출입자가 앱을 설치하고 알림을 볼 수 있게 저장한다.
+                find_passers = Passer.objects.filter(pNo=phone_numbers[i])
+                phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+                new_notification = Notification_Work(
+                    work_id = work.id,
+                    customer_work_id=rqst["customer_work_id"],
+                    employee_id= phones_state[phone_numbers[i]],
+                    employee_pNo=phone_numbers[i],
+                    dt_answer_deadline=rqst["dt_answer_deadline"],
+                )
+                new_notification.save()
+    # print(phones_state)
     logSend({'result':phones_state})
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'result':phones_state})

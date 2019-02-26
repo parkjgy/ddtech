@@ -587,7 +587,8 @@ def sms_customer_staff(request):
     http://0.0.0.0:8000/operation/sms_customer_staff?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_pNo=010-2557-3555
     POST
         {
-            'staff_id': 'cipher_id'
+            'staff_id': 'cipher_id',
+            'staff_pNo': 010-2557-3555
         }
     response
         STATUS 200
@@ -603,7 +604,7 @@ def sms_customer_staff(request):
 
     new_customer_data = {
         'worker_id': AES_ENCRYPT_BASE64(str(worker.id)),
-        'staff_id': AES_ENCRYPT_BASE64(rqst['staff_id']),
+        'staff_id': rqst['staff_id']
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
                                       json=new_customer_data)
@@ -636,6 +637,8 @@ def sms_customer_staff(request):
 def list_customer(request):
     """
     고객사 리스트를 요청한다.
+    - 2019/02/26 현재 parameter 는 처리하지 않음.
+    - 차후 검색어로 사용: 지역, 업체명 포함, 담당자 이름 포함, 담당자 전화번호 일부 포함
     http://0.0.0.0:8000/operation/list_customer?customer_name=대덕테크&staff_name=박종기&staff_pNo=010-2557-3555&staff_email=thinking@ddtechi.com
     GET
         customer_name=대덕기공
@@ -934,3 +937,676 @@ def dt_android_upgrade(request):
     result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def customer_test_step_1(request):
+    """
+    [[고객 서버 시험]] Step 1: 고객 테이블 삭제
+    - id reset $ python manage.py sqlsequencereset customer
+    GET
+        { "key" : "사용 승인 key" }
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    # 고객서버 테이블 삭제 및 초기화
+    key = {'key':rqst['key']}
+    response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
+    print(response.json())
+
+    result = {'message': 'customer tables deleted\n$ python manage.py sqlsequencereset customer'}
+    logSend(result['message'])
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def customer_test_step_2(request):
+    """
+    [[고객 서버 시험]] Step 2: 고객 생성
+    - 운영 로그인
+    - 고객업체 생성
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+    result = []
+
+    # 운영 로그인
+    login_data = {"id": "thinking",
+                  "pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객업체 생성
+    customer_data = {'customer_name': '대덕테크',
+                     'staff_name': '박종기',
+                     'staff_pNo': '010-2557-3555',
+                     'staff_email': 'thinking@ddtechi.com'
+                     }
+    r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_3(request):
+    """
+    [[고객 서버 시험]] Step 3: 운영에서 고객사 리스트, 고객사 담당자에게 비밀번호 초기화 문자 발송
+    - 운영: 고객사 리스트
+    - 운영: 고객사 담당자에게 비밀번호 초기화 문자 발송
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 운영 : 로그인
+    login_data = {"id": "thinking",
+                  "pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 운영 : 고객사 리스트
+    customer_data = {'customer_name': '대덕테크',
+                     'staff_name': '박종기',
+                     'staff_pNo': '010-2557-3555',
+                     'staff_email': 'thinking@ddtechi.com'
+                     }
+    r = s.post(settings.OPERATION_URL + 'list_customer', json=customer_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    customer = r.json()['customers'][0]
+
+    # 운영 : 고객사 담당자 SMS 다시 보냄
+    customer_data = {'staff_id': customer['staff_id'],
+                     'staff_pNo': customer['staff_pNo']
+                     }
+    r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 운영 : 고객사 담당자 SMS 다시 보냄
+    customer_data = {'staff_id': customer['staff_id'],
+                     'staff_pNo': customer['staff_pNo']
+                     }
+    r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_4(request):
+    """
+    [[고객 서버 시험]] Step 4: 고객 웹 로그인, 고객사 담당자 정보 변경, 직원 리스트
+    - 고객 웹 로그인
+    - 담당자 정보 변경
+    - 직원 추가 등록
+    - 직원 리스트
+    - 고객사 담당자 변경
+    - 고객사 정보 수정
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "temp_6",
+                  "login_pw": "happy_day!!!"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    if r.status_code == 200:
+        # 고객 : 자기 정보 수정 - login_id
+        staff_data = {'new_login_id': 'thinking',
+                      'before_pw': 'happy_day!!!',
+                      }
+        r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+        result.append({'STATUS':r.status_code, 'R':r.json()})
+
+        # 고객 : 로그인
+        login_data = {"login_id": "thinking",
+                      "login_pw": "happy_day!!!"
+                      }
+        s = requests.session()
+        r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+        result.append({'STATUS':r.status_code, 'R':r.json()})
+
+        # 고객 : 자기 정보 수정 - login_pw
+        staff_data = {'before_pw': 'happy_day!!!',
+                      'login_pw': 'parkjong',
+                      }
+        r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+        result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 자기 정보 수정 - 직책
+    staff_data = {'before_pw': 'parkjong',
+                  'position': '이사',
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 직원 등록
+    staff_data = {'name': '이요셉',
+                  'login_id': 'hello',
+                  'position': '책임연구원',     # option 비워서 보내도 됨
+                  'department': '개발팀',  # option 비워서 보내도 됨
+                  'pNo': '010-2450-5942', # '-'를 넣어도 삭제되어 저장 됨
+                  'email': 'hello@ddtechi.com',
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 직원 리스트
+    staff_data = {}
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(r.json()['staffs'][1])
+    # 고객 : 고객사 정보 수정
+    customer_infor = {'staff_id': r.json()['staffs'][1]['id']}
+    r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 고객사 정보 수정
+    customer_infor = {'name':'주식회사 대덕테크',
+                      'regNo':'894-88-00927',
+                      'ceoName':'최진',
+                      'address':'울산광역시 남구 봉월로 22, 309호(신정동, 임창베네시안)',
+                      'business_type':'서비스업',
+                      'business_item':'시스템개발 및 관리, 컴퓨터프로그래밍, 시스템종합관리업',
+                      'dt_reg':'2018-03-12',
+                      'dt_payment':'25'
+                      }
+    r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_5(request):
+    """
+    [[고객 서버 시험]] Step 5: 발주사, 협력사 등록, 수정, 리스트
+    - 발주사 등록
+    - 협력사 등록
+    - 발주, 협력사 리스트
+    - 협력사 수정
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 발주사 등록
+    relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
+                          'corp_name': '대덕기공',
+                          'staff_name': '엄원섭',
+                          'staff_pNo': '010-3877-4105',
+                          'staff_email': 'wonsup.eom@daeducki.com',
+                          }
+    r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 협력사 등록
+    relationship_infor = {'type': 12,    # 10 : 발주사, 12 : 협력사
+                          'corp_name': '주식회사 살구',
+                          'staff_name': '정소원',
+                          'staff_pNo': '010-7620-5918',
+                          'staff_email': 'salgoo.ceo@gmail.com',
+                          }
+    r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 발주, 협력사 리스트
+    get_parameter = {'is_partner': 'YES',
+                     'is_orderer': 'YES'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 협력사 수정
+    relationship_infor = {'corp_id': 'ox9fRbgDQ-PxgCiqoDLYhQ==',    # 발주사 or 협력사 id 의 암호화된 값
+                          'corp_name': '주식회사 살구',
+                          'staff_name': '김미진 대리',
+                          'staff_pNo': '010-8876-7614',
+                          'staff_email': 'midal@salgooc.com',
+                          'manager_name': '정소원',      # 선택
+                          'manager_pNo': '010-7620-5918',  # 선택
+                          'manager_email': 'salgoo.ceo@gmail.com', # 선택
+                          'name':'(주)살구',      # 상호 - 선택
+                          'regNo':'123-000000-12',    # 사업자등록번호 - 선택
+                          'ceoName':'정소원',         # 이름(대표자) - 선택
+                          'address':'울산시 중구 돋질로 20',   # 사업장소재지 - 선택
+                          'business_type':'서비스',      # 업태 - 선택
+                          'business_item':'정보통신',    # 종목 - 선택
+                          'dt_reg':'2018-12-05',       # 사업자등록일 - 선택
+                          }
+    r = s.post(settings.CUSTOMER_URL + 'update_relationship', json=relationship_infor)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 협력사 상세 정보
+    get_parameter = {'relationship_id':'ox9fRbgDQ-PxgCiqoDLYhQ=='}
+    r = s.post(settings.CUSTOMER_URL + 'detail_relationship', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_6(request):
+    """
+    [[고객 서버 시험]] Step 6: 사업장 등록, 리스트, 수정
+    - 사업장 등록
+    - 사업장 리스트
+    - 사업장 수정
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 등록
+    work_place = {
+        'name': '대덕기공 출입시스템',  # 이름
+        'manager_id': '53Zvmm4kTxQWo3QD_k-aCQ==',  # 관리자 id (암호화되어 있음)
+        'order_id': '3EP9Yb9apLUn2Ymof8Mw9A==',  # 발주사 id (암호화되어 있음)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'대덕',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':''
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 수정
+    work_place = {
+        'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ==', #'iZ_rkELjhh18ZZauMq2vQw==', #'4dnQVYFTi501mmdz6hX6CA==', # 'iZ_rkELjhh18ZZauMq2vQw=='
+        'name': '효성 2공장',  # 이름
+        'manager_id': 'QJ4CSvmpM14fuSxyhyufYQ=='
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work_place', json=work_place)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_7(request):
+    """
+    [[고객 서버 시험]] Step 7: 사업장 업무 등록, 리스트, 수정
+    - 업무 등록
+    - 업무 리스트
+    - 업무 수정
+    - 업무 리스트
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 등록
+    work = {
+        'name': '비콘점검',  # 생산, 포장, 경비, 미화 등
+        'work_place_id': '4dnQVYFTi501mmdz6hX6CA==',
+        'type': '주간 오전',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+        'dt_begin': '2019-02-27',  # 업무 시작 날짜
+        'dt_end': '2019-02-27',  # 업무 종료 날짜
+        'staff_id': 'QJ4CSvmpM14fuSxyhyufYQ==',
+        'partner_id': 'ox9fRbgDQ-PxgCiqoDLYhQ=='
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 등록
+    work = {
+        'name': '비콘 시험',  # 생산, 포장, 경비, 미화 등
+        'work_place_id': '4dnQVYFTi501mmdz6hX6CA==',
+        'type': '주간 오후',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+        'dt_begin': '2019-02-27',  # 업무 시작 날짜
+        'dt_end': '2019-02-27',  # 업무 종료 날짜
+        'staff_id': 'QJ4CSvmpM14fuSxyhyufYQ==',
+        'partner_id': 'ox9fRbgDQ-PxgCiqoDLYhQ=='
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 리스트
+    get_parameter = {'name'            : '',
+                     'work_place_name' : '',
+                     'type'            : '',
+                     'contractor_name' : '',
+                     'staff_name'      : '',
+                     'staff_pNo'       : '',
+                     'dt_begin'        : '',
+                     'dt_end'          : '',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 수정
+    work = {
+        'work_id':'_LdMng5jDTwK-LMNlj22Vw',
+        'dt_end': '2019-02-28',  # 업무 종료 날짜
+        'partner_id': 'gDoPqy_Pea6imtYYzWrEXQ=='
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=work)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 수정
+    work = {
+        'work_id':'ryWQkNtiHgkUaY_SZ1o2uA',
+        'dt_end': '2019-02-28',  # 업무 종료 날짜
+        'partner_id': 'gDoPqy_Pea6imtYYzWrEXQ=='
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=work)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 리스트
+    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
+                     'dt_begin':'2019-02-25',
+                     'dt_end':'2019-02-27',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_8(request):
+    """
+    [[고객 서버 시험]] Step 8: 근로자 등록
+    - 근로자 등록 (고객 서버)
+    - 근로자 알림 확인 (근로자 서버)
+    - 근로자 수락 / 거부 (근로자 서버)
+    -
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 리스트
+    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
+                     'dt_begin':'2019-02-25',
+                     'dt_end':'2019-02-27',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    work_id = r.json()['works'][0]['id']
+    print(work_id, r.json()['works'])
+
+    # 고객 : 근로자 등록
+    employee = {
+        'work_id':work_id,
+        'dt_answer_deadline':'2019-03-01 19:00:00',
+        'phone_numbers':['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555']
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 : 알림 확인
+    passer = {'passer_id':'qgf6YHf1z2Fx80DR8o_Lvg'}
+    r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 : 업무 수락 / 거절
+    accept = {
+        'passer_id': 'qgf6YHf1z2Fx80DR8o_Lvg',  # 암호화된 값임
+        'notification_id': 'tuqB7wUIVoIKH0pz2J9IfQ==',
+        'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
+    }
+    r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_9(request):
+    """
+    [[고객 서버 시험]] Step 9: ?
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 업무 리스트
+    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
+                     'dt_begin':'2019-02-25',
+                     'dt_end':'2019-02-27',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    result.append({'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+

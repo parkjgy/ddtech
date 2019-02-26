@@ -24,6 +24,16 @@ urlpatterns = [
     url(r'operation/list_beacon$', views.list_beacon, name='list_beacon'),
     url(r'operation/detail_beacon$', views.detail_beacon, name='detail_beacon'),
     url(r'operation/dt_android_upgrade', views.dt_android_upgrade, name='dt_android_upgrade'),
+
+    url(r'operation/customer_test_step_1', views.customer_test_step_1, name='customer_test_step_1'),
+    url(r'operation/customer_test_step_2', views.customer_test_step_2, name='customer_test_step_2'),
+    url(r'operation/customer_test_step_3', views.customer_test_step_3, name='customer_test_step_3'),
+    url(r'operation/customer_test_step_4', views.customer_test_step_4, name='customer_test_step_4'),
+    url(r'operation/customer_test_step_5', views.customer_test_step_5, name='customer_test_step_5'),
+    url(r'operation/customer_test_step_6', views.customer_test_step_6, name='customer_test_step_6'),
+    url(r'operation/customer_test_step_7', views.customer_test_step_7, name='customer_test_step_7'),
+    url(r'operation/customer_test_step_8', views.customer_test_step_8, name='customer_test_step_8'),
+    url(r'operation/customer_test_step_9', views.customer_test_step_9, name='customer_test_step_9'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
