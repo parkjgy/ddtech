@@ -610,6 +610,8 @@ def detail_relationship(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
+    if not 'relationship_id' in rqst:
+        logSend('relationship_id << 없음')
     logSend(rqst['relationship_id'])
     logSend(AES_DECRYPT_BASE64(rqst['relationship_id']))
     corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['relationship_id']))
