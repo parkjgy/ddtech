@@ -1576,7 +1576,7 @@ def customer_test_step_8(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
-    logSend(work_id, r.json()['works'])
+    logSend(r.json()['works'])
     work_id = r.json()['works'][0]['id']
 
     # 고객 : 근로자 등록
