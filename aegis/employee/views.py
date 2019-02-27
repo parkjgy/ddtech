@@ -555,6 +555,78 @@ def pass_verify(request):
 
 
 @cross_origin_read_allow
+def pass_sms(request):
+    """
+    출입확인 : 전화 사용자가 문자로 출근(퇴근)을 서버로 전송
+    http://0.0.0.0:8000/employee/pass_sms?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
+    POST : json
+        {
+            'phone_no' : '문자 보낸 사람 전화번호',
+            'dt' : '2018-12-28 12:53:36',
+            'sms' : '출근했어요' # '퇴근했어요', '지금 외출 나갑니다', '먼저 퇴근합니다', '외출했다가 왔습니다', '오늘 조금 지각했습니다'
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    phone_no = no_only_phone_no(rqst['phone_no'])
+    dt = rqst['dt']
+    sms = rqst['sms']
+
+    if '출근' in sms:
+        is_in = True
+    elif '퇴근' in sms:
+        is_in = False
+
+    passers = Passer.object.filter(pNo=phone_no)
+    if len(passer) == 0:
+        logError({'ERROR': '출입자에 전화번호가 없습니다.' + phone_no})
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_541_NOT_REGISTERED.to_json_response()
+    passer = passers[0]
+    print(passer.id, dt, is_in)
+    # dt = datetime.datetime.now()
+    dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+    # print(dt, str_dt)
+    new_pass = Pass(
+        passer_id=passer.id,
+        is_in=is_in,
+        dt_verify=dt
+    )
+    new_pass.save()
+    before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+    # 가장 최근에 저장된 값부터 가져옮
+    # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
+    # for x in before_passes :
+    #     print(x.dt_reg, x.is_in, x.dt_verify)
+    #     if is_in == x.is_in and x.dt_verify == '':
+    #         print('--- save')
+    #         x.dt_verify = dt
+    #         # s.save()
+    #         break
+    #     elif x.dt_verify != '' :
+    #         print('--- msg')
+    #         result = {'msg': '출근 전에 퇴근이 요청되었습니다.' if is_in else '퇴근 전에 출근이 요청되었습니다.'}
+    #         response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
+    #         response.status_code = 503
+    #         print(response)
+    #         return response
+    #         break
+    #
+    # response = HttpResponse()
+    # response.status_code = 200
+    # return response
+
+
+@cross_origin_read_allow
 def beacon_verify(request):
     """
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제

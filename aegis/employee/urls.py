@@ -53,6 +53,7 @@ urlpatterns = [
 
     url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
     url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
+    url(r'employee/pass_sms$', views.pass_sms, name='pass_sms'),
     url(r'employee/reg_employee$', views.reg_employee, name='reg_employee'),
     url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
     url(r'employee/work_list$', views.work_list, name='work_list'),
