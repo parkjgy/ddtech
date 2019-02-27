@@ -610,7 +610,8 @@ def detail_relationship(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    logSend(rqst['relationship_id'], AES_DECRYPT_BASE64(rqst['relationship_id']))
+    logSend(rqst['relationship_id'])
+    logSend(AES_DECRYPT_BASE64(rqst['relationship_id']))
     corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['relationship_id']))
     if len(corps) == 0:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
