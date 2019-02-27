@@ -1578,7 +1578,7 @@ def customer_test_step_8(request):
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     work_id = r.json()['works'][0]['id']
-    print(work_id, r.json()['works'])
+    logSend(work_id, r.json()['works'])
 
     # 고객 : 근로자 등록
     employee = {
