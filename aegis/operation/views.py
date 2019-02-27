@@ -1080,13 +1080,6 @@ def customer_test_step_3(request):
     r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
-    # 운영 : 고객사 담당자 SMS 다시 보냄
-    customer_data = {'staff_id': customer['staff_id'],
-                     'staff_pNo': customer['staff_pNo']
-                     }
-    r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
-    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
-
     print(result)
     logSend(result)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1272,6 +1265,7 @@ def customer_test_step_5(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    partner_id = r.json()['partners'][0]['id']
 
     # 고객 : 협력사 수정
     relationship_infor = {'corp_id': 'ox9fRbgDQ-PxgCiqoDLYhQ==',    # 발주사 or 협력사 id 의 암호화된 값
@@ -1294,7 +1288,7 @@ def customer_test_step_5(request):
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 협력사 상세 정보
-    get_parameter = {'relationship_id':'ox9fRbgDQ-PxgCiqoDLYhQ=='}
+    get_parameter = {'relationship_id':partner_id}
     r = s.post(settings.CUSTOMER_URL + 'detail_relationship', json=get_parameter)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
@@ -1339,11 +1333,25 @@ def customer_test_step_6(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
+    # 고객 : 직원 리스트
+    staff_data = {}
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    manager_id = r.json()['staffs'][0]['id']
+    new_manager_id = r.json()['staffs'][1]['id']
+    # 고객 : 발주, 협력사 리스트
+    get_parameter = {'is_partner': 'NO',
+                     'is_orderer': 'YES'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    order_id = r.json()['orderers'][0]['id']
+
     # 고객 : 사업장 등록
     work_place = {
         'name': '대덕기공 출입시스템',  # 이름
-        'manager_id': 'qgf6YHf1z2Fx80DR8o_Lvg==',  # 관리자 id (암호화되어 있음)
-        'order_id': '_LdMng5jDTwK-LMNlj22Vw==',  # 발주사 id (암호화되어 있음)
+        'manager_id': manager_id,  # 관리자 id (암호화되어 있음)
+        'order_id': order_id,  # 발주사 id (암호화되어 있음)
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
@@ -1356,13 +1364,13 @@ def customer_test_step_6(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
-
     work_place_id = r.json()['work_places'][0]['id']
+
     # 고객 : 사업장 수정
     work_place = {
         'work_place_id': work_place_id,
         'name': '효성 2공장',  # 이름
-        'manager_id': 'QJ4CSvmpM14fuSxyhyufYQ=='
+        'manager_id': new_manager_id
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work_place', json=work_place)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
