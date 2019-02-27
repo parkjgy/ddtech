@@ -944,6 +944,7 @@ def customer_test_step_1(request):
     """
     [[고객 서버 시험]] Step 1: 고객 테이블 삭제
     - id reset $ python manage.py sqlsequencereset customer
+    http://0.0.0.0:8000/operation/customer_test_step_1?key=
     GET
         { "key" : "사용 승인 key" }
     response
@@ -967,7 +968,7 @@ def customer_test_step_1(request):
     response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
     print(response.json())
 
-    result = {'message': 'customer tables deleted\n$ python manage.py sqlsequencereset customer'}
+    result = {'message': 'Customer all tables deleted'}
     logSend(result['message'])
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
@@ -1004,7 +1005,13 @@ def customer_test_step_2(request):
                   }
     s = requests.session()
     r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    if r.status_code == 530:
+        staff = Staff.objects.get(id=1)
+        staff.login_pw = hash_SHA256(login_data["pw"])
+        staff.save()
+        r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+        result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객업체 생성
     customer_data = {'customer_name': '대덕테크',
@@ -1013,7 +1020,7 @@ def customer_test_step_2(request):
                      'staff_email': 'thinking@ddtechi.com'
                      }
     r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1053,7 +1060,7 @@ def customer_test_step_3(request):
                   }
     s = requests.session()
     r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 운영 : 고객사 리스트
     customer_data = {'customer_name': '대덕테크',
@@ -1062,7 +1069,7 @@ def customer_test_step_3(request):
                      'staff_email': 'thinking@ddtechi.com'
                      }
     r = s.post(settings.OPERATION_URL + 'list_customer', json=customer_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     customer = r.json()['customers'][0]
 
@@ -1071,14 +1078,14 @@ def customer_test_step_3(request):
                      'staff_pNo': customer['staff_pNo']
                      }
     r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 운영 : 고객사 담당자 SMS 다시 보냄
     customer_data = {'staff_id': customer['staff_id'],
                      'staff_pNo': customer['staff_pNo']
                      }
     r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1117,12 +1124,12 @@ def customer_test_step_4(request):
     result = []
 
     # 고객 : 로그인
-    login_data = {"login_id": "temp_6",
+    login_data = {"login_id": "temp_1",
                   "login_pw": "happy_day!!!"
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     if r.status_code == 200:
         # 고객 : 자기 정보 수정 - login_id
@@ -1130,7 +1137,7 @@ def customer_test_step_4(request):
                       'before_pw': 'happy_day!!!',
                       }
         r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-        result.append({'STATUS':r.status_code, 'R':r.json()})
+        result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
         # 고객 : 로그인
         login_data = {"login_id": "thinking",
@@ -1138,14 +1145,14 @@ def customer_test_step_4(request):
                       }
         s = requests.session()
         r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-        result.append({'STATUS':r.status_code, 'R':r.json()})
+        result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
         # 고객 : 자기 정보 수정 - login_pw
         staff_data = {'before_pw': 'happy_day!!!',
                       'login_pw': 'parkjong',
                       }
         r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-        result.append({'STATUS':r.status_code, 'R':r.json()})
+        result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 로그인
     login_data = {"login_id": "thinking",
@@ -1153,14 +1160,14 @@ def customer_test_step_4(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 자기 정보 수정 - 직책
     staff_data = {'before_pw': 'parkjong',
                   'position': '이사',
                   }
     r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 직원 등록
     staff_data = {'name': '이요셉',
@@ -1171,18 +1178,18 @@ def customer_test_step_4(request):
                   'email': 'hello@ddtechi.com',
                   }
     r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 직원 리스트
     staff_data = {}
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(r.json()['staffs'][1])
     # 고객 : 고객사 정보 수정
     customer_infor = {'staff_id': r.json()['staffs'][1]['id']}
     r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 고객사 정보 수정
     customer_infor = {'name':'주식회사 대덕테크',
@@ -1195,7 +1202,7 @@ def customer_test_step_4(request):
                       'dt_payment':'25'
                       }
     r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1237,7 +1244,7 @@ def customer_test_step_5(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 발주사 등록
     relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
@@ -1247,7 +1254,7 @@ def customer_test_step_5(request):
                           'staff_email': 'wonsup.eom@daeducki.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 협력사 등록
     relationship_infor = {'type': 12,    # 10 : 발주사, 12 : 협력사
@@ -1257,14 +1264,14 @@ def customer_test_step_5(request):
                           'staff_email': 'salgoo.ceo@gmail.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 발주, 협력사 리스트
     get_parameter = {'is_partner': 'YES',
                      'is_orderer': 'YES'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 협력사 수정
     relationship_infor = {'corp_id': 'ox9fRbgDQ-PxgCiqoDLYhQ==',    # 발주사 or 협력사 id 의 암호화된 값
@@ -1284,12 +1291,12 @@ def customer_test_step_5(request):
                           'dt_reg':'2018-12-05',       # 사업자등록일 - 선택
                           }
     r = s.post(settings.CUSTOMER_URL + 'update_relationship', json=relationship_infor)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 협력사 상세 정보
     get_parameter = {'relationship_id':'ox9fRbgDQ-PxgCiqoDLYhQ=='}
     r = s.post(settings.CUSTOMER_URL + 'detail_relationship', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1330,16 +1337,16 @@ def customer_test_step_6(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 사업장 등록
     work_place = {
         'name': '대덕기공 출입시스템',  # 이름
-        'manager_id': '53Zvmm4kTxQWo3QD_k-aCQ==',  # 관리자 id (암호화되어 있음)
-        'order_id': '3EP9Yb9apLUn2Ymof8Mw9A==',  # 발주사 id (암호화되어 있음)
+        'manager_id': 'qgf6YHf1z2Fx80DR8o_Lvg==',  # 관리자 id (암호화되어 있음)
+        'order_id': '_LdMng5jDTwK-LMNlj22Vw==',  # 발주사 id (암호화되어 있음)
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 사업장 리스트
     get_parameter = {'name':'대덕',
@@ -1348,16 +1355,17 @@ def customer_test_step_6(request):
                      'order_name':''
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
+    work_place_id = r.json()['work_places'][0]['id']
     # 고객 : 사업장 수정
     work_place = {
-        'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ==', #'iZ_rkELjhh18ZZauMq2vQw==', #'4dnQVYFTi501mmdz6hX6CA==', # 'iZ_rkELjhh18ZZauMq2vQw=='
+        'work_place_id': work_place_id,
         'name': '효성 2공장',  # 이름
         'manager_id': 'QJ4CSvmpM14fuSxyhyufYQ=='
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work_place', json=work_place)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 사업장 리스트
     get_parameter = {'name':'',
@@ -1366,7 +1374,7 @@ def customer_test_step_6(request):
                      'order_name':'대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1408,33 +1416,57 @@ def customer_test_step_7(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    # 고객 : 직원 리스트
+    staff_data = {}
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    staff_id = r.json()['staffs'][1]['id']
+
+    # 고객 : 발주, 협력사 리스트
+    get_parameter = {'is_partner': 'YES',
+                     'is_orderer': 'NO'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    partner_id = r.json()['partners'][0]['id']
 
     # 고객 : 업무 등록
     work = {
-        'name': '비콘점검',  # 생산, 포장, 경비, 미화 등
-        'work_place_id': '4dnQVYFTi501mmdz6hX6CA==',
+        'name': '비콘 점검',  # 생산, 포장, 경비, 미화 등
+        'work_place_id': work_place_id,
         'type': '주간 오전',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
         'dt_begin': '2019-02-27',  # 업무 시작 날짜
         'dt_end': '2019-02-27',  # 업무 종료 날짜
-        'staff_id': 'QJ4CSvmpM14fuSxyhyufYQ==',
-        'partner_id': 'ox9fRbgDQ-PxgCiqoDLYhQ=='
+        'staff_id': staff_id,
+        'partner_id': partner_id
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 업무 등록
     work = {
         'name': '비콘 시험',  # 생산, 포장, 경비, 미화 등
-        'work_place_id': '4dnQVYFTi501mmdz6hX6CA==',
+        'work_place_id': work_place_id,
         'type': '주간 오후',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
         'dt_begin': '2019-02-27',  # 업무 시작 날짜
         'dt_end': '2019-02-27',  # 업무 종료 날짜
-        'staff_id': 'QJ4CSvmpM14fuSxyhyufYQ==',
-        'partner_id': 'ox9fRbgDQ-PxgCiqoDLYhQ=='
+        'staff_id': staff_id,
+        'partner_id': partner_id
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 업무 리스트
     get_parameter = {'name'            : '',
@@ -1447,33 +1479,35 @@ def customer_test_step_7(request):
                      'dt_end'          : '',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+
+    work_id_1 = r.json()['works'][0]['id']
+    work_id_2 = r.json()['works'][1]['id']
+    # 고객 : 업무 수정
+    work = {
+        'work_id': work_id_1,
+        'dt_end': '2019-02-28',  # 업무 종료 날짜
+        'partner_id': partner_id
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=work)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 업무 수정
     work = {
-        'work_id':'_LdMng5jDTwK-LMNlj22Vw',
+        'work_id': work_id_2,
         'dt_end': '2019-02-28',  # 업무 종료 날짜
         'partner_id': 'gDoPqy_Pea6imtYYzWrEXQ=='
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=work)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
-
-    # 고객 : 업무 수정
-    work = {
-        'work_id':'ryWQkNtiHgkUaY_SZ1o2uA',
-        'dt_end': '2019-02-28',  # 업무 종료 날짜
-        'partner_id': 'gDoPqy_Pea6imtYYzWrEXQ=='
-    }
-    r = s.post(settings.CUSTOMER_URL + 'update_work', json=work)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 업무 리스트
-    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
+    get_parameter = {'work_place_id': work_place_id,
                      'dt_begin':'2019-02-25',
                      'dt_end':'2019-02-27',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1515,15 +1549,25 @@ def customer_test_step_8(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 업무 리스트
-    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
+    get_parameter = {'work_place_id':work_place_id,
                      'dt_begin':'2019-02-25',
                      'dt_end':'2019-02-27',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     work_id = r.json()['works'][0]['id']
     print(work_id, r.json()['works'])
@@ -1535,12 +1579,12 @@ def customer_test_step_8(request):
         'phone_numbers':['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555']
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 근로자 : 알림 확인
     passer = {'passer_id':'qgf6YHf1z2Fx80DR8o_Lvg'}
     r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 근로자 : 업무 수락 / 거절
     accept = {
@@ -1549,14 +1593,14 @@ def customer_test_step_8(request):
         'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
     }
     r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
             'is_working_history':'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
@@ -1594,7 +1638,7 @@ def customer_test_step_9(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 업무 리스트
     get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
@@ -1602,11 +1646,12 @@ def customer_test_step_9(request):
                      'dt_end':'2019-02-27',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
     print(result)
     logSend(result)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'result':result})
+
 
 

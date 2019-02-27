@@ -60,6 +60,16 @@ def table_reset_and_clear_for_operation(request):
     Work.objects.all().delete()
     Employee.objects.all().delete()
 
+    from django.db import connection
+    cursor = connection.cursor()
+    cursor.execute("ALTER TABLE customer_customer AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_relationship AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_business_registration AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_staff AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_work_place AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_work AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_employee AUTO_INCREMENT = 1")
+
     result = {'message': 'customer tables deleted\n$ python manage.py sqlsequencereset customer'}
     logSend(result['message'])
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
