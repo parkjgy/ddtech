@@ -957,7 +957,7 @@ def customer_test_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -992,7 +992,7 @@ def customer_test_step_2(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1046,7 +1046,7 @@ def customer_test_step_3(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1115,7 +1115,7 @@ def customer_test_step_4(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1230,7 +1230,7 @@ def customer_test_step_5(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1323,7 +1323,7 @@ def customer_test_step_6(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1402,7 +1402,7 @@ def customer_test_step_7(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1535,7 +1535,7 @@ def customer_test_step_8(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1624,7 +1624,7 @@ def customer_test_step_9(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
