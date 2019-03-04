@@ -570,8 +570,11 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-                                                             '비밀번호 happy_day!!!'
+               '비밀번호 happy_day!!!'
     }
+    if settings.DEBUG:
+        rData['testmode_yn'] = 'Y'
+
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     # print(r.json())
 
@@ -622,7 +625,7 @@ def sms_customer_staff(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-                                                             '비밀번호 happy_day!!!'
+               '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     logSend(r.json())
@@ -1588,6 +1591,12 @@ def customer_test_step_8(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
     result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
 
+    #
+    # 근로자 등록과정
+    #
+    # << work : end 날짜 때문에 work 없는 경우 처리 필요
+    #
+
     # 근로자 : 알림 확인
     passer = {'passer_id':'qgf6YHf1z2Fx80DR8o_Lvg'}
     r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
@@ -1616,7 +1625,63 @@ def customer_test_step_8(request):
 
 
 @cross_origin_read_allow
-def customer_test_step_9(request):
+def employee_test_step_1(request):
+    """
+    [[고객 서버 시험]] Step 9: check_version
+    - check version
+    - 전화번호 인증 reg_employee
+    -
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 근로자 : 로그인
+    version = {"v": "A.1.0.0.190111"}
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'check_version', json=version)
+    result.append({'url':r.url, 'GET':version, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 : 인증번호 요청
+    phone_no = {'phone_no' : '010-3355-8282'}
+    settings.IS_TEST = True
+    r = s.post(settings.EMPLOYEE_URL + 'reg_employee', json=phone_no)
+    settings.IS_TEST = False
+    result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 : 근로자 확인
+    certification_data = {
+            'phone_no' : '010-3355-8282',
+            'cn' : AES_ENCRYPT_BASE64('201903'),
+            'phone_type' : 'A', # 안드로이드 폰
+            'push_token' : 'push token'
+        }
+    r = s.post(settings.EMPLOYEE_URL + 'verify_employee', json=certification_data)
+    result.append({'url':r.url, 'POST':certification_data, 'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def employee_test_step_2(request):
     """
     [[고객 서버 시험]] Step 9: ?
     GET
@@ -1639,21 +1704,95 @@ def customer_test_step_9(request):
 
     result = []
 
-    # 고객 : 로그인
-    login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
-                  }
-    s = requests.session()
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
 
-    # 고객 : 업무 리스트
-    get_parameter = {'work_place_id':'4dnQVYFTi501mmdz6hX6CA==',
-                     'dt_begin':'2019-02-25',
-                     'dt_end':'2019-02-27',
-                     }
-    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'url':r.url, 'STATUS':r.status_code, 'R':r.json()})
+
+@cross_origin_read_allow
+def employee_test_step_3(request):
+    """
+    [[고객 서버 시험]] Step 9: ?
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def employee_test_step_4(request):
+    """
+    [[고객 서버 시험]] Step 9: ?
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def employee_test_step_5(request):
+    """
+    [[고객 서버 시험]] Step 9: ?
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
 
     print(result)
     logSend(result)

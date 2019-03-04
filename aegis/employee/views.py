@@ -166,8 +166,9 @@ def reg_employee_for_customer(request):
         # 'receiver': phone_numbers[i],
         'msg_type': 'SMS',
         'msg': msg,
-        'testmode_yn': 'Y'
     }
+    if settings.DEBUG:
+        rData['testmode_yn'] = 'Y'
 
     phones_state = {}
     for i in range(len(phone_numbers)):
@@ -577,6 +578,7 @@ def pass_sms(request):
     phone_no = no_only_phone_no(rqst['phone_no'])
     dt = rqst['dt']
     sms = rqst['sms']
+    logSend(phone_no, dt, sms)
 
     if '출근' in sms:
         is_in = True
@@ -701,7 +703,7 @@ def beacon_verify(request):
 @cross_origin_read_allow
 def reg_employee(request):
     """
-    근로자를 등록한다. - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
+    근로자 전화번호 인증을 위한 인증번호 요청 - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
     - SMS 로 인증 문자(6자리)를 보낸다.
     http://0.0.0.0:8000/employee/reg_employee?phone_no=01025573555
     POST : json
@@ -732,6 +734,8 @@ def reg_employee(request):
         passer = passers[0]
 
     certificateNo = random.randint(100000, 999999)
+    if settings.IS_TEST:
+        certificateNo = 201903
     passer.cn = certificateNo
     passer.save()
 
@@ -744,6 +748,10 @@ def reg_employee(request):
         'msg': '이지체크 앱 사용\n'
                '인증번호[' + str(certificateNo) + ']입니다.'
     }
+    if settings.IS_TEST:
+        rData['testmode_yn'] = 'Y'
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_200_SUCCESS.to_json_response(rData)
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
     print(rSMS.status_code)
@@ -766,10 +774,10 @@ def verify_employee(request):
     http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
     POST
         {
-            'phone_no' : '010-1111-2222'
-            'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화'
-            'phone_type' : 'A' # 안드로이드 폰
-            'push_token' : 'push token'
+            'phone_no' : '010-1111-2222',
+            'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화',
+            'phone_type' : 'A', # 안드로이드 폰
+            'push_token' : 'push token',
         }
     response
         STATUS 503
@@ -797,14 +805,10 @@ def verify_employee(request):
     else:
         rqst = request.GET
 
-    phone_no = rqst['phone_no']
+    phone_no = no_only_phone_no(rqst['phone_no'])
     cipher_cn = rqst['cn']
     phone_type = rqst['phone_type']
     push_token = rqst['push_token']
-
-    if len(phone_type) > 0:
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
 
     passer = Passer.objects.get(pNo=phone_no)
     cn = AES_DECRYPT_BASE64(cipher_cn)
@@ -812,9 +816,7 @@ def verify_employee(request):
         rMsg = {'message': '인증번호가 틀립니다.'}
         response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
         response.status_code = 503
-        print(response)
         return response
-    print('s 1')
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
