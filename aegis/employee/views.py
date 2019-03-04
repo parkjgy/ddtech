@@ -585,13 +585,13 @@ def pass_sms(request):
     elif '퇴근' in sms:
         is_in = False
 
-    passers = Passer.object.filter(pNo=phone_no)
-    if len(passer) == 0:
-        logError({'ERROR': '출입자에 전화번호가 없습니다.' + phone_no})
+    passers = Passer.objects.filter(pNo=phone_no)
+    if len(passers) == 0:
+        logError({'ERROR': '출입자의 전화번호가 없습니다.' + phone_no})
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
-    print(passer.id, dt, is_in)
+    print(phone_no, passer.id, dt, is_in)
     # dt = datetime.datetime.now()
     dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -602,7 +602,7 @@ def pass_sms(request):
         dt_verify=dt
     )
     new_pass.save()
-    before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
+    # before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
     # 가장 최근에 저장된 값부터 가져옮
