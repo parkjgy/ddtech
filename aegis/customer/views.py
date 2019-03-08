@@ -1185,6 +1185,7 @@ def list_staff(request):
     arr_staff = []
     for staff in staffs:
         staff['id'] = AES_ENCRYPT_BASE64(str(staff['id']))
+        staff['pNo'] = phone_format(staff['pNo'])
         arr_staff.append(staff)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'staffs':arr_staff})
