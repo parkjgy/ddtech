@@ -1600,39 +1600,159 @@ def customer_test_step_8(request):
     employee = {
         'work_id':work_id,
         'dt_answer_deadline':next_4_day,
-        'phone_numbers':['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555']
+        'phone_numbers':['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555', '010-1111-3333', '010-4444-7777']
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
     result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
 
-    # 근로자 리스트
+    names = ["양만춘", "강감찬", "이순신", "안중근"]
+    arr_phone_no = ['010-1111-2222', '010-4444-5555', '010-1111-3333', '010-4444-7777']
+    for pNo in arr_phone_no:
+        # 근로자 : 인증번호 요청
+        phone_no = {'phone_no' : pNo}
+        settings.IS_TEST = True
+        r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
+        settings.IS_TEST = False
+        result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
+
+        # 근로자 : 근로자 확인
+        certification_data = {
+                'phone_no' : pNo,
+                'cn' : AES_ENCRYPT_BASE64('201903'),
+                'phone_type' : 'A', # 안드로이드 폰
+                'push_token' : 'push token'
+            }
+        r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
+        result.append({'url':r.url, 'POST':certification_data, 'STATUS':r.status_code, 'R':r.json()})
+        print(r.json())
+
+        employee_info = {
+            'passer_id': r.json()['id'],
+            'name': names[arr_phone_no.index(pNo)],
+            'bank': '기업은행',
+            'bank_account': '12300000012000',
+            'pNo': pNo,  # 추후 SMS 확인 절차 추가
+        }
+        r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
+        result.append({'url':r.url, 'POST':employee_info, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 리스트 - 전화번호에 1111 가 포함된 근로자
     phone_no = {
-        'phone_no':'3555'
+        'phone_no':'1111'
     }
     r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
     result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
-    passer_id = r.json()['passers'][0]['id']
+    passers = r.json()['passers']
 
-    #
-    # 근로자 등록과정
-    #
-    # << work : end 날짜 때문에 work 없는 경우 처리 필요
-    #
+    if len(passers) > 0:
+        for ex_passer in passers:
+            # 근로자 : 알림 확인
+            passer = {'passer_id':ex_passer['id']}
+            r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+            result.append({'url':r.url, 'GET':passer, 'STATUS':r.status_code, 'R':r.json()})
+            print(r.json())
+            if len(r.json()['notifications']) == 0:
+                # 알림이 없는 출입자 - 대상이 아님
+                continue
+            notification_id = r.json()['notifications'][0]['id']
 
-    # 근로자 : 알림 확인
-    passer = {'passer_id':passer_id}
-    r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
-    result.append({'url':r.url, 'GET':passer, 'STATUS':r.status_code, 'R':r.json()})
-    notification_id = r.json()['notifications'][0]['id']
+            # 근로자 : 업무 수락 / 거절
+            accept = {
+                'passer_id': ex_passer['id'],  # 암호화된 값임
+                'notification_id': notification_id,
+                'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
+            }
+            r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+            result.append({'url':r.url, 'POST':accept, 'STATUS':r.status_code, 'R':r.json()})
 
-    # 근로자 : 업무 수락 / 거절
-    accept = {
-        'passer_id': passer_id,  # 암호화된 값임
-        'notification_id': notification_id,
-        'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
+    # # 근로자 리스트
+    # phone_no = {
+    #     'phone_no':'3555'
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
+    # result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
+    # passer_id = r.json()['passers'][0]['id']
+    #
+    # #
+    # # 근로자 등록과정
+    # #
+    # # << work : end 날짜 때문에 work 없는 경우 처리 필요
+    # #
+    #
+    # # 근로자 : 알림 확인
+    # passer = {'passer_id':passer_id}
+    # r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+    # result.append({'url':r.url, 'GET':passer, 'STATUS':r.status_code, 'R':r.json()})
+    # notification_id = r.json()['notifications'][0]['id']
+    #
+    # # 근로자 : 업무 수락 / 거절
+    # accept = {
+    #     'passer_id': passer_id,  # 암호화된 값임
+    #     'notification_id': notification_id,
+    #     'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+    # result.append({'url':r.url, 'POST':accept, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 리스트 - 전화번호에 4444 가 포함된 근로자
+    phone_no = {
+        'phone_no':'4444'
     }
-    r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
-    result.append({'url':r.url, 'POST':accept, 'STATUS':r.status_code, 'R':r.json()})
+    r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
+    result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
+    passers = r.json()['passers']
+
+    if len(passers) > 0:
+        for ex_passer in passers:
+            # 근로자 : 알림 확인
+            passer = {'passer_id':ex_passer['id']}
+            r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+            result.append({'url':r.url, 'GET':passer, 'STATUS':r.status_code, 'R':r.json()})
+            print(r.json())
+            if len(r.json()['notifications']) == 0:
+                # 알림이 없는 출입자 - 대상이 아님
+                continue
+            notification_id = r.json()['notifications'][0]['id']
+
+            # 근로자 : 업무 수락 / 거절
+            accept = {
+                'passer_id': ex_passer['id'],  # 암호화된 값임
+                'notification_id': notification_id,
+                'is_accept': 1  # 1 : 업무 수락, 0 : 업무 거부
+            }
+            r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+            result.append({'url':r.url, 'POST':accept, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+    employees = r.json()['employees']
+
+    for employee in employees:
+        if employee['pNo'] == '010-33-3344':
+            employee_id = employee['id']
+            employee_dt_begin = employee['dt_begin']
+            break
+    print(employee_id, employee_dt_begin)
+    update_employee = {
+        'employee_id': employee_id,  # 필수
+        'phone_no': '010-3333-4444',  # 전화번호가 잘못되었을 때 변경
+        'dt_answer_deadline':(datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S"), # 전화번호 바꿀 때 필수
+        'dt_begin': '2019-03-09',  # 근무 시작일
+        'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_employee', json=update_employee)
+    result.append({'url':r.url, 'POST':update_employee, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
@@ -1683,7 +1803,7 @@ def employee_test_step_1(request):
     # 근로자 : 인증번호 요청
     phone_no = {'phone_no' : '010-3355-8282'}
     settings.IS_TEST = True
-    r = s.post(settings.EMPLOYEE_URL + 'reg_employee', json=phone_no)
+    r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
     settings.IS_TEST = False
     result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
 
@@ -1694,7 +1814,7 @@ def employee_test_step_1(request):
             'phone_type' : 'A', # 안드로이드 폰
             'push_token' : 'push token'
         }
-    r = s.post(settings.EMPLOYEE_URL + 'verify_employee', json=certification_data)
+    r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
     result.append({'url':r.url, 'POST':certification_data, 'STATUS':r.status_code, 'R':r.json()})
 
     employee_info = {

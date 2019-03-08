@@ -137,6 +137,8 @@ class Employee(models.Model):
     dt_begin_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 출근시간
     dt_end_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 퇴근시간
 
+    overtime = models.IntegerField(default=0) # 연장 근무 시간
+
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
 

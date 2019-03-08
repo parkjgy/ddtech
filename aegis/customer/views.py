@@ -1855,11 +1855,15 @@ def reg_employee(request):
     duplicate_pNo = []
     arr_employee = []
     for phone in phones:
-        if len(Employee.objects.filter(work_id=work.id, pNo=phone)) > 0:
+        find_employee = Employee.objects.filter(work_id=work.id, pNo=phone)
+        if len(find_employee) > 0:
             # 이미 SMS 등록된 전화번호를 걸러낸다.
+            find_employee[0].is_accept_work=None
+            find_employee[0].save()
             duplicate_pNo.append(phone)
             continue
         new_employee = Employee(
+            is_accept_work = None,  # 아직 근로자가 결정하지 않았다.
             is_active = 0, # 근무 중 아님
             dt_begin = work.dt_begin,
             dt_end = work.dt_end,
@@ -1972,10 +1976,15 @@ def update_employee(request):
     POST
         {
             'employee_id':5,            # 필수
-            'dt_end':2019-02-01,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+            'phone_no':'010-3355-7788', # 전화번호가 잘못되었을 때 변경
+            'dt_answer_deadline':2019-03-09 19:00:00,
+            'dt_begin':2019-03-09,      # 근무 시작일
+            'dt_end':2019-03-31,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
             'is_active':'YES',          # YES: 업무 배정, NO: 업무 배제
             'message':'업무 종료일이 변경되었거나 업무에 대한 응답이 없어 업무에서 뺐을 때 사유 전달'
         }
+        업무 시작 전 수정일 때: employee_id, phone_no, dt_begin, dt_end
+        업무 시작 후 수정일 때: employee_id, dt_end, is_active, message
     response
         STATUS 200
         STATUS 503
@@ -1992,29 +2001,50 @@ def update_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    employee_id = rqst['employee_id']
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
     employee = Employee.objects.get(id=employee_id)
-
-    dt_end = rqst['dt_end']
-    if len(dt_end) > 0:
-        employee.dt_end = datetime.datetime.strptime(dt_end, "%Y-%m-%d")
+    print(employee)
+    if 'phone_no' in rqst and len(rqst['phone_no']) > 0:
+        if 'dt_answer_deadline' not in rqst or len(rqst['dt_answer_deadline']) == 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 바꾸려면 업무 답변 기한을 꼭 넣어야 합니다.'})
+        employee.pNo = no_only_phone_no(rqst['phone_no'])
+        work = Work.objects.get(id=employee.work_id)
+        #
+        # 근로자 서버로 근로자의 업무 의사와 답변을 요청
+        #
+        new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
+                             "work_place_name": work.work_place_name,
+                             "work_name_type": work.name + ' (' + work.type + ')',
+                             "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
+                             "dt_end": work.dt_end.strftime('%Y/%m/%d'),
+                             "dt_answer_deadline": rqst['dt_answer_deadline'],
+                             "staff_name": work.staff_name,
+                             "staff_phone": work.staff_pNo,
+                             "phones": [employee.pNo]
+                             }
+        # print(new_employee_data)
+        response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
+        print('--- ', response_employee.json())
+        if response_employee.status_code != 200:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return ReqLibJsonResponse(response_employee)
+        employee.employee_id = response_employee.json()['result'][employee.pNo]
+    if 'dt_begin' in rqst and len(rqst['dt_begin']) > 0:
+        employee.dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
+    if 'dt_end' in rqst and len(rqst['dt_end']) > 0:
+        employee.dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
         employee.is_active = 0 if employee.dt_end < datetime.datetime.now() else 1  # 업무 종료일이 오늘 이전이면 업무 종료
-        print(dt_end, employee.dt_end, datetime.datetime.now(), employee.is_active)
+    if 'is_active' in rqst and len(rqst['is_active']) > 0:
+        employee.is_active = True if rqst['is_active'].upper() == 'YES' else False
+    if 'message' in rqst and len(rqst['message']) > 0:
         #
         # to employee server : message,
         #
-
-    is_active = rqst['is_active']
-    if is_active.upper() == 'YES':
-        employee.is_active = 1
-    elif is_active.upper() == 'NO':
-        employee.is_active = 0
-
-    message = rqst['message']
-    #
-    # to employee server : message,
-    #
+        print()
     employee.save()
+    print(employee)
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
@@ -2067,20 +2097,11 @@ def list_employee(request):
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     work = Work.objects.get(id=work_id) # 업무 에러 확인용
 
-    # employees = Employee.objects.filter(work_id=work_id).values('id',
-    #                                                             'is_active',
-    #                                                             'dt_begin',
-    #                                                             'dt_end',
-    #                                                             'work_id',
-    #                                                             'employee_id',
-    #                                                             'name',
-    #                                                             'pNo')
-
     employees = Employee.objects.filter(work_id=work_id)
     arr_employee = []
     today = datetime.datetime.now()
-    if False:
-    # if work.dt_begin < today:
+    # if False:
+    if work.dt_begin < today:
         # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
         for employee in employees:
             state = "잘못된 전화번호"

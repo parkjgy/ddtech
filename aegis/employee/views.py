@@ -187,7 +187,7 @@ def reg_employee_for_customer(request):
             logSend('SMS result', rSMS.json())
             print('--- ', rSMS.json())
             # if int(rSMS.json()['result_code']) < 0:
-            if phone_numbers[i] != '01025573555':
+            if len(phone_numbers[i]) < 11:
                 # 전화번호 에러로 문자를 보낼 수 없음.
                 phones_state[phone_numbers[i]] = -101
             else:
@@ -202,7 +202,7 @@ def reg_employee_for_customer(request):
                     dt_answer_deadline=rqst["dt_answer_deadline"],
                 )
                 new_notification.save()
-    # print(phones_state)
+    print('--- ',phones_state)
     logSend({'result':phones_state})
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response({'result':phones_state})
@@ -315,7 +315,7 @@ def notification_accept(request):
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
     notification = notifications[0]
 
-    is_accept = True if rqst['is_accept'] == '1' else False
+    is_accept = 1 if rqst['is_accept'] == 1 else 0
     #
     # 근로자 정보에 업무를 등록
     #
@@ -849,6 +849,7 @@ def reg_from_certification_no(request):
     else:
         rqst = request.GET
 
+    print('--- ', rqst['phone_no'])
     phone_no = no_only_phone_no(rqst['phone_no'])
     cipher_cn = rqst['cn']
     phone_type = rqst['phone_type']
@@ -881,6 +882,10 @@ def reg_from_certification_no(request):
             result['bank_account'] = employee.bank_account
 
     if status_code == 200 or status_code == 201:
+        notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+        for notification in notification_list:
+            notification.employee_id = employee.id
+            notification.save()
         result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
                                '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행',
                                '신협중앙회', '우체국', '전북은행', '제주은행', '카카오뱅크', '중국공상은행', 'BNP파리바은행', 'HSBC은행', 'JP모간체이스은행',
@@ -926,12 +931,7 @@ def update_my_info(request):
     name = rqst['name']
     bank = rqst['bank']
     bank_account = rqst['bank_account']
-    pNo = rqst['pNo']
-
-    if len(pNo):
-        pNo = pNo.replace('-', '')
-        pNo = pNo.replace(' ', '')
-        print(pNo)
+    pNo = no_only_phone_no(rqst['pNo'])
 
     print(cipher_passer_id, name, bank, bank_account)
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
