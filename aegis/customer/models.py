@@ -128,7 +128,7 @@ class Employee(models.Model):
     work_id = models.IntegerField() # 업무 id
 
     employee_id = models.IntegerField(default=-1) # 출입 서버의 근로자 id
-    name = models.CharField(max_length=127, default='이름') # 근로자 이름
+    name = models.CharField(max_length=127, default='-----') # 근로자 이름
     pNo = models.CharField(max_length = 19)
 
     dt_begin_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 출근시간

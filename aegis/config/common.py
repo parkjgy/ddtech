@@ -172,3 +172,15 @@ def no_only_phone_no(phone_no):
     return phone_no
 
 
+def phone_format(phone_no):
+    """
+    숫자만으로된 전화번호를 전화번호 양식으로 바꾸어준다.
+    :param phone_no: 01033335555
+    :return: 010-3333-5555
+    """
+    formated_phone_no = phone_no[:3] + '-' + \
+                        phone_no[3:len(phone_no)-4] + '-' + \
+                        phone_no[len(phone_no)-4:]
+    return formated_phone_no
+
+

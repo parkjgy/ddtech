@@ -49,16 +49,28 @@ urlpatterns = [
     url(r'employee/notification_list$', views.notification_list, name='notification_list'),
     url(r'employee/notification_accept$', views.notification_accept, name='notification_accept'),
 
+    url(r'employee/passer_list$', views.passer_list, name='passer_list'),
+
     url(r'employee/passer_reg$', views.passer_reg, name='passer_reg'),
 
     url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
     url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
     url(r'employee/pass_sms$', views.pass_sms, name='pass_sms'),
-    url(r'employee/reg_employee$', views.reg_employee, name='reg_employee'),
-    url(r'employee/verify_employee$', views.verify_employee, name='verify_employee'),
-    url(r'employee/work_list$', views.work_list, name='work_list'),
-    url(r'employee/exchange_info$', views.exchange_info, name='exchange_info'),
-    url(r'employee/beacon_verify$', views.beacon_verify, name='beacon_verify'),
+
+    # 비콘 상테 전송 API 이름 변경
+    url(r'employee/beacon_verify$', views.beacons_is, name='beacons_is'),
+    url(r'employee/beacons_is$', views.beacons_is, name='beacons_is'),
+
+    # old 등록 api
+    url(r'employee/reg_employee$', views.certification_no_to_sms, name='certification_no_to_sms'),
+    url(r'employee/verify_employee$', views.reg_from_certification_no, name='reg_from_certification_no'),
+    url(r'employee/exchange_info$', views.update_my_info, name='update_my_info'),
+    url(r'employee/work_list$', views.my_work_histories, name='my_work_histories'),
+    # new 등록 api
+    url(r'employee/certification_no_to_sms$', views.certification_no_to_sms, name='certification_no_to_sms'),
+    url(r'employee/reg_from_certification_no$', views.reg_from_certification_no, name='reg_from_certification_no'),
+    url(r'employee/update_my_info$', views.update_my_info, name='update_my_info'),
+    url(r'employee/my_work_histories$', views.my_work_histories, name='my_work_histories'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),
     url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),

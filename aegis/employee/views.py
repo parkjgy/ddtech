@@ -10,7 +10,7 @@ from config.common import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
 from config.common import func_begin_log, func_end_log
-from config.common import no_only_phone_no
+from config.common import no_only_phone_no, phone_format
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -43,7 +43,7 @@ def check_version(request):
 
     response
         STATUS 200
-        STATUS 503
+        STATUS 551
         {
             'msg': '업그레이드가 필요합니다.'
             'url': 'http://...' # itune, google play update
@@ -106,11 +106,11 @@ def reg_employee_for_customer(request):
             {
               "message": "정상적으로 처리되었습니다.",
               "result": {
-                "01025573555": 2,
-                "01046755165": -1,
+                "01025573555": 2,   # 고객이 앱을 설치했음
+                "01046755165": -1,  # 고객이 앱을 아직 설치하지 않았음
                 "01011112222": -1,
                 "01022223333": -1,
-                "0103333": -101,
+                "0103333": -101,    # 잘못된 전화번호임
                 "01044445555": -1
               }
             }
@@ -126,7 +126,7 @@ def reg_employee_for_customer(request):
     # print(rqst["work_name_type"])
     # print(rqst["dt_begin"])
     # print(rqst["dt_end"])
-    # print(rqst["dt_answer_deadline"])
+    print(rqst["dt_answer_deadline"])
     # print(rqst["staff_name"])
     # print(rqst["staff_phone"])
 
@@ -135,7 +135,7 @@ def reg_employee_for_customer(request):
         phone_numbers = rqst['phones']
     else:
         phone_numbers = rqst.getlist('phones')
-    # print(phone_numbers)
+    print(phone_numbers, rqst['phones'])
 
     find_works = Work.objects.filter(customer_work_id=rqst['customer_work_id'])
     if len(find_works) == 0:
@@ -172,18 +172,22 @@ def reg_employee_for_customer(request):
 
     phones_state = {}
     for i in range(len(phone_numbers)):
+        print('DDD ', phone_numbers[i])
         notification_list = Notification_Work.objects.filter(customer_work_id=rqst["customer_work_id"], employee_pNo=phone_numbers[i])
         if len(notification_list) > 0:
+            print('--- sms 알려서 안보냄 ', phone_numbers[i])
             # 이전에 SMS 를 보낸적있는 전화번호는 전화번호 출입자가 저장하고 있는 근로자 id 만 확인해서 보낸다.
             find_passers = Passer.objects.filter(pNo=phone_numbers[i])
             phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
         else:
+            print('--- sms 보냄', phone_numbers[i])
             # SMS 를 보낸다.
             rData['receiver'] = phone_numbers[i]
             rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
             logSend('SMS result', rSMS.json())
-            print(rSMS.json())
-            if int(rSMS.json()['result_code']) < 0:
+            print('--- ', rSMS.json())
+            # if int(rSMS.json()['result_code']) < 0:
+            if phone_numbers[i] != '01025573555':
                 # 전화번호 에러로 문자를 보낼 수 없음.
                 phones_state[phone_numbers[i]] = -101
             else:
@@ -350,6 +354,46 @@ def notification_accept(request):
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def passer_list(request):
+    """
+    출입자 리스트 : 출입자 검색
+    http://dev.ddtechi.com:8055/employee/passer_list?phone_no=1111
+    POST : json
+        {
+            'phone_no' : 1111  # 폰 번호의 일부 혹은 전부
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    phone_no = no_only_phone_no(rqst['phone_no'])
+
+    employee_list = []
+    passers = Passer.objects.filter(pNo__contains=phone_no)
+    for passer in passers:
+        passer_info = {}
+        if passer.employee_id > 0:
+            employee = Employee.objects.get(id=passer.employee_id)
+            passer_info['name'] = employee.name
+            passer_info['work_id'] = employee.work_id
+            passer_info['work_id_2'] = employee.work_id_2
+        else:
+            passer_info['name'] = '---'
+            passer_info['work_id'] = 0
+            passer_info['work_id_2'] = 0
+        passer_info['id'] = AES_ENCRYPT_BASE64(str(passer.id))
+        passer_info['pNo'] = passer.pNo
+        employee_list.append(passer_info)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'passers':employee_list})
 
 
 @cross_origin_read_allow
@@ -629,10 +673,10 @@ def pass_sms(request):
 
 
 @cross_origin_read_allow
-def beacon_verify(request):
+def beacons_is(request):
     """
     비콘 확인 : 출입 등록 후 10분 후에 서버로 앱에서 수집된 비콘 정보 전송 - 앱의 비콘 정보 삭제
-    http://192.168.219.62:8000/employee/beacon_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001&beacons=
+    http://192.168.219.62:8000/employee/beacons_is?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1&major=11001&beacons=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -701,11 +745,11 @@ def beacon_verify(request):
 
 
 @cross_origin_read_allow
-def reg_employee(request):
+def certification_no_to_sms(request):
     """
-    근로자 전화번호 인증을 위한 인증번호 요청 - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
+    핸드폰 인증 숫자 6자리를 SMS로 요청 - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
     - SMS 로 인증 문자(6자리)를 보낸다.
-    http://0.0.0.0:8000/employee/reg_employee?phone_no=01025573555
+    http://0.0.0.0:8000/employee/certification_no_to_sms?phone_no=010-2557-3555
     POST : json
     {
         'phone_no' : '010-1111-2222'
@@ -768,10 +812,10 @@ def reg_employee(request):
 
 
 @cross_origin_read_allow
-def verify_employee(request):
+def reg_from_certification_no(request):
     """
     근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
-    http://0.0.0.0:8000/employee/verify_employee?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
+    http://0.0.0.0:8000/employee/reg_from_certification_no?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
     POST
         {
             'phone_no' : '010-1111-2222',
@@ -855,10 +899,60 @@ def verify_employee(request):
 
 
 @cross_origin_read_allow
-def work_list(request):
+def update_my_info(request):
+    """
+    근로자 정보 변경 : 근로자의 정보를 변경한다.
+        주)     로그인이 있으면 앱 시작할 때 화면 표출
+            항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
+    http://0.0.0.0:8000/employee/update_my_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
+    POST
+        {
+            'passer_id': '서버로 받아 저장해둔 출입자 id',
+            'name': '이름',
+            'bank': '기업은행',
+            'bank_account': '12300000012000',
+            'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
+        }
+    response
+        STATUS 200
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    cipher_passer_id = rqst['passer_id']
+    name = rqst['name']
+    bank = rqst['bank']
+    bank_account = rqst['bank_account']
+    pNo = rqst['pNo']
+
+    if len(pNo):
+        pNo = pNo.replace('-', '')
+        pNo = pNo.replace(' ', '')
+        print(pNo)
+
+    print(cipher_passer_id, name, bank, bank_account)
+    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    logSend('\t\t\t\t\t' + passer_id)
+    passer = Passer.objects.get(id=passer_id)
+    employee = Employee.objects.get(id=passer.employee_id)
+    if len(name) > 0:
+        employee.name = name
+    if len(bank) > 0 and len(bank_account) > 0:
+        employee.bank = bank
+        employee.bank_account = bank_account
+    employee.save()
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def my_work_histories(request):
     """
     근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
-    http://0.0.0.0:8000/employee/work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
         passer_id='서버로 받아 저장해둔 출입자 id'
         dt = '2018-01'
@@ -938,56 +1032,6 @@ def generation_pass_history(request):
     퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
     1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
     2. 주어진 날짜의
-    """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    cipher_passer_id = rqst['passer_id']
-    name = rqst['name']
-    bank = rqst['bank']
-    bank_account = rqst['bank_account']
-    pNo = rqst['pNo']
-
-    if len(pNo):
-        pNo = pNo.replace('-', '')
-        pNo = pNo.replace(' ', '')
-        print(pNo)
-
-    print(cipher_passer_id, name, bank, bank_account)
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    passer = Passer.objects.get(id=passer_id)
-    employee = Employee.objects.get(id=passer.employee_id)
-    if len(name) > 0:
-        employee.name = name
-    if len(bank) > 0 and len(bank_account) > 0:
-        employee.bank = bank
-        employee.bank_account = bank_account
-    employee.save()
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    return REG_200_SUCCESS.to_json_response()
-
-
-@cross_origin_read_allow
-def exchange_info(request):
-    """
-    근로자 정보 변경 : 근로자의 정보를 변경한다.
-        주)     로그인이 있으면 앱 시작할 때 화면 표출
-            항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
-    http://0.0.0.0:8000/employee/exchange_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
-    POST
-        {
-            'passer_id': '서버로 받아 저장해둔 출입자 id',
-            'name': '이름',
-            'bank': '기업은행',
-            'bank_account': '12300000012000',
-            'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
-        }
-    response
-        STATUS 200
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':

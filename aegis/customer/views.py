@@ -14,7 +14,7 @@ from config.common import DateTimeEncoder, exceptionError
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log
 # secret import
-from config.common import hash_SHA256, no_only_phone_no
+from config.common import hash_SHA256, no_only_phone_no, phone_format
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -351,7 +351,7 @@ def update_customer(request):
                     staff = staffs[0]
                     customer.staff_id = staff.id
                     customer.staff_name = staff.name
-                    customer.staff_pNo = staff.pNo
+                    customer.staff_pNo = phone_format(staff.pNo)
                     customer.staff_email = staff.email
                     customer.save()
                     staff.is_site_owner = True
@@ -389,7 +389,7 @@ def update_customer(request):
                         manager = managers[0]
                         customer.manager_id = manager.id
                         customer.manager_name = manager.name
-                        customer.manager_pNo = manager.pNo
+                        customer.manager_pNo = phone_format(manager.pNo)
                         customer.manager_email = manager.email
                         customer.save()
                         manager.is_manager = True
@@ -625,10 +625,10 @@ def detail_relationship(request):
                            'corp_id':rqst['relationship_id'],
                            'corp_name':corp.corp_name,
                            'staff_name': corp.staff_name,
-                           'staff_pNo': corp.staff_pNo,
+                           'staff_pNo': phone_format(corp.staff_pNo),
                            'staff_email': corp.staff_email,
                            'manager_name': corp.manager_name,
-                           'manager_pNo': corp.manager_pNo,
+                           'manager_pNo': phone_format(corp.manager_pNo),
                            'manager_email': corp.manager_email,
                            }
 
@@ -934,10 +934,10 @@ def login(request):
     company_general = {'co_id':AES_ENCRYPT_BASE64(str(customer.id)),
                        'corp_name': customer.corp_name,
                        'staff_name': customer.staff_name,
-                       'staff_pNo': customer.staff_pNo,
+                       'staff_pNo': phone_format(customer.staff_pNo),
                        'staff_email': customer.staff_email,
                        'manager_name': customer.manager_name,
-                       'manager_pNo': customer.manager_pNo,
+                       'manager_pNo': phone_format(customer.manager_pNo),
                        'manager_email': customer.manager_email,
                        'dt_payment': None if customer.dt_payment is None else customer.dt_payment.strftime('%d')
                        }
@@ -1414,6 +1414,7 @@ def list_work_place(request):
         work_place['id'] = AES_ENCRYPT_BASE64(str(work_place['id']))
         work_place['manager_id'] = AES_ENCRYPT_BASE64(str(work_place['manager_id']))
         work_place['order_id'] = AES_ENCRYPT_BASE64(str(work_place['order_id']))
+        work_place['manager_pNo'] = phone_format(work_place['manager_pNo'])
         arr_work_place.append(work_place)
     result = {'work_places': arr_work_place}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1690,6 +1691,7 @@ def list_work_from_work_place(request):
         work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        work['staff_pNo'] = phone_format(work['staff_pNo'])
         arr_work.append(work)
     result = {'works': arr_work}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1794,6 +1796,7 @@ def list_work(request):
         work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
         work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
         work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        work['staff_pNo'] = phone_format(work['staff_pNo'])
         arr_work.append(work)
     result = {'works': arr_work}
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1849,14 +1852,12 @@ def reg_employee(request):
     phones = [no_only_phone_no(pNo) for pNo in phones]
 
     duplicate_pNo = []
-    sms_pNo = []
     arr_employee = []
     for phone in phones:
         if len(Employee.objects.filter(work_id=work.id, pNo=phone)) > 0:
             # 이미 SMS 등록된 전화번호를 걸러낸다.
             duplicate_pNo.append(phone)
             continue
-        sms_pNo.append(phone)
         new_employee = Employee(
             is_active = 0, # 근무 중 아님
             dt_begin = work.dt_begin,
@@ -1879,7 +1880,7 @@ def reg_employee(request):
                          "dt_answer_deadline": rqst['dt_answer_deadline'],
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,
-                         "phones": sms_pNo
+                         "phones": phones
                          }
     print(new_employee_data)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
@@ -2063,17 +2064,67 @@ def list_employee(request):
     worker = Staff.objects.get(id=worker_id)
 
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    Work.objects.get(id=work_id) # 업무 에러 확인용
+    work = Work.objects.get(id=work_id) # 업무 에러 확인용
 
-    employees = Employee.objects.filter(work_id=work_id).values('id',
-                                                                'is_active',
-                                                                'dt_begin',
-                                                                'dt_end',
-                                                                'work_id',
-                                                                'employee_id',
-                                                                'name',
-                                                                'pNo')
-    arr_employee = [employee for employee in employees]
+    # employees = Employee.objects.filter(work_id=work_id).values('id',
+    #                                                             'is_active',
+    #                                                             'dt_begin',
+    #                                                             'dt_end',
+    #                                                             'work_id',
+    #                                                             'employee_id',
+    #                                                             'name',
+    #                                                             'pNo')
+
+    employees = Employee.objects.filter(work_id=work_id)
+    arr_employee = []
+    today = datetime.datetime.now()
+    if False:
+    # if work.dt_begin < today:
+        # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
+        for employee in employees:
+            state = "잘못된 전화번호"
+            if employee.employee_id != -101:
+                if employee.is_accept_work == None:
+                    state = "답변 X"
+                elif employee.is_accept_work:
+                    state = "승락"
+                else:
+                    state = "거부"
+            view_employee = {'id':AES_ENCRYPT_BASE64(str(employee.id)),
+                             'name':employee.name,
+                             'pNo':phone_format(employee.pNo),
+                             'dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                             'dt_end':employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                             'state':state,
+                             }
+            arr_employee.append(view_employee)
+    else:
+        # 업무가 시작되었으면 당일의 근태내역을 표시
+        # 근로자 서버에서 가져오나?
+        # 임시로 근태 내역을 표시
+        for employee in employees:
+            today_str = today.strftime("%Y-%m-%d ")
+            employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
+            employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
+            employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
+            employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
+            print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            state = ""
+            if employee.pNo == '010333344':
+                state = "SMS"
+                employee.dt_begin_beacon = None
+                employee.dt_end_beacon = None
+            print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            view_employee = {'id':AES_ENCRYPT_BASE64(str(employee.id)),
+                             'name':employee.name,
+                             'pNo':phone_format(employee.pNo),
+                             'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon != None else "",
+                             'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch != None else "",
+                             'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon != None else "",
+                             'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch != None else "",
+                             'state': state
+                             }
+            arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
         print('   >>> request: working history')
         #
@@ -2192,7 +2243,10 @@ def report(request):
                                                          'dt_begin',
                                                          'dt_end'
                                                          )
-            arr_employee = [employee for employee in employees]
+            arr_employee = []
+            for employee in employees:
+                employee['pNo'] = phone_format(employee['pNo'])
+                arr_employee.append(employee)
             work['arr_employee'] = arr_employee
             arr_work.append(work)
             for employee in employees:
@@ -2275,6 +2329,7 @@ def report_of_manager(request):
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
+        work_place['manager_pNo'] = phone_format(work_place['manager_pNo'])
         works = Work.objects.filter(work_place_id=work_place['id']
                                     ).values('id',
                                              'name',
@@ -2284,6 +2339,7 @@ def report_of_manager(request):
                                              )
         arr_work = []
         for work in works:
+            work['staff_pNo'] = phone_format(work['staff_pNo'])
             employees = Employee.objects.filter(work_id=work['id'])
             print('    ', work['name'], work['type'], work['type'], work['staff_name'], work['staff_pNo'], len(employees))
             summary = {u'업무':work['name'],
@@ -2357,6 +2413,7 @@ def report_all(request):
     arr_work_place = []
     for work_place in work_places:
         print('  ', work_place['name'])
+        work_place['manager_pNo'] = phone_format(work_place['manager_pNo'])
         works = Work.objects.filter(work_place_id=work_place['id']
                                     ).values('id',
                                              'name',
@@ -2368,6 +2425,7 @@ def report_all(request):
         no_absent = 0
         no_late = 0
         for work in works:
+            work['staff_pNo'] = phone_format(work['staff_pNo'])
             employees = Employee.objects.filter(work_id=work['id'])
             print('    ', work['name'], work['type'], work['type'], work['staff_name'], work['staff_pNo'], len(employees))
             no_employees += len(employees)
@@ -2440,7 +2498,7 @@ def report_of_staff(request):
                 'contractor_name': work['contractor_name'],
                 'type': work['type'],
                 'staff_name': work['staff_name'],
-                'staff_pNo': work['staff_pNo']
+                'staff_pNo': phone_format(work['staff_pNo'])
                 }
         employees = Employee.objects.filter(work_id=work['id'],
                                                 ).values('id',
@@ -2458,6 +2516,7 @@ def report_of_staff(request):
         for employee in employees:
             employee['id'] = AES_ENCRYPT_BASE64(str(employee.id))
             employee['is_active'] = '' if employee['is_active'] == 0 else '근무중'
+            employee['pNo'] = phone_format(employee['pNo'])
             arr_employee.append(employee)
         work['arr_employee'] = arr_employee
         arr_work.append('arr_employee')
