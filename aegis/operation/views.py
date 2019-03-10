@@ -1594,6 +1594,17 @@ def customer_test_step_8(request):
     result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
     work_id = r.json()['works'][0]['id']
 
+    # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
+    begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%M-%d")
+    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%M-%d")
+    update_work = {
+        'work_id': work_id,  # 필수
+        'dt_begin': begin_day,  # 근무 시작일
+        'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
+    result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
+
     # 고객 : 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
     next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
@@ -1739,11 +1750,13 @@ def customer_test_step_8(request):
     employees = r.json()['employees']
 
     for employee in employees:
+        print('--- ', employee)
         if employee['pNo'] == '010-33-3344':
             employee_id = employee['id']
             employee_dt_begin = employee['dt_begin']
             break
     print(employee_id, employee_dt_begin)
+    # 근로자 정보 수정 - 잘못된 전화번호 수정
     update_employee = {
         'employee_id': employee_id,  # 필수
         'phone_no': '010-3333-4444',  # 전화번호가 잘못되었을 때 변경
@@ -1753,6 +1766,27 @@ def customer_test_step_8(request):
     }
     r = s.post(settings.CUSTOMER_URL + 'update_employee', json=update_employee)
     result.append({'url':r.url, 'POST':update_employee, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이전으로 변경
+    begin_day = (datetime.datetime.now() - timedelta(days=1)).strftime("%Y-%M-%d")
+    update_work = {
+        'work_id': work_id,  # 필수
+        'dt_begin': begin_day,  # 근무 시작일
+    }
+    update_work = {
+        'work_id': work_id,  # 필수
+        'dt_begin': '2019-03-09',  # 근무 시작일
+        'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
+    result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,

@@ -2055,7 +2055,8 @@ def list_employee(request):
     """
     근로자 목록
       - 업무별 리스트
-      - option 에 따라 근로자 근태 내역 추가
+      -
+      - option 에 따라 근로자 근태 내역 추가 (2019
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_employee?work_id=1&is_working_history=YES
@@ -2064,25 +2065,100 @@ def list_employee(request):
         is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
     response
         STATUS 200
+            # 업무 시직 전 응답 - 업무 승락 상태 표시
             {
-            	"employees":
-            	[
-            		{
-            		    "id":42,
-            			"is_active": false,
-            			"dt_begin": "2019-01-30 15:35:39",
-            			"dt_end": "2019-01-26 00:00:00",
-            			"work_id": 1,
-            			"work_name": "비콘교체",
-            			"work_place_name": "대덕테크",
-            			"employee_id": -1,  # -101 잘못된 전화번호, -1 아직 앱을 설치하지 않음. 1 < 근로자 서버의 근로자 id
-            			"name": "unknown",
-            			"pNo": "010-3333-5555"
-            		},
-            		......
-            	]
+              "message": "정상적으로 처리되었습니다.",
+              "employees": [
+                {
+                  "id": "iZ_rkELjhh18ZZauMq2vQw==",
+                  "name": "박종기",
+                  "pNo": "010-2557-3555",
+                  "dt_begin": "2019-03-08 19:09:30",
+                  "dt_end": "2019-03-14 00:00:00",
+                  "state": "답변 X"
+                },
+                {
+                  "id": "gDoPqy_Pea6imtYYzWrEXQ==",
+                  "name": "양만춘",
+                  "pNo": "010-1111-2222",
+                  "dt_begin": "2019-03-08 19:09:30",
+                  "dt_end": "2019-03-14 00:00:00",
+                  "state": "거부"
+                },
+                {
+                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
+                  "name": "강감찬",
+                  "pNo": "010-4444-5555",
+                  "dt_begin": "2019-03-08 19:09:30",
+                  "dt_end": "2019-03-14 00:00:00",
+                  "state": "승락"
+                },
+                {
+                  "id": "PTs37nITB5mJAWFwUQKixQ==",
+                  "name": "-----",
+                  "pNo": "010-33-3344",
+                  "dt_begin": "2019-03-10 13:15:29",
+                  "dt_end": "2019-03-14 00:00:00",
+                  "state": "잘못된 전화번호"
+                }
+              ]
             }
-            * employee_id= -101 잘못된 전화번호, -1 아직 앱을 설치하지 않음. 1 < 근로자 서버의 근로자 id
+            # 업무 시작 후 응답 - 출입 시간 표시
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "employees": [
+                {
+                  "id": "iZ_rkELjhh18ZZauMq2vQw==",
+                  "name": "박종기",
+                  "pNo": "010-2557-3555",
+                  "dt_begin_beacon": "08:25",
+                  "dt_begin_touch": "08:26",
+                  "dt_end_beacon": "17:50",
+                  "dt_end_touch": "17:31",
+                  "state": ""
+                },
+                {
+                  "id": "gDoPqy_Pea6imtYYzWrEXQ==",
+                  "name": "양만춘",
+                  "pNo": "010-1111-2222",
+                  "dt_begin_beacon": "08:22",
+                  "dt_begin_touch": "08:30",
+                  "dt_end_beacon": "17:48",
+                  "dt_end_touch": "17:31",
+                  "state": ""
+                },
+                {
+                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
+                  "name": "강감찬",
+                  "pNo": "010-4444-5555",
+                  "dt_begin_beacon": "08:18",
+                  "dt_begin_touch": "08:27",
+                  "dt_end_beacon": "17:47",
+                  "dt_end_touch": "17:30",
+                  "state": ""
+                },
+                {
+                  "id": "dMNzyCm2k_hGaqkDrFojAA==",
+                  "name": "이순신",
+                  "pNo": "010-1111-3333",
+                  "dt_begin_beacon": "08:25",
+                  "dt_begin_touch": "08:30",
+                  "dt_end_beacon": "17:40",
+                  "dt_end_touch": "17:32",
+                  "state": ""
+                },
+                {
+                  "id": "voGxXzbAurv_GvSDv1nciw==",
+                  "name": "안중근",
+                  "pNo": "010-4444-7777",
+                  "dt_begin_beacon": "08:16",
+                  "dt_begin_touch": "08:32",
+                  "dt_end_beacon": "17:47",
+                  "dt_end_touch": "17:33",
+                  "state": ""
+                }
+              ]
+            }
         STATUS 503
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -2100,8 +2176,10 @@ def list_employee(request):
     employees = Employee.objects.filter(work_id=work_id)
     arr_employee = []
     today = datetime.datetime.now()
+    print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
     # if False:
-    if work.dt_begin < today:
+    if work.dt_begin > today:
+        print('--- 업무 시작 전')
         # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
         for employee in employees:
             state = "잘못된 전화번호"
@@ -2121,6 +2199,7 @@ def list_employee(request):
                              }
             arr_employee.append(view_employee)
     else:
+        print('--- 업무 시작 후')
         # 업무가 시작되었으면 당일의 근태내역을 표시
         # 근로자 서버에서 가져오나?
         # 임시로 근태 내역을 표시
