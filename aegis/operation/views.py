@@ -1595,8 +1595,8 @@ def customer_test_step_8(request):
     work_id = r.json()['works'][0]['id']
 
     # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
-    begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%M-%d")
-    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%M-%d")
+    begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
     update_work = {
         'work_id': work_id,  # 필수
         'dt_begin': begin_day,  # 근무 시작일
@@ -1775,15 +1775,10 @@ def customer_test_step_8(request):
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
 
     # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이전으로 변경
-    begin_day = (datetime.datetime.now() - timedelta(days=1)).strftime("%Y-%M-%d")
+    begin_day = (datetime.datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     update_work = {
         'work_id': work_id,  # 필수
         'dt_begin': begin_day,  # 근무 시작일
-    }
-    update_work = {
-        'work_id': work_id,  # 필수
-        'dt_begin': '2019-03-09',  # 근무 시작일
-        'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
     result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})

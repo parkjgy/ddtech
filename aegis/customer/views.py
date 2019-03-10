@@ -2071,8 +2071,8 @@ def list_employee(request):
               "employees": [
                 {
                   "id": "iZ_rkELjhh18ZZauMq2vQw==",
-                  "name": "박종기",
-                  "pNo": "010-2557-3555",
+                  "name": "이순신",
+                  "pNo": "010-1111-3555",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
                   "state": "답변 X"
@@ -2108,52 +2108,32 @@ def list_employee(request):
               "message": "정상적으로 처리되었습니다.",
               "employees": [
                 {
-                  "id": "iZ_rkELjhh18ZZauMq2vQw==",
-                  "name": "박종기",
-                  "pNo": "010-2557-3555",
-                  "dt_begin_beacon": "08:25",
-                  "dt_begin_touch": "08:26",
-                  "dt_end_beacon": "17:50",
-                  "dt_end_touch": "17:31",
-                  "state": ""
-                },
-                {
-                  "id": "gDoPqy_Pea6imtYYzWrEXQ==",
-                  "name": "양만춘",
-                  "pNo": "010-1111-2222",
-                  "dt_begin_beacon": "08:22",
-                  "dt_begin_touch": "08:30",
-                  "dt_end_beacon": "17:48",
-                  "dt_end_touch": "17:31",
-                  "state": ""
-                },
-                {
                   "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
                   "name": "강감찬",
                   "pNo": "010-4444-5555",
-                  "dt_begin_beacon": "08:18",
-                  "dt_begin_touch": "08:27",
-                  "dt_end_beacon": "17:47",
-                  "dt_end_touch": "17:30",
-                  "state": ""
-                },
-                {
-                  "id": "dMNzyCm2k_hGaqkDrFojAA==",
-                  "name": "이순신",
-                  "pNo": "010-1111-3333",
-                  "dt_begin_beacon": "08:25",
-                  "dt_begin_touch": "08:30",
-                  "dt_end_beacon": "17:40",
-                  "dt_end_touch": "17:32",
+                  "dt_begin_beacon": "08:20",
+                  "dt_begin_touch": "08:31",
+                  "dt_end_beacon": "17:48",
+                  "dt_end_touch": "17:38",
                   "state": ""
                 },
                 {
                   "id": "voGxXzbAurv_GvSDv1nciw==",
                   "name": "안중근",
-                  "pNo": "010-4444-7777",
+                  "pNo": "010-3333-4444",
+                  "dt_begin_beacon": "",
+                  "dt_begin_touch": "08:31",
+                  "dt_end_beacon": "",
+                  "dt_end_touch": "17:31",
+                  "state": "SMS"
+                },
+                {
+                  "id": "dMNzyCm2k_hGaqkDrFojAA==",
+                  "name": "이순신",
+                  "pNo": "010-1111-3333",
                   "dt_begin_beacon": "08:16",
-                  "dt_begin_touch": "08:32",
-                  "dt_end_beacon": "17:47",
+                  "dt_begin_touch": "08:27",
+                  "dt_end_beacon": "17:50",
                   "dt_end_touch": "17:33",
                   "state": ""
                 }
@@ -2211,7 +2191,7 @@ def list_employee(request):
             employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
             print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
             state = ""
-            if employee.pNo == '010333344':
+            if employee.pNo == '01033334444':
                 state = "SMS"
                 employee.dt_begin_beacon = None
                 employee.dt_end_beacon = None
