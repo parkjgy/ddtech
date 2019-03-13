@@ -522,17 +522,19 @@ def list_relationship(request):
               "message": "정상적으로 처리되었습니다.",
               "partners": [
                 {
-                  "name": "(주)티에스엔지",	 # 협력사 상호
-                  "id": "cipher_id",	 # 협력사 id (협력사 정보 수정시 사용)
-                },
-                ...
-              ]
+                  "name": "주식회사 살구",
+                  "id": "ryWQkNtiHgkUaY_SZ1o2uA==",
+                  "staff_name": "정소원",
+                  "staff_pNo": "010-7620-5918"
+                }
+              ],
               "orderers": [
                 {
-                  "name": "(주)효성 용연공장",	# 발주사 상호
-                  "id": "cipher_id",		# 발주사 id (발주사 정보 수정시 사용)
-                },
-                ...
+                  "name": "대덕기공",
+                  "id": "_LdMng5jDTwK-LMNlj22Vw==",
+                  "staff_name": "엄원섭",
+                  "staff_pNo": "010-3877-4105"
+                }
               ]
             }
     """
@@ -551,11 +553,20 @@ def list_relationship(request):
     if rqst['is_orderer'].upper() == 'YES':
         types.append(10)
     relationships = Relationship.objects.filter(contractor_id = worker.co_id, type__in = types)
+    relationship_ids = [relationship.corp_id for relationship in relationships]
+    corps = Customer.objects.filter(id__in=relationship_ids).values('id',
+                                                                    'staff_name',
+                                                                    'staff_pNo')
+    corp_dic = {}
+    for corp in corps:
+        corp_dic[corp['id']] = corp
     partners = []
     orderers = []
     for relationship in relationships:
         corp = {'name':relationship.corp_name,
-                'id':AES_ENCRYPT_BASE64(str(relationship.corp_id))
+                'id':AES_ENCRYPT_BASE64(str(relationship.corp_id)),
+                'staff_name':corp_dic[relationship.corp_id]['staff_name'],
+                'staff_pNo':phone_format(corp_dic[relationship.corp_id]['staff_pNo'])
                 }
         if relationship.type == 12:
             partners.append(corp)
