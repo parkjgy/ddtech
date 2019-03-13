@@ -1750,19 +1750,19 @@ def customer_test_step_8(request):
     employees = r.json()['employees']
 
     for employee in employees:
-        print('--- ', employee)
+        # print('--- ', employee)
         if employee['pNo'] == '010-33-3344':
             employee_id = employee['id']
-            employee_dt_begin = employee['dt_begin']
+            # employee_dt_begin = employee['dt_begin']
             break
-    print(employee_id, employee_dt_begin)
-    # 근로자 정보 수정 - 잘못된 전화번호 수정
+    # print(employee_id, employee_dt_begin)
+    # 근로자 정보 수정 - 잘못된 화번호 수정
     update_employee = {
         'employee_id': employee_id,  # 필수
         'phone_no': '010-3333-4444',  # 전화번호가 잘못되었을 때 변경
         'dt_answer_deadline':(datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S"), # 전화번호 바꿀 때 필수
-        'dt_begin': '2019-03-09',  # 근무 시작일
-        'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+        # 'dt_begin': '2019-03-09',  # 근무 시작일
+        # 'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_employee', json=update_employee)
     result.append({'url':r.url, 'POST':update_employee, 'STATUS':r.status_code, 'R':r.json()})
@@ -1782,6 +1782,121 @@ def customer_test_step_8(request):
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
     result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+
+    print(result)
+    logSend(result)
+    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def customer_test_step_9(request):
+    """
+    [[고객 서버 시험]] Step 8: 근로자 시험 디버깅
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url':r.url, 'POST':login_data, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    # result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    # 고객 : 업무 리스트
+    get_parameter = {'work_place_id':work_place_id,
+                     'dt_begin':'2019-02-25',
+                     'dt_end':'2019-02-27',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    # result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    work_id = r.json()['works'][1]['id']
+
+    # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
+    begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+    update_work = {
+        'work_id': work_id,  # 필수
+        'dt_begin': begin_day,  # 근무 시작일
+        'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
+    # result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 등록
+    next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
+    next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
+    employee = {
+        'work_id':work_id,
+        'dt_answer_deadline':next_4_day,
+        'phone_numbers':['010-3333-44', '01-1111-4444']
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+    employees = r.json()['employees']
+
+    employee_dic = {'010333344':'', '0111114444':''}
+    employee_pNo = {'010333344':'010-3333-4444', '0111114444':'010-1111-4444'}
+    for employee in employees:
+        # print('--- ', employee)
+        if no_only_phone_no(employee['pNo']) in employee_dic.keys():
+            employee_dic[no_only_phone_no(employee['pNo'])] = employee['id']
+    print(employee_dic)
+
+    # 근로자 정보 수정 - 잘못된 전화번호 수정
+    dt_answer_deadline = (datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S")  # 전화번호 바꿀 때 필수
+    for employee_key in employee_dic.keys():
+        update_employee = {
+            'employee_id': employee_dic[employee_key],  # 필수
+            'phone_no': employee_pNo[employee_key],  # 전화번호가 잘못되었을 때 변경
+            'dt_answer_deadline':dt_answer_deadline
+            # 'dt_begin': '2019-03-09',  # 근무 시작일
+            # 'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+        }
+        r = s.post(settings.CUSTOMER_URL + 'update_employee', json=update_employee)
+        result.append({'url':r.url, 'POST':update_employee, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
