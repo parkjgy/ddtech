@@ -862,6 +862,7 @@ def reg_from_certification_no(request):
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
     cn = AES_DECRYPT_BASE64(cipher_cn)
+    cn = cn.replace(' ', '')
     if passer.cn != int(cn):
         rMsg = {'message': '인증번호가 틀립니다.'}
         response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
