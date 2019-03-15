@@ -855,7 +855,12 @@ def reg_from_certification_no(request):
     phone_type = rqst['phone_type']
     push_token = rqst['push_token']
 
-    passer = Passer.objects.get(pNo=phone_no)
+    passers = Passer.objects.filter(pNo=phone_no)
+    if len(passers) > 1:
+        duplicate_id = [passer.id for passer in passers]
+        print('ERROR: ', phone_no, duplicate_id)
+        logSend('ERROR: ', phone_no, duplicate_id)
+    passer = passers[0]
     cn = AES_DECRYPT_BASE64(cipher_cn)
     if passer.cn != int(cn):
         rMsg = {'message': '인증번호가 틀립니다.'}
