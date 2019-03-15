@@ -872,7 +872,7 @@ def reg_from_certification_no(request):
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
         status_code = 202
-    elif passer.pType == 0:  # 신규 근로자
+    elif passer.employee_id < 0:  # 신규 근로자
         status_code = 201
         employee = Employee(
         )
