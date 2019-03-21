@@ -923,9 +923,18 @@ def update_my_info(request):
             'bank': '기업은행',
             'bank_account': '12300000012000',
             'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
+            'work_start':'08:00', # 오전 오후로 표시하지 않는다.
+            'working_time':'08',        # 시간 4 - 12
+            'work_start_alarm':'1:00',  # '1:00'(한시간 전), '30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
+            'work_end_alarm':'30',      # '30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
         }
     response
         STATUS 200
+            {'message':'정상적으로 처리되었습니다.'}
+        STATUS 422
+            {'message':'이름은 2자 이상이어야 합니다.'}
+            {'message':'전화번호를 확인해 주세요.'}
+            {'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -934,22 +943,40 @@ def update_my_info(request):
         rqst = request.GET
 
     cipher_passer_id = rqst['passer_id']
-    name = rqst['name']
-    bank = rqst['bank']
-    bank_account = rqst['bank_account']
-    pNo = no_only_phone_no(rqst['pNo'])
-
-    print(cipher_passer_id, name, bank, bank_account)
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
+    logSend('   ' + passer_id)
     passer = Passer.objects.get(id=passer_id)
     employee = Employee.objects.get(id=passer.employee_id)
-    if len(name) > 0:
-        employee.name = name
-    if len(bank) > 0 and len(bank_account) > 0:
-        employee.bank = bank
-        employee.bank_account = bank_account
-    employee.save()
+
+    if 'name' in rqst:
+        if len(rqst['name']) < 2:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'이름은 2자 이상이어야 합니다.'})
+        employee.name = rqst['name'];
+        logSend('   ' + rqst['name']);
+    if 'pNo' in rqst:
+        pNo = no_only_phone_no(rqst['pNo'])
+        if len(pNo) < 9:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 확인해 주세요.'})
+        passer.pNo = pNo;
+        # passer.save()
+        logSend('   ' + pNo);
+    if 'bank' in rqst and 'bank_account' in rqst:
+        if len(rqst['bank_account']) < 5:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
+        employee.bank = rqst['bank'];
+        employee.bank_account = rqst['bank_account'];
+        logSend('   ' + rqst['bank'], rqst['bank_account'])
+    if 'work_start' in rqst and 'working_time' in rqst and 'work_start_alarm' in rqst and 'work_end_alarm' in rqst:
+        employee.work_start = rqst['work_start'];
+        employee.working_time = rqst['working_time'];
+        employee.work_start_alarm = rqst['work_start_alarm'];
+        employee.work_end_alarm = rqst['work_end_alarm'];
+        logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
+
+    # employee.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 

@@ -9,6 +9,10 @@ class Employee(models.Model):
     급여 계좌 : bank_account
     """
     name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
+    work_start = models.CharField(max_length = 20, default='')         # 출근 시간 23:00
+    working_time = models.CharField(max_length = 20, default='')       # 근무 시간 04 ~ 12
+    work_start_alarm = models.CharField(max_length = 20, default='')   # 출근 알람 1:00, 30, X
+    work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
     work_id = models.IntegerField(default=-1)  # employee server work id
@@ -70,6 +74,9 @@ class Pass(models.Model):
     dt_reg = models.DateTimeField(null=True, blank=True)
     dt_verify = models.DateTimeField(null=True, blank=True)
 
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
 
 class Pass_History(models.Model):
     """
@@ -100,6 +107,9 @@ class Beacon_History(models.Model):
     dt_begin = models.DateTimeField(auto_now_add = True)
     RSSI_begin = models.IntegerField()
 
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
 
 class Beacon(models.Model):
     """
@@ -113,3 +123,7 @@ class Beacon(models.Model):
     major = models.IntegerField()
     minor = models.IntegerField()
     dt_last = models.DateTimeField(auto_now_add = True)
+
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
