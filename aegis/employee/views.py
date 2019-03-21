@@ -925,8 +925,8 @@ def update_my_info(request):
             'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
             'work_start':'08:00', # 오전 오후로 표시하지 않는다.
             'working_time':'08',        # 시간 4 - 12
-            'work_start_alarm':'1:00',  # '1:00'(한시간 전), '30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
-            'work_end_alarm':'30',      # '30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
+            'work_start_alarm':'1:00',  # '-60'(한시간 전), '-30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
+            'work_end_alarm':'30',      # '-30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
         }
     response
         STATUS 200
@@ -960,7 +960,7 @@ def update_my_info(request):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 확인해 주세요.'})
         passer.pNo = pNo;
-        # passer.save()
+        passer.save()
         logSend('   ' + pNo);
     if 'bank' in rqst and 'bank_account' in rqst:
         if len(rqst['bank_account']) < 5:
@@ -976,7 +976,7 @@ def update_my_info(request):
         employee.work_end_alarm = rqst['work_end_alarm'];
         logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
 
-    # employee.save()
+    employee.save()
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
