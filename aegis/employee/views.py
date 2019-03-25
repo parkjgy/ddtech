@@ -753,9 +753,12 @@ def certification_no_to_sms(request):
     POST : json
     {
         'phone_no' : '010-1111-2222'
+        'passer_id' : '......' # 암호화된 id 기존 전화번호를 바꾸려는 경우만 사용
     }
     response
         STATUS 200
+        STATUS 542
+            {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -769,19 +772,31 @@ def certification_no_to_sms(request):
     phone_no = phone_no.replace('-', '')
     phone_no = phone_no.replace(' ', '')
     # print(phone_no)
-    passers = Passer.objects.filter(pNo=phone_no)
-    if len(passers) == 0:
-        passer = Passer(
-            pNo=phone_no
-        )
+    if 'passer_id' in rqst and len(rqst['passer_id']) > 6:
+        passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
+        passers = Passer.objects.filter(pNo=phone_no).exclude(id=passer_id)
+        if len(passers) > 0:
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+        passer = Passer.objects.get(id=passer_id)
+        passer.pNo = phone_no
     else:
-        passer = passers[0]
+        passers = Passer.objects.filter(pNo=phone_no)
+        if len(passers) == 0:
+            passer = Passer(
+                pNo=phone_no
+            )
+        else:
+            passer = passers[0]
 
-    certificateNo = random.randint(100000, 999999)
-    if settings.IS_TEST:
-        certificateNo = 201903
-    passer.cn = certificateNo
-    passer.save()
+    if passer.cn == 0:
+        certificateNo = random.randint(100000, 999999)
+        if settings.IS_TEST:
+            certificateNo = 201903
+        passer.cn = certificateNo
+        passer.save()
+    else:
+        certificateNo = passer.cn
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -861,13 +876,12 @@ def reg_from_certification_no(request):
         print('ERROR: ', phone_no, duplicate_id)
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
-    cn = AES_DECRYPT_BASE64(cipher_cn)
-    cn = cn.replace(' ', '')
-    if passer.cn != int(cn):
-        rMsg = {'message': '인증번호가 틀립니다.'}
-        response = HttpResponse(json.dumps(rMsg, cls=DateTimeEncoder))
-        response.status_code = 503
-        return response
+    if passer.cn != 0:
+        cn = AES_DECRYPT_BASE64(cipher_cn)
+        cn = cn.replace(' ', '')
+        if passer.cn != int(cn):
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response(result)
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
@@ -985,6 +999,10 @@ def update_my_info(request):
 def my_work_histories(request):
     """
     근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
     http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
         passer_id='서버로 받아 저장해둔 출입자 id'
@@ -1012,6 +1030,7 @@ def my_work_histories(request):
         rqst = request.GET
 
     cipher_passer_id = rqst["passer_id"]
+    print(cipher_passer_id)
     str_dt = rqst["dt"]
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
     logSend('\t\t\t\t\t' + passer_id)
@@ -1030,30 +1049,67 @@ def my_work_histories(request):
     print(dt_begin, dt_end)
     passes = Pass.objects.filter(passer_id=passer.id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end)
     print('work_list :', len(passes))
-    result = {
-        'working': [
-            {'action': 112, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing': [
-                {'dt_begin': '2018-12-03 12:30:00', 'dt_end': '2018-12-03 13:30:00'}]},
-            {'action': 110, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-07 08:25:00', 'dt_end': '2018-12-07 17:33:00', 'outing': []},
-
-            {'action': 210, 'dt_begin': '2018-12-10 08:55:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
-            {'action': 120, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 15:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-13 08:25:00', 'dt_end': '2018-12-13 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
-
-            {'action': 110, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-17-12 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-18-14 17:33:00', 'outing': []},
-            {'action': 112, 'dt_begin': '2018-12-19 08:25:00', 'dt_end': '2018-19-15 17:33:00', 'outing': [
-                {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
-            {'action': 110, 'dt_begin': '2018-12-20 08:25:00', 'dt_end': '2018-12-20 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-21 08:25:00', 'dt_end': '2018-12-21 17:33:00', 'outing': []},
-            {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
-        ]
-    }
+    #
+    # 가상 데이터 생성
+    #
+    workings = []
+    for day in range(30):
+        if random.randint(0,7) > 5: # 7일에 5일 꼴로 쉬는 날
+            continue
+        working = {}
+        action = 0
+        if random.randint(0,30) > 27: # 한달에 3번꼴로 지각
+            action = 200
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:45:00'
+        else :
+            action = 100
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:25:00'
+        if random.randint(0,30) > 29: # 한달에 1번꼴로 조퇴
+            action += 20
+            working['dt_end'] = str_dt + '-%02d'%day + ' 15:33:00'
+        elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
+            action += 40
+            working['dt_end'] = str_dt + '-%02d'%day + ' 18:35:00'
+        else:
+            action += 10
+            working['dt_end'] = str_dt + '-%02d' % day + ' 17:35:00'
+        outing = (random.randint(0,30) - 28) % 3 # 한달에 2번꼴로 외출
+        outings = []
+        if outing > 0:
+            for i in range(outing):
+                print(i)
+                outings.append({'dt_begin':str_dt + str(day) + ' ' + str(i+13) + ':00:00',
+                               'dt_end':str_dt + str(day) + ' ' + str(i+13) + ':30:00'})
+        working['outing'] = outings
+        working['action'] = action + outing
+        print(working)
+        workings.append(working)
+    # print(workings)
+    result = {'working': workings}
+    # result = {
+    #     'working': [
+    #         {'action': 112, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-03 12:30:00', 'dt_end': '2018-12-03 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-07 08:25:00', 'dt_end': '2018-12-07 17:33:00', 'outing': []},
+    #
+    #         {'action': 210, 'dt_begin': '2018-12-10 08:55:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
+    #         {'action': 120, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 15:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-13 08:25:00', 'dt_end': '2018-12-13 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
+    #
+    #         {'action': 110, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-17-12 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-18-14 17:33:00', 'outing': []},
+    #         {'action': 112, 'dt_begin': '2018-12-19 08:25:00', 'dt_end': '2018-19-15 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-20 08:25:00', 'dt_end': '2018-12-20 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-21 08:25:00', 'dt_end': '2018-12-21 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
+    #     ]
+    # }
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response(result)
 
