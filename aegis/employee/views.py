@@ -834,7 +834,7 @@ def reg_from_certification_no(request):
     POST
         {
             'phone_no' : '010-1111-2222',
-            'cn' : '6자리 SMS 인증숫자를 문자로 바꾸어 암호화',
+            'cn' : '6자리 SMS 인증숫자',
             'phone_type' : 'A', # 안드로이드 폰
             'push_token' : 'push token',
         }
@@ -866,7 +866,7 @@ def reg_from_certification_no(request):
 
     print('--- ', rqst['phone_no'])
     phone_no = no_only_phone_no(rqst['phone_no'])
-    cipher_cn = rqst['cn']
+    cn = rqst['cn']
     phone_type = rqst['phone_type']
     push_token = rqst['push_token']
 
@@ -877,7 +877,6 @@ def reg_from_certification_no(request):
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
     if passer.cn != 0:
-        cn = AES_DECRYPT_BASE64(cipher_cn)
         cn = cn.replace(' ', '')
         if passer.cn != int(cn):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
