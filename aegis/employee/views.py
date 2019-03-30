@@ -36,7 +36,7 @@ from django.conf import settings
 @cross_origin_read_allow
 def check_version(request):
     """
-    앱 버전을 확인한다.
+    앱 버전을 확인한다. (마지막 190111 은 필히 6자리)
     http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
     GET
         v=A.1.0.0.190111
@@ -58,10 +58,12 @@ def check_version(request):
     version = rqst['v']
 
     items = version.split('.')
-    if (items[4]) == 0:
+    ver_dt = items[len(items) - 1]
+    print(ver_dt)
+    if len(ver_dt) < 6:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
-    ver_dt = items[4]
+
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
                                             '%Y-%m-%d %H:%M:%S')
     response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
