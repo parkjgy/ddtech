@@ -2668,9 +2668,9 @@ def staff_foreground(request):
     - id, login_id, login_pw 는 앱 저장한다.
     http://0.0.0.0:8000/customer/staff_foreground?v=A.1.0.0.190111
     GET
-        id= 암호화된 id # 처음이거나 15분 이상 지났으면 login_id, login_pw 를 보낸다.
-        login_id=abc # 암호화 할 것
-        login_pw=password # 암호화 한 것
+        id = id
+        login_id=abc
+        login_pw=password
     response
         STATUS 200
         {
@@ -2687,25 +2687,26 @@ def staff_foreground(request):
     else:
         rqst = request.GET
 
-    cipher_id = rqst['id']
-    cipher_login_id = rqst['login_id']
-    cipher_login_pw = rqst['login_pw']
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    login_id = rqst['login_id']
+    login_pw = rqst['login_pw']
     result = {}
-    if len(cipher_id) > 0:
-        app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
-        if  datetime.datetime.now() > app_user.dt_app_login + datetime.timedelta(minutes=15):
-            if app_user.login_id != int(AES_DECRYPT_BASE64(cipher_login_id)) or app_user.login_pw != cipher_login_pw:
-                func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-                return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+    print(staff_id, login_id, login_pw)
+    if len(staff_id) > 0:
+        app_user = Staff.objects.get(id = staff_id)
+        if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     else:
-        app_user = Staff.objects.get(login_id=AES_DECRYPT_BASE64(cipher_login_id), login_pw=cipher_login_pw)
+        app_user = Staff.objects.get(login_id=login_id, login_pw=hash_SHA256(login_pw))
         result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
 
-    work_places = Work_Place.objects.filter(contractor_ir=app_user.co_id, manager_id=app_user.id).values('id', 'name')
+    print(app_user.name)
+    work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id).values('id', 'name')
     if len(work_places) > 0:
         arr_work_place = [work_place for work_place in work_places]
         result['work_places'] = arr_work_place
-    works = Work.objects.filter(contractor_ir=app_user.co_id, staff_id=app_user.id).values('id', 'name')
+    works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id).values('id', 'name')
     if len(works) > 0:
         arr_work = [work for work in works]
         result['works'] = arr_work
