@@ -796,11 +796,12 @@ def certification_no_to_sms(request):
         else:
             passer = passers[0]
 
-    if passer.dt_cn > datetime.datetime.now():
+    if (passer.dt_cn != None) and (passer.dt_cn > datetime.datetime.now()):
+        # 3분 이내에 인증번호 재요청하면
         print(passer.dt_cn, datetime.datetime.now())
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
-    # if passer.cn == 0:
+
     certificateNo = random.randint(100000, 999999)
     if settings.IS_TEST:
         certificateNo = 201903
@@ -808,8 +809,6 @@ def certification_no_to_sms(request):
     passer.dt_cn = datetime.datetime.now() + datetime.timedelta(minutes=3)
     passer.save()
     print(certificateNo)
-    # else:
-    #     certificateNo = passer.cn
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
