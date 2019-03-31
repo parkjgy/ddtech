@@ -57,7 +57,8 @@ class Passer(models.Model):
     push_token = models.CharField(max_length = 255, default='')
     employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자
     notification_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
-    cn = models.IntegerField(default = 0)           # 인증 문자
+    cn = models.IntegerField(default = 0)           # 인증 번호 숫자 6자리
+    dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
 
 
 class Pass(models.Model):

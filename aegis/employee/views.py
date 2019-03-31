@@ -761,6 +761,8 @@ def certification_no_to_sms(request):
         STATUS 200
         STATUS 542
             {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
+        STATUS 552
+            {'message': '인증번호는 3분에 한번씩만 발급합니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -775,6 +777,8 @@ def certification_no_to_sms(request):
     phone_no = phone_no.replace(' ', '')
     # print(phone_no)
     if 'passer_id' in rqst and len(rqst['passer_id']) > 6:
+        # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
+        # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
         passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
         passers = Passer.objects.filter(pNo=phone_no).exclude(id=passer_id)
         if len(passers) > 0:
@@ -783,6 +787,7 @@ def certification_no_to_sms(request):
         passer = Passer.objects.get(id=passer_id)
         passer.pNo = phone_no
     else:
+        # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
         passers = Passer.objects.filter(pNo=phone_no)
         if len(passers) == 0:
             passer = Passer(
@@ -791,15 +796,20 @@ def certification_no_to_sms(request):
         else:
             passer = passers[0]
 
-    if passer.cn == 0:
-        certificateNo = random.randint(100000, 999999)
-        if settings.IS_TEST:
-            certificateNo = 201903
-        passer.cn = certificateNo
-        passer.save()
-        print(certificateNo)
-    else:
-        certificateNo = passer.cn
+    if passer.dt_cn > datetime.datetime.now():
+        print(passer.dt_cn, datetime.datetime.now())
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
+    # if passer.cn == 0:
+    certificateNo = random.randint(100000, 999999)
+    if settings.IS_TEST:
+        certificateNo = 201903
+    passer.cn = certificateNo
+    passer.dt_cn = datetime.datetime.now() + datetime.timedelta(minutes=3)
+    passer.save()
+    print(certificateNo)
+    # else:
+    #     certificateNo = passer.cn
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -842,10 +852,9 @@ def reg_from_certification_no(request):
             'push_token' : 'push token',
         }
     response
-        STATUS 503
-        {
-            'message': '인증번호가 틀립니다.'
-        }
+        STATUS 550
+            {'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'} # 인증시간 3분
+            {'message': '인증번호가 틀립니다.'}
         STATUS 200 # 기존 근로자
         {
             'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000',
@@ -879,8 +888,15 @@ def reg_from_certification_no(request):
         print('ERROR: ', phone_no, duplicate_id)
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
-    print(passer)
-    if passer.cn == 0:
+    print(passer.pNo)
+    if passer.dt_cn == None:
+        print('ERROR: 인증번호 요청없이 인증요청한 경우')
+        logSend('ERROR: 인증번호 요청없이 인증요청한 경우')
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_520_UNDEFINED.to_json_response()
+
+    if passer.dt_cn < datetime.datetime.now():
+        print(passer.dt_cn, datetime.datetime.now())
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
@@ -923,6 +939,7 @@ def reg_from_certification_no(request):
     passer.pType = 20 if phone_type == 'A' else 10
     passer.push_token = push_token
     passer.cn = 0
+    passer.dt_cn = None
     passer.save()
 
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])

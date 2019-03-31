@@ -36,8 +36,9 @@ REG_422_UNPROCESSABLE_ENTITY = StatusCollection(422, '파라미터가 틀립니�
 """
 시작
 업그레이드가 필요합니다.
-인증번호가 틀립니다.
+인증번호가 틀립니다. not enough time
 """
+REG_552_NOT_ENOUGH_TIME = StatusCollection(551, '아직 시간이 남았습니다.')
 REG_551_AN_UPGRADE_IS_REQUIRED = StatusCollection(551, '업그레이드가 필요합니다.')
 REG_550_CERTIFICATION_NO_IS_INCORRECT = StatusCollection(550, '인증번호가 틀립니다.')
 

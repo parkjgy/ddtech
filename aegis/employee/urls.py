@@ -58,14 +58,14 @@ urlpatterns = [
     url(r'employee/pass_sms$', views.pass_sms, name='pass_sms'),
 
     # 비콘 상테 전송 API 이름 변경
-    url(r'employee/beacon_verify$', views.beacons_is, name='beacons_is'),
+    # url(r'employee/beacon_verify$', views.beacons_is, name='beacons_is'),
     url(r'employee/beacons_is$', views.beacons_is, name='beacons_is'),
 
     # old 등록 api
-    url(r'employee/reg_employee$', views.certification_no_to_sms, name='certification_no_to_sms'),
-    url(r'employee/verify_employee$', views.reg_from_certification_no, name='reg_from_certification_no'),
-    url(r'employee/exchange_info$', views.update_my_info, name='update_my_info'),
-    url(r'employee/work_list$', views.my_work_histories, name='my_work_histories'),
+    # url(r'employee/reg_employee$', views.certification_no_to_sms, name='certification_no_to_sms'),
+    # url(r'employee/verify_employee$', views.reg_from_certification_no, name='reg_from_certification_no'),
+    # url(r'employee/exchange_info$', views.update_my_info, name='update_my_info'),
+    # url(r'employee/work_list$', views.my_work_histories, name='my_work_histories'),
     # new 등록 api
     url(r'employee/certification_no_to_sms$', views.certification_no_to_sms, name='certification_no_to_sms'),
     url(r'employee/reg_from_certification_no$', views.reg_from_certification_no, name='reg_from_certification_no'),
