@@ -797,6 +797,7 @@ def certification_no_to_sms(request):
             certificateNo = 201903
         passer.cn = certificateNo
         passer.save()
+        print(certificateNo)
     else:
         certificateNo = passer.cn
 
@@ -878,11 +879,15 @@ def reg_from_certification_no(request):
         print('ERROR: ', phone_no, duplicate_id)
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
-    if passer.cn != 0:
+    print(passer)
+    if passer.cn == 0:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
+    else:
         cn = cn.replace(' ', '')
         if passer.cn != int(cn):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response(result)
+            return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
