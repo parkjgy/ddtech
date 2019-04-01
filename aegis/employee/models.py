@@ -9,6 +9,10 @@ class Employee(models.Model):
     급여 계좌 : bank_account
     """
     name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
+    work_start = models.CharField(max_length = 20, default='')         # 출근 시간 23:00
+    working_time = models.CharField(max_length = 20, default='')       # 근무 시간 04 ~ 12
+    work_start_alarm = models.CharField(max_length = 20, default='')   # 출근 알람 1:00, 30, X
+    work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
     work_id = models.IntegerField(default=-1)  # employee server work id
@@ -53,7 +57,8 @@ class Passer(models.Model):
     push_token = models.CharField(max_length = 255, default='')
     employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자
     notification_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
-    cn = models.IntegerField(default = 0)           # 인증 문자
+    cn = models.IntegerField(default = 0)           # 인증 번호 숫자 6자리
+    dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
 
 
 class Pass(models.Model):
@@ -69,6 +74,9 @@ class Pass(models.Model):
     is_in = models.IntegerField(default=10) # ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
     dt_reg = models.DateTimeField(null=True, blank=True)
     dt_verify = models.DateTimeField(null=True, blank=True)
+
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
 
 
 class Pass_History(models.Model):
@@ -100,6 +108,9 @@ class Beacon_History(models.Model):
     dt_begin = models.DateTimeField(auto_now_add = True)
     RSSI_begin = models.IntegerField()
 
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
 
 class Beacon(models.Model):
     """
@@ -113,3 +124,7 @@ class Beacon(models.Model):
     major = models.IntegerField()
     minor = models.IntegerField()
     dt_last = models.DateTimeField(auto_now_add = True)
+
+    x = models.FloatField(null=True, default=None) # 위도 latitude
+    y = models.FloatField(null=True, default=None) # 경도 longitude
+
