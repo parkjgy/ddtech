@@ -2628,12 +2628,12 @@ def staff_version(request):
 
     response
         STATUS 200
-        STATUS 503
+        STATUS 551
         {
-            'message': '업그레이드가 필요합니다.'
+            'message': '업그레이드가 필요합니다.',
             'url': 'http://...' # itune, google play update
         }
-        STATUS 509
+        STATUS 520
         {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -2684,6 +2684,7 @@ def staff_foreground(request):
         }
         STATUS 530
             {'message': '아이디나 비밀번호가 틀립니다.'}
+            {'message':'비밀번호가 비었어요'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2691,29 +2692,82 @@ def staff_foreground(request):
     else:
         rqst = request.GET
 
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if not 'login_id' in rqst:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message':'아이디가 비었어요'})
+    if not 'login_pw' in rqst:
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message':'비밀번호가 비었어요'})
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
     result = {}
-    print(staff_id, login_id, login_pw)
-    if len(staff_id) > 0:
-        app_user = Staff.objects.get(id = staff_id)
-        if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+    print(login_id, login_pw)
+    is_login_id_pw = True
+    if 'id' in rqst: # id 가 들어왔는지 검사
+        if len(rqst['id']) > 8: # 암호화된 값이면 최소 8자 이상이어야 함
+            staff_id = AES_DECRYPT_BASE64(rqst['id'])
+            if len(staff_id) > 0: # id 면 1부터 시작됨
+                app_user = Staff.objects.get(id = staff_id)
+                if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+                    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                    return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+                else:
+                    is_login_id_pw = False
+    if is_login_id_pw:
+        app_user = Staff.objects.get(login_id=login_id)
+        print(hash_SHA256(login_pw), app_user.login_pw)
+        app_user.login_pw = hash_SHA256(login_pw)
+        app_user.save()
+        app_users = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
+        if len(app_users) != 1:
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
-    else:
-        app_user = Staff.objects.get(login_id=login_id, login_pw=hash_SHA256(login_pw))
+        app_user = app_users[0]
         result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
 
-    print(app_user.name)
-    work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id).values('id', 'name')
+    print(app_user.name, app_user.id, app_user.co_id)
+    # 업무 추출
+    # 사업장 조회 - 사업장을 관리자로 검색해서 있으면 그 사업장의 모든 업무를 볼 수 있게 한다.
+    work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id)
+    print([work_place.name for work_place in work_places])
     if len(work_places) > 0:
-        arr_work_place = [work_place for work_place in work_places]
-        result['work_places'] = arr_work_place
-    works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id).values('id', 'name')
-    if len(works) > 0:
-        arr_work = [work for work in works]
-        result['works'] = arr_work
+        arr_work_place_id = [work_place.id for work_place in work_places]
+        print(arr_work_place_id)
+        # 해당 사업장의 모든 업무 조회
+        works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id)
+    else:
+        works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id)
+    print([work.staff_name for work in works])
+    # 관리자, 현장 소장의 소속 업무 조회 완료
+    arr_work = []
+    for work in works:
+        employees = Employee.objects.filter(work_id=work.id)
+        arr_employee = []
+        for employee in employees:
+            employee_dic = {'is_accept_work':employee.is_accept_work,
+                            'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                            'name':employee.name,
+                            'phone':employee.pNo,
+                            'dt_begin_beacon':employee.dt_begin_beacon,
+                            'dt_end_beacon':employee.dt_end_beacon,
+                            'dt_begin_touch':employee.dt_begin_touch,
+                            'dt_end_touch':employee.dt_end_touch,
+                            'overtime':employee.overtime,
+                            'x':employee.x,
+                            'y':employee.y,
+                            }
+            arr_employee.append(employee_dic)
+        work_dic = {'name':work.work_place_name + ' ' + work.name + '(' + work.type + ')',
+                    'work_id':AES_ENCRYPT_BASE64(str(work.id)),
+                    'staff_name':work.staff_name,
+                    'staff_phone':work.staff_pNo,
+                    'dt_begin':work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                    'dt_end':work.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                    'employees':arr_employee
+                    }
+        arr_work.append(work_dic)
+    print(works)
+    result['works'] = arr_work
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
     app_user.save()

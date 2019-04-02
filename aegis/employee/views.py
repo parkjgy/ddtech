@@ -900,6 +900,7 @@ def reg_from_certification_no(request):
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
+        print(passer.cn, cn)
         if passer.cn != int(cn):
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()

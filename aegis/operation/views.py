@@ -1392,6 +1392,24 @@ def customer_test_step_6(request):
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     result.append({'url':r.url, 'GET':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
 
+    # 고객 : 사업장 수정
+    work_place = {
+        'work_place_id': work_place_id,
+        'name': 'ITNJ',  # 이름
+        'manager_id': manager_id  # 이요셉
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work_place', json=work_place)
+    result.append({'url':r.url, 'POST':work_place, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    result.append({'url':r.url, 'GET':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+
     print(result)
     logSend(result)
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -1629,7 +1647,7 @@ def customer_test_step_8(request):
         # 근로자 : 근로자 확인
         certification_data = {
                 'phone_no' : pNo,
-                'cn' : AES_ENCRYPT_BASE64('201903'),
+                'cn' : '201903',
                 'phone_type' : 'A', # 안드로이드 폰
                 'push_token' : 'push token'
             }
@@ -1954,7 +1972,7 @@ def employee_test_step_1(request):
     # 근로자 : 근로자 확인
     certification_data = {
             'phone_no' : '010-3355-8282',
-            'cn' : AES_ENCRYPT_BASE64('201903'),
+            'cn' : '201903',
             'phone_type' : 'A', # 안드로이드 폰
             'push_token' : 'push token'
         }
