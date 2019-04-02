@@ -2734,9 +2734,11 @@ def staff_foreground(request):
         arr_work_place_id = [work_place.id for work_place in work_places]
         print(arr_work_place_id)
         # 해당 사업장의 모든 업무 조회
-        works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id)
+        # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
+        works = Work.objects.filter(work_place_id__in=arr_work_place_id)
     else:
-        works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id)
+        # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
+        works = Work.objects.filter(staff_id=app_user.id)
     print([work.staff_name for work in works])
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
