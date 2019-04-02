@@ -2670,7 +2670,7 @@ def staff_foreground(request):
     - 로그인을 했었으면 id 로 로그인을 한다. (15분 후에는 login_id, login_pw 같이 보내야 한다.)
     - 처음 로그인하면 id 는 비우고 login_id, login_pw 를 암호화 해서 보낸다.
     - id, login_id, login_pw 는 앱 저장한다.
-    http://0.0.0.0:8000/customer/staff_foreground?v=A.1.0.0.190111
+    http://0.0.0.0:8000/customer/staff_foreground?id=qgf6YHf1z2Fx80DR8o_Lvg&login_id=thinking&login_pw=parkjong
     GET
         id = id
         login_id=abc
@@ -2682,8 +2682,8 @@ def staff_foreground(request):
             'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
             'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
         }
-        STATUS 603
-            {'message': '로그인 아이디나 비밀번호가 틀립니다.'}
+        STATUS 530
+            {'message': '아이디나 비밀번호가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2725,13 +2725,13 @@ def staff_foreground(request):
 def staff_background(request):
     """
     현장 소장 - foreground to background (서버로 전송할 내용이 있으면 전송하다.)
-    http://0.0.0.0:8000/customer/staff_background?v=A.1.0.0.190111
+    http://0.0.0.0:8000/customer/staff_background?id=qgf6YHf1z2Fx80DR8o_Lvg
     POST
         id=암호화된 id
     response
         STATUS 200
-        STATUS 604
-            {'message': 'id 가 틀립니다.'}
+        STATUS 532
+            {'message': '아이디가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
