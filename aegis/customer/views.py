@@ -2621,6 +2621,7 @@ def report_of_staff(request):
 def staff_version(request):
     """
     현장 소장 - 앱 버전 확인
+    - 마지막의 날짜(190111 - 2019.01.11)가 190401 보다 이후이면 업그레이드 메시지 리턴
     http://0.0.0.0:8000/customer/staff_version?v=A.1.0.0.190111
     GET
         v=A.1.0.0.190111
@@ -2643,18 +2644,21 @@ def staff_version(request):
 
     version = rqst['v']
     items = version.split('.')
-    if len(items[4]) == 0:
+    ver_dt = items[len(items) - 1]
+    print(ver_dt)
+    if len(ver_dt) < 6:
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '버전값의 양식이 틀립니다.'})
-    ver_dt = items[4]
+        return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
+
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
                                             '%Y-%m-%d %H:%M:%S')
-    dt_check = datetime.datetime.strptime('2019-01-12 00:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_check = datetime.datetime.strptime('2019-04-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     print(dt_version)
     if dt_version < dt_check:
         print('dt_version < dt_check')
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
+
     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     return REG_200_SUCCESS.to_json_response()
 
