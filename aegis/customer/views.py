@@ -2707,29 +2707,19 @@ def staff_foreground(request):
     if 'id' in rqst: # id 가 들어왔는지 검사
         staff_id = AES_DECRYPT_BASE64(rqst['id'])
         if staff_id != '__error':
-            try:
-                app_user = Staff.objects.get(id=staff_id)
-                if (app_user.login_id == login_id) and (app_user.login_pw != hash_SHA256(login_pw)):
-                    is_login_id_pw = False
-                else:
+            app_users = Staff.objects.filter(id=staff_id)
+            if len(app_users) == 1:
+                app_user = app_users[0]
+                if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
                     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
                     return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
-            except Exception as e:
-                logSend('Error(DB get):', str(e))
-
-            # app_users = Staff.objects.filter(id=staff_id)
-            # if len(app_users) == 1:
-            #     app_user = app_users[0]
-            #     if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
-            #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-            #         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
-            #     else:
-            #         is_login_id_pw = False
+                else:
+                    is_login_id_pw = False
     if is_login_id_pw:
-        app_user = Staff.objects.get(login_id=login_id)
-        print(hash_SHA256(login_pw), app_user.login_pw)
-        app_user.login_pw = hash_SHA256(login_pw)
-        app_user.save()
+        # app_user = Staff.objects.get(login_id=login_id)
+        # print(hash_SHA256(login_pw), app_user.login_pw)
+        # app_user.login_pw = hash_SHA256(login_pw)
+        # app_user.save()
         app_users = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
         if len(app_users) != 1:
             func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -2794,13 +2784,18 @@ def staff_foreground(request):
 def staff_background(request):
     """
     현장 소장 - foreground to background (서버로 전송할 내용이 있으면 전송하다.)
+    - 로그인 할때 받았던 id 를 보낸다.
     http://0.0.0.0:8000/customer/staff_background?id=qgf6YHf1z2Fx80DR8o_Lvg
     POST
-        id=암호화된 id
+        id=암호화된 id  # foreground 에서 받은 식별
     response
         STATUS 200
         STATUS 532
             {'message': '아이디가 틀립니다.'}
+        STATUS ??? << 개발 완료 후 발생하면 안되는 에러
+            {'message':'DEV 파라미터 id 가 없어요.'}                # 개발 중 버그
+            {'message':'DEV 파라미터 id 가 정상적인 값이 아니예요.'}    # 개발 중 버그
+            {'message':'DEV 서버 error - 서버에 데이터 없어요.'}     # 개발 중 버그
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2808,11 +2803,23 @@ def staff_background(request):
     else:
         rqst = request.GET
 
-    cipher_id = rqst['id']
-    if len(cipher_id) == 0:
+    if not 'id' in rqst: # id 가 들어왔는지 검사
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_532_ID_IS_WRONG
-    app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
+        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 파라미터 id 가 없어요.'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 파라미터 id 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        logSend('   Error(id\'s row is empty or duplecate', id)
+        logError('   Error(id\'s row is empty or duplecate', id)
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 서버 error - 서버에 데이터 없어요.'})
+
+    app_user = app_users[0]
     app_user.is_app_login = False
     app_user.dt_login = datetime.datetime.now()
     app_user.save()
