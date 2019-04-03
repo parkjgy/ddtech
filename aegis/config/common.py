@@ -4,12 +4,15 @@
 
 import datetime
 import json
+
 import logging
 from datetime import timedelta
 
 from django.http import HttpResponse, JsonResponse
 
 from Crypto.Hash import SHA256
+
+from .status_collection import *
 
 # cron 과 충돌
 # from Crypto.Cipher import AES
@@ -112,36 +115,31 @@ def ValuesQuerySetToDict(vqs):
     return [item for item in vqs]
 
 
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            if obj.utcoffset() is not None:
-                obj = obj - obj.utcoffset() + timedelta(0, 0, 0, 0, 0, 9)
-                # logSend('DateTimeEncoder >>> utcoffset() = ' + str(obj.utcoffset()) + ', obj = ' + str(obj))
-            encoded_object = obj.strftime('%Y-%m-%d %H:%M:%S')
-            # logSend('DateTimeEncoder >>> is YES >>>' + str(encoded_object))
-        else:
-            encoded_object = json.JSONEncoder.default(self, obj)
-            # logSend('DateTimeEncoder >>> is NO >>>' + str(encoded_object))
-        return encoded_object
-
-
-def func_begin_log(app_name, func_name):
+def func_begin_log(*args) -> str:
     """
     호출하는 쪽에서 필수 : import inspect
     """
-    log = '>>> ' + app_name + '/' + func_name
+    func_name = ''
+    for arg in args:
+        func_name = func_name + '/' + arg
+    logSend('>>> ' + func_name)
+    return func_name
+
+
+def func_end_log(func_name, message = None):
+    """
+    호출하는 쪽에서 필수 : import inspect
+    """
+    log = '<<< ' + func_name
+    if message != None:
+        log += ' >>> ' + message
     logSend(log)
     return
 
 
-def func_end_log(app_name, func_name):
-    """
-    호출하는 쪽에서 필수 : import inspect
-    """
-    log = '<<< ' + app_name + '/' + func_name
-    logSend(log)
-    return
+def status422(func_name, _message):
+    func_end_log(func_name, _message['message'])
+    return REG_422_UNPROCESSABLE_ENTITY.to_json_response(_message)
 
 
 def hash_SHA256(password):

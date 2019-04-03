@@ -12,7 +12,7 @@ from config.common import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import DateTimeEncoder
 # from config.common import HttpResponse
-from config.common import func_begin_log, func_end_log
+from config.common import func_begin_log, func_end_log, status422
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -2683,9 +2683,10 @@ def staff_foreground(request):
             'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
         }
         STATUS 530
+            {'message':'아이디나 비밀번호가 틀립니다.'}
+        STATUS 422
             {'message':'아이디가 비었어요'}
             {'message':'비밀번호가 비었어요'}
-            {'message':'아이디나 비밀번호가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2694,10 +2695,10 @@ def staff_foreground(request):
         rqst = request.GET
 
     if not 'login_id' in rqst:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3], '아이디가 비었어요')
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message':'아이디가 비었어요'})
     if not 'login_pw' in rqst:
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3], '비밀번호가 비었어요')
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message':'비밀번호가 비었어요'})
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
@@ -2711,7 +2712,7 @@ def staff_foreground(request):
             if len(app_users) == 1:
                 app_user = app_users[0]
                 if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
-                    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+                    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3], '530 아이디나 비밀번호가 틀립니다.')
                     return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
                 else:
                     is_login_id_pw = False
@@ -2722,7 +2723,7 @@ def staff_foreground(request):
         # app_user.save()
         app_users = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
         if len(app_users) != 1:
-            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3], '530 아이디나 비밀번호가 틀립니다.')
             return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
         app_user = app_users[0]
         result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
@@ -2792,39 +2793,34 @@ def staff_background(request):
         STATUS 200
         STATUS 532
             {'message': '아이디가 틀립니다.'}
-        STATUS ??? << 개발 완료 후 발생하면 안되는 에러
-            {'message':'DEV 파라미터 id 가 없어요.'}                # 개발 중 버그
-            {'message':'DEV 파라미터 id 가 정상적인 값이 아니예요.'}    # 개발 중 버그
-            {'message':'DEV 서버 error - 서버에 데이터 없어요.'}     # 개발 중 버그
+        STATUS 422
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
     """
-    func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
 
     if not 'id' in rqst: # id 가 들어왔는지 검사
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 파라미터 id 가 없어요.'})
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
 
     staff_id = AES_DECRYPT_BASE64(rqst['id'])
     if staff_id == '__error':
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 파라미터 id 가 정상적인 값이 아니예요.'})
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        logSend('   Error(id\'s row is empty or duplecate', id)
-        logError('   Error(id\'s row is empty or duplecate', id)
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        return REG_532_ID_IS_WRONG.to_json_response({'message':'DEV 서버 error - 서버에 데이터 없어요.'})
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
 
     app_user = app_users[0]
     app_user.is_app_login = False
     app_user.dt_login = datetime.datetime.now()
     app_user.save()
 
-    func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    func_end_log(func_name, 'OK')
     return REG_200_SUCCESS.to_json_response()
 
 

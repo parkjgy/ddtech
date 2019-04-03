@@ -87,7 +87,6 @@ def AES_DECRYPT_BASE64(msg: str) -> str:
         return AES_DECRYPT(msg).decode(encoding='UTF-8')
     except Exception as e:
         logSend('Error(AES_DECRYPT_BASE64):', str(e))
-        print('Error(AES_DECRYPT_BASE64):', str(e))
         return '__error'
 
 
