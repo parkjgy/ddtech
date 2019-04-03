@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 from config.common import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import DateTimeEncoder, ValuesQuerySetToDict
 from config.common import func_begin_log, func_end_log
 from config.common import no_only_phone_no, phone_format
 

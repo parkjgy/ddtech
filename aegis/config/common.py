@@ -33,6 +33,7 @@ def logSend(*args):
         str_list = []
         for arg in args:
             str_list.append(str(arg))
+        print(''.join(str_list))
         logger_log.debug(''.join(str_list))
     except Exception as e:
         logger_error.error(str(e))
@@ -47,6 +48,7 @@ def logHeader(*args):
         str_list = []
         for arg in args:
             str_list.append(str(arg))
+        print(''.join(str_list))
         logger_header.debug(''.join(str_list))
     except Exception as e:
         logger_log.debug(str(e))
@@ -66,6 +68,7 @@ def logError(*args):
         str_list = []
         for arg in args:
             str_list.append(str(arg))
+        print(''.join(str_list))
         logger_error.debug(''.join(str_list))
     except Exception as e:
         logger_error.error(str(e))
@@ -128,7 +131,6 @@ def func_begin_log(app_name, func_name):
     호출하는 쪽에서 필수 : import inspect
     """
     log = '>>> ' + app_name + '/' + func_name
-    print(log)
     logSend(log)
     return
 
@@ -138,19 +140,8 @@ def func_end_log(app_name, func_name):
     호출하는 쪽에서 필수 : import inspect
     """
     log = '<<< ' + app_name + '/' + func_name
-    print(log)
     logSend(log)
     return
-
-
-def exceptionError(funcName, code, e):
-    print('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
-    logSend('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
-    logError('<<< ', funcName, ' : ', code, ' ERROR: ', str(e))
-    result = {'message': str(e)}
-    response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    response.status_code = 503
-    return response
 
 
 def hash_SHA256(password):

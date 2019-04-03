@@ -10,7 +10,7 @@ from django.conf import settings
 
 from config.common import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import DateTimeEncoder, exceptionError
+from config.common import DateTimeEncoder
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log
 # secret import
@@ -2683,8 +2683,9 @@ def staff_foreground(request):
             'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
         }
         STATUS 530
-            {'message': '아이디나 비밀번호가 틀립니다.'}
+            {'message':'아이디가 비었어요'}
             {'message':'비밀번호가 비었어요'}
+            {'message':'아이디나 비밀번호가 틀립니다.'}
     """
     func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2704,15 +2705,26 @@ def staff_foreground(request):
     print(login_id, login_pw)
     is_login_id_pw = True
     if 'id' in rqst: # id 가 들어왔는지 검사
-        if len(rqst['id']) > 8: # 암호화된 값이면 최소 8자 이상이어야 함
-            staff_id = AES_DECRYPT_BASE64(rqst['id'])
-            if len(staff_id) > 0: # id 면 1부터 시작됨
-                app_user = Staff.objects.get(id = staff_id)
-                if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+        staff_id = AES_DECRYPT_BASE64(rqst['id'])
+        if staff_id != '__error':
+            try:
+                app_user = Staff.objects.get(id=staff_id)
+                if (app_user.login_id == login_id) and (app_user.login_pw != hash_SHA256(login_pw)):
+                    is_login_id_pw = False
+                else:
                     func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
                     return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
-                else:
-                    is_login_id_pw = False
+            except Exception as e:
+                logSend('Error(DB get):', str(e))
+
+            # app_users = Staff.objects.filter(id=staff_id)
+            # if len(app_users) == 1:
+            #     app_user = app_users[0]
+            #     if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+            #         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+            #         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+            #     else:
+            #         is_login_id_pw = False
     if is_login_id_pw:
         app_user = Staff.objects.get(login_id=login_id)
         print(hash_SHA256(login_pw), app_user.login_pw)
@@ -2726,6 +2738,7 @@ def staff_foreground(request):
         result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
 
     print(app_user.name, app_user.id, app_user.co_id)
+    dt_today = datetime.datetime.now()
     # 업무 추출
     # 사업장 조회 - 사업장을 관리자로 검색해서 있으면 그 사업장의 모든 업무를 볼 수 있게 한다.
     work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id)
@@ -2735,10 +2748,10 @@ def staff_foreground(request):
         print(arr_work_place_id)
         # 해당 사업장의 모든 업무 조회
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
-        works = Work.objects.filter(work_place_id__in=arr_work_place_id)
+        works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
-        works = Work.objects.filter(staff_id=app_user.id)
+        works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=dt_today)
     print([work.staff_name for work in works])
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
@@ -2749,7 +2762,7 @@ def staff_foreground(request):
             employee_dic = {'is_accept_work':employee.is_accept_work,
                             'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
                             'name':employee.name,
-                            'phone':employee.pNo,
+                            'phone':phone_format(employee.pNo),
                             'dt_begin_beacon':employee.dt_begin_beacon,
                             'dt_end_beacon':employee.dt_end_beacon,
                             'dt_begin_touch':employee.dt_begin_touch,
@@ -2762,7 +2775,7 @@ def staff_foreground(request):
         work_dic = {'name':work.work_place_name + ' ' + work.name + '(' + work.type + ')',
                     'work_id':AES_ENCRYPT_BASE64(str(work.id)),
                     'staff_name':work.staff_name,
-                    'staff_phone':work.staff_pNo,
+                    'staff_phone':phone_format(work.staff_pNo),
                     'dt_begin':work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                     'dt_end':work.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
                     'employees':arr_employee

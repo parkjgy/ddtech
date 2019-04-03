@@ -9,7 +9,7 @@ from rest_framework.schemas import AutoSchema
 from rest_framework.views import APIView
 
 from config.common import logSend, logError
-from config.common import DateTimeEncoder, ValuesQuerySetToDict, exceptionError
+from config.common import DateTimeEncoder, ValuesQuerySetToDict
 from config.common import HttpResponse, ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format
@@ -45,18 +45,18 @@ import inspect
 
 class Env(object):
     def __init__(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         self.start()
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
     def __del__(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         logSend(' <<< Environment class delete')
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
     def loadEnvironment(self):
         func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -69,11 +69,9 @@ class Env(object):
             )
             newEnv.save()
         note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
-        print(note)
         logSend(note)
         envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
-        note = '>>> no of environment = ' + str(len(envs))
-        print(note)
+        note = '    >>> no of environment = ' + str(len(envs))
         logSend(note)
         """
         i = 0
@@ -82,45 +80,45 @@ class Env(object):
             i = i + 1
         """
         self.curEnv = envs[0]
-        print('   Env: ')
-        print('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
-        print('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
-        print('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
+        logSend('   Env: ')
+        logSend('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
+        logSend('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
+        logSend('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + self.curEnv.timeCheckServer
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         if self.dt_reload < datetime.datetime.now():  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
             self.dt_reload = self.dt_reload + timedelta(days=1)
             logSend('       next load time + 24 hours')
-        print('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
-        print('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        logSend('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
+        logSend('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return
 
     def start(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if not self.is_running:
             self.loadEnvironment()
             self.is_running = True
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
     def stop(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
 
     def current(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if self.dt_reload < datetime.datetime.now():
             self.is_running = False
             self.loadEnvironment()
             self.is_running = True
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return self.curEnv
 
     def self(self):
-        func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+        # func_end_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         return self
 
 
