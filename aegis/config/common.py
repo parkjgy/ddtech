@@ -173,3 +173,10 @@ def phone_format(phone_no):
     return formated_phone_no
 
 
+def dt_null(dt) -> str:
+    """
+    날짜 시간이 None 값일 때 시간을 표시하지 않고 None 을 표시함
+    :param dt:
+    :return:
+    """
+    return None if dt == None else dt.strftime("%Y-%m-%d %H:%M:%S")

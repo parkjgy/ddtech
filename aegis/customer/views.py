@@ -14,7 +14,7 @@ from config.common import DateTimeEncoder
 # from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log, status422
 # secret import
-from config.common import hash_SHA256, no_only_phone_no, phone_format
+from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -2013,6 +2013,8 @@ def update_employee(request):
     worker = Staff.objects.get(id=worker_id)
 
     employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'employee_id 해독 에러 %s' % rqst['employee_id']})
     employee = Employee.objects.get(id=employee_id)
     print(employee)
     if 'phone_no' in rqst and len(rqst['phone_no']) > 0:
@@ -2677,11 +2679,84 @@ def staff_foreground(request):
         login_pw=password
     response
         STATUS 200
-        {
-            'id':'암호화 된 id', # 처음 로그인할 때 한번만 온다.
-            'work_places':[{'work_place_id':'...', 'work_place_name':'...'}, ...], # 관리자의 경우 사업장
-            'works':[{'work_id':'...', 'work_name':'...'}, ...]                     # 현장 소장의 경우 업무(관리자가 겸하는 경우도 있음.)
-        }
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "id": "qgf6YHf1z2Fx80DR8o_Lvg", # 서버에서 쓰이는 식별자 앱에서 자장하고 있다가 서버와 통신할 때 보내야 한다.
+              "works": [                      # 업무
+                {
+                  "name": "대덕기공 출입시스템 비콘 점검(주간 오전)",    # 업무 이름 : 사업장(대덕기공) + 업무(출입시스템 비콘 점검) + 형식(주간 오전)
+                  "work_id": "qgf6YHf1z2Fx80DR8o_Lvg",          # 업무 식별자
+                  "staff_name": "이요셉",                         # 업무 담당자 이름 (앱 사용 본인)
+                  "staff_phone": "010-2450-5942",               # 업무 담당자 전화번호
+                  "dt_begin": "2019-04-02 00:00:00",    # 업무 시작일: 아직 업무 시작 전 상태로 정의한다.
+                  "dt_end": "2019-06-02 00:00:00",
+                  "employees": [                        # 업무에 참여하는 근로자
+                    {
+                      "is_accept_work": '응답 X',           # 근로자가 업무를 거부도 승락도 안한 상태
+                      "employee_id": "_LdMng5jDTwK-LMNlj22Vw",  # (업무 시작 전 상태에서는 사용 안됨)
+                      "name": "-----",                  # 근로자가 앱을 설치하지 않아서 이름이 없는 상태
+                      "phone": "010-2557-3555",
+                      "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
+                      "dt_end_beacon": null,
+                      "dt_begin_touch": null,
+                      "dt_end_touch": null,
+                      "overtime": 0,
+                      "x": null,
+                      "y": null
+                    },
+                    {
+                      "is_accept_work": '수락',          # 근로자가 업무를 수락한 상태
+                      "employee_id": "aiac_m6lgajv9tpIGESEQg",  # (업무 시작 전 상태에서는 사용 안됨)
+                      "name": "양만춘",                    # 근로자가 앱을 설치하고 알림에서 거부했기 때문에 이름이 나타남
+                      "phone": "010-1111-2222",
+                      "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
+                      "dt_end_beacon": null,
+                      "dt_begin_touch": null,
+                      "dt_end_touch": null,
+                      "overtime": 0,
+                      "x": null,
+                      "y": null
+                    },
+                    {
+                      "is_accept_work": '거절',           # 근로자가 업무를 거부한 상태
+                      "employee_id": "wfu2AVGd4epGiK76lVJt0A",  # (업무 시작 전 상태에서는 사용 안됨)
+                      "name": "강감찬",                    # 근로자가 앱을 설치하고 알림에서 수락했기 때문에 이름이 나타남
+                      "phone": "010-4444-5555",
+                      "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
+                      "dt_end_beacon": null,
+                      "dt_begin_touch": null,
+                      "dt_end_touch": null,
+                      "overtime": 0,
+                      "x": null,
+                      "y": null
+                    }
+                  ]
+                },
+                {
+                  "name": "대덕기공 출입시스템 비콘 시험(주간 오후)",    # 업무 이름 : 사업장(대덕기공) + 업무(비콘 시험) + 형식(주간 오후)
+                  "work_id": "_LdMng5jDTwK-LMNlj22Vw",          # 업무 식별자
+                  "staff_name": "이요셉",                          # 업무 담당자 이름 (앱 사용 본인)
+                  "staff_phone": "010-2450-5942",               # 업무 담당자 전화번호
+                  "dt_begin": "2019-04-04 00:00:00",        # 업무 시작일: 업무가 시작된 상태로 정의한다.
+                  "dt_end": "2019-06-02 00:00:00",          # 업무 종료일
+                  "employees": [
+                    {
+                      "is_accept_work": '수락',                   # 업무 시작 후에는 모두 true (업무를 수락했기 때문에 업무에 투입되는 것이므로...)
+                      "employee_id": "AELFuG3KnlPmZkwsdKsIIQ",  # 근로자 식별자 이걸 이용해서 오늘 이전의 근로 내역을 조회할 것임.
+                      "name": "안중근",                            # 근로자 이름
+                      "phone": "010-4444-7777",                 # 근로자 전화번호 SMS, 통화에 사용
+                      "dt_begin_beacon": "2019-04-03 08:20:00", # 오늘 출근시간 (비콘이 처음 인식된 시간)
+                      "dt_end_beacon": "2019-04-03 17:45:00",   # 오늘 퇴근시간 (비콘이 마지막으로 인식된 시간)
+                      "dt_begin_touch": "2019-04-03 08:25:00",  # 오늘 출근 버튼을 누른 시간
+                      "dt_end_touch": "2019-04-03 17:35:00",    # 오늘 퇴근 버튼을 누른 시간
+                      "overtime": 30,                           # 오늘 연장근무한 시간 (30분 단위 : 30, 60, 90, 120, ...)
+                      "x": 35.4812,                             # 위도 (latitude) : 처음 비콘 인식 위치
+                      "y": 129.4230                             # 경도 (longitude) : 처름 비콘 인식 위치
+                    }
+                  ]
+                }
+              ]
+            }
         STATUS 530
             {'message':'아이디나 비밀번호가 틀립니다.'}
         STATUS 422 # 개발자 수정사항
@@ -2724,7 +2799,8 @@ def staff_foreground(request):
             func_end_log(func_name, '530 아이디나 비밀번호가 틀립니다.')
             return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
         app_user = app_users[0]
-        result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
+
+    result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
 
     print(app_user.name, app_user.id, app_user.co_id)
     dt_today = datetime.datetime.now()
@@ -2744,24 +2820,32 @@ def staff_foreground(request):
     print([work.staff_name for work in works])
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
+    isWorkStart = True
     for work in works:
+        isWorkStart = not isWorkStart
         employees = Employee.objects.filter(work_id=work.id)
         arr_employee = []
         for employee in employees:
-            employee_dic = {'is_accept_work':employee.is_accept_work,
+            employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
                             'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
                             'name':employee.name,
                             'phone':phone_format(employee.pNo),
-                            'dt_begin_beacon':employee.dt_begin_beacon,
-                            'dt_end_beacon':employee.dt_end_beacon,
-                            'dt_begin_touch':employee.dt_begin_touch,
-                            'dt_end_touch':employee.dt_end_touch,
+                            'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
+                            'dt_end_beacon':dt_null(employee.dt_end_beacon),
+                            'dt_begin_touch':dt_null(employee.dt_begin_touch),
+                            'dt_end_touch':dt_null(employee.dt_end_touch),
                             'overtime':employee.overtime,
                             'x':employee.x,
                             'y':employee.y,
                             }
+            # 가상 데이터 생성
+            employee_dic = virsual_employee(isWorkStart, employee_dic)
             arr_employee.append(employee_dic)
-        work_dic = {'name':work.work_place_name + ' ' + work.name + '(' + work.type + ')',
+        # work.work_place_name = '대덕기공'
+        # work.name = '시험'
+        # work.type = '오후'
+        linefeed = '\n' if len(work.work_place_name) + len(work.name) + len(work.type) > 9 else ' '
+        work_dic = {'name':work.work_place_name + linefeed + work.name + '(' + work.type + ')',
                     'work_id':AES_ENCRYPT_BASE64(str(work.id)),
                     'staff_name':work.staff_name,
                     'staff_phone':phone_format(work.staff_pNo),
@@ -2769,14 +2853,44 @@ def staff_foreground(request):
                     'dt_end':work.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
                     'employees':arr_employee
                     }
+        # 가상 데이터 생성
+        work_dic = virsual_work(isWorkStart, work_dic)
         arr_work.append(work_dic)
-    print(works)
     result['works'] = arr_work
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
     app_user.save()
     func_end_log(func_name, 'OK')
     return REG_200_SUCCESS.to_json_response(result)
+
+
+def virsual_employee(isWorkStart, employee) -> dict:
+    if isWorkStart:
+        employee['is_accept_work'] = True
+        dt_today = datetime.datetime.now().strftime("%Y-%m-%d")
+        overtime = random.randint(0, 4) * 30
+        employee['overtime'] = str(overtime)
+        dt_begin = datetime.datetime.strptime(dt_today + ' 08:35:00', "%Y-%m-%d %H:%M:%S")
+        dt_end = datetime.datetime.strptime(dt_today + ' 17:25:00', "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=overtime)
+        employee['dt_begin_beacon'] = (dt_begin - datetime.timedelta(minutes=random.randint(0,3)*5 + 15)).strftime("%Y-%m-%d %H:%M:%S")
+        employee['dt_end_beacon'] = (dt_end + datetime.timedelta(minutes=random.randint(0,3)*5 + 15)).strftime("%Y-%m-%d %H:%M:%S")
+        employee['dt_begin_touch'] = (dt_begin - datetime.timedelta(minutes=random.randint(0,3)*5)).strftime("%Y-%m-%d %H:%M:%S")
+        employee['dt_end_touch'] = (dt_end + datetime.timedelta(minutes=random.randint(0,3)*5 + 15)).strftime("%Y-%m-%d %H:%M:%S")
+        employee['x'] = 35.4812 + float(random.randint(0,100)) / 1000.
+        employee['y'] = 129.4230 + float(random.randint(0,100)) / 1000.
+    # else:
+    #     t = random.randint(0,10)
+    #     employee['is_accept_work'] = None if t < 5 else True if t < 8 else False
+    #     logSend(t, employee['is_accept_work'])
+    return employee
+
+
+def virsual_work(isWorkStart, work) -> dict:
+    if isWorkStart:
+        work['dt_begin'] = (datetime.datetime.now() - datetime.timedelta(days=9)).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        work['dt_begin'] = (datetime.datetime.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+    return work
 
 
 @cross_origin_read_allow

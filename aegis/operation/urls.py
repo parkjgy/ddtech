@@ -34,6 +34,7 @@ urlpatterns = [
     url(r'operation/customer_test_step_7', views.customer_test_step_7, name='customer_test_step_7'),
     url(r'operation/customer_test_step_8', views.customer_test_step_8, name='customer_test_step_8'),
     url(r'operation/customer_test_step_9', views.customer_test_step_9, name='customer_test_step_9'),
+    url(r'operation/customer_test_step_A', views.customer_test_step_A, name='customer_test_step_A'),
 
     url(r'operation/employee_test_step_1', views.employee_test_step_1, name='employee_test_step_1'),
     url(r'operation/employee_test_step_2', views.employee_test_step_2, name='employee_test_step_2'),

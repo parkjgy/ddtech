@@ -260,7 +260,8 @@ def notification_list(request):
     passer = passers[0]
     dt_today = datetime.datetime.now()
     print(passer.pNo)
-    notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
+    # notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
+    notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo)
     print(notification_list)
     arr_notification = []
     for notification in notification_list:

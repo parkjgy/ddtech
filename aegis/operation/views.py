@@ -1853,6 +1853,7 @@ def customer_test_step_9(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     # result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    # 첫번째 사업장을 시험 대상으로 설정
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 업무 리스트
@@ -1862,6 +1863,7 @@ def customer_test_step_9(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
     # result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    # 두번째 업무를 시험 대상으로 설정
     work_id = r.json()['works'][1]['id']
 
     # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
@@ -1873,7 +1875,7 @@ def customer_test_step_9(request):
         'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
-    # result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
+    result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
@@ -1897,7 +1899,7 @@ def customer_test_step_9(request):
     employee_dic = {'010333344':'', '0111114444':''}
     employee_pNo = {'010333344':'010-3333-4444', '0111114444':'010-1111-4444'}
     for employee in employees:
-        # print('--- ', employee)
+        print('--- ', employee)
         if no_only_phone_no(employee['pNo']) in employee_dic.keys():
             employee_dic[no_only_phone_no(employee['pNo'])] = employee['id']
     print(employee_dic)
@@ -1922,7 +1924,151 @@ def customer_test_step_9(request):
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
 
-    print(result)
+    logSend(result)
+    func_end_log(func_name, 'OK')
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+
+@cross_origin_read_allow
+def customer_test_step_A(request):
+    """
+    [[고객 서버 시험]] Step 10: 8명의 근로자를 업무에 등록, 앱설치, 업무 확인, 업무 수락하는 과정 시험
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(func_name, 'OK')
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    result = []
+
+    # 고객 : 로그인
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url':r.url, 'POST':login_data, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 고객 : 사업장 리스트
+    get_parameter = {'name':'',
+                     'manager_name':'',
+                     'manager_phone':'',
+                     'order_name':'대덕'
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    # result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    # 고객 : 업무 리스트
+    get_parameter = {'work_place_id':work_place_id,
+                     'dt_begin':'2019-02-25',
+                     'dt_end':'2019-02-27',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    result.append({'url':r.url, 'POST':get_parameter, 'STATUS':r.status_code, 'R':r.json()})
+    work_id = r.json()['works'][1]['id']
+
+    # 업무 시작 날짜 수정 - 업무가 시작된 것으로 처리하기 위하여 시간을 수정
+    begin_day = (datetime.datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d") # 10일 전부터 일을 하고 있음
+    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+    update_work = {
+        'work_id': work_id,  # 필수
+        'dt_begin': begin_day,  # 근무 시작일
+        'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
+    result.append({'url':r.url, 'POST':update_work, 'STATUS':r.status_code, 'R':r.json()})
+
+    # 근로자 모두 등록 상태에 업무 수락 상태로 변경
+    names = ["김좌진", "윤봉", "안창호", "이시영", "계백", "을지문덕", "권율", "최영"]
+    arr_phone_no = ['010-3355-1001', '010-3355-1002', '010-3355-1003', '010-3355-1004', '010-3355-2001', '010-3355-2002', '010-3355-2003', '010-3355-2004']
+
+    # 고객 : 고객웹에서 근로자 등록
+    next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
+    next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
+    employee = {
+        'work_id':work_id,
+        'dt_answer_deadline':next_4_day,
+        'phone_numbers':arr_phone_no
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
+    duplicate_pNo = r.json()['duplicate_pNo']
+    print(duplicate_pNo)
+
+    for pNo in arr_phone_no:
+
+        # 근로자 : 앱 설치 후 인증번호 요청
+        phone_no = {'phone_no' : pNo}
+        settings.IS_TEST = True
+        r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
+        settings.IS_TEST = False
+        # result.append({'url':r.url, 'POST':phone_no, 'STATUS':r.status_code, 'R':r.json()})
+
+        # 근로자 : 인증
+        certification_data = {
+                'phone_no' : pNo,
+                'cn' : '201903',
+                'phone_type' : 'A', # 안드로이드 폰
+                'push_token' : 'push token'
+            }
+        r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
+        # result.append({'url':r.url, 'POST':certification_data, 'STATUS':r.status_code, 'R':r.json()})
+        employee = r.json()
+        employee_id = employee['id'] # 등록 근로자 id (passer_id)
+        print(employee)
+
+        if (not 'name' in employee) and ('bank_list' in employee):
+            # 처음 설치한 경우 : 자기 정보 수정
+            employee_info = {
+                'passer_id': employee_id,
+                'name': names[arr_phone_no.index(pNo)],
+                'bank': '기업은행',
+                'bank_account': '1230000001200%d' % arr_phone_no.index(pNo),
+                'pNo': pNo,  # 추후 SMS 확인 절차 추가
+            }
+            r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
+            # result.append({'url':r.url, 'POST':employee_info, 'STATUS':r.status_code, 'R':r.json()})
+
+        # 근로자 : 알림 확인
+        passer = {'passer_id': employee_id}
+        r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+        result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
+        print(r.json())
+        if len(r.json()['notifications']) == 0:
+            # 알림이 없는 출입자 - 대상이 아님
+            continue
+        notification_id = r.json()['notifications'][0]['id']
+
+        # 근로자 : 업무 수락 / 거절
+        accept = {
+            'passer_id': employee_id,  # 암호화된 값임
+            'notification_id': notification_id,
+            'is_accept': 1  # 1 : 업무 수락, 0 : 업무 거부
+        }
+        r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+        result.append({'url': r.url, 'POST': accept, 'STATUS': r.status_code, 'R': r.json()})
+
+    # 고객 : 근로자 리스트
+    work = {'work_id': work_id,
+            'is_working_history':'YES'
+            }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
+    result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
+
     logSend(result)
     func_end_log(func_name, 'OK')
     return REG_200_SUCCESS.to_json_response({'result':result})
