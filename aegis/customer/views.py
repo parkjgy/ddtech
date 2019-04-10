@@ -2790,10 +2790,10 @@ def staff_foreground(request):
                 else:
                     is_login_id_pw = False
     if is_login_id_pw:
-        # app_user = Staff.objects.get(login_id=login_id)
-        # print(hash_SHA256(login_pw), app_user.login_pw)
-        # app_user.login_pw = hash_SHA256(login_pw)
-        # app_user.save()
+        app_user = Staff.objects.get(login_id=login_id)
+        print(hash_SHA256(login_pw), app_user.login_pw)
+        app_user.login_pw = hash_SHA256(login_pw)
+        app_user.save()
         app_users = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
         if len(app_users) != 1:
             func_end_log(func_name, '530 아이디나 비밀번호가 틀립니다.')
