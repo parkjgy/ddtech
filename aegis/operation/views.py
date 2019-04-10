@@ -47,7 +47,7 @@ class Env(object):
     def __init__(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
-        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
+        strToday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d ")
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         self.start()
