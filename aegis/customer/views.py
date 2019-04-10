@@ -70,7 +70,7 @@ def table_reset_and_clear_for_operation(request):
     cursor.execute("ALTER TABLE customer_work AUTO_INCREMENT = 1")
     cursor.execute("ALTER TABLE customer_employee AUTO_INCREMENT = 1")
 
-    result = {'message': 'customer tables deleted\n$ python manage.py sqlsequencereset customer'}
+    result = {'message': 'customer tables deleted == $ python manage.py sqlsequencereset customer'}
     logSend(result['message'])
     func_end_log(func_name, 'OK')
     return REG_200_SUCCESS.to_json_response(result)
@@ -2696,6 +2696,8 @@ def staff_foreground(request):
                       "employee_id": "_LdMng5jDTwK-LMNlj22Vw",  # (업무 시작 전 상태에서는 사용 안됨)
                       "name": "-----",                  # 근로자가 앱을 설치하지 않아서 이름이 없는 상태
                       "phone": "010-2557-3555",
+                      "dt_begin": "2019-03-10 14:46:04", # 이 근로자가 업무 시작하는 날 (업무 날짜와 별개임)
+                      "dt_end": "2019-05-09 00:00:00",   # 이 근로자가 업무 종료하는 날 (업무 날짜와 별개임)
                       "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
                       "dt_end_beacon": null,
                       "dt_begin_touch": null,
@@ -2709,6 +2711,8 @@ def staff_foreground(request):
                       "employee_id": "aiac_m6lgajv9tpIGESEQg",  # (업무 시작 전 상태에서는 사용 안됨)
                       "name": "양만춘",                    # 근로자가 앱을 설치하고 알림에서 거부했기 때문에 이름이 나타남
                       "phone": "010-1111-2222",
+                      "dt_begin": "2019-03-10 14:46:04", # 이 근로자가 업무 시작하는 날 (업무 날짜와 별개임)
+                      "dt_end": "2019-05-09 00:00:00",   # 이 근로자가 업무 종료하는 날 (업무 날짜와 별개임)
                       "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
                       "dt_end_beacon": null,
                       "dt_begin_touch": null,
@@ -2722,6 +2726,8 @@ def staff_foreground(request):
                       "employee_id": "wfu2AVGd4epGiK76lVJt0A",  # (업무 시작 전 상태에서는 사용 안됨)
                       "name": "강감찬",                    # 근로자가 앱을 설치하고 알림에서 수락했기 때문에 이름이 나타남
                       "phone": "010-4444-5555",
+                      "dt_begin": "2019-03-10 14:46:04", # 이 근로자가 업무 시작하는 날 (업무 날짜와 별개임)
+                      "dt_end": "2019-05-09 00:00:00",   # 이 근로자가 업무 종료하는 날 (업무 날짜와 별개임)
                       "dt_begin_beacon": null,          # 아래 dt_... 는 모두 무시 (업무 시작 전 상태이기 때문에)
                       "dt_end_beacon": null,
                       "dt_begin_touch": null,
@@ -2745,6 +2751,8 @@ def staff_foreground(request):
                       "employee_id": "AELFuG3KnlPmZkwsdKsIIQ",  # 근로자 식별자 이걸 이용해서 오늘 이전의 근로 내역을 조회할 것임.
                       "name": "안중근",                            # 근로자 이름
                       "phone": "010-4444-7777",                 # 근로자 전화번호 SMS, 통화에 사용
+                      "dt_begin": "2019-03-10 14:46:04", # 이 근로자가 업무 시작하는 날 (업무 날짜와 별개임)
+                      "dt_end": "2019-05-09 00:00:00",   # 이 근로자가 업무 종료하는 날 (업무 날짜와 별개임)
                       "dt_begin_beacon": "2019-04-03 08:20:00", # 오늘 출근시간 (비콘이 처음 인식된 시간)
                       "dt_end_beacon": "2019-04-03 17:45:00",   # 오늘 퇴근시간 (비콘이 마지막으로 인식된 시간)
                       "dt_begin_touch": "2019-04-03 08:25:00",  # 오늘 출근 버튼을 누른 시간
@@ -2830,6 +2838,8 @@ def staff_foreground(request):
                             'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
                             'name':employee.name,
                             'phone':phone_format(employee.pNo),
+                            'dt_begin':dt_null(employee.dt_begin),
+                            'dt_end':dt_null(employee.dt_end),
                             'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
                             'dt_end_beacon':dt_null(employee.dt_end_beacon),
                             'dt_begin_touch':dt_null(employee.dt_begin_touch),
@@ -2867,6 +2877,9 @@ def staff_foreground(request):
 def virsual_employee(isWorkStart, employee) -> dict:
     if isWorkStart:
         employee['is_accept_work'] = True
+        if random.randint(0,100) > 90:
+            employee['dt_begin'] = (datetime.datetime.now() + datetime.timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
+            return employee
         dt_today = datetime.datetime.now().strftime("%Y-%m-%d")
         overtime = random.randint(0, 4) * 30
         employee['overtime'] = str(overtime)

@@ -975,7 +975,7 @@ def customer_test_step_1(request):
     response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
     logSend(response.json())
 
-    result = {'message': 'Customer all tables deleted'}
+    result = {'message': 'Customer all tables deleted$ '}
     logSend(result['message'])
     func_end_log(func_name, 'OK')
     return REG_200_SUCCESS.to_json_response(result)
