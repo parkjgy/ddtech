@@ -973,7 +973,7 @@ def customer_test_step_1(request):
     # 고객서버 테이블 삭제 및 초기화
     key = {'key':rqst['key']}
     response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
-    print(response.json())
+    logSend(response.json())
 
     result = {'message': 'Customer all tables deleted'}
     logSend(result['message'])
