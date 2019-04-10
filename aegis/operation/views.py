@@ -47,7 +47,7 @@ class Env(object):
     def __init__(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
-        strToday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d ")
+        strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         self.start()
@@ -62,7 +62,8 @@ class Env(object):
         func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if len(Environment.objects.filter()) == 0:
             newEnv = Environment(
-                dt=datetime.datetime.now() - timedelta(days=3),
+                # dt=datetime.datetime.now() - timedelta(days=3),
+                dt=datetime.datetime.strptime("2019-01-01 00:00:00", "%Y-%m-%d %H:%M:%S"),
                 manager_id=0,
                 dt_android_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
                 timeCheckServer="05:00:00",
@@ -70,6 +71,10 @@ class Env(object):
             newEnv.save()
         note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
         logSend(note)
+        print(self.dt_reload)
+        envs = Environment.objects.filter()
+        for env in envs:
+            print(env.id, env.dt)
         envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
         note = '    >>> no of environment = ' + str(len(envs))
         logSend(note)

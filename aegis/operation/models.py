@@ -2,7 +2,7 @@ from django.db import models
 
 # 환경 저장
 class Environment(models.Model):
-    dt = models.DateTimeField(auto_now_add = True) 
+    dt = models.DateTimeField(auto_now_add = False, blank=True) 
     dt_android_upgrade = models.DateTimeField(auto_now_add = False) 
     manager_id = models.IntegerField(default = 0) # 환경 변경 직원 id
     timeCheckServer =  models.CharField(max_length = 15) # 09:00:00 형식의 문자열
