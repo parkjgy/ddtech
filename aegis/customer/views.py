@@ -4,14 +4,10 @@ import datetime
 from datetime import timedelta
 import inspect
 
-from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
-
 from django.conf import settings
 
-from config.common import logSend, logError
+from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import DateTimeEncoder
-# from config.common import HttpResponse
 from config.common import func_begin_log, func_end_log, status422
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null

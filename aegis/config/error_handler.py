@@ -2,7 +2,7 @@ from django.http import HttpResponse
 import traceback
 import os
 import json
-from .common import logSend, logError
+from .log import logSend, logError
 
 
 class BaseMiddleware:

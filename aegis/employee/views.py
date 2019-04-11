@@ -1,14 +1,8 @@
-# log import
-import json
 import random
 import inspect
 
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
-
-from config.common import logSend, logError
+from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import DateTimeEncoder, ValuesQuerySetToDict
 from config.common import func_begin_log, func_end_log
 from config.common import no_only_phone_no, phone_format
 
@@ -852,6 +846,8 @@ def reg_from_certification_no(request):
             'push_token' : 'push token',
         }
     response
+        STATUS 422
+            {'message':'인증번호 요청없이 인증번호 요청이 들어왔습니다.'}
         STATUS 550
             {'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'} # 인증시간 3분
             {'message': '인증번호가 틀립니다.'}
@@ -876,31 +872,30 @@ def reg_from_certification_no(request):
     else:
         rqst = request.GET
 
-    print('--- ', rqst['phone_no'])
+    # logSend('--- ', rqst['phone_no'])
     phone_no = no_only_phone_no(rqst['phone_no'])
     cn = rqst['cn']
     phone_type = rqst['phone_type']
     push_token = rqst['push_token']
+    for key in rqst.keys():
+        logSend(key, ' : ', rqst[key])
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) > 1:
         duplicate_id = [passer.id for passer in passers]
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
-    print(passer.pNo)
     if passer.dt_cn == None:
-        print('ERROR: 인증번호 요청없이 인증요청한 경우')
-        logSend('ERROR: 인증번호 요청없이 인증요청한 경우')
         func_end_log(func_name, 'OK')
-        return REG_520_UNDEFINED.to_json_response()
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'인증번호 요청없이 인증요청(해킹?)'})
 
     if passer.dt_cn < datetime.datetime.now():
-        print(passer.dt_cn, datetime.datetime.now())
+        logSend(passer.dt_cn, datetime.datetime.now())
         func_end_log(func_name, 'OK')
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
-        print(passer.cn, cn)
+        logSend(passer.cn, cn)
         if passer.cn != int(cn):
             func_end_log(func_name, 'OK')
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()

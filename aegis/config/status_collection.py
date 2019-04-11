@@ -2,6 +2,7 @@ import json
 
 from django.http import JsonResponse, HttpResponse
 from .common_json import DateTimeEncoder
+from .log import logSend
 
 
 class StatusCollection(object):
@@ -15,7 +16,7 @@ class StatusCollection(object):
             response_body.update(_body)
         resp = JsonResponse(response_body)
         resp.status_code = self.status
-        print(resp.status_code, resp)
+        logSend('<<< ', resp.status_code, ' ', response_body)
         return resp
 
     def to_response(self, _body=None):
@@ -24,6 +25,7 @@ class StatusCollection(object):
             response_body.update(_body)
         resp = HttpResponse(json.dumps(response_body, cls=DateTimeEncoder))
         resp.status_code = self.status
+        logSend('<StatusCollection>', resp.status_code)
         return resp
 
 
