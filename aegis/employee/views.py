@@ -912,7 +912,11 @@ def reg_from_certification_no(request):
     else:
         employees = Employee.objects.filter(id=passer.employee_id)
         if len(employees) == 0:
-            passer.employee_id = -1
+            status_code = 201
+            employee = Employee(
+            )
+            employee.save()
+            passer.employee_id = employee.id
         else:
             employee = employees[0]
             if employee.name == 'unknown':
