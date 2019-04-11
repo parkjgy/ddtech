@@ -50,12 +50,12 @@ class Env(object):
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         self.start()
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
 
     def __del__(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         logSend(' <<< Environment class delete')
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
 
     def loadEnvironment(self):
         func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -96,7 +96,7 @@ class Env(object):
             logSend('       next load time + 24 hours')
         logSend('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
         logSend('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return
 
     def start(self):
@@ -104,12 +104,12 @@ class Env(object):
         if not self.is_running:
             self.loadEnvironment()
             self.is_running = True
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
 
     def stop(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
 
     def current(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -117,12 +117,12 @@ class Env(object):
             self.is_running = False
             self.loadEnvironment()
             self.is_running = True
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
         return self.curEnv
 
     def self(self):
         # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
         return self
 
 
@@ -148,7 +148,7 @@ def testEnv(request):
     result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
     result['timeCheckServer'] = env.current().timeCheckServer
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -182,7 +182,7 @@ def currentEnv(request):
         'dt_android_upgrade': env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
         'timeCheckServer': env.curEnv.timeCheckServer
     }
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
 
 
@@ -216,7 +216,7 @@ def updateEnv(request):
     worker = Staff.objects.get(id=worker_id)
     if not (worker.id in [1, 2]):
         print('524')
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     is_update = False
@@ -248,7 +248,7 @@ def updateEnv(request):
         newEnv.save()
         env.start()
     print('200')
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -289,10 +289,10 @@ class OperationView(APIView):
         worker = Staff.objects.get(id=worker_id)
         # try:
         #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-        #         func_end_log(func_name, 'OK')
+        #         func_end_log(func_name)
         #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
         # except Exception as e:
-        #     func_end_log(func_name, 'OK')
+        #     func_end_log(func_name)
         #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
         phone_no = no_only_phone_no(rqst['pNo'])
@@ -301,7 +301,7 @@ class OperationView(APIView):
 
         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
         if len(staffs) > 0:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
         new_staff = Staff(
             login_id=id_,
@@ -309,7 +309,7 @@ class OperationView(APIView):
             pNo=phone_no
         )
         new_staff.save()
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
 
 
@@ -340,7 +340,7 @@ def login(request):
     staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw_))
     if len(staffs) == 0:
         print('530')
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
     staff.is_login = True
@@ -351,7 +351,7 @@ def login(request):
     request.session['op_id'] = 'O0000' + str(staff.id)
     request.session.save()
     print('200')
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -367,7 +367,7 @@ def logout(request):
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.session is None or 'op_id' not in request.session:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['op_id'][5:])
     staff.is_login = False
@@ -375,7 +375,7 @@ def logout(request):
     staff.save()
     del request.session['op_id']
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -434,16 +434,16 @@ def update_staff(request):
     staff = worker
     # if worker.id != staff.id:
     #     staff.login_pw = hash_SHA256('happy_day82')
-    #     func_end_log(func_name, 'OK')
+    #     func_end_log(func_name)
     #     return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
 
     if hash_SHA256(before_pw) != staff.login_pw:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_id) > 0:
         if (Staff.objects.filter(login_id=login_id)) > 0:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디가 중복됩니다.'})
         staff.login_id = login_id
     if len(login_pw) > 0:
@@ -463,7 +463,7 @@ def update_staff(request):
     if len(email) > 0:
         staff.email = email
     staff.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -511,7 +511,7 @@ def list_staff(request):
         }
         arr_staff.append(r_staff)
     print(arr_staff)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
 
@@ -559,7 +559,7 @@ def reg_customer(request):
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
     # print('아이디 ' + response_customer_json['login_id'] + '\n' + '비밀번호 ' + response_customer_json['login_pw'])
@@ -580,7 +580,7 @@ def reg_customer(request):
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     # print(r.json())
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
 
 
@@ -614,7 +614,7 @@ def sms_customer_staff(request):
     response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
                                       json=new_customer_data)
     if response_customer.status_code != 200:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
     print('아이디 ' + response_customer_json['login_id'])
@@ -633,7 +633,7 @@ def sms_customer_staff(request):
     logSend(r.json())
     print(r.json())
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
 
 
@@ -698,7 +698,7 @@ def list_customer(request):
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
     print(response_customer.json())
     if response_customer.status_code != 200:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     arr_customer = response_customer.json()['customers']
     print(arr_customer)
@@ -713,7 +713,7 @@ def list_customer(request):
         op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
         op_arr_customer.append(op_customer)
     logSend(op_arr_customer)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
 
 
@@ -941,7 +941,7 @@ def dt_android_upgrade(request):
 
     global env
     result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -966,7 +966,7 @@ def customer_test_step_1(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     # 고객서버 테이블 삭제 및 초기화
@@ -976,7 +976,7 @@ def customer_test_step_1(request):
 
     result = {'message': 'Customer all tables deleted$ '}
     logSend(result['message'])
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1001,7 +1001,7 @@ def customer_test_step_2(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
     result = []
 
@@ -1030,7 +1030,7 @@ def customer_test_step_2(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1055,7 +1055,7 @@ def customer_test_step_3(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1088,7 +1088,7 @@ def customer_test_step_3(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1117,7 +1117,7 @@ def customer_test_step_4(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1205,7 +1205,7 @@ def customer_test_step_4(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1232,7 +1232,7 @@ def customer_test_step_5(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1300,7 +1300,7 @@ def customer_test_step_5(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1326,7 +1326,7 @@ def customer_test_step_6(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1415,7 +1415,7 @@ def customer_test_step_6(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1442,7 +1442,7 @@ def customer_test_step_7(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1554,7 +1554,7 @@ def customer_test_step_7(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1581,7 +1581,7 @@ def customer_test_step_8(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1813,7 +1813,7 @@ def customer_test_step_8(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1836,7 +1836,7 @@ def customer_test_step_9(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -1929,7 +1929,7 @@ def customer_test_step_9(request):
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
 
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -1953,7 +1953,7 @@ def customer_test_step_A(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -2074,7 +2074,7 @@ def customer_test_step_A(request):
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
 
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -2100,7 +2100,7 @@ def employee_test_step_1(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
@@ -2140,7 +2140,7 @@ def employee_test_step_1(request):
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -2163,14 +2163,14 @@ def employee_test_step_2(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -2193,14 +2193,14 @@ def employee_test_step_3(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -2223,14 +2223,14 @@ def employee_test_step_4(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
@@ -2253,14 +2253,14 @@ def employee_test_step_5(request):
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
 
     print(result)
     logSend(result)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 

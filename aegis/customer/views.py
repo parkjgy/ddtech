@@ -45,7 +45,7 @@ def table_reset_and_clear_for_operation(request):
     if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
     Customer.objects.all().delete()
@@ -68,7 +68,7 @@ def table_reset_and_clear_for_operation(request):
 
     result = {'message': 'customer tables deleted == $ python manage.py sqlsequencereset customer'}
     logSend(result['message'])
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -122,7 +122,7 @@ def reg_customer_for_operation(request):
     # 파견기업 등록
     if len(customers) > 0:
         # 파견기업 상호와 담당자 전화번호가 등록되어 있는 경우
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_543_EXIST_TO_SAME_NAME_AND_PHONE_NO.to_json_response()
     else:
         customer = Customer(
@@ -155,7 +155,7 @@ def reg_customer_for_operation(request):
     result = {'message': '정상처리되었습니다.',
               'login_id': staff.login_id
               }
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -193,7 +193,7 @@ def sms_customer_staff_for_operation(request):
     print(rqst['staff_id'], AES_DECRYPT_BASE64(rqst['staff_id']))
     staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
     if len(staffs) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response()
     staff = staffs[0]
     staff.login_pw = hash_SHA256('happy_day!!!')
@@ -201,7 +201,7 @@ def sms_customer_staff_for_operation(request):
     result = {'message': '정상처리되었습니다.',
               'login_id': staff.login_id
               }
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -270,7 +270,7 @@ def list_customer_for_operation(request):
         customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['staff_id']))
         arr_customer.append(customer)
     result = {'customers': arr_customer}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -326,11 +326,11 @@ def update_customer(request):
     print(str(customer.manager_id))
     if not(worker.is_site_owner or worker.is_manager):
         print('담당자나 관리자만 변경 가능합니다.')
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
     if customer.staff_id != worker.id and customer.manager_id != worker.id:
         print('담당자나 관리자만 변경 가능합니다.')
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
     if 'staff_id' in rqst:
         print('staff_id 있음')
@@ -355,7 +355,7 @@ def update_customer(request):
 
                     if customer.manager_id == worker.id:
                         # 관리자가 담당자를 바꾸었기 때문에 로그아웃하지 않는다.
-                        func_end_log(func_name, 'OK')
+                        func_end_log(func_name)
                         return REG_200_SUCCESS.to_json_response()
 
                     worker.is_site_owner = False
@@ -364,9 +364,9 @@ def update_customer(request):
                     worker.save()
                     del request.session['id']
 
-                    func_end_log(func_name, 'OK')
+                    func_end_log(func_name)
                     return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'staff_id 가 잘못된 값입니다.'})
 
     if 'manager_id' in rqst:
@@ -397,12 +397,12 @@ def update_customer(request):
                         worker.save()
                         del request.session['id']
 
-                        func_end_log(func_name, 'OK')
+                        func_end_log(func_name)
                         return REG_200_SUCCESS.to_json_response({'message': '관리자가 바뀌어 로그아웃되었습니다.'})
                     else:
-                        func_end_log(func_name, 'OK')
+                        func_end_log(func_name)
                         return REG_521_MODIFY_MANAGER_ONLY.to_json_response()
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'manager_id 가 잘못된 값입니다.'})
 
     # 사업자 등록증 내용 변경 or 새로 만들기
@@ -418,7 +418,7 @@ def update_customer(request):
             customer.dt_payment = datetime.datetime.strptime(str_dt_now, '%Y-%m-%d %H:%M:%S')
         customer.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -470,7 +470,7 @@ def reg_relationship(request):
 
     relationships = Relationship.objects.filter(contractor_id=worker.co_id, type=type, corp_name=corp_name)
     if len(relationships) > 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_544_EXISTED.to_json_response()
     staff_name = rqst['staff_name']
     staff_pNo = no_only_phone_no(rqst['staff_pNo'])
@@ -499,7 +499,7 @@ def reg_relationship(request):
     # 사업자 등록증 처리
     update_business_registration(rqst, corp)
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -569,7 +569,7 @@ def list_relationship(request):
         elif relationship.type == 10:
             orderers.append(corp)
     result = {'partners':partners, 'orderers':orderers}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -623,7 +623,7 @@ def detail_relationship(request):
     logSend(AES_DECRYPT_BASE64(rqst['relationship_id']))
     corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['relationship_id']))
     if len(corps) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     corp = corps[0]
 
@@ -658,7 +658,7 @@ def detail_relationship(request):
         detail_relationship['business_item'] = None  # 종목
         detail_relationship['dt_reg'] = None  # 사업자등록일
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'detail_relationship':detail_relationship})
 
 
@@ -708,7 +708,7 @@ def update_relationship(request):
     corp_id = rqst['corp_id']
     corps = Customer.objects.filter(id=AES_DECRYPT_BASE64(corp_id))
     if len(corps) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     corp = corps[0]
     is_update_corp = False
@@ -738,7 +738,7 @@ def update_relationship(request):
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, corp)
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -795,7 +795,7 @@ def update_business_registration(rqst, corp):
 
             corp.business_reg_id = business_reg.id
             corp.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return
 
 
@@ -840,7 +840,7 @@ def reg_staff(request):
 
     staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
     if len(staffs) > 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
         name=name,
@@ -854,7 +854,7 @@ def reg_staff(request):
         email=email
     )
     new_staff.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -921,7 +921,7 @@ def login(request):
 
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
     staff.dt_login = datetime.datetime.now()
@@ -932,7 +932,7 @@ def login(request):
 
     customers = Customer.objects.filter(id=staff.co_id)
     if len(customers) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response({'message':'등록된 업체가 없습니다.'})
     customer = customers[0]
     staff_permission = {'is_site_owner': staff.is_site_owner,  # 담당자인가?
@@ -970,7 +970,7 @@ def login(request):
                                  'dt_reg':None  # 사업자등록일
                                  }
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'staff_permisstion':staff_permission,
                                              'company_general':company_general,
                                              'business_registration':business_registration
@@ -988,14 +988,14 @@ def logout(request):
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.session is None or 'id' not in request.session:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['id'])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
     staff.save()
     del request.session['id']
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1049,18 +1049,18 @@ def update_staff(request):
     if 'new_login_id' in parameter:
         new_login_id = parameter['new_login_id']  # 기존 비밀번호
         if len(new_login_id) < 5: # id 글자수 5자 이상으로 제한
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디는 5자 이상으로 만들어야 합니다.'})
         duplicate_staffs = Staff.objects.filter(login_id=new_login_id)
         if len(duplicate_staffs) > 0:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디가 중복됩니다.'})
         parameter['login_id'] = new_login_id
         del parameter['new_login_id']
     print(parameter)
     # 비밀번호 확인
     if not ('before_pw' in parameter) or len(parameter['before_pw']) == 0 or hash_SHA256(parameter['before_pw']) != worker.login_pw:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     print(parameter)
@@ -1068,10 +1068,10 @@ def update_staff(request):
     if 'login_pw' in parameter:
         login_pw = parameter['login_pw']
         if len(login_pw) < 8: # id 글자수 8자 이상으로 제한
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'비밀번호는 8자 이상으로 만들어야 합니다.'})
         # alphabet, number, 특수문자 포함여부 확인
-        # func_end_log(func_name, 'OK')
+        # func_end_log(func_name)
         # return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'영문, 숫자, 특수문자가 모두 포합되어야 합니다.'})
         parameter['login_pw'] = hash_SHA256(login_pw)
 
@@ -1092,7 +1092,7 @@ def update_staff(request):
             worker.dt_login = datetime.datetime.now()
             worker.save()
             del request.session['id']
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_403_FORBIDDEN.to_json_response()
         worker.save()
     #
@@ -1161,7 +1161,7 @@ def update_staff(request):
             work.staff_email = rqst['email']
             work.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1194,7 +1194,7 @@ def list_staff(request):
         staff['id'] = AES_ENCRYPT_BASE64(str(staff['id']))
         staff['pNo'] = phone_format(staff['pNo'])
         arr_staff.append(staff)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'staffs':arr_staff})
 
 
@@ -1229,12 +1229,12 @@ def reg_work_place(request):
     manager_id = rqst['manager_id']
     order_id = rqst['order_id']
     if len(name) == 0 or len(manager_id) == 0 or len(order_id) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
 
     list_work_place = Work_Place.objects.filter(name=name)
     if len(list_work_place) > 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_540_REGISTRATION_FAILED.to_json_response({'message':'같은 이름의 사업장이 있습니다.\n꼭 같은 이름의 사업장이 필요하면\n다른 이름으로 등록 후 이름을 바꾸십시요.'})
 
     manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
@@ -1252,7 +1252,7 @@ def reg_work_place(request):
         order_name = order.corp_name
     )
     new_work_place.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1296,7 +1296,7 @@ def update_work_place(request):
     work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
     if work_place.contractor_id != worker.co_id:
         logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     is_update_manager = False
@@ -1335,7 +1335,7 @@ def update_work_place(request):
             work.save()
 
     work_place.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'is_update_manager':is_update_manager,
                                              'is_update_order':is_update_order,
                                              'is_update_name':is_update_name})
@@ -1425,7 +1425,7 @@ def list_work_place(request):
         work_place['manager_pNo'] = phone_format(work_place['manager_pNo'])
         arr_work_place.append(work_place)
     result = {'work_places': arr_work_place}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1473,7 +1473,7 @@ def reg_work(request):
             blanks.append(key)
             is_empty = True
     if is_empty:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'})
     works = Work.objects.filter(name=rqst['name'],
                                 type=rqst['type'],
@@ -1482,7 +1482,7 @@ def reg_work(request):
                                 contractor_id=AES_DECRYPT_BASE64(rqst['partner_id']),
                                 )
     if len(works) > 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
 
     work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
@@ -1503,7 +1503,7 @@ def reg_work(request):
         staff_email=staff.email,
     )
     new_work.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1546,7 +1546,7 @@ def update_work(request):
     work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
     # if work.contractor_id != worker.co_id:
     #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #     func_end_log(func_name, 'OK')
+    #     func_end_log(func_name)
     #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     is_update_name = False
@@ -1605,7 +1605,7 @@ def update_work(request):
             is_update_staff = True
 
     work.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'is_update_type':is_update_type,
                                              'is_update_dt_begin':is_update_dt_begin,
                                              'is_update_dt_end':is_update_dt_end,
@@ -1702,7 +1702,7 @@ def list_work_from_work_place(request):
         work['staff_pNo'] = phone_format(work['staff_pNo'])
         arr_work.append(work)
     result = {'works': arr_work}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1807,7 +1807,7 @@ def list_work(request):
         work['staff_pNo'] = phone_format(work['staff_pNo'])
         arr_work.append(work)
     result = {'works': arr_work}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1898,7 +1898,7 @@ def reg_employee(request):
     response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
     print(response_employee)
     if response_employee.status_code != 200:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return ReqLibJsonResponse(response_employee)
 
     sms_result = response_employee.json()['result']
@@ -1907,7 +1907,7 @@ def reg_employee(request):
         employee.employee_id = sms_result[employee.pNo]
         employee.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'duplicate_pNo':duplicate_pNo})
 
 
@@ -1955,7 +1955,7 @@ def employee_work_accept_for_employee(request):
     work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
     employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
     if len(employees) != 1:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'파견사 측에 근로자 정보가 없습니다.'})
 
     employee = employees[0]
@@ -1965,7 +1965,7 @@ def employee_work_accept_for_employee(request):
     print(employee)
     employee.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -2015,7 +2015,7 @@ def update_employee(request):
     print(employee)
     if 'phone_no' in rqst and len(rqst['phone_no']) > 0:
         if 'dt_answer_deadline' not in rqst or len(rqst['dt_answer_deadline']) == 0:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 바꾸려면 업무 답변 기한을 꼭 넣어야 합니다.'})
         employee.pNo = no_only_phone_no(rqst['phone_no'])
         work = Work.objects.get(id=employee.work_id)
@@ -2036,7 +2036,7 @@ def update_employee(request):
         response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
         print('--- ', response_employee.json())
         if response_employee.status_code != 200:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return ReqLibJsonResponse(response_employee)
         employee.employee_id = response_employee.json()['result'][employee.pNo]
     if 'dt_begin' in rqst and len(rqst['dt_begin']) > 0:
@@ -2054,7 +2054,7 @@ def update_employee(request):
     employee.save()
     print(employee)
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -2222,7 +2222,7 @@ def list_employee(request):
         # 근로자 서버에 근태 내역 요청
         #
     result = {'employees': arr_employee}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2344,7 +2344,7 @@ def report(request):
         work_place['arr_work'] = arr_work
         arr_work_place.append(work_place)
     result = {'arr_work_place': arr_work_place}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2444,7 +2444,7 @@ def report_of_manager(request):
         work_place['arr_work'] = arr_work
         arr_work_place.append(work_place)
     result = {'arr_work_place': arr_work_place}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2527,7 +2527,7 @@ def report_all(request):
                                  }
         arr_work_place.append(work_place)
     result = {'arr_work_place': arr_work_place}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2611,7 +2611,7 @@ def report_of_staff(request):
         work['arr_employee'] = arr_employee
         arr_work.append('arr_employee')
     result = {'arr_work': arr_work}
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2645,7 +2645,7 @@ def staff_version(request):
     ver_dt = items[len(items) - 1]
     print(ver_dt)
     if len(ver_dt) < 6:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
 
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
@@ -2654,10 +2654,10 @@ def staff_version(request):
     print(dt_version)
     if dt_version < dt_check:
         print('dt_version < dt_check')
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -2866,7 +2866,7 @@ def staff_foreground(request):
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
     app_user.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2941,7 +2941,7 @@ def staff_background(request):
     app_user.dt_login = datetime.datetime.now()
     app_user.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -3000,7 +3000,7 @@ def staff_update_me(request):
     else:
         staff = Staff.objects.get(login_id=login_id)
     if before_pw != staff.login_pw:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_pw) > 0:
@@ -3020,7 +3020,7 @@ def staff_update_me(request):
     if len(email) > 0:
         staff.email = email
     staff.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -3049,7 +3049,7 @@ def staff_request_certification_no(request):
 
     phone_no = rqst['phone_no']
     if len(phone_no) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '전화번호가 없습니다.'})
 
     phone_no = phone_no.replace('+82', '0')
@@ -3058,7 +3058,7 @@ def staff_request_certification_no(request):
     # print(phone_no)
     staffs = Staff.objects.filter(pNo=phone_no)
     if len(staffs) == 0:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response()
 
     staff = staffs[0]
@@ -3087,7 +3087,7 @@ def staff_request_certification_no(request):
     # rJson['vefiry_no'] = str(certificateNo)
 
     # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -3127,14 +3127,14 @@ def staff_verify_certification_no(request):
     staff = Staff.objects.get(pNo=phone_no)
     cn = AES_DECRYPT_BASE64(cipher_cn)
     if int(staff.push_token) != int(cn):
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
 
     staff.pType = 20 if phone_type == 'A' else 10
     staff.push_token = push_token
     staff.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -3190,7 +3190,7 @@ def staff_list_my_work(request):
     if len(works) > 0:
         arr_work = [work for work in works]
         result['works'] = arr_work
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -3224,7 +3224,7 @@ def staff_work_list_employee(request):
     if len(employees) > 0:
         arr_employee = [employee for employee in employees]
         result['employees'] = arr_employee
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -3283,7 +3283,7 @@ def staff_work_update_employee(request):
     else:
         staff = Staff.objects.get(login_id=login_id)
     if before_pw != staff.login_pw:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_pw) > 0:
@@ -3304,5 +3304,5 @@ def staff_work_update_employee(request):
         staff.email = email
     staff.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
