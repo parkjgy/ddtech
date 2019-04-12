@@ -2946,9 +2946,147 @@ def staff_background(request):
 
 
 @cross_origin_read_allow
+def staff_employees_from_work(request):
+    """
+    현장 소장 - 다른 날짜의 근로 내역 요청
+    - 담당자(현장 소장, 관리자), 업무, 근로내역 날짜
+    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id
+        day : 근로내역 날짜
+    response
+        STATUS 200
+        STATUS 532
+            {'message': '아이디가 틀립니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'day\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'work_id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
+    if not 'day' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'day\' 가 없어요'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    if work_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def staff_change_work_time(request):
+    """
+    현장 소장 - 작업 중 작업 시간이 변경되었을 때 호출
+    - 담당자(현장 소장, 관리자), 업무, 변경 형태
+    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id
+        type : 0        # 0:업무 완료 조기 퇴근, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+    response
+        STATUS 200
+        STATUS 532
+            {'message': '아이디가 틀립니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'type\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'work_id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
+    if not 'type' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'type\' 가 없어요'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    if work_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def staff_employee_working(request):
+    """
+    현장 소장 - 업무에 투입된 근로자의 한달 근로 내역 요청
+    - 담당자(현장 소장, 관리자), 업무, 필요한 근로 내역 연월
+    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        employee_id : 근로자 id
+        year_month : 2019-04   # 근로내역 연월
+    response
+        STATUS 200
+        STATUS 532
+            {'message': '아이디가 틀립니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
+    if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    if work_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
 def staff_update_me(request):
     """
-    현장 소장 - 자기정보 update
+    현장 소장 - 자기정보 update (사용 보류)
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
