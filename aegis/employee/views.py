@@ -163,8 +163,8 @@ def reg_employee_for_customer(request):
         'msg_type': 'SMS',
         'msg': msg,
     }
-    if settings.DEBUG:
-        rData['testmode_yn'] = 'Y'
+    # if settings.DEBUG:
+    #     rData['testmode_yn'] = 'Y'
 
     phones_state = {}
     for i in range(len(phone_numbers)):
