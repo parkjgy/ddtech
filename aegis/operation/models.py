@@ -2,7 +2,7 @@ from django.db import models
 
 # 환경 저장
 class Environment(models.Model):
-    dt = models.DateTimeField(auto_now_add = False, blank=True) 
+    dt = models.DateTimeField(null=True, blank=True) 
     dt_android_upgrade = models.DateTimeField(auto_now_add = False) 
     manager_id = models.IntegerField(default = 0) # 환경 변경 직원 id
     timeCheckServer =  models.CharField(max_length = 15) # 09:00:00 형식의 문자열
@@ -32,9 +32,9 @@ class Staff(models.Model):
     push_token = models.CharField(max_length = 256, default='unknown')
     email = models.CharField(max_length = 512, default='unknown') # 이메일
     is_app_login = models.BooleanField(default=False) # 앱에서 로그인이 되었는가?
-    dt_app_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_app_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_login = models.BooleanField(default=False) # 로그인이 되었는가?
-    dt_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
 
 """
 사업장
@@ -92,7 +92,7 @@ class Beacon(models.Model):
     uuid = models.CharField(max_length = 36, default='12345678-0000-0000-123456789012') # 8-4-4-4-12
     major = models.IntegerField(default=0)
     minor = models.IntegerField(default=0)
-    dt_last = models.DateTimeField(auto_now_add = True)
-    dt_battery = models.DateTimeField(auto_now_add = True)
+    dt_last = models.DateTimeField(null=True, blank=True)
+    dt_battery = models.DateTimeField(null=True, blank=True)
     work_place_id = models.IntegerField(default=-1) # 사업장 id
 

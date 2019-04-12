@@ -69,9 +69,9 @@ class Staff(models.Model):
     push_token = models.CharField(max_length = 255, default='unknown')
     email = models.CharField(max_length = 320, default='') # 이메일
     is_app_login = models.BooleanField(default=False) # 현장소장용 앱에서 로그인이 되었는가?
-    dt_app_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_app_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_login = models.BooleanField(default=False) # 로그인이 되었는가?
-    dt_login = models.DateTimeField(auto_now_add=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_site_owner = models.BooleanField(default=False) # 고객사 담당자 인가?
     is_manager = models.BooleanField(default=False) # 고객사 관리자 인가?
 
@@ -106,7 +106,7 @@ class Work(models.Model):
     contractor_id = models.IntegerField() # 파견업체, 도급업체 id
     contractor_name = models.CharField(max_length=127) # 파견업체, 도급업체 이름
 
-    dt_begin = models.DateTimeField(auto_now_add = True) # 작업 시작일
+    dt_begin = models.DateTimeField(null=True, blank=True) # 작업 시작일
     dt_end = models.DateTimeField(null=True, blank=True) # 작업 종료일
 
     staff_id = models.IntegerField() # 담당자 id
@@ -122,7 +122,7 @@ class Employee(models.Model):
     is_accept_work = models.BooleanField(null=True, blank=True) # null : 선택하지 않음, True: 업무에 승락, False: 업무를 거부
     is_active = models.BooleanField(default=False) # 0 (False) 근무 중이 아님, 1 (True) 근무 중
 
-    dt_begin = models.DateTimeField(auto_now_add = True) # 근무 시작일
+    dt_begin = models.DateTimeField(null=True, blank=True) # 근무 시작일
     dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
 
     work_id = models.IntegerField() # 업무 id
