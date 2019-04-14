@@ -50,6 +50,7 @@ urlpatterns = [
     url(r'customer/staff_change_work_time$', views.staff_change_work_time, name='staff_change_work_time'),
     url(r'customer/staff_employee_working$', views.staff_employee_working, name='staff_employee_working'),
     url(r'customer/staff_employees_from_work$', views.staff_employees_from_work, name='staff_employees_from_work'),
+    url(r'customer/staff_update_employee$', views.staff_update_employee, name='staff_update_employee'),
 
     # 이하 사용 보류
     url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),

@@ -4,7 +4,7 @@ import inspect
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import no_only_phone_no, phone_format
+from config.common import status422, no_only_phone_no, phone_format
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1017,6 +1017,160 @@ def update_my_info(request):
     employee.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def my_work_histories_for_customer(request):
+    """
+    <<<고객 서버용>>> 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    http://0.0.0.0:8000/employee/my_work_histories_for_customer?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'
+        dt = '2018-01'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # if not 'passer_id' in rqst: # id 가 들어왔는지 검사
+    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 없어요'})
+    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    if not 'dt' in rqst: # year_month 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'dt\' 가 없어요'})
+    str_dt = rqst["dt"]
+
+    # passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
+    # if passer_id == '__error':
+    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'})
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+
+    # passers = Passer.objects.filter(id=passer_id)
+    # if len(passers) != 1:
+    #     return status422(func_name, {'message':'ServerError: Passer 에 id=%s 이(가) 없거나 중복됨' % passers })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+
+    passers = Passer.objects.filter(employee_id=employee.id)
+    if len(passers) != 1:
+        return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee.id })
+    passer = passers[0]
+
+    # cipher_passer_id = rqst["passer_id"]
+    # print(cipher_passer_id)
+    # passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    # logSend('\t\t\t\t\t' + passer_id)
+    # print('work_list : passer_id', passer_id)
+    # passer = Passer.objects.get(id=passer_id)
+    # employee = Employee.objects.get(id=passer.employee_id)
+    logSend('work_list :', employee.name, ' 현재 가상 데이터 표출')
+    dt_begin = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_end = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    if dt_end.month + 1 == 13:
+        month = 1
+        dt_end = dt_end.replace(month=1, year=dt_end.year + 1)
+    else:
+        dt_end = dt_end.replace(month=dt_end.month + 1)
+    # dt_end = dt_end + timedelta(days=31)
+    print(dt_begin, dt_end)
+    passes = Pass.objects.filter(passer_id=passer.id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end)
+    print('work_list :', len(passes))
+    #
+    # 가상 데이터 생성
+    #
+    workings = []
+    for day in range(30):
+        if random.randint(0,7) > 5: # 7일에 5일 꼴로 쉬는 날
+            continue
+        working = {}
+        action = 0
+        if random.randint(0,30) > 27: # 한달에 3번꼴로 지각
+            action = 200
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:45:00'
+        else :
+            action = 100
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:25:00'
+        if random.randint(0,30) > 29: # 한달에 1번꼴로 조퇴
+            action += 20
+            working['dt_end'] = str_dt + '-%02d'%day + ' 15:33:00'
+        elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
+            action += 40
+            working['dt_end'] = str_dt + '-%02d'%day + ' 18:35:00'
+        else:
+            action += 10
+            working['dt_end'] = str_dt + '-%02d' % day + ' 17:35:00'
+        outing = (random.randint(0,30) - 28) % 3 # 한달에 2번꼴로 외출
+        outings = []
+        if outing > 0:
+            for i in range(outing):
+                print(i)
+                outings.append({'dt_begin':str_dt + str(day) + ' ' + str(i+13) + ':00:00',
+                               'dt_end':str_dt + str(day) + ' ' + str(i+13) + ':30:00'})
+        working['outing'] = outings
+        working['action'] = action + outing
+        print(working)
+        workings.append(working)
+    # print(workings)
+    result = {'working': workings}
+    # result = {
+    #     'working': [
+    #         {'action': 112, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-03 12:30:00', 'dt_end': '2018-12-03 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-07 08:25:00', 'dt_end': '2018-12-07 17:33:00', 'outing': []},
+    #
+    #         {'action': 210, 'dt_begin': '2018-12-10 08:55:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
+    #         {'action': 120, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 15:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-13 08:25:00', 'dt_end': '2018-12-13 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
+    #
+    #         {'action': 110, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-17-12 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-18-14 17:33:00', 'outing': []},
+    #         {'action': 112, 'dt_begin': '2018-12-19 08:25:00', 'dt_end': '2018-19-15 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-20 08:25:00', 'dt_end': '2018-12-20 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-21 08:25:00', 'dt_end': '2018-12-21 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
+    #     ]
+    # }
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow

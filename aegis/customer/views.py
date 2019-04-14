@@ -2764,8 +2764,8 @@ def staff_foreground(request):
         STATUS 530
             {'message':'아이디나 비밀번호가 틀립니다.'}
         STATUS 422 # 개발자 수정사항
-            {'message':'아이디가 비었어요'}
-            {'message':'비밀번호가 비었어요'}
+            {'message':'ClientError: parameter \'login_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'login_pw\' 가 없어요'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -2950,15 +2950,39 @@ def staff_employees_from_work(request):
     """
     현장 소장 - 다른 날짜의 근로 내역 요청
     - 담당자(현장 소장, 관리자), 업무, 근로내역 날짜
-    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
+    - 근로내역 날짜가 업무의 날짜 범위 밖이면 STATUS 416
+    - 주) 보낸 날짜의 근로 내역이 없으면 employees:[] 온다.
+    http://0.0.0.0:8000/customer/staff_employees_from_work?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=qgf6YHf1z2Fx80DR8o_Lvg&day=2019-04-12
     POST
-        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
-        work_id : 업무 id
-        day : 근로내역 날짜
+        id : 현장관리자 id     # foreground 에서 받은 현장 관리자의 암호화된 식별 id
+        work_id : 업무 id     # foreground 에서 받은 업무의 암호화된 식별 id
+        day : "2019-04-12"  # 근로내역 날짜
     response
         STATUS 200
-        STATUS 532
-            {'message': '아이디가 틀립니다.'}
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "dt_work": "2019-04-12"
+              "emplyees": [
+                {
+                  "is_accept_work": true,
+                  "employee_id": "i52bN-IdKYwB4fcddHRn-g",
+                  "name": "근로자",
+                  "phone": "010-3333-4444",
+                  "dt_begin": "2019-03-10 14:46:04",
+                  "dt_end": "2019-05-09 00:00:00",
+                  "dt_begin_beacon": "2019-04-14 08:10:00",
+                  "dt_end_beacon": "2019-04-14 18:55:00",
+                  "dt_begin_touch": "2019-04-14 08:20:00",
+                  "dt_end_touch": "2019-04-14 18:45:00",
+                  "overtime": "60",
+                  "x": 35.5602,
+                  "y": 129.446
+                },
+                ...
+              ],
+            }
+        STATUS 416
+            {'message':'업무 날짜 밖의 근로 내역 요청'}  # 앱에서 근로 날짜로 처리해서 나타나지 않게 한다.
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'id\' 가 없어요'}
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
@@ -2966,98 +2990,7 @@ def staff_employees_from_work(request):
             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-    """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-    if not 'work_id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
-    if not 'day' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'day\' 가 없어요'})
-
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    if work_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
-
-
-@cross_origin_read_allow
-def staff_change_work_time(request):
-    """
-    현장 소장 - 작업 중 작업 시간이 변경되었을 때 호출
-    - 담당자(현장 소장, 관리자), 업무, 변경 형태
-    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
-    POST
-        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
-        work_id : 업무 id
-        type : 0        # 0:업무 완료 조기 퇴근, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
-    response
-        STATUS 200
-        STATUS 532
-            {'message': '아이디가 틀립니다.'}
-        STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'id\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'type\' 가 없어요'}
-            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-    """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-    if not 'work_id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
-    if not 'type' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'type\' 가 없어요'})
-
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    if work_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
-
-
-@cross_origin_read_allow
-def staff_employee_working(request):
-    """
-    현장 소장 - 업무에 투입된 근로자의 한달 근로 내역 요청
-    - 담당자(현장 소장, 관리자), 업무, 필요한 근로 내역 연월
-    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg
-    POST
-        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
-        employee_id : 근로자 id
-        year_month : 2019-04   # 근로내역 연월
-    response
-        STATUS 200
-        STATUS 532
-            {'message': '아이디가 틀립니다.'}
-        STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'id\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
-            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -3069,8 +3002,8 @@ def staff_employee_working(request):
         return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
     if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
         return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
-    if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
+    if not 'day' in rqst: # day 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'day\' 가 없어요'})
 
     staff_id = AES_DECRYPT_BASE64(rqst['id'])
     if staff_id == '__error':
@@ -3079,8 +3012,318 @@ def staff_employee_working(request):
     if work_id == '__error':
         return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
 
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    works = Work.objects.filter(id=work_id)
+    if len(works) != 1:
+        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id })
+    app_user = app_users[0]
+    work = works[0]
+    if work.staff_id != app_user.id:
+        # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
+        logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
+    target_day = datetime.datetime.strptime(rqst['day'] + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
+    if target_day < work.dt_begin:
+        # 근로 내역을 원하는 날짜가 업무 시작일 보다 적은 경우 - 아직 업무가 시작되지도 않은 근로 내역을 요청한 경우
+        func_end_log(func_name, '416 업무 날짜 밖의 근로 내역 요청')
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message':'업무 날짜 밖의 근로 내역 요청'})
+
+    employees = Employee.objects.filter(work_id=work.id)
+    arr_employee = []
+    for employee in employees:
+        employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+                        'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                        'name':employee.name,
+                        'phone':phone_format(employee.pNo),
+                        'dt_begin':dt_null(employee.dt_begin),
+                        'dt_end':dt_null(employee.dt_end),
+                        'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
+                        'dt_end_beacon':dt_null(employee.dt_end_beacon),
+                        'dt_begin_touch':dt_null(employee.dt_begin_touch),
+                        'dt_end_touch':dt_null(employee.dt_end_touch),
+                        'overtime':employee.overtime,
+                        'x':employee.x,
+                        'y':employee.y,
+                        }
+        # 가상 데이터 생성
+        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        arr_employee.append(employee_dic)
+    result = {'emplyees':arr_employee,
+              'dt_work':target_day.strftime("%Y-%m-%d")
+              }
+
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_change_work_time(request):
+    """
+    현장 소장 - 작업 중 작업 시간이 변경되었을 때 호출
+    - 담당자(현장 소장, 관리자), 업무, 변경 형태
+    http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id
+        overtime_type : 0        # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "emplyees": [
+                {
+                  "is_accept_work": true,
+                  "employee_id": "i52bN-IdKYwB4fcddHRn-g",
+                  "name": "근로자",
+                  "phone": "010-3333-4444",
+                  "dt_begin": "2019-03-10 14:46:04",
+                  "dt_end": "2019-05-09 00:00:00",
+                  "dt_begin_beacon": "2019-04-14 08:20:00",
+                  "dt_end_beacon": "2019-04-14 18:20:00",
+                  "dt_begin_touch": "2019-04-14 08:35:00",
+                  "dt_end_touch": "2019-04-14 18:25:00",
+                  "overtime": "30",
+                  "x": 35.5362,
+                  "y": 129.444,
+                  "overtime_type": -1
+                },
+                ......
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
+    if not 'overtime_type' in rqst: # overtime_type 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 가 없어요'})
+    overtime_type = int(rqst['overtime_type'])
+    if overtime_type < -1 or 6 < overtime_type:
+        # 초과 근무 형태가 범위를 벗어난 경우
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    if work_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    works = Work.objects.filter(id=work_id)
+    if len(works) != 1:
+        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id })
+    app_user = app_users[0]
+    work = works[0]
+    if work.staff_id != app_user.id:
+        # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
+        logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
+
+    employees = Employee.objects.filter(work_id=work.id)
+    arr_employee = []
+    for employee in employees:
+        employee.overtime = overtime_type
+        employee.save()
+        employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+                        'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                        'name':employee.name,
+                        'phone':phone_format(employee.pNo),
+                        'dt_begin':dt_null(employee.dt_begin),
+                        'dt_end':dt_null(employee.dt_end),
+                        'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
+                        'dt_end_beacon':dt_null(employee.dt_end_beacon),
+                        'dt_begin_touch':dt_null(employee.dt_begin_touch),
+                        'dt_end_touch':dt_null(employee.dt_end_touch),
+                        'overtime':overtime_type,
+                        'x':employee.x,
+                        'y':employee.y,
+                        }
+        # 가상 데이터 생성
+        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        employee_dic['overtime_type'] = overtime_type
+        arr_employee.append(employee_dic)
+    result = {'emplyees':arr_employee}
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_employee_working(request):
+    """
+    현장 소장 - 업무에 투입된 근로자의 한달 근로 내역 요청
+    - 담당자(현장 소장, 관리자), 업무, 필요한 근로 내역 연월
+    http://0.0.0.0:8000/customer/staff_employee_working?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=i52bN-IdKYwB4fcddHRn-g&year_month=2019-04
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        employee_id : 근로자 id
+        year_month : 2019-04   # 근로내역 연월
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+
+    #
+    # 근로자 서버로 근로자의 월 근로 내역을 요청
+    #
+    employee_info = {
+            'employee_id' : AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'dt' : rqst['year_month'],
+        }
+    logSend(employee_info)
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
+    logSend(response_employee)
+    result = response_employee.json()
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_update_employee(request):
+    """
+    현장 소장 - 업무에 투입된 근로자의 근무 기간, 연장 근무 변경 요청
+    - 담당자(현장 소장, 관리자), 근로자, 근무 기간, 당일의 연장 근무
+    - 근로자의 근무 기간은 업무의 기간을 벗아나지 못한다.
+    http://0.0.0.0:8000/customer/staff_update_employee?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_begin=2019-03-01&dt_end=2019-04-30&overtime_type=0
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        employee_id : 근로자 id
+        dt_begin : 2019-04-01   # 근로 시작 날짜
+        dt_end : 2019-04-13     # 근로 종료 날짜
+        overtime_type : 0       # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_end\' 가 없어요'}
+            {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt_begin\', \'dt_end\' 가 업무의 날짜 범위를 벗어났습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    if not 'dt_begin' in rqst: # dt_begin 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'dt_begin\' 가 없어요'})
+    dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
+    if not 'dt_end' in rqst: # dt_end 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'dt_end\' 가 없어요'})
+    dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
+    if not 'overtime_type' in rqst: # overtime_type 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 가 없어요'})
+    overtime_type = rqst['overtime_type']
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+    works = Work.objects.filter(id=employee.work_id)
+    if len(works) != 1:
+        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
+    work = works[0]
+    if dt_begin < work.dt_begin or work.dt_end < dt_end:
+        return status422(func_name, {'message':'ClientError: parameter \'dt_begin\', \'dt_end\' 가 업무의 날짜 범위를 벗어났습니다.'})
+
+    employee.dt_begin = dt_begin
+    employee.dt_end = dt_end
+    employee.overtime = overtime_type
+    employee.save()
+
+    result = {'update_dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+              'update_dt_end':employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+              'update_overtime':employee.overtime
+              }
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow

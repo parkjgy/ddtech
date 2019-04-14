@@ -36,6 +36,8 @@ urlpatterns = [
     url(r'employee/reg_from_certification_no$', views.reg_from_certification_no, name='reg_from_certification_no'),
     url(r'employee/update_my_info$', views.update_my_info, name='update_my_info'),
     url(r'employee/my_work_histories$', views.my_work_histories, name='my_work_histories'),
+    url(r'employee/my_work_histories_for_customer$', views.my_work_histories_for_customer,
+        name='my_work_histories_for_customer'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),
     url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),
