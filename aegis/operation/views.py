@@ -1184,6 +1184,10 @@ def customer_test_step_4(request):
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
     result.append({'url':r.url, 'GET':staff_data, 'STATUS':r.status_code, 'R':r.json()})
 
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+    print(r.json())
     print(r.json()['staffs'][1])
     # 고객 : 고객사 정보 수정
     customer_infor = {'staff_id': r.json()['staffs'][1]['id']}
@@ -2078,6 +2082,10 @@ def customer_test_step_A(request):
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
+def check_test_key(rqst) ->bool:
+    return True
+
+
 @cross_origin_read_allow
 def employee_test_step_1(request):
     """
@@ -2098,6 +2106,7 @@ def employee_test_step_1(request):
     else:
         rqst = request.GET
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        logSend(AES_DECRYPT_BASE64(rqst['key']))
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(func_name)
