@@ -105,7 +105,7 @@ class Beacon_History(models.Model):
     major = models.IntegerField()
     minor = models.IntegerField()
     passer_id = models.IntegerField()
-    dt_begin = models.DateTimeField(auto_now_add = True)
+    dt_begin = models.DateTimeField(null=True, blank=True)
     RSSI_begin = models.IntegerField()
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
@@ -123,7 +123,7 @@ class Beacon(models.Model):
     uuid = models.CharField(max_length = 38) # 8-4-4-4-12
     major = models.IntegerField()
     minor = models.IntegerField()
-    dt_last = models.DateTimeField(auto_now_add = True)
+    dt_last = models.DateTimeField(null=True, blank=True)
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude

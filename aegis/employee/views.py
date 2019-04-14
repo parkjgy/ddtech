@@ -1,16 +1,10 @@
-# log import
-import json
 import random
 import inspect
 
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
-
-from config.common import logSend, logError
+from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import DateTimeEncoder, ValuesQuerySetToDict
 from config.common import func_begin_log, func_end_log
-from config.common import no_only_phone_no, phone_format
+from config.common import status422, no_only_phone_no, phone_format
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -61,7 +55,7 @@ def check_version(request):
     ver_dt = items[len(items) - 1]
     print(ver_dt)
     if len(ver_dt) < 6:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
 
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
@@ -74,10 +68,10 @@ def check_version(request):
     dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
     print(dt_version)
     if dt_version < dt_check:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
                   })
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -169,8 +163,8 @@ def reg_employee_for_customer(request):
         'msg_type': 'SMS',
         'msg': msg,
     }
-    if settings.DEBUG:
-        rData['testmode_yn'] = 'Y'
+    # if settings.DEBUG:
+    #     rData['testmode_yn'] = 'Y'
 
     phones_state = {}
     for i in range(len(phone_numbers)):
@@ -206,7 +200,7 @@ def reg_employee_for_customer(request):
                 new_notification.save()
     print('--- ',phones_state)
     logSend({'result':phones_state})
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':phones_state})
 
 
@@ -255,7 +249,7 @@ def notification_list(request):
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) != 1:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
     passer = passers[0]
     dt_today = datetime.datetime.now()
@@ -277,7 +271,7 @@ def notification_list(request):
             'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M:%S")
         }
         arr_notification.append(view_notification)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'notifications':arr_notification})
 
 
@@ -308,13 +302,13 @@ def notification_accept(request):
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) != 1:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
     passer = passers[0]
 
     notifications = Notification_Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['notification_id']))
     if len(notifications) != 1:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
     notification = notifications[0]
 
@@ -350,12 +344,12 @@ def notification_accept(request):
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
     print(response_customer)
     if response_customer.status_code != 200:
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
 
     notification.delete()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -395,7 +389,7 @@ def passer_list(request):
         passer_info['id'] = AES_ENCRYPT_BASE64(str(passer.id))
         passer_info['pNo'] = passer.pNo
         employee_list.append(passer_info)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'passers':employee_list})
 
 
@@ -434,7 +428,7 @@ def passer_reg(request):
         )
         print([(x, passer.__dict__[x]) for x in Passer().__dict__.keys() if not x.startswith('_')])
         passer.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -522,7 +516,7 @@ def pass_reg(request):
         dt_reg=dt
     )
     new_pass.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -577,7 +571,7 @@ def pass_verify(request):
     )
     new_pass.save()
     before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
     # 가장 최근에 저장된 값부터 가져옮
     # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
@@ -635,7 +629,7 @@ def pass_sms(request):
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) == 0:
         logError({'ERROR': '출입자의 전화번호가 없습니다.' + phone_no})
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
     print(phone_no, passer.id, dt, is_in)
@@ -650,7 +644,7 @@ def pass_sms(request):
     )
     new_pass.save()
     # before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
     # 가장 최근에 저장된 값부터 가져옮
     # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
@@ -743,7 +737,7 @@ def beacons_is(request):
             RSSI_begin=beacons[i]['rssi']
         )
         beacon_history.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -783,7 +777,7 @@ def certification_no_to_sms(request):
         passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
         passers = Passer.objects.filter(pNo=phone_no).exclude(id=passer_id)
         if len(passers) > 0:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
         passer = Passer.objects.get(id=passer_id)
         passer.pNo = phone_no
@@ -800,7 +794,7 @@ def certification_no_to_sms(request):
     if (passer.dt_cn != None) and (passer.dt_cn > datetime.datetime.now()):
         # 3분 이내에 인증번호 재요청하면
         print(passer.dt_cn, datetime.datetime.now())
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
 
     certificateNo = random.randint(100000, 999999)
@@ -822,7 +816,7 @@ def certification_no_to_sms(request):
     }
     if settings.IS_TEST:
         rData['testmode_yn'] = 'Y'
-        func_end_log(func_name, 'OK')
+        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response(rData)
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
@@ -835,7 +829,7 @@ def certification_no_to_sms(request):
     # rJson['vefiry_no'] = str(certificateNo)
 
     # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -852,6 +846,8 @@ def reg_from_certification_no(request):
             'push_token' : 'push token',
         }
     response
+        STATUS 422
+            {'message':'인증번호 요청없이 인증번호 요청이 들어왔습니다.'}
         STATUS 550
             {'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'} # 인증시간 3분
             {'message': '인증번호가 틀립니다.'}
@@ -876,33 +872,32 @@ def reg_from_certification_no(request):
     else:
         rqst = request.GET
 
-    print('--- ', rqst['phone_no'])
+    # logSend('--- ', rqst['phone_no'])
     phone_no = no_only_phone_no(rqst['phone_no'])
     cn = rqst['cn']
     phone_type = rqst['phone_type']
     push_token = rqst['push_token']
+    for key in rqst.keys():
+        logSend(key, ' : ', rqst[key])
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) > 1:
         duplicate_id = [passer.id for passer in passers]
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
-    print(passer.pNo)
     if passer.dt_cn == None:
-        print('ERROR: 인증번호 요청없이 인증요청한 경우')
-        logSend('ERROR: 인증번호 요청없이 인증요청한 경우')
-        func_end_log(func_name, 'OK')
-        return REG_520_UNDEFINED.to_json_response()
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'인증번호 요청없이 인증요청(해킹?)'})
 
     if passer.dt_cn < datetime.datetime.now():
-        print(passer.dt_cn, datetime.datetime.now())
-        func_end_log(func_name, 'OK')
+        logSend(passer.dt_cn, datetime.datetime.now())
+        func_end_log(func_name)
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
-        print(passer.cn, cn)
+        logSend(passer.cn, ' vs ', cn)
         if passer.cn != int(cn):
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
@@ -915,13 +910,21 @@ def reg_from_certification_no(request):
         employee.save()
         passer.employee_id = employee.id
     else:
-        employee = Employee.objects.get(id=passer.employee_id)
-        if employee.name == 'unknown':
+        employees = Employee.objects.filter(id=passer.employee_id)
+        if len(employees) == 0:
             status_code = 201
+            employee = Employee(
+            )
+            employee.save()
+            passer.employee_id = employee.id
         else:
-            result['name'] = employee.name
-            result['bank'] = employee.bank
-            result['bank_account'] = employee.bank_account
+            employee = employees[0]
+            if employee.name == 'unknown':
+                status_code = 201
+            else:
+                result['name'] = employee.name
+                result['bank'] = employee.bank
+                result['bank_account'] = employee.bank_account
 
     if status_code == 200 or status_code == 201:
         notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
@@ -934,15 +937,13 @@ def reg_from_certification_no(request):
                                '케이뱅크', '교보증권', '대신증권', 'DB금융투자', '메리츠종합금융증권', '미래에셋대우', '부국증권', '삼성증권', '신영증권',
                                '신한금융투자', '에스케이증권', '현대차증권주식회사', '유안타증권주식회사', '유진투자증권', '이베스트증권', '케이프투자증권', '키움증권',
                                '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
-    # print(result)
-
     passer.pType = 20 if phone_type == 'A' else 10
     passer.push_token = push_token
     passer.cn = 0
     passer.dt_cn = None
     passer.save()
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -987,21 +988,21 @@ def update_my_info(request):
 
     if 'name' in rqst:
         if len(rqst['name']) < 2:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'이름은 2자 이상이어야 합니다.'})
         employee.name = rqst['name'];
         logSend('   ' + rqst['name']);
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
         if len(pNo) < 9:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 확인해 주세요.'})
         passer.pNo = pNo;
         passer.save()
         logSend('   ' + pNo);
     if 'bank' in rqst and 'bank_account' in rqst:
         if len(rqst['bank_account']) < 5:
-            func_end_log(func_name, 'OK')
+            func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
         employee.bank = rqst['bank'];
         employee.bank_account = rqst['bank_account'];
@@ -1014,8 +1015,162 @@ def update_my_info(request):
         logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
 
     employee.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def my_work_histories_for_customer(request):
+    """
+    <<<고객 서버용>>> 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    http://0.0.0.0:8000/employee/my_work_histories_for_customer?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'
+        dt = '2018-01'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # if not 'passer_id' in rqst: # id 가 들어왔는지 검사
+    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 없어요'})
+    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    if not 'dt' in rqst: # year_month 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'dt\' 가 없어요'})
+    str_dt = rqst["dt"]
+
+    # passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
+    # if passer_id == '__error':
+    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'})
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+
+    # passers = Passer.objects.filter(id=passer_id)
+    # if len(passers) != 1:
+    #     return status422(func_name, {'message':'ServerError: Passer 에 id=%s 이(가) 없거나 중복됨' % passers })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+
+    passers = Passer.objects.filter(employee_id=employee.id)
+    if len(passers) != 1:
+        return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee.id })
+    passer = passers[0]
+
+    # cipher_passer_id = rqst["passer_id"]
+    # print(cipher_passer_id)
+    # passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    # logSend('\t\t\t\t\t' + passer_id)
+    # print('work_list : passer_id', passer_id)
+    # passer = Passer.objects.get(id=passer_id)
+    # employee = Employee.objects.get(id=passer.employee_id)
+    logSend('work_list :', employee.name, ' 현재 가상 데이터 표출')
+    dt_begin = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_end = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    if dt_end.month + 1 == 13:
+        month = 1
+        dt_end = dt_end.replace(month=1, year=dt_end.year + 1)
+    else:
+        dt_end = dt_end.replace(month=dt_end.month + 1)
+    # dt_end = dt_end + timedelta(days=31)
+    print(dt_begin, dt_end)
+    passes = Pass.objects.filter(passer_id=passer.id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end)
+    print('work_list :', len(passes))
+    #
+    # 가상 데이터 생성
+    #
+    workings = []
+    for day in range(30):
+        if random.randint(0,7) > 5: # 7일에 5일 꼴로 쉬는 날
+            continue
+        working = {}
+        action = 0
+        if random.randint(0,30) > 27: # 한달에 3번꼴로 지각
+            action = 200
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:45:00'
+        else :
+            action = 100
+            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:25:00'
+        if random.randint(0,30) > 29: # 한달에 1번꼴로 조퇴
+            action += 20
+            working['dt_end'] = str_dt + '-%02d'%day + ' 15:33:00'
+        elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
+            action += 40
+            working['dt_end'] = str_dt + '-%02d'%day + ' 18:35:00'
+        else:
+            action += 10
+            working['dt_end'] = str_dt + '-%02d' % day + ' 17:35:00'
+        outing = (random.randint(0,30) - 28) % 3 # 한달에 2번꼴로 외출
+        outings = []
+        if outing > 0:
+            for i in range(outing):
+                print(i)
+                outings.append({'dt_begin':str_dt + str(day) + ' ' + str(i+13) + ':00:00',
+                               'dt_end':str_dt + str(day) + ' ' + str(i+13) + ':30:00'})
+        working['outing'] = outings
+        working['action'] = action + outing
+        print(working)
+        workings.append(working)
+    # print(workings)
+    result = {'working': workings}
+    # result = {
+    #     'working': [
+    #         {'action': 112, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-03 12:30:00', 'dt_end': '2018-12-03 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-07 08:25:00', 'dt_end': '2018-12-07 17:33:00', 'outing': []},
+    #
+    #         {'action': 210, 'dt_begin': '2018-12-10 08:55:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
+    #         {'action': 120, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 15:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-13 08:25:00', 'dt_end': '2018-12-13 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
+    #
+    #         {'action': 110, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-17-12 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-18-14 17:33:00', 'outing': []},
+    #         {'action': 112, 'dt_begin': '2018-12-19 08:25:00', 'dt_end': '2018-19-15 17:33:00', 'outing': [
+    #             {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
+    #         {'action': 110, 'dt_begin': '2018-12-20 08:25:00', 'dt_end': '2018-12-20 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-21 08:25:00', 'dt_end': '2018-12-21 17:33:00', 'outing': []},
+    #         {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
+    #     ]
+    # }
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
@@ -1133,7 +1288,7 @@ def my_work_histories(request):
     #         {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
     #     ]
     # }
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1173,7 +1328,7 @@ def generation_pass_history(request):
         employee.bank = bank
         employee.bank_account = bank_account
     employee.save()
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1283,7 +1438,7 @@ def analysys(request):
                             'dt_reg': pass_['dt_reg'],
                             'dt_verify': pass_['dt_verify']}
                 dic_passer[key]['pass'].append(new_pass)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(dic_passer)
 
 
@@ -1390,7 +1545,7 @@ def rebuild_pass_history(request):
                 pass_history.minor = 0
                 pass_history.save()
     print(len(arr_pass_history), len(error_passes))
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'long_interval_list':long_interval_list, 'error_passes': error_passes})
 
 
@@ -1435,7 +1590,7 @@ def beacon_status(request):
                    'minor':0
                    }
         arr_pass_histories.append(view_ph)
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'pass_histories': arr_pass_histories})
 
 
@@ -1469,7 +1624,7 @@ def beacon_status(request):
     beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
     arr_beacon = [beacon for beacon in beacons]
 
-    func_end_log(func_name, 'OK')
+    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
 
 

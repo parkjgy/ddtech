@@ -2,6 +2,7 @@ import json
 
 from django.http import JsonResponse, HttpResponse
 from .common_json import DateTimeEncoder
+from .log import logSend
 
 
 class StatusCollection(object):
@@ -15,7 +16,7 @@ class StatusCollection(object):
             response_body.update(_body)
         resp = JsonResponse(response_body)
         resp.status_code = self.status
-        print(resp.status_code, resp)
+        logSend('<<< ', resp.status_code, ' ', response_body)
         return resp
 
     def to_response(self, _body=None):
@@ -24,6 +25,7 @@ class StatusCollection(object):
             response_body.update(_body)
         resp = HttpResponse(json.dumps(response_body, cls=DateTimeEncoder))
         resp.status_code = self.status
+        logSend('<StatusCollection>', resp.status_code)
         return resp
 
 
@@ -31,6 +33,7 @@ REG_200_SUCCESS = StatusCollection(200, '정상적으로 처리되었습니다.'
 
 REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED = StatusCollection(400, '이미 등록되어 있는 고객업체의 담당자입니다.')
 REG_403_FORBIDDEN = StatusCollection(403, '로그아웃되었습니다.\n다시 로그인해주세요.')
+REG_416_RANGE_NOT_SATISFIABLE = StatusCollection(416, '요청받은 범위에 대해서 서비스 할 수 없습니다.')
 REG_422_UNPROCESSABLE_ENTITY = StatusCollection(422, '파라미터가 틀립니다.') # message 가 상세하게 바뀔 수 있다.
 
 """
