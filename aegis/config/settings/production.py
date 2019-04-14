@@ -23,7 +23,8 @@ DATABASES = {
     }
 }
 
-CUSTOMER_URL = 'https://api.aegisfac.com/customer/'
-OPERATION_URL = 'https://api.aegisfac.com/operation/'
-EMPLOYEE_URL = 'https://api.aegisfac.com/employee/'
+
+CUSTOMER_URL = 'http://0.0.0.0:8000/customer/'
+OPERATION_URL = 'http://0.0.0.0:8000/operation/'
+EMPLOYEE_URL = 'http://0.0.0.0:8000/employee/'
 SMS_SENDER_PN = '07042503340'
