@@ -2846,6 +2846,7 @@ def staff_foreground(request):
                             }
             # 가상 데이터 생성
             employee_dic = virsual_employee(isWorkStart, employee_dic)
+            # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
         # work.work_place_name = '대덕기공'
         # work.name = '시험'
@@ -2872,7 +2873,7 @@ def staff_foreground(request):
 
 def virsual_employee(isWorkStart, employee) -> dict:
     if isWorkStart:
-        employee['is_accept_work'] = True
+        employee['is_accept_work'] = '수락'
         if random.randint(0,100) > 90:
             employee['dt_begin'] = (datetime.datetime.now() + datetime.timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
             return employee
@@ -2887,10 +2888,11 @@ def virsual_employee(isWorkStart, employee) -> dict:
         employee['dt_end_touch'] = (dt_end + datetime.timedelta(minutes=random.randint(0,3)*5 + 15)).strftime("%Y-%m-%d %H:%M:%S")
         employee['x'] = 35.4812 + float(random.randint(0,100)) / 1000.
         employee['y'] = 129.4230 + float(random.randint(0,100)) / 1000.
-    # else:
-    #     t = random.randint(0,10)
-    #     employee['is_accept_work'] = None if t < 5 else True if t < 8 else False
-    #     logSend(t, employee['is_accept_work'])
+    else:
+        t = random.randint(0,10)
+        employee['dt_begin'] = (datetime.datetime.now() + datetime.timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
+        employee['dt_end'] = (datetime.datetime.now() + datetime.timedelta(days=20)).strftime("%Y-%m-%d %H:%M:%S")
+        logSend(t, employee['is_accept_work'])
     return employee
 
 
