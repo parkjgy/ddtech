@@ -2802,11 +2802,12 @@ def staff_foreground(request):
                     return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
                 else:
                     is_login_id_pw = False
+    logSend(hash_SHA256(login_pw))
     if is_login_id_pw:
         app_user = Staff.objects.get(login_id=login_id)
-        print(hash_SHA256(login_pw), app_user.login_pw)
-        app_user.login_pw = hash_SHA256(login_pw)
-        app_user.save()
+        logSend(hash_SHA256(login_pw), '\n', app_user.login_pw)
+        # app_user.login_pw = hash_SHA256(login_pw)
+        # app_user.save()
         app_users = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
         if len(app_users) != 1:
             func_end_log(func_name, '530 아이디나 비밀번호가 틀립니다.')
