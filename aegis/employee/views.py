@@ -366,7 +366,7 @@ def notification_list(request):
         work = Work.objects.get(id=notification.work_id)
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
-            'work_playce_name': work.work_place_name,
+            'work_place_name': work.work_place_name,
             'work_name_type': work.work_name_type,
             'begin': work.begin,
             'end': work.end,

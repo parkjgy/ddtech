@@ -92,7 +92,7 @@ def reg_customer_for_operation(request):
         }
     response
         STATUS 200
-            {
+         {
                 'msg': '정상처리되었습니다.',
                 'login_id': staff.login_id,
                 'login_pw': staff.login_pw
@@ -3064,6 +3064,139 @@ def staff_employees_from_work(request):
     result = {'emplyees':arr_employee,
               'dt_work':target_day.strftime("%Y-%m-%d")
               }
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_change_time(request):
+    """
+    현장 소장 - 작업 중 특정 근로자의 근무시간을 변경할 때 호출
+    - 담당자(현장 소장, 관리자), 업무, 변경 형태
+    https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
+    POST
+        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id
+        overtime_type : 0        # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+        employee_ids : [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "emplyees": [
+                {
+                  "is_accept_work": true,
+                  "employee_id": "i52bN-IdKYwB4fcddHRn-g",
+                  "name": "근로자",
+                  "phone": "010-3333-4444",
+                  "dt_begin": "2019-03-10 14:46:04",
+                  "dt_end": "2019-05-09 00:00:00",
+                  "dt_begin_beacon": "2019-04-14 08:20:00",
+                  "dt_end_beacon": "2019-04-14 18:20:00",
+                  "dt_begin_touch": "2019-04-14 08:35:00",
+                  "dt_end_touch": "2019-04-14 18:25:00",
+                  "overtime": "30",
+                  "x": 35.5362,
+                  "y": 129.444,
+                  "overtime_type": -1
+                },
+                ......
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if not 'id' in rqst: # id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
+    if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
+    if not 'overtime_type' in rqst: # overtime_type 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 가 없어요'})
+    overtime_type = int(rqst['overtime_type'])
+    if overtime_type < -1 or 6 < overtime_type:
+        # 초과 근무 형태가 범위를 벗어난 경우
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'})
+
+    staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    if work_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    works = Work.objects.filter(id=work_id)
+    if len(works) != 1:
+        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id })
+    app_user = app_users[0]
+    work = works[0]
+    if work.staff_id != app_user.id:
+        # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
+        logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
+
+    if request.method == 'POST':
+        employee_ids = rqst['employee_ids']
+    else:
+        employee_ids = rqst.getlist('employee_ids')
+
+    # employee_ids = rqst['employee_ids']
+    logSend(employee_ids)
+    employee_id_list = []
+    for employee_id in employee_ids:
+        employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
+    logSend(employee_id_list)
+
+    employees = Employee.objects.filter(work_id=work.id, id__in=employee_id_list)
+    # employees = Employee.objects.filter(id__in=employee_id_list)
+    # employee_list = []
+    # for employee in employees:
+    #     # employee_list.append({'a':employee.id, 'b':employee.name, 'c':employee.overtime})
+    #     employee_list.append([employee.id, employee.name, employee.overtime])
+    # result = {'employees':employee_list}
+    # # result = {'employees':[AES_ENCRYPT_BASE64(str(employee.id)) for employee in employees]}
+    #
+    # func_end_log(func_name)
+    # return REG_200_SUCCESS.to_json_response(result)
+    #
+    arr_employee = []
+    for employee in employees:
+        employee.overtime = overtime_type
+        employee.save()
+        employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+                        'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                        'name':employee.name,
+                        'phone':phone_format(employee.pNo),
+                        'dt_begin':dt_null(employee.dt_begin),
+                        'dt_end':dt_null(employee.dt_end),
+                        'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
+                        'dt_end_beacon':dt_null(employee.dt_end_beacon),
+                        'dt_begin_touch':dt_null(employee.dt_begin_touch),
+                        'dt_end_touch':dt_null(employee.dt_end_touch),
+                        'overtime':overtime_type,
+                        'x':employee.x,
+                        'y':employee.y,
+                        }
+        # 가상 데이터 생성
+        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        employee_dic['overtime_type'] = overtime_type
+        arr_employee.append(employee_dic)
+    result = {'emplyees':arr_employee}
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
