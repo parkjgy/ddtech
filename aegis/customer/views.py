@@ -922,9 +922,14 @@ def login(request):
 
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
+    logSend(hash_SHA256(login_pw), ' vs' )
 
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
+        staffs = Staff.objects.filter(login_id=login_id)
+        staff = staffs[0]
+        logSend(hash_SHA256(login_pw), ' vs\n', staff.login_pw)
+
         func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]

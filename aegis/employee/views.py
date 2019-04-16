@@ -738,7 +738,7 @@ def beacons_is(request):
         )
         beacon_history.save()
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
