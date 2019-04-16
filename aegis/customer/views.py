@@ -922,7 +922,7 @@ def login(request):
 
     login_id = rqst['login_id'].replace(' ', '')
     login_pw = rqst['login_pw'].replace(' ', '')
-    logSend(hash_SHA256(login_pw), ' vs' )
+    logSend(hash_SHA256(login_pw), ' - [', login_pw, ']' )
 
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
