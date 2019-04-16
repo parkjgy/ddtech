@@ -2790,7 +2790,7 @@ def staff_foreground(request):
     login_pw = rqst['login_pw']
     result = {}
     logSend(login_id, login_pw)
-    # is_login_id_pw = True
+    is_login_id_pw = True
     # if 'id' in rqst: # id 가 들어왔는지 검사
     #     staff_id = AES_DECRYPT_BASE64(rqst['id'])
     #     if staff_id != '__error':
