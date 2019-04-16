@@ -47,6 +47,7 @@ urlpatterns = [
     url(r'customer/staff_version$', views.staff_version, name='staff_version'),
     url(r'customer/staff_foreground$', views.staff_foreground, name='staff_foreground'),
     url(r'customer/staff_background$', views.staff_background, name='staff_background'),
+    url(r'customer/staff_change_time$', views.staff_change_time, name='staff_change_time'),
     url(r'customer/staff_change_work_time$', views.staff_change_work_time, name='staff_change_work_time'),
     url(r'customer/staff_employee_working$', views.staff_employee_working, name='staff_employee_working'),
     url(r'customer/staff_employees_from_work$', views.staff_employees_from_work, name='staff_employees_from_work'),
