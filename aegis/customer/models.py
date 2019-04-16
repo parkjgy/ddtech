@@ -58,8 +58,8 @@ class Staff(models.Model):
     사원(관리자, 담당자)
     """
     name = models.CharField(max_length=127) # 이름
-    login_id = models.CharField(max_length=128, default='') # 로그인 id
-    login_pw = models.CharField(max_length=128, default='happy_day!!!') # 로그인 pw
+    login_id = models.CharField(max_length=128) # 로그인 id
+    login_pw = models.CharField(max_length=128) # 로그인 pw
     co_id = models.IntegerField(default=-1) # 소속사 id
     co_name = models.CharField(max_length=127, default='unknown') # 소속사 이름
     position = models.CharField(max_length=127, default='') # 직위, 직책

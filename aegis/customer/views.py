@@ -847,7 +847,7 @@ def reg_staff(request):
     new_staff = Staff(
         name=name,
         login_id=login_id,
-        login_pw=hash_SHA256('HappyDay365!!!'),
+        login_pw=hash_SHA256('happy_day!!!'),
         co_id=worker.co_id,
         co_name=worker.co_name,
         position=position,
