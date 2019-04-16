@@ -27,7 +27,16 @@ import datetime
 from django.conf import settings
 
 
-# def check_request_key_decrypt(rqst, key, is_decrypt = True) -> (is_error, message=None):
+def is_ok_request_key_decrypt(rqst, key, is_decrypt = False) -> (bool, str):
+    if not key in rqst:
+        return False, {'message':'ClientError: parameter \'%s\' 가 없어요' % key}
+    if is_decrypt:
+        plain = AES_DECRYPT_BASE64(rqst[key])
+        if plain == '__error':
+            return False, {'message':'ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.' % key}
+        else:
+            return True, plain
+    return True, rqst[key]
 
 
 @cross_origin_read_allow
@@ -35,7 +44,7 @@ def table_reset_and_clear_for_operation(request):
     """
     <<<운영 서버용>>> 근로자 서버 데이터 리셋 & 클리어
     GET
-        { "key" : "사용 승인 key"
+        { "key" : "사용 승인 key" }
     response
         STATUS 200
         STATUS 403
@@ -55,7 +64,15 @@ def table_reset_and_clear_for_operation(request):
     else:
         rqst = request.GET
 
-    result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset customer'}
+    key = is_ok_request_key_decrypt(rqst, 'key', is_decrypt=True)
+    if not key[0]:
+        return status422(func_name, key[1])
+
+    if key[1] != 'thinking':
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response({'message':'사용 권한이 없습니다.'})
+
+    result = {'message': 'employee tables deleted.\n$ python manage.py sqlsequencereset customer'}
     logSend(result['message'])
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
