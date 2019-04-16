@@ -2789,19 +2789,19 @@ def staff_foreground(request):
     login_id = rqst['login_id']
     login_pw = rqst['login_pw']
     result = {}
-    print(login_id, login_pw)
-    is_login_id_pw = True
-    if 'id' in rqst: # id 가 들어왔는지 검사
-        staff_id = AES_DECRYPT_BASE64(rqst['id'])
-        if staff_id != '__error':
-            app_users = Staff.objects.filter(id=staff_id)
-            if len(app_users) == 1:
-                app_user = app_users[0]
-                if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
-                    func_end_log(func_name, '530 아이디나 비밀번호가 틀립니다.')
-                    return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
-                else:
-                    is_login_id_pw = False
+    logSend(login_id, login_pw)
+    # is_login_id_pw = True
+    # if 'id' in rqst: # id 가 들어왔는지 검사
+    #     staff_id = AES_DECRYPT_BASE64(rqst['id'])
+    #     if staff_id != '__error':
+    #         app_users = Staff.objects.filter(id=staff_id)
+    #         if len(app_users) == 1:
+    #             app_user = app_users[0]
+    #             if app_user.login_id != login_id or app_user.login_pw != hash_SHA256(login_pw):
+    #                 func_end_log(func_name, '530 아이디나 비밀번호가 틀립니다.')
+    #                 return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+    #             else:
+    #                 is_login_id_pw = False
     logSend(hash_SHA256(login_pw))
     if is_login_id_pw:
         app_user = Staff.objects.get(login_id=login_id)
