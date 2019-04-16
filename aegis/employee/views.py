@@ -27,6 +27,93 @@ import datetime
 from django.conf import settings
 
 
+# def check_request_key_decrypt(rqst, key, is_decrypt = True) -> (is_error, message=None):
+
+
+@cross_origin_read_allow
+def table_reset_and_clear_for_operation(request):
+    """
+    <<<운영 서버용>>> 근로자 서버 데이터 리셋 & 클리어
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'key\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset customer'}
+    logSend(result['message'])
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+    if not 'key' in rqst: # key 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'key\' 가 없어요'})
+
+    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
+        return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
+
+    key = AES_DECRYPT_BASE64(rqst['key'])
+    if key == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'})
+
+    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    if employee_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+
+    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+        result = {'message':'사용 권한이 없습니다.'}
+        logSend(result['message'])
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response(result)
+
+    Customer.objects.all().delete()
+    Relationship.objects.all().delete()
+    Business_Registration.objects.all().delete()
+    Staff.objects.all().delete()
+    Work_Place.objects.all().delete()
+    Work.objects.all().delete()
+    Employee.objects.all().delete()
+
+    from django.db import connection
+    cursor = connection.cursor()
+    cursor.execute("ALTER TABLE customer_customer AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_relationship AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_business_registration AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_staff AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_work_place AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_work AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE customer_employee AUTO_INCREMENT = 1")
+
+    result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset customer'}
+    logSend(result['message'])
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
 @cross_origin_read_allow
 def check_version(request):
     """

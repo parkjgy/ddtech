@@ -920,8 +920,8 @@ def login(request):
     else:
         rqst = request.GET
 
-    login_id = rqst['login_id']
-    login_pw = rqst['login_pw']
+    login_id = rqst['login_id'].replace(' ', '')
+    login_pw = rqst['login_pw'].replace(' ', '')
     logSend(hash_SHA256(login_pw), ' vs' )
 
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
