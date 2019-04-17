@@ -1069,7 +1069,7 @@ def update_staff(request):
     staffs = Staff.objects.filter(id=staff_id)
     if len(staffs) == 0:
         return status422(func_name, {'message': 'ServerError: parameter \'%s\' 의 직원이 없다.' % staff_id})
-    edit_staff = staffs
+    edit_staff = staffs[0]
     parameter = {}
     for x in rqst.keys():
         parameter[x] = rqst[x]

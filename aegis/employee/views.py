@@ -97,7 +97,8 @@ def table_reset_and_clear_for_operation(request):
     #     func_end_log(func_name)
     #     return REG_403_FORBIDDEN.to_json_response({'message':'사용 권한이 없습니다.'})
 
-    parameter_check = is_parameter_ok(rqst, ['key_!', 'id_!', 'aa'])
+    # parameter_check = is_parameter_ok(rqst, ['key_!', 'id_!', 'aa'])
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
     print(parameter_check['parameters'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
@@ -315,12 +316,13 @@ def reg_employee_for_customer(request):
             find_passers = Passer.objects.filter(pNo=phone_numbers[i])
             phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
         else:
-            print('--- sms 보냄', phone_numbers[i])
-            # SMS 를 보낸다.
-            rData['receiver'] = phone_numbers[i]
-            rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-            logSend('SMS result', rSMS.json())
-            print('--- ', rSMS.json())
+            if not settings.IS_TEST:
+                print('--- sms 보냄', phone_numbers[i])
+                # SMS 를 보낸다.
+                rData['receiver'] = phone_numbers[i]
+                rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+                logSend('SMS result', rSMS.json())
+                print('--- ', rSMS.json())
             # if int(rSMS.json()['result_code']) < 0:
             if len(phone_numbers[i]) < 11:
                 # 전화번호 에러로 문자를 보낼 수 없음.
