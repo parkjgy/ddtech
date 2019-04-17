@@ -39,6 +39,30 @@ def is_ok_request_key_decrypt(rqst, key, is_decrypt = False) -> (bool, str):
     return True, rqst[key]
 
 
+def is_parameter_ok(rqst, key_list) -> dict:
+    results = {'is_ok':True, 'results':[], 'parameters':{}}
+    for key in key_list:
+        is_decrypt = '_!' in key
+        if is_decrypt:
+            key = key.replace('_!', '')
+        if not key in rqst:
+            # key 가 parameter 에 포함되어 있지 않으면
+            results['is_ok'] = False
+            results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
+        else:
+            if is_decrypt:
+                # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
+                plain = AES_DECRYPT_BASE64(rqst[key])
+                if plain == '__error':
+                    results['is_ok'] = False
+                    results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
+                else:
+                    results['parameters'][key] = plain
+            else:
+                results['parameters'][key] = rqst[key]
+    return results
+
+
 @cross_origin_read_allow
 def table_reset_and_clear_for_operation(request):
     """
@@ -51,9 +75,10 @@ def table_reset_and_clear_for_operation(request):
             {'message':'사용 권한이 없습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'key\' 가 없어요'}
+            {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'}
+
             {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
-            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
             {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
@@ -64,68 +89,78 @@ def table_reset_and_clear_for_operation(request):
     else:
         rqst = request.GET
 
-    key = is_ok_request_key_decrypt(rqst, 'key', is_decrypt=True)
-    if not key[0]:
-        return status422(func_name, key[1])
+    # key = is_ok_request_key_decrypt(rqst, 'key', is_decrypt=True)
+    # if not key[0]:
+    #     return status422(func_name, key[1])
+    #
+    # if key[1] != 'thinking':
+    #     func_end_log(func_name)
+    #     return REG_403_FORBIDDEN.to_json_response({'message':'사용 권한이 없습니다.'})
 
-    if key[1] != 'thinking':
+    parameter_check = is_parameter_ok(rqst, ['key_!', 'id_!', 'aa'])
+    print(parameter_check['parameters'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message':'사용 권한이 없습니다.'})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+        # return status422(func_name, {'message':parameter_check['results']})
 
     result = {'message': 'employee tables deleted.\n$ python manage.py sqlsequencereset customer'}
     logSend(result['message'])
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
-    if not 'key' in rqst: # key 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'key\' 가 없어요'})
+    # if not 'key' in rqst: # key 가 들어왔는지 검사
+    #     return status422(func_name, {'message':'ClientError: parameter \'key\' 가 없어요'})
+    #
+    # if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
+    #     return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
+    # if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
+    #     return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
+    #
+    # key = AES_DECRYPT_BASE64(rqst['key'])
+    # if key == '__error':
+    #     return status422(func_name, {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'})
+    #
+    # employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    # if employee_id == '__error':
+    #     return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+    #
+    # app_users = Staff.objects.filter(id=staff_id)
+    # if len(app_users) != 1:
+    #     return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    # employees = Employee.objects.filter(id=employee_id)
+    # if len(employees) != 1:
+    #     return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    # employee = employees[0]
+    #
+    # if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
+    #     result = {'message':'사용 권한이 없습니다.'}
+    #     logSend(result['message'])
+    #     func_end_log(func_name)
+    #     return REG_403_FORBIDDEN.to_json_response(result)
 
-    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
-    if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
-
-    key = AES_DECRYPT_BASE64(rqst['key'])
-    if key == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'})
-
-    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-    if employee_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
-
-    app_users = Staff.objects.filter(id=staff_id)
-    if len(app_users) != 1:
-        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
-    employees = Employee.objects.filter(id=employee_id)
-    if len(employees) != 1:
-        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
-    employee = employees[0]
-
-    if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
-        func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
-
-    Customer.objects.all().delete()
-    Relationship.objects.all().delete()
-    Business_Registration.objects.all().delete()
-    Staff.objects.all().delete()
-    Work_Place.objects.all().delete()
-    Work.objects.all().delete()
+    Beacon.objects.all().delete()
+    Beacon_History.objects.all().delete()
     Employee.objects.all().delete()
+    Notification_Work.objects.all().delete()
+    Work.objects.all().delete()
+    Pass.objects.all().delete()
+    Passer.objects.all().delete()
+    Pass_History.objects.all().delete()
 
     from django.db import connection
     cursor = connection.cursor()
-    cursor.execute("ALTER TABLE customer_customer AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_relationship AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_business_registration AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_staff AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_work_place AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_work AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE customer_employee AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_beacon AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_beacon_history AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_employee AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_notification_work AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_work AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_pass AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_passer AUTO_INCREMENT = 1")
+    cursor.execute("ALTER TABLE employee_pass_history AUTO_INCREMENT = 1")
 
-    result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset customer'}
+    result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset employee'}
     logSend(result['message'])
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
@@ -404,13 +439,24 @@ def notification_accept(request):
     else:
         rqst = request.GET
 
-    passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
+    parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
+    if not parameter['is_ok']:
+        return status422(func_name, parameter['message'])
+
+    logSend(parameter['parameters'])
+    rqst = parameter['parameters']
+
+    # func_end_log(func_name)
+    # return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
+
+    # passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
+    passers = Passer.objects.filter(id=rqst['passer_id'])
     if len(passers) != 1:
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
     passer = passers[0]
 
-    notifications = Notification_Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['notification_id']))
+    notifications = Notification_Work.objects.filter(id=rqst['notification_id'])
     if len(notifications) != 1:
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})

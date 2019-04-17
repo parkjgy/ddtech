@@ -1020,9 +1020,10 @@ def update_staff(request):
     http://0.0.0.0:8000/customer/update_staff?before_pw=A~~~8282&login_pw=A~~~8282&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
     	{
-    	    'new_login_id': '변경하고 싶은 id',
-    		'before_pw': '기존 비밀번호',     # 필수
-    		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
+    	    'staff_id': 직원의 암호화된 식별 id         # << 추가됨 >> 필수
+    	    'new_login_id': '변경하고 싶은 login id',
+    		'before_pw': '기존 비밀번호',              # 필수
+    		'login_pw': '변경하려는 비밀번호',          # 사전에 비밀번호를 확인할 것
     		'name': '이름',
     		'position': '직책',
     		'department': '부서 or 소속',
@@ -1040,6 +1041,10 @@ def update_staff(request):
     	STATUS 542
     	    {'message':'아이디는 5자 이상으로 만들어야 합니다.'}
     	    {'message':'아이디가 중복됩니다.'}
+    	STAUS 422  # 개발자 수정사항
+    	    {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
+    	    {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요. <암호해독 에러>'}
+    	    {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1049,6 +1054,16 @@ def update_staff(request):
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
+
+    if not 'staff_id' in rqst:
+        return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 가 없어요'})
+    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+    if staff_id == '__error':
+        return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요. <암호해독 에러>'})
+    if int(staff_id) != worker_id:
+        # 수정할 직원과 로그인한 직원이 같지 않으면 - 자신의 정보를 자신이 수정할 수는 있지만 관리자가 아니면 다른 사람의 정보 수정이 금지된다.
+        if not (worker.is_site_owner or worker.is_manager):
+            return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'})
 
     parameter = {}
     for x in rqst.keys():
