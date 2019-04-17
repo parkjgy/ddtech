@@ -113,13 +113,13 @@ class Beacon_History(models.Model):
 
 
 class Beacon(models.Model):
-    """
-    비콘
-    uuid 
-    major 
-    minor 
-    dt_last
-    """
+#     """
+#     비콘
+#     uuid 
+#     major 
+#     minor 
+#     dt_last
+#     """
     uuid = models.CharField(max_length = 38) # 8-4-4-4-12
     major = models.IntegerField()
     minor = models.IntegerField()

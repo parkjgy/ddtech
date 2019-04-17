@@ -1,5 +1,6 @@
 # -*- encoding:utf-8-*-
 
+import random
 from Crypto.Hash import SHA256
 
 from .log import logSend
@@ -108,3 +109,12 @@ def dt_null(dt) -> str:
     :return:
     """
     return None if dt == None else dt.strftime("%Y-%m-%d %H:%M:%S")
+
+def rMin(min) -> int:
+    """
+    min 값을 기준으로 위 아래 5분 값을 랜덤으로 준다.
+    :param min:
+    :return:
+    """
+    random_value = random.randint(0, 10)
+    return min - 5 + random_value

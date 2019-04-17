@@ -106,11 +106,6 @@ def table_reset_and_clear_for_operation(request):
 
         # return status422(func_name, {'message':parameter_check['results']})
 
-    result = {'message': 'employee tables deleted.\n$ python manage.py sqlsequencereset customer'}
-    logSend(result['message'])
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response(result)
-
     # if not 'key' in rqst: # key 가 들어왔는지 검사
     #     return status422(func_name, {'message':'ClientError: parameter \'key\' 가 없어요'})
     #
@@ -614,21 +609,20 @@ def pass_reg(request):
     dt = rqst['dt']
     is_in = rqst['is_in']
     major = rqst['major']
-    beacons = rqst['beacons']
     if request.method == 'POST':
         beacons = rqst['beacons']
     else:
         beacons = rqst.getlist('beacons')
 
-    if request.method == 'GET':
-        beacons = [
-            {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-            {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-            {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
-            # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
-            # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-            # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-        ]
+    # if request.method == 'GET':
+    #     beacons = [
+    #         {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+    #         {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+    #         {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+    #         # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
+    #         # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
+    #         # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
+    #     ]
 
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
     logSend('\t\t\t\t\t' + passer_id)
@@ -719,7 +713,7 @@ def pass_verify(request):
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
-        dt_verify=dt
+        dt_verify=dt,
     )
     new_pass.save()
     before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()

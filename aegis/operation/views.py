@@ -12,6 +12,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format
+from config.common import rMin
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
@@ -621,7 +622,6 @@ def sms_customer_staff(request):
         func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
-    print('아이디 ' + response_customer_json['login_id'])
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -635,10 +635,9 @@ def sms_customer_staff(request):
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     logSend(r.json())
-    print(r.json())
 
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
+    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.', 'login_id':response_customer_json['login_id']})
 
 
 @cross_origin_read_allow
@@ -1081,8 +1080,13 @@ def customer_test_step_3(request):
                      }
     r = s.post(settings.OPERATION_URL + 'list_customer', json=customer_data)
     result.append({'url':r.url, 'GET':customer_data, 'STATUS':r.status_code, 'R':r.json()})
-
-    customer = r.json()['customers'][0]
+    customer_list = r.json()['customers']
+    for cust in customer_list:
+        logSend(cust)
+        if cust['corp_name'] == customer_data['customer_name']:
+            customer = cust
+    logSend(customer['staff_id'], ' ', AES_DECRYPT_BASE64(customer['staff_id']))
+    customer_staff_id = customer['staff_id']
 
     # 운영 : 고객사 담당자 SMS 다시 보냄
     customer_data = {'staff_id': customer['staff_id'],
@@ -1090,8 +1094,27 @@ def customer_test_step_3(request):
                      }
     r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
     result.append({'url':r.url, 'POST':customer_data, 'STATUS':r.status_code, 'R':r.json()})
+    logSend(r.json())
+    login_id = r.json()['login_id']
 
-    print(result)
+    # 고객 : 로그인
+    login_data = {"login_id": login_id,
+                  "login_pw": "happy_day!!!"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url':r.url, 'POST':login_data, 'STATUS':r.status_code, 'R':r.json()})
+
+    if r.status_code == 200:
+        # 고객 : 자기 정보 수정 - login_id
+        staff_data = {'staff_id':customer_staff_id,
+                      'new_login_id': 'thinking',
+                      'before_pw': 'happy_day!!!',
+                      'login_pw': 'parkjong'
+                      }
+        r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+        result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -1126,37 +1149,6 @@ def customer_test_step_4(request):
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
-
-    # 고객 : 로그인
-    login_data = {"login_id": "temp_1",
-                  "login_pw": "happy_day!!!"
-                  }
-    s = requests.session()
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url':r.url, 'POST':login_data, 'STATUS':r.status_code, 'R':r.json()})
-
-    if r.status_code == 200:
-        # 고객 : 자기 정보 수정 - login_id
-        staff_data = {'new_login_id': 'thinking',
-                      'before_pw': 'happy_day!!!',
-                      }
-        r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-        result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
-
-        # 고객 : 로그인
-        login_data = {"login_id": "thinking",
-                      "login_pw": "happy_day!!!"
-                      }
-        s = requests.session()
-        r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-        result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-        # 고객 : 자기 정보 수정 - login_pw
-        staff_data = {'before_pw': 'happy_day!!!',
-                      'login_pw': 'parkjong',
-                      }
-        r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-        result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 로그인
     login_data = {"login_id": "thinking",
@@ -2094,6 +2086,7 @@ def employee_test_step_1(request):
     - check version
     - 전화번호 인증 reg_employee
     -
+    http://0.0.0.0:8000/operation/employee_test_step_1?key=vChLo3rsRAl0B4NNuaZOsg
     GET
         { "key" : "사용 승인 key"
     response
@@ -2258,6 +2251,8 @@ def employee_test_step_3(request):
     result.append({'url':r.url, 'POST':relationship_infor, 'STATUS':r.status_code, 'R':r.json()})
 
     # 고객 : 직원 등록
+    # staffs = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
+
     staffs = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
               ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
               ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
@@ -2378,6 +2373,8 @@ def employee_test_step_4(request):
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 근로자 등록
+    # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
+
     employees = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
               ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
               ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
@@ -2445,8 +2442,12 @@ def employee_test_step_4(request):
                 'passer_id': employee_id,
                 'name': employee_ex[0],
                 'bank': '기업은행',
-                'bank_account': '1230000001200%d' % employees.index(employee_ex),
+                'bank_account': '12300000012%03d' % employees.index(employee_ex),
                 'pNo': employee_ex[1],  # 추후 SMS 확인 절차 추가
+                'work_start': '08:30',  # 오전 오후로 표시하지 않는다.
+                'working_time': '09',  # 시간 4 - 12
+                'work_start_alarm': 'X',  # '-60'(한시간 전), '-30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
+                'work_end_alarm': 'X',  # '-30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
             }
             r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
             # result.append({'url':r.url, 'POST':employee_info, 'STATUS':r.status_code, 'R':r.json()})
@@ -2472,31 +2473,57 @@ def employee_test_step_4(request):
 
         # 근로자 출근 기록 만들기
         # 3월
-        holidays = [3, 10, 17, 24, 31]
-        for day in range(1, 5):
-            if day in holidays:
-                continue
-            beacon_data = {
-            'passer_id': employee_id,
-            'dt': '2018-03-%02d 08:25:30'%day,
-            'is_in': 1,  # 0: out, 1 : in
-            'major': 11001,  # 11 (지역) 001(사업장)
-            'beacons': [
-                {'minor': 11001, 'dt_begin': '2019-03-%02d 08:25:30'%day, 'rssi': -70},
-                {'minor': 11002, 'dt_begin': '2019-03-%02d 08:25:31'%day, 'rssi': -70},
-                {'minor': 11003, 'dt_begin': '2019-03-%02d 08:25:32'%day, 'rssi': -70}
-            ]
-            }
-            r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-            result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+        months = {3:[32, [3, 10, 17, 24, 31]], 4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
+        for m_key in months.keys():
+            month = m_key
+            month_range = months[m_key][0]
+            month_holidays = months[m_key][1]
+            for day in range(1, month_range):
+                if day in month_holidays:
+                    continue
+                beacon_data = {
+                    'passer_id': employee_id,
+                    'dt': '2018-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
+                    'is_in': 1,  # 0: out, 1 : in
+                    'major': 11001,  # 11 (지역) 001(사업장)
+                    'beacons': [
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70}
+                    ]
+                    }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
-            button_data = {
-                'passer_id': employee_id,
-                'dt': '2019-03-%02d 12:53:36'%day,
-                'is_in': 1,  # 0: out, 1 : in
-            }
-            r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
-            result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+                button_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)),
+                    'is_in': 1,  # 0: out, 1 : in
+                }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
+                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+
+                button_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(35)),
+                    'is_in': 0,  # 0: out, 1 : in
+                }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
+                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+
+                beacon_data = {
+                    'passer_id': employee_id,
+                    'dt': '2018-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
+                    'is_in': 1,  # 0: out, 1 : in
+                    'major': 11001,  # 11 (지역) 001(사업장)
+                    'beacons': [
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70}
+                    ]
+                    }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)
