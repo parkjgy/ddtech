@@ -1046,6 +1046,7 @@ def update_staff(request):
     	    {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
     	    {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요. <암호해독 에러>'}
     	    {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'}
+    	    {'message':'ServerError: parameter \'%s\' 의 직원이 없다.' % staff_id }
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1065,7 +1066,10 @@ def update_staff(request):
         # 수정할 직원과 로그인한 직원이 같지 않으면 - 자신의 정보를 자신이 수정할 수는 있지만 관리자가 아니면 다른 사람의 정보 수정이 금지된다.
         if not (worker.is_site_owner or worker.is_manager):
             return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'})
-
+    staffs = Staff.objects.filter(id=staff_id)
+    if len(staffs) == 0:
+        return status422(func_name, {'message': 'ServerError: parameter \'%s\' 의 직원이 없다.' % staff_id})
+    edit_staff = staffs
     parameter = {}
     for x in rqst.keys():
         parameter[x] = rqst[x]
@@ -1084,7 +1088,8 @@ def update_staff(request):
         del parameter['new_login_id']
     print(parameter)
     # 비밀번호 확인
-    if not ('before_pw' in parameter) or len(parameter['before_pw']) == 0 or hash_SHA256(parameter['before_pw']) != worker.login_pw:
+    if not ('before_pw' in parameter) or len(parameter['before_pw']) == 0 or hash_SHA256(parameter['before_pw']) != edit_staff.login_pw:
+        # 현재 비밀번호가 없거나, 비밀번호를 넣지 않았거나 비밀번호가 다르면
         func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
@@ -1108,80 +1113,80 @@ def update_staff(request):
         print('key', key)
         if key in parameter:
             print('     value', parameter[key])
-            worker.__dict__[key] = '' if len(parameter[key]) == 0 else parameter[key]
+            edit_staff.__dict__[key] = '' if len(parameter[key]) == 0 else parameter[key]
             is_update_worker = True
     if is_update_worker:
         print([(x, worker.__dict__[x]) for x in Staff().__dict__.keys() if not x.startswith('_')])
         if ('login_id' in parameter) or ('login_pw' in parameter):
-            worker.is_login = False
-            worker.dt_login = datetime.datetime.now()
-            worker.save()
+            edit_staff.is_login = False
+            edit_staff.dt_login = datetime.datetime.now()
+            edit_staff.save()
             del request.session['id']
             func_end_log(func_name)
             return REG_403_FORBIDDEN.to_json_response()
-        worker.save()
+        edit_staff.save()
     #
     # 영항 받는 곳 update : Customer, Work_Place, Work - name, pNo, email
     #
     if ('name' in rqst) and (len(rqst['name']) > 0):
-        customers = Customer.objects.filter(staff_id=worker.id)
+        customers = Customer.objects.filter(staff_id=edit_staff.id)
         for customer in customers:
             customer.staff_name = rqst['name']
             customer.save()
 
-        customers = Customer.objects.filter(manager_id=worker.id)
+        customers = Customer.objects.filter(manager_id=edit_staff.id)
         for customer in customers:
             customer.manager_name = rqst['name']
             customer.save()
 
-        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
         for work_place in work_places:
             work_place.manager_name = rqst['name']
             work_place.save()
 
-        works = Work.objects.filter(staff_id=worker.id)
+        works = Work.objects.filter(staff_id=edit_staff.id)
         for work in works:
             work.staff_name = rqst['name']
             work.save()
 
     if ('phone_no' in rqst) and (len(rqst['phone_no']) > 0):
-        customers = Customer.objects.filter(staff_id=worker.id)
+        customers = Customer.objects.filter(staff_id=edit_staff.id)
         for customer in customers:
             customer.staff_pNo = rqst['phone_no']
             customer.save()
 
-        customers = Customer.objects.filter(manager_id=worker.id)
+        customers = Customer.objects.filter(manager_id=edit_staff.id)
         for customer in customers:
             customer.manager_pNo = rqst['phone_no']
             customer.save()
 
-        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
         for work_place in work_places:
             work_place.manager_pNo = rqst['phone_no']
             work_place.save()
 
-        works = Work.objects.filter(staff_id=worker.id)
+        works = Work.objects.filter(staff_id=edit_staff.id)
         for work in works:
             work.staff_pNo = rqst['phone_no']
             work.save()
 
     if ('email' in rqst) and (len(rqst['email']) > 0):
-        customers = Customer.objects.filter(staff_id=worker.id)
+        customers = Customer.objects.filter(staff_id=edit_staff.id)
         for customer in customers:
             customer.staff_email = rqst['email']
             customer.save()
 
-        customers = Customer.objects.filter(manager_id=worker.id)
+        customers = Customer.objects.filter(manager_id=edit_staff.id)
         for customer in customers:
             customer.manager_email = rqst['email']
             customer.save()
 
-        work_places = Work_Place.objects.filter(manager_id=worker.id)
+        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
         for work_place in work_places:
             work_place.manager_email = rqst['email']
             work_place.save()
 
-        works = Work.objects.filter(staff_id=worker.id)
+        works = Work.objects.filter(staff_id=edit_staff.id)
         for work in works:
             work.staff_email = rqst['email']
             work.save()
