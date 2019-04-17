@@ -490,7 +490,7 @@ def notification_accept(request):
         'employee_pNo':notification.employee_pNo,
         'is_accept':is_accept
     }
-    print(request_data)
+    logSend(request_data)
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
     print(response_customer)
     if response_customer.status_code != 200:

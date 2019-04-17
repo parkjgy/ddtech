@@ -1971,10 +1971,10 @@ def employee_work_accept_for_employee(request):
     logSend('   from operation server : op staff id ', worker_id)
     print('   from operation server : op staff id ', worker_id)
 
-    print(rqst['work_id'])
-    print(rqst['employee_name'])
-    print(rqst['employee_pNo'])
-    print(rqst['is_accept'])
+    logSend(rqst['work_id'])
+    logSend(rqst['employee_name'])
+    logSend(rqst['employee_pNo'])
+    logSend(rqst['is_accept'])
 
     work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
     employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
