@@ -1014,6 +1014,7 @@ def update_staff(request):
     """
     직원 정보를 수정한다.
     - 자신의 정보만 수정할 수 있다.
+    - 관리자나 담당자는 다른 직원의 정보를 수정할 수 있다.
     - login id, pw 가 바뀌면 로그아웃된다.
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
@@ -1959,6 +1960,8 @@ def employee_work_accept_for_employee(request):
             }
         STATUS 542
             {'message':'파견사 측에 근로자 정보가 없습니다.'}
+        STATUS 422  # 개발자 수정사항
+            {'message':'업무 참여 시간이 종료되었습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
