@@ -110,8 +110,7 @@ def reg_customer_for_operation(request):
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-    logSend('   from operation server : op staff id ', worker_id)
-    print('   from operation server : op staff id ', worker_id)
+    logSend('   from operation server : operation staff id ', worker_id)
 
     customer_name = rqst["customer_name"]
     staff_name = rqst["staff_name"]
@@ -152,8 +151,8 @@ def reg_customer_for_operation(request):
         customer.staff_id = str(staff.id)
         customer.manager_id = str(staff.id)
         customer.save()
-    print('staff id = ', staff.id)
-    print(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
+    logSend('staff id = ', staff.id)
+    logSend(customer_name, staff_name, staff_pNo, staff_email, staff.login_id, staff.login_pw)
     result = {'message': '정상처리되었습니다.',
               'login_id': staff.login_id
               }
@@ -189,10 +188,8 @@ def sms_customer_staff_for_operation(request):
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-    logSend('   from operation server : op staff id ', worker_id)
-    print('   from operation server : op staff id ', worker_id)
+    logSend('   from operation server : operation staff id ', worker_id)
 
-    print(rqst['staff_id'], AES_DECRYPT_BASE64(rqst['staff_id']))
     staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
     if len(staffs) == 0:
         func_end_log(func_name)

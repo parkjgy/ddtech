@@ -566,7 +566,7 @@ def reg_customer(request):
 
     if settings.IS_TEST:
         func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response({'message': ['SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.', 'id:%s pw:happy_day!!!'%response_customer_json['login_id']]})
+        return REG_200_SUCCESS.to_json_response({'message': ['id/pw to SMS(실제로 보내지는 않음)', response_customer_json['login_id'], 'happy_day!!!']})
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -579,11 +579,8 @@ def reg_customer(request):
                '아이디 ' + response_customer_json['login_id'] + '\n'
                '비밀번호 happy_day!!!'
     }
-    # if settings.DEBUG:
-    #     rData['testmode_yn'] = 'Y'
-
     r = requests.post('https://apis.aligo.in/send/', data=rData)
-    # print(r.json())
+    logSend(r.json())
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
@@ -2162,27 +2159,35 @@ def employee_test_step_2(request):
         result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객업체 생성
-    settings.IS_TEST = True  # sms pass
     customer_data = {'customer_name': '이지체크',
                      'staff_name': '박종기',
                      'staff_pNo': '010-2557-3555',
                      'staff_email': 'thinking@ddtechi.com'
                      }
+    settings.IS_TEST = True  # sms pass
     r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
     settings.IS_TEST = False  # sms pass
     result.append({'url':r.url, 'POST':customer_data, 'STATUS':r.status_code, 'R':r.json()})
-
+    init_login_id = r.json()['message'][1]
     # 고객 : 로그인
-    login_data = {"login_id": r.json()['message'][1][3:9],
+    login_data = {"login_id": init_login_id,
                   "login_pw": "happy_day!!!"
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url':r.url, 'POST':login_data, 'STATUS':r.status_code, 'R':r.json()})
 
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    staffs = r.json()['staffs']
+    for staff in staffs:
+        if staff['login_id'] == init_login_id:
+            owner_staff_id = staff['id']
+            break
+
     if r.status_code == 200:
         # 고객 : 자기 정보 수정 - login_id,
-        staff_data = {'staff_id':AES_ENCRYPT_BASE64('1'),
+        staff_data = {'staff_id':owner_staff_id,
                       'new_login_id': 'think',
                       'before_pw': 'happy_day!!!',
                       'login_pw':'parkjong',
@@ -2553,6 +2558,39 @@ def employee_test_step_5(request):
         return REG_403_FORBIDDEN.to_json_response(result)
 
     result = []
+
+    # login_data = {"login_id": "think",
+    #               "login_pw": "parkjong"
+    #               }
+    login_data = {"login_id": "staff_4",
+                  "login_pw": "happy_day!!!"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    staffs = r.json()['staffs']
+    for staff in staffs:
+        if staff['login_id'] == login_data['login_id']:
+            update_staff_id = staff['id']
+            break
+
+    # staff_data = {'staff_id': update_staff_id,
+    #               'new_login_id': 'think',
+    #               'before_pw': 'happy_day!!!',
+    #               'login_pw': 'parkjong',
+    #               'position': '이사'
+    #               }
+    staff_data = {'staff_id': update_staff_id,
+                  'new_login_id': 'ddtech_ceo',
+                  'before_pw': 'happy_day!!!',
+                  # 'login_pw': 'parkjong',
+                  'position': '대표'
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     print(result)
     logSend(result)
