@@ -2851,22 +2851,22 @@ def staff_foreground(request):
 
     result['id'] = AES_ENCRYPT_BASE64(str(app_user.id))
 
-    print(app_user.name, app_user.id, app_user.co_id)
+    logSend(app_user.name, app_user.id, app_user.co_id)
     dt_today = datetime.datetime.now()
     # 업무 추출
     # 사업장 조회 - 사업장을 관리자로 검색해서 있으면 그 사업장의 모든 업무를 볼 수 있게 한다.
     work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id)
-    print([work_place.name for work_place in work_places])
+    logSend([work_place.name for work_place in work_places])
     if len(work_places) > 0:
         arr_work_place_id = [work_place.id for work_place in work_places]
-        print(arr_work_place_id)
+        logSend(arr_work_place_id)
         # 해당 사업장의 모든 업무 조회
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=dt_today)
-    print([work.staff_name for work in works])
+    logSend([work.staff_name for work in works])
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
     isWorkStart = True
@@ -2890,7 +2890,7 @@ def staff_foreground(request):
                             'y':employee.y,
                             }
             # 가상 데이터 생성
-            employee_dic = virsual_employee(isWorkStart, employee_dic)
+            # employee_dic = virsual_employee(isWorkStart, employee_dic)
             # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
         # work.work_place_name = '대덕기공'
@@ -2906,7 +2906,7 @@ def staff_foreground(request):
                     'employees':arr_employee
                     }
         # 가상 데이터 생성
-        work_dic = virsual_work(isWorkStart, work_dic)
+        # work_dic = virsual_work(isWorkStart, work_dic)
         arr_work.append(work_dic)
     result['works'] = arr_work
     app_user.is_app_login = True
