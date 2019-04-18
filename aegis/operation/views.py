@@ -1026,10 +1026,11 @@ def customer_test_step_2(request):
                      'staff_pNo': '010-2557-3555',
                      'staff_email': 'thinking@ddtechi.com'
                      }
+    settings.IS_TEST = True
     r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
+    settings.IS_TEST = False
     result.append({'url':r.url, 'POST':customer_data, 'STATUS':r.status_code, 'R':r.json()})
 
-    print(result)
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -1089,7 +1090,9 @@ def customer_test_step_3(request):
     customer_data = {'staff_id': customer['staff_id'],
                      'staff_pNo': customer['staff_pNo']
                      }
+    settings.IS_TEST = True
     r = s.post(settings.OPERATION_URL + 'sms_customer_staff', json=customer_data)
+    settings.IS_TEST = False
     result.append({'url':r.url, 'POST':customer_data, 'STATUS':r.status_code, 'R':r.json()})
     logSend(r.json())
     login_id = r.json()['login_id']
