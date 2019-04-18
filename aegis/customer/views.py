@@ -2659,6 +2659,7 @@ def report_of_staff(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
+
 @cross_origin_read_allow
 def staff_version(request):
     """
@@ -2890,7 +2891,7 @@ def staff_foreground(request):
                             'y':employee.y,
                             }
             # 가상 데이터 생성
-            # employee_dic = virsual_employee(isWorkStart, employee_dic)
+            employee_dic = virsual_employee(isWorkStart, employee_dic)
             # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
         # work.work_place_name = '대덕기공'
@@ -2906,7 +2907,7 @@ def staff_foreground(request):
                     'employees':arr_employee
                     }
         # 가상 데이터 생성
-        # work_dic = virsual_work(isWorkStart, work_dic)
+        work_dic = virsual_work(isWorkStart, work_dic)
         arr_work.append(work_dic)
     result['works'] = arr_work
     app_user.is_app_login = True
@@ -2914,6 +2915,10 @@ def staff_foreground(request):
     app_user.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
+
+
+# def employee_day_working_from_employee(employee):
+
 
 
 def virsual_employee(isWorkStart, employee) -> dict:
@@ -3194,7 +3199,10 @@ def staff_change_time(request):
     logSend(employee_ids)
     employee_id_list = []
     for employee_id in employee_ids:
-        employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
+        if type(employee_id) == dict:
+            employee_id_list.append(AES_DECRYPT_BASE64(employee_id['emplyee_id']))
+        else:
+            employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
     logSend(employee_id_list)
 
     employees = Employee.objects.filter(work_id=work.id, id__in=employee_id_list)

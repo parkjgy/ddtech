@@ -1166,6 +1166,60 @@ def update_my_info(request):
 
 
 @cross_origin_read_allow
+def employee_day_working_from_employee(request):
+    """
+    <<<고객 서버용>>> 근로자 한명의 하루 근로 내용
+    http://0.0.0.0:8000/employee/employee_day_working_from_employee?employee_id=qgf6YHf1z2Fx80DR8o_Lvg&dt=2019-04-18
+    GET
+        employee_id='근로자 id'
+        dt = '2019-04-18'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    passer_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    dt = rqst['dt']
+    dt_begin = datetime.datetime.strptime(dt+' 00:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_end = dt_begin + datetime.timedelta(days=1)
+
+    passer = Passer.objects.get(id=passer_id)
+    # passes = Pass.objects.filter(id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end).values('dt_reg', 'dt_verify')
+    passes = Pass.objects.filter(id=passer_id).values('dt_reg', 'dt_verify')
+    pass_list = [pass_ for pass_ in passes]
+    logSend(pass_list)
+
+    result = {'r':pass_list}
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
 def my_work_histories_for_customer(request):
     """
     <<<고객 서버용>>> 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
