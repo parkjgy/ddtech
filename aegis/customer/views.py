@@ -3244,14 +3244,14 @@ def staff_change_time(request):
                         'dt_end_beacon':dt_null(employee.dt_end_beacon),
                         'dt_begin_touch':dt_null(employee.dt_begin_touch),
                         'dt_end_touch':dt_null(employee.dt_end_touch),
-                        'overtime':overtime_type,
+                        'overtime':employee.overtime,
                         'x':employee.x,
                         'y':employee.y,
                         }
         employee_dic = employee_day_working_from_employee(employee_dic)
         # 가상 데이터 생성
         # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
-        employee_dic['overtime_type'] = overtime_type
+        # employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}
 
@@ -3354,14 +3354,14 @@ def staff_change_work_time(request):
                         'dt_end_beacon':dt_null(employee.dt_end_beacon),
                         'dt_begin_touch':dt_null(employee.dt_begin_touch),
                         'dt_end_touch':dt_null(employee.dt_end_touch),
-                        'overtime':overtime_type,
+                        'overtime':employee.overtime,
                         'x':employee.x,
                         'y':employee.y,
                         }
         employee_dic = employee_day_working_from_employee(employee_dic)
         # 가상 데이터 생성
         # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
-        employee_dic['overtime_type'] = overtime_type
+        # employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}
 

@@ -1352,18 +1352,18 @@ def my_work_histories_for_customer(request):
     # 가상 데이터 생성
     #
     workings = []
-    for day in range(30):
-        if random.randint(0,7) > 5: # 7일에 5일 꼴로 쉬는 날
+    for day in range(1, 30):
+        if random.randint(1,7) > 5: # 7일에 5일 꼴로 쉬는 날
             continue
         working = {}
         action = 0
-        if random.randint(0,30) > 27: # 한달에 3번꼴로 지각
+        if random.randint(1,30) > 27: # 한달에 3번꼴로 지각
             action = 200
             working['dt_begin'] = str_dt + '-%02d'%day + ' 08:45:00'
         else :
             action = 100
             working['dt_begin'] = str_dt + '-%02d'%day + ' 08:25:00'
-        if random.randint(0,30) > 29: # 한달에 1번꼴로 조퇴
+        if random.randint(1,30) > 29: # 한달에 1번꼴로 조퇴
             action += 20
             working['dt_end'] = str_dt + '-%02d'%day + ' 15:33:00'
         elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
