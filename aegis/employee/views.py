@@ -1166,7 +1166,7 @@ def update_my_info(request):
 
 
 @cross_origin_read_allow
-def employee_day_working_from_employee(request):
+def employee_day_working_from_customer(request):
     """
     <<<고객 서버용>>> 근로자 한명의 하루 근로 내용
     http://0.0.0.0:8000/employee/employee_day_working_from_employee?employee_id=qgf6YHf1z2Fx80DR8o_Lvg&dt=2019-04-18
@@ -1207,16 +1207,56 @@ def employee_day_working_from_employee(request):
     dt = rqst['dt']
     dt_begin = datetime.datetime.strptime(dt+' 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_end = dt_begin + datetime.timedelta(days=1)
+    # logSend(dt_begin, '  ', dt_end)
+
+    pass_history_list = Pass_History.objects.filter(passer_id=passer_id, dt_in__gt=dt_begin, dt_in__lt=dt_end)
+    if len(pass_history_list) > 0:
+        pass_history = pass_history_list[0]
+        day_work = {'dt_begin_beacon': pass_history.dt_in,
+                    'dt_end_beacon': pass_history.dt_out,
+                    'dt_begin_touch': pass_history.dt_in_verify,
+                    'dt_end_touch': pass_history.dt_out_verify
+                    }
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'dt': day_work})
+
+    pass_history = Pass_History(passer_id=passer_id,
+                                action=110,
+                                minor=0
+                                )
 
     passer = Passer.objects.get(id=passer_id)
-    # passes = Pass.objects.filter(id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end).values('dt_reg', 'dt_verify')
-    passes = Pass.objects.filter(id=passer_id).values('dt_reg', 'dt_verify')
-    pass_list = [pass_ for pass_ in passes]
-    logSend(pass_list)
+    passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end, is_in=1)
+    begin_beacon = passes[0]
+    # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
+    pass_history.dt_in = begin_beacon.dt_reg
 
-    result = {'r':pass_list}
+    passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=dt_begin, dt_verify__lt=dt_end, is_in=1)
+    begin_button = passes[0]
+    # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
+    pass_history.dt_in_verify = begin_button.dt_verify
+
+    passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=begin_button.dt_verify, dt_verify__lt=begin_button.dt_verify + datetime.timedelta(days=1), is_in=0)
+    if len(passes) > 0:
+        end_button = passes[0]
+        # logSend(end_button.dt_verify, ' ', end_button.is_in)
+        pass_history.dt_out_verify = end_button.dt_verify
+
+    passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=begin_beacon.dt_reg + datetime.timedelta(hours=5),
+                                 dt_reg__lt=begin_beacon.dt_reg + datetime.timedelta(hours=14), is_in=0)
+    if len(passes) > 0:
+        end_beacon = passes[len(passes) - 1]
+        # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
+        pass_history.dt_out = end_beacon.dt_reg
+    pass_history.save()
+
+    day_work = {'dt_begin_beacon':pass_history.dt_in,
+                'dt_end_beacon':pass_history.dt_out,
+                'dt_begin_touch':pass_history.dt_in_verify,
+                'dt_end_touch':pass_history.dt_out_verify
+                }
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response({'dt':day_work})
 
 
 @cross_origin_read_allow

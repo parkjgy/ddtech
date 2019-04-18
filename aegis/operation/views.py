@@ -2246,8 +2246,8 @@ def employee_test_step_3(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    co_id = r.json()['company_general']['co_id']
     # 고객 : 발주사 등록
     relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
                           'corp_name': '울산광역시',
@@ -2258,8 +2258,8 @@ def employee_test_step_3(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
     result.append({'url':r.url, 'POST':relationship_infor, 'STATUS':r.status_code, 'R':r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES'})
-    result.append({'url':r.url, 'POST':{'is_orderer':'YES'}, 'STATUS':r.status_code, 'R':r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES', 'is_partner':'NO'})
+    result.append({'url':r.url, 'POST':{'is_orderer':'YES', 'is_partner':'NO'}, 'STATUS':r.status_code, 'R':r.json()})
     order_id = r.json()['orderers'][0]['id']
 
     # 고객 : 직원 등록
@@ -2305,7 +2305,7 @@ def employee_test_step_3(request):
         result.append({'url':r.url, 'POST':staff_data, 'STATUS':r.status_code, 'R':r.json()})
 
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
     staffs = r.json()['staffs']
     for staff in staffs:
         if staff['name'] == '최진':
@@ -2348,7 +2348,7 @@ def employee_test_step_3(request):
         'dt_begin': '2019-03-01',
         'dt_end': '2019-07-31',  # 업무 종료 날짜 - 오늘로 3일 뒤
         'staff_id': staff_id,
-        'partner_id': AES_ENCRYPT_BASE64('0'),
+        'partner_id': co_id,
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
@@ -2361,7 +2361,7 @@ def employee_test_step_3(request):
         'dt_begin': next_5_day,
         'dt_end': '2019-07-31',  # 업무 종료 날짜 - 오늘로 3일 뒤
         'staff_id': staff_id,
-        'partner_id': AES_ENCRYPT_BASE64('0'),
+        'partner_id': co_id,
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
@@ -2534,7 +2534,7 @@ def employee_test_step_4(request):
                     continue
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2018-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
+                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
                     'is_in': 1,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
@@ -2564,8 +2564,8 @@ def employee_test_step_4(request):
 
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2018-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
-                    'is_in': 1,  # 0: out, 1 : in
+                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
+                    'is_in': 0,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
                         {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},

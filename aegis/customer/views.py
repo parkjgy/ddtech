@@ -2891,7 +2891,8 @@ def staff_foreground(request):
                             'y':employee.y,
                             }
             # 가상 데이터 생성
-            employee_dic = virsual_employee(isWorkStart, employee_dic)
+            # employee_dic = virsual_employee(isWorkStart, employee_dic)
+            employee_dic = employee_day_working_from_employee(employee_dic)
             # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
         # work.work_place_name = '대덕기공'
@@ -2907,7 +2908,7 @@ def staff_foreground(request):
                     'employees':arr_employee
                     }
         # 가상 데이터 생성
-        work_dic = virsual_work(isWorkStart, work_dic)
+        # work_dic = virsual_work(isWorkStart, work_dic)
         arr_work.append(work_dic)
     result['works'] = arr_work
     app_user.is_app_login = True
@@ -2917,8 +2918,18 @@ def staff_foreground(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
-# def employee_day_working_from_employee(employee):
-
+def employee_day_working_from_employee(employee_dic):
+    dt_today = datetime.datetime.now()
+    if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_today:
+        employee_infor = {'employee_id':employee_dic['employee_id'],
+                          'dt':dt_today.strftime("%Y-%m-%d")
+                          }
+        r = requests.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=employee_infor)
+        logSend(r.json())
+        dt = r.json()['dt']
+        for dt_key in dt.keys():
+            employee_dic[dt_key] = dt[dt_key]
+    return employee_dic
 
 
 def virsual_employee(isWorkStart, employee) -> dict:
