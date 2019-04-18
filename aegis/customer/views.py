@@ -134,6 +134,15 @@ def reg_customer_for_operation(request):
             manager_email=staff_email
         )
         customer.save()
+
+        relationship = Relationship(
+            contractor_id=customer.id,
+            type=12,
+            corp_id=customer.id,
+            corp_name=customer_name
+        )
+        relationship.save()
+
         staff = Staff(
             name=staff_name,
             login_id='temp_' + str(customer.id),
@@ -924,8 +933,9 @@ def login(request):
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) == 0:
         staffs = Staff.objects.filter(login_id=login_id)
-        staff = staffs[0]
-        logSend(hash_SHA256(login_pw), ' vs\n', staff.login_pw)
+        if len(staffs) > 0:
+            staff = staffs[0]
+            logSend(hash_SHA256(login_pw), ' vs\n', staff.login_pw)
 
         func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
@@ -1877,7 +1887,7 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    print(rqst['work_id'])
+    logSend(rqst['work_id'])
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     work = Work.objects.get(id=work_id)
     if request.method == 'POST':

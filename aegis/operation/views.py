@@ -2246,7 +2246,7 @@ def employee_test_step_3(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 발주사 등록
     relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
@@ -2257,6 +2257,10 @@ def employee_test_step_3(request):
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
     result.append({'url':r.url, 'POST':relationship_infor, 'STATUS':r.status_code, 'R':r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES'})
+    result.append({'url':r.url, 'POST':{'is_orderer':'YES'}, 'STATUS':r.status_code, 'R':r.json()})
+    order_id = r.json()['orderers'][0]['id']
 
     # 고객 : 직원 등록
     # staffs = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
@@ -2300,29 +2304,51 @@ def employee_test_step_3(request):
         index += 1
         result.append({'url':r.url, 'POST':staff_data, 'STATUS':r.status_code, 'R':r.json()})
 
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    staffs = r.json()['staffs']
+    for staff in staffs:
+        if staff['name'] == '최진':
+            manager_id = staff['id']
+            break
+
     # 고객 : 사업장 등록
     work_place = {
         'name': '태화강',  # 이름
-        'manager_id': AES_ENCRYPT_BASE64('1'),
-        'order_id': AES_ENCRYPT_BASE64('1')
+        'manager_id': manager_id,
+        'order_id': order_id
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
     result.append({'url':r.url, 'POST':work_place, 'STATUS':r.status_code, 'R':r.json()})
+
+    work_place_infor = { 'name':'',
+                         'manager_name':'',
+                         'manager_phone':'',
+                         'order_name':''
+                         }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
+    result.append({'url':r.url, 'POST':work_place_infor, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
 
     today = datetime.datetime.now() + datetime.timedelta(days=2)
     next_3_day = (today + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
     next_5_day = (today + datetime.timedelta(days=5)).strftime("%Y-%m-%d")
     today = today.strftime("%Y-%m-%d")
 
+    for staff in staffs:
+        if staff['name'] == '박종기':
+            staff_id = staff['id']
+            break
+
     # 고객 : 업무 등록
     work = {
         'name': '공원 감시',
-        'work_place_id': AES_ENCRYPT_BASE64('1'),
+        'work_place_id': work_place_id,
         'type': '주간 오전',
         'dt_begin': '2019-03-01',
         'dt_end': '2019-07-31',  # 업무 종료 날짜 - 오늘로 3일 뒤
-        'staff_id': AES_ENCRYPT_BASE64('1'),
-        'partner_id': AES_ENCRYPT_BASE64('1'),
+        'staff_id': staff_id,
+        'partner_id': AES_ENCRYPT_BASE64('0'),
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
@@ -2330,12 +2356,12 @@ def employee_test_step_3(request):
     # 고객 : 업무 등록
     work = {
         'name': '공원 청소',
-        'work_place_id': AES_ENCRYPT_BASE64('1'),
+        'work_place_id': work_place_id,
         'type': '주간 오후',
         'dt_begin': next_5_day,
         'dt_end': '2019-07-31',  # 업무 종료 날짜 - 오늘로 3일 뒤
-        'staff_id': AES_ENCRYPT_BASE64('1'),
-        'partner_id': AES_ENCRYPT_BASE64('1'),
+        'staff_id': staff_id,
+        'partner_id': AES_ENCRYPT_BASE64('0'),
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url':r.url, 'POST':work, 'STATUS':r.status_code, 'R':r.json()})
@@ -2380,6 +2406,23 @@ def employee_test_step_4(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
+    work_place_infor = { 'name':'',
+                         'manager_name':'',
+                         'manager_phone':'',
+                         'order_name':''
+                         }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
+    result.append({'url':r.url, 'POST':work_place_infor, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    work_infor = {'work_place_id':work_place_id,
+                  'dt_begin':'',
+                  'dt_end':''
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
+    result.append({'url':r.url, 'POST':work_infor, 'STATUS':r.status_code, 'R':r.json()})
+    work_id = r.json()['works'][0]['id']
+
     # 근로자 등록
     # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
 
@@ -2416,7 +2459,7 @@ def employee_test_step_4(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':AES_ENCRYPT_BASE64('1'),
+        'work_id':work_id,
         'dt_answer_deadline':next_4_day,
         'phone_numbers':arr_phone_no
     }
@@ -2562,40 +2605,103 @@ def employee_test_step_5(request):
 
     result = []
 
-    # login_data = {"login_id": "think",
-    #               "login_pw": "parkjong"
-    #               }
-    login_data = {"login_id": "staff_4",
-                  "login_pw": "happy_day!!!"
+    login_data = {"login_id": "think",
+                  "login_pw": "parkjong"
                   }
+    # login_data = {"login_id": "staff_4",
+    #               "login_pw": "happy_day!!!"
+    #               }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
-    staffs = r.json()['staffs']
-    for staff in staffs:
-        if staff['login_id'] == login_data['login_id']:
-            update_staff_id = staff['id']
-            break
-
+    # 로그인한 본인의 정보 수정 기능 시험
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # staffs = r.json()['staffs']
+    # for staff in staffs:
+    #     if staff['login_id'] == login_data['login_id']:
+    #         update_staff_id = staff['id']
+    #         break
+    #
+    # # staff_data = {'staff_id': update_staff_id,
+    # #               'new_login_id': 'think',
+    # #               'before_pw': 'happy_day!!!',
+    # #               'login_pw': 'parkjong',
+    # #               'position': '이사'
+    # #               }
     # staff_data = {'staff_id': update_staff_id,
-    #               'new_login_id': 'think',
+    #               'new_login_id': 'ddtech_ceo',
     #               'before_pw': 'happy_day!!!',
-    #               'login_pw': 'parkjong',
-    #               'position': '이사'
+    #               # 'login_pw': 'parkjong',
+    #               'position': '대표'
     #               }
-    staff_data = {'staff_id': update_staff_id,
-                  'new_login_id': 'ddtech_ceo',
-                  'before_pw': 'happy_day!!!',
-                  # 'login_pw': 'parkjong',
-                  'position': '대표'
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    # r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
+    # result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    print(result)
+    work_place_infor = { 'name':'',
+                         'manager_name':'',
+                         'manager_phone':'',
+                         'order_name':''
+                         }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
+    result.append({'url':r.url, 'POST':work_place_infor, 'STATUS':r.status_code, 'R':r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    work_infor = {'work_place_id':work_place_id,
+                  'dt_begin':'',
+                  'dt_end':''
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
+    result.append({'url':r.url, 'POST':work_infor, 'STATUS':r.status_code, 'R':r.json()})
+    work_id = r.json()['works'][1]['id']
+    logSend('work_id = ', work_id)
+
+    # 근로자 등록
+    # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
+
+    employees = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
+              ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
+              ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
+              ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
+              ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
+              ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
+              ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
+              ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
+              ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
+              ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
+              ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
+              ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
+              ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
+              ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
+              ['엄상경', '010-8538-4106', '관리부장', 'TS'],
+              ['김종민', '010-7290-8113', '관리차장', 'TS'],
+              ['임유빈', '010-7255-4888', '총무사원', 'TS'],
+              ['박용수', '010-2100-9864', '상무이사', 'F&S'],
+              ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
+              ['김유신', '010-7725-9293', '대      리', 'F&S'],
+              ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
+              ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
+              ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
+              ['김유경', '010-9342-0997', '후     성', 'F&S'],
+              ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
+              ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
+
+    # 고객 : 고객웹에서 근로자 등록
+    next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
+    next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
+    arr_phone_no = [employee[1] for employee in employees]
+    settings.IS_TEST = True
+    employee = {
+        'work_id':work_id,
+        'dt_answer_deadline':next_4_day,
+        'phone_numbers':arr_phone_no
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
+    settings.IS_TEST = False
+
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
