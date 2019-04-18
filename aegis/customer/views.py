@@ -3087,6 +3087,7 @@ def staff_employees_from_work(request):
         # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
         logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
     target_day = datetime.datetime.strptime(rqst['day'] + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
+    logSend(target_day, ' ', work.dt_begin)
     if target_day < work.dt_begin:
         # 근로 내역을 원하는 날짜가 업무 시작일 보다 적은 경우 - 아직 업무가 시작되지도 않은 근로 내역을 요청한 경우
         func_end_log(func_name, '416 업무 날짜 밖의 근로 내역 요청')
@@ -3109,6 +3110,7 @@ def staff_employees_from_work(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
+
         # 가상 데이터 생성
         employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
         arr_employee.append(employee_dic)
@@ -3211,7 +3213,7 @@ def staff_change_time(request):
     employee_id_list = []
     for employee_id in employee_ids:
         if type(employee_id) == dict:
-            employee_id_list.append(AES_DECRYPT_BASE64(employee_id['emplyee_id']))
+            employee_id_list.append(AES_DECRYPT_BASE64(employee_id['employee_id']))
         else:
             employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
     logSend(employee_id_list)
@@ -3246,8 +3248,9 @@ def staff_change_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
+        employee_dic = employee_day_working_from_employee(employee_dic)
         # 가상 데이터 생성
-        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
         employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}
@@ -3355,8 +3358,9 @@ def staff_change_work_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
+        employee_dic = employee_day_working_from_employee(employee_dic)
         # 가상 데이터 생성
-        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
         employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}
