@@ -1212,10 +1212,10 @@ def employee_day_working_from_customer(request):
     pass_history_list = Pass_History.objects.filter(passer_id=passer_id, dt_in__gt=dt_begin, dt_in__lt=dt_end)
     if len(pass_history_list) > 0:
         pass_history = pass_history_list[0]
-        day_work = {'dt_begin_beacon': pass_history.dt_in,
-                    'dt_end_beacon': pass_history.dt_out,
-                    'dt_begin_touch': pass_history.dt_in_verify,
-                    'dt_end_touch': pass_history.dt_out_verify
+        day_work = {'dt_begin_beacon': pass_history.dt_in.strftime('%Y-%m-%d %H:%M:%S'),
+                    'dt_end_beacon': pass_history.dt_out.strftime('%Y-%m-%d %H:%M:%S'),
+                    'dt_begin_touch': pass_history.dt_in_verify.strftime('%Y-%m-%d %H:%M:%S'),
+                    'dt_end_touch': pass_history.dt_out_verify.strftime('%Y-%m-%d %H:%M:%S')
                     }
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'dt': day_work})
@@ -1250,10 +1250,10 @@ def employee_day_working_from_customer(request):
         pass_history.dt_out = end_beacon.dt_reg
     pass_history.save()
 
-    day_work = {'dt_begin_beacon':pass_history.dt_in,
-                'dt_end_beacon':pass_history.dt_out,
-                'dt_begin_touch':pass_history.dt_in_verify,
-                'dt_end_touch':pass_history.dt_out_verify
+    day_work = {'dt_begin_beacon':pass_history.dt_in.strftime('%Y-%m-%d %H:%M:%S'),
+                'dt_end_beacon':pass_history.dt_out.strftime('%Y-%m-%d %H:%M:%S'),
+                'dt_begin_touch':pass_history.dt_in_verify.strftime('%Y-%m-%d %H:%M:%S'),
+                'dt_end_touch':pass_history.dt_out_verify.strftime('%Y-%m-%d %H:%M:%S')
                 }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'dt':day_work})
