@@ -286,7 +286,7 @@ def reg_employee_for_customer(request):
     msg = '이지체크\n'\
           '새로운 업무를 앱에서 확인해주세요.\n'\
           '앱은 홈페이지에서...\n'\
-          'http://0.0.0.0:8000/app'
+          'https://api.aegisfac.com/app'
 
     # print(len(msg))
 

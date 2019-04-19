@@ -579,8 +579,9 @@ def reg_customer(request):
                '아이디 ' + response_customer_json['login_id'] + '\n'
                '비밀번호 happy_day!!!'
     }
-    r = requests.post('https://apis.aligo.in/send/', data=rData)
-    logSend(r.json())
+    if settings.IS_TEST:
+        r = requests.post('https://apis.aligo.in/send/', data=rData)
+        logSend(r.json())
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
@@ -2463,9 +2464,10 @@ def employee_test_step_4(request):
         'dt_answer_deadline':next_4_day,
         'phone_numbers':arr_phone_no
     }
+    settings.IS_TEST = True
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
     settings.IS_TEST = False
+    result.append({'url':r.url, 'POST':employee, 'STATUS':r.status_code, 'R':r.json()})
 
     for employee_ex in employees:
         # 근로자 : 앱 설치 후 인증번호 요청
@@ -2602,6 +2604,25 @@ def employee_test_step_5(request):
         logSend(result['message'])
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
+
+    msg = '이지체크\n'\
+          '새로운 업무를 앱에서 확인해주세요.\n'\
+          '앱 설치는...\n'\
+          'https://api.aegisfac.com/app'
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        'receiver': '01025573555',
+        'msg_type': 'SMS',
+        'msg': msg,
+    }
+
+    rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+    logSend('SMS result', rSMS.json())
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
 
     result = []
 
