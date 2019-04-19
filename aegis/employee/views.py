@@ -4,7 +4,7 @@ import inspect
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import status422, no_only_phone_no, phone_format
+from config.common import status422, no_only_phone_no, phone_format, dt_null
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1213,10 +1213,10 @@ def employee_day_working_from_customer(request):
     pass_history_list = Pass_History.objects.filter(passer_id=passer_id, dt_in__gt=dt_begin, dt_in__lt=dt_end)
     if len(pass_history_list) > 0:
         pass_history = pass_history_list[0]
-        day_work = {'dt_begin_beacon': pass_history.dt_in.strftime('%Y-%m-%d %H:%M:%S'),
-                    'dt_end_beacon': pass_history.dt_out.strftime('%Y-%m-%d %H:%M:%S'),
-                    'dt_begin_touch': pass_history.dt_in_verify.strftime('%Y-%m-%d %H:%M:%S'),
-                    'dt_end_touch': pass_history.dt_out_verify.strftime('%Y-%m-%d %H:%M:%S'),
+        day_work = {'dt_begin_beacon': dt_null(pass_history.dt_in),
+                    'dt_end_beacon': dt_null(pass_history.dt_out),
+                    'dt_begin_touch': dt_null(pass_history.dt_in_verify),
+                    'dt_end_touch': dt_null(pass_history.dt_out_verify),
                     'action': pass_history.action,
                     }
         func_end_log(func_name)
@@ -1233,6 +1233,12 @@ def employee_day_working_from_customer(request):
         begin_beacon = passes[0]
         # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
         pass_history.dt_in = begin_beacon.dt_reg
+        passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=begin_beacon.dt_reg + datetime.timedelta(hours=5),
+                                     dt_reg__lt=begin_beacon.dt_reg + datetime.timedelta(hours=14), is_in=0)
+        if len(passes) > 0:
+            end_beacon = passes[len(passes) - 1]
+            # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
+            pass_history.dt_out = end_beacon.dt_reg
 
     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=dt_begin, dt_verify__lt=dt_end, is_in=1)
     if len(passes) > 0:
@@ -1240,24 +1246,18 @@ def employee_day_working_from_customer(request):
         # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
         pass_history.dt_in_verify = begin_button.dt_verify
 
-    passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=begin_button.dt_verify, dt_verify__lt=begin_button.dt_verify + datetime.timedelta(days=1), is_in=0)
-    if len(passes) > 0:
-        end_button = passes[0]
-        # logSend(end_button.dt_verify, ' ', end_button.is_in)
-        pass_history.dt_out_verify = end_button.dt_verify
+        passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=begin_button.dt_verify, dt_verify__lt=begin_button.dt_verify + datetime.timedelta(days=1), is_in=0)
+        if len(passes) > 0:
+            end_button = passes[0]
+            # logSend(end_button.dt_verify, ' ', end_button.is_in)
+            pass_history.dt_out_verify = end_button.dt_verify
 
-    passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=begin_beacon.dt_reg + datetime.timedelta(hours=5),
-                                 dt_reg__lt=begin_beacon.dt_reg + datetime.timedelta(hours=14), is_in=0)
-    if len(passes) > 0:
-        end_beacon = passes[len(passes) - 1]
-        # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
-        pass_history.dt_out = end_beacon.dt_reg
     pass_history.save()
 
-    day_work = {'dt_begin_beacon':pass_history.dt_in.strftime('%Y-%m-%d %H:%M:%S'),
-                'dt_end_beacon':pass_history.dt_out.strftime('%Y-%m-%d %H:%M:%S'),
-                'dt_begin_touch':pass_history.dt_in_verify.strftime('%Y-%m-%d %H:%M:%S'),
-                'dt_end_touch':pass_history.dt_out_verify.strftime('%Y-%m-%d %H:%M:%S'),
+    day_work = {'dt_begin_beacon':dt_null(pass_history.dt_in),
+                'dt_end_beacon':dt_null(pass_history.dt_out),
+                'dt_begin_touch':dt_null(pass_history.dt_in_verify),
+                'dt_end_touch':dt_null(pass_history.dt_out_verify),
                 'action':pass_history.action,
                 }
     func_end_log(func_name)
