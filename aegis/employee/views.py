@@ -1229,14 +1229,16 @@ def employee_day_working_from_customer(request):
 
     # passer = Passer.objects.get(id=passer_id)
     passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end, is_in=1)
-    begin_beacon = passes[0]
-    # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
-    pass_history.dt_in = begin_beacon.dt_reg
+    if len(passes) > 0:
+        begin_beacon = passes[0]
+        # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
+        pass_history.dt_in = begin_beacon.dt_reg
 
     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=dt_begin, dt_verify__lt=dt_end, is_in=1)
-    begin_button = passes[0]
-    # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
-    pass_history.dt_in_verify = begin_button.dt_verify
+    if len(passes) > 0:
+        begin_button = passes[0]
+        # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
+        pass_history.dt_in_verify = begin_button.dt_verify
 
     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=begin_button.dt_verify, dt_verify__lt=begin_button.dt_verify + datetime.timedelta(days=1), is_in=0)
     if len(passes) > 0:
