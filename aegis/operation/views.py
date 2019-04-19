@@ -2605,25 +2605,6 @@ def employee_test_step_5(request):
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response(result)
 
-    msg = '이지체크\n'\
-          '새로운 업무를 앱에서 확인해주세요.\n'\
-          '앱 설치는...\n'\
-          'https://api.aegisfac.com/app'
-    rData = {
-        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
-        'user_id': 'yuadocjon22',
-        'sender': settings.SMS_SENDER_PN,
-        'receiver': '01025573555',
-        'msg_type': 'SMS',
-        'msg': msg,
-    }
-
-    rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-    logSend('SMS result', rSMS.json())
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
-
     result = []
 
     login_data = {"login_id": "think",
@@ -2728,4 +2709,69 @@ def employee_test_step_5(request):
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
+@cross_origin_read_allow
+def sms_install_mng(request):
+
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+
+    # msg = '이지체크\n'\
+    #       '새로운 업무를 앱에서 확인해주세요.\n'\
+    #       '앱 설치\n'\
+    #       'https://api-dev.aegisfac.com/app'
+    #
+    # rData = {
+    #     'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+    #     'user_id': 'yuadocjon22',
+    #     'sender': settings.SMS_SENDER_PN,
+    #     'receiver': '01025573555',
+    #     'msg_type': 'SMS',
+    #     'msg': msg,
+    # }
+    # r = requests.post('https://apis.aligo.in/send/', data=rData)
+    # func_end_log(func_name)
+    # return REG_200_SUCCESS.to_json_response({'result':result})
+
+    result = []
+
+    login_data = {"login_id": "think",
+                  "login_pw": "parkjong"
+                  }
+    # login_data = {"login_id": "staff_4",
+    #               "login_pw": "happy_day!!!"
+    #               }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    staffs = r.json()['staffs']
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        'msg_type': 'SMS',
+    }
+
+    # rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+    for staff in staffs:
+        msg = '이지체크\n'
+        msg += '관리자 앱을 설치하십시요.\n'
+        msg += 'id: %s\n' % staff['login_id']
+        msg += 'https://api-dev.aegisfac.com/apm'
+        rData['receiver'] = staff['pNo']
+        rData['msg'] = msg
+        # logSend(staff['login_id'], ' ', staff['pNo'])
+        # result.append({'login_id':staff['login_id'], 'pNo':staff['pNo']})
+        r = requests.post('https://apis.aligo.in/send/', data=rData)
+        result.append({'url': r.url, 'POST': rData, 'STATUS': r.status_code, 'R': r.json()})
+        # logSend('SMS result', rSMS.json())
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result':result})
 
