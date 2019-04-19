@@ -2736,6 +2736,10 @@ def sms_install_mng(request):
     # func_end_log(func_name)
     # return REG_200_SUCCESS.to_json_response({'result':result})
 
+    if not 'id' in rqst:
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'result': 'parameter: id?'})
+
     result = []
 
     login_data = {"login_id": "think",
