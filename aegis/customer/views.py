@@ -2920,6 +2920,7 @@ def staff_foreground(request):
 
 def employee_day_working_from_employee(employee_dic, day):
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d %H:%M:%S")
+    logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
         employee_infor = {'employee_id':employee_dic['employee_id'],
                           'dt':dt_day.strftime("%Y-%m-%d")
