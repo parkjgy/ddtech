@@ -460,7 +460,7 @@ def notification_accept(request):
     notification = notifications[0]
 
     is_accept = 1 if rqst['is_accept'] == '1' else 0
-    logSend(rqst['is_accept'], ' ', is_accept)
+    logSend('is_accept = ', rqst['is_accept'], ' ', is_accept)
     #
     # 근로자 정보에 업무를 등록
     #
@@ -1227,7 +1227,7 @@ def employee_day_working_from_customer(request):
                                 minor=0,
                                 )
 
-    passer = Passer.objects.get(id=passer_id)
+    # passer = Passer.objects.get(id=passer_id)
     passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end, is_in=1)
     begin_beacon = passes[0]
     # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
