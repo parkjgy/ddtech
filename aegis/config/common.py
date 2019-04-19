@@ -108,7 +108,7 @@ def dt_null(dt) -> str:
     :param dt:
     :return:
     """
-    return None if dt == "" else dt.strftime("%Y-%m-%d %H:%M:%S")
+    return None if dt == None else dt.strftime("%Y-%m-%d %H:%M:%S")
 
 def rMin(min) -> int:
     """
