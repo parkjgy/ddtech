@@ -459,7 +459,8 @@ def notification_accept(request):
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
     notification = notifications[0]
 
-    is_accept = 1 if rqst['is_accept'] == 1 else 0
+    is_accept = 1 if rqst['is_accept'] == '1' else 0
+    logSend(rqst['is_accept'], ' ', is_accept)
     #
     # 근로자 정보에 업무를 등록
     #
