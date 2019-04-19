@@ -2892,7 +2892,7 @@ def staff_foreground(request):
                             }
             # 가상 데이터 생성
             # employee_dic = virsual_employee(isWorkStart, employee_dic)
-            employee_dic = employee_day_working_from_employee(employee_dic)
+            employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
         # work.work_place_name = '대덕기공'
@@ -2918,11 +2918,11 @@ def staff_foreground(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
-def employee_day_working_from_employee(employee_dic):
-    dt_today = datetime.datetime.now()
-    if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_today:
+def employee_day_working_from_employee(employee_dic, day):
+    dt_day = datetime.datetime.strptime(day, "%Y-%m-%d %H:%M:%S")
+    if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
         employee_infor = {'employee_id':employee_dic['employee_id'],
-                          'dt':dt_today.strftime("%Y-%m-%d")
+                          'dt':dt_day.strftime("%Y-%m-%d")
                           }
         r = requests.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=employee_infor)
         logSend(r.json())
@@ -3248,7 +3248,7 @@ def staff_change_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic)
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # 가상 데이터 생성
         # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
@@ -3358,7 +3358,7 @@ def staff_change_work_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic)
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # 가상 데이터 생성
         # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type

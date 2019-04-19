@@ -66,12 +66,12 @@ class Pass(models.Model):
     출입
     id
     출입자 id
-    action ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
+    is_in   # 0:out, 1:in
     출입 등록 시간 : dt_reg 
     출입자 확인 시간 : dt_verify
     """
     passer_id = models.IntegerField()
-    is_in = models.IntegerField(default=10) # ( 0 : 출근 안함, 100 : 정상 출근, 200 : 지각 출근, 110 : 정상 퇴근, 120 : 조퇴 퇴근, 112 : 정상 출퇴근 외출 2회 )
+    is_in = models.IntegerField() 
     dt_reg = models.DateTimeField(null=True, blank=True)
     dt_verify = models.DateTimeField(null=True, blank=True)
 
