@@ -1233,24 +1233,33 @@ def employee_day_working_from_customer(request):
         begin_beacon = passes[0]
         # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
         pass_history.dt_in = begin_beacon.dt_reg
-        passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=begin_beacon.dt_reg + datetime.timedelta(hours=5),
-                                     dt_reg__lt=begin_beacon.dt_reg + datetime.timedelta(hours=14), is_in=0)
-        if len(passes) > 0:
-            end_beacon = passes[len(passes) - 1]
-            # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
-            pass_history.dt_out = end_beacon.dt_reg
+    else:
+        pass_history.dt_in = dt_begin + datetime.timedelta(hours=8, minutes=20)
+
+    passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=pass_history.dt_in + datetime.timedelta(hours=5),
+                                 dt_reg__lt=pass_history.dt_in + datetime.timedelta(hours=14), is_in=0)
+    if len(passes) > 0:
+        end_beacon = passes[len(passes) - 1]
+        # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
+        pass_history.dt_out = end_beacon.dt_reg
+    else:
+        pass_history.dt_out = pass_history.dt_in + datetime.timedelta(hours=9, minutes=30)
 
     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=dt_begin, dt_verify__lt=dt_end, is_in=1)
     if len(passes) > 0:
         begin_button = passes[0]
         # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
         pass_history.dt_in_verify = begin_button.dt_verify
+    else:
+        pass_history.dt_in_verify = dt_begin + datetime.timedelta(hours=8, minutes=25)
 
-        passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=begin_button.dt_verify, dt_verify__lt=begin_button.dt_verify + datetime.timedelta(days=1), is_in=0)
-        if len(passes) > 0:
-            end_button = passes[0]
-            # logSend(end_button.dt_verify, ' ', end_button.is_in)
-            pass_history.dt_out_verify = end_button.dt_verify
+    passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=pass_history.dt_in_verify, dt_verify__lt=pass_history.dt_in_verify + datetime.timedelta(days=1), is_in=0)
+    if len(passes) > 0:
+        end_button = passes[0]
+        # logSend(end_button.dt_verify, ' ', end_button.is_in)
+        pass_history.dt_out_verify = end_button.dt_verify
+    else:
+        pass_history.dt_out_verify = pass_history.dt_in + datetime.timedelta(hours=10)
 
     pass_history.save()
 
