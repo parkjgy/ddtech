@@ -4,7 +4,7 @@ import inspect
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import status422, no_only_phone_no, phone_format, dt_null
+from config.common import status422, no_only_phone_no, phone_format, dt_null, is_parameter_ok
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -25,42 +25,6 @@ from datetime import datetime, timedelta
 import datetime
 
 from django.conf import settings
-
-
-def is_ok_request_key_decrypt(rqst, key, is_decrypt = False) -> (bool, str):
-    if not key in rqst:
-        return False, {'message':'ClientError: parameter \'%s\' 가 없어요' % key}
-    if is_decrypt:
-        plain = AES_DECRYPT_BASE64(rqst[key])
-        if plain == '__error':
-            return False, {'message':'ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.' % key}
-        else:
-            return True, plain
-    return True, rqst[key]
-
-
-def is_parameter_ok(rqst, key_list) -> dict:
-    results = {'is_ok':True, 'results':[], 'parameters':{}}
-    for key in key_list:
-        is_decrypt = '_!' in key
-        if is_decrypt:
-            key = key.replace('_!', '')
-        if not key in rqst:
-            # key 가 parameter 에 포함되어 있지 않으면
-            results['is_ok'] = False
-            results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-        else:
-            if is_decrypt:
-                # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
-                plain = AES_DECRYPT_BASE64(rqst[key])
-                if plain == '__error':
-                    results['is_ok'] = False
-                    results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
-                else:
-                    results['parameters'][key] = plain
-            else:
-                results['parameters'][key] = rqst[key]
-    return results
 
 
 @cross_origin_read_allow
@@ -1283,7 +1247,7 @@ def my_work_histories_for_customer(request):
         두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
     http://0.0.0.0:8000/employee/my_work_histories_for_customer?employee_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
-        passer_id='서버로 받아 저장해둔 출입자 id'
+        employee_id='서버로 받아 저장해둔 출입자 id'
         dt = '2018-01'
     response
         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
@@ -1315,24 +1279,14 @@ def my_work_histories_for_customer(request):
     else:
         rqst = request.GET
 
-    # if not 'passer_id' in rqst: # id 가 들어왔는지 검사
-    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 없어요'})
-    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
-    if not 'dt' in rqst: # year_month 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'dt\' 가 없어요'})
-    year_month = rqst["dt"]
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
-    # passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
-    # if passer_id == '__error':
-    #     return status422(func_name, {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'})
-    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-    if employee_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+    employee_id = parameter_check['parameters']['employee_id']
+    year_month = parameter_check['parameters']['dt']
 
-    # passers = Passer.objects.filter(id=passer_id)
-    # if len(passers) != 1:
-    #     return status422(func_name, {'message':'ServerError: Passer 에 id=%s 이(가) 없거나 중복됨' % passers })
     employees = Employee.objects.filter(id=employee_id)
     if len(employees) != 1:
         return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })

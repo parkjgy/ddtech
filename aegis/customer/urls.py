@@ -43,6 +43,7 @@ urlpatterns = [
     url(r'customer/report_of_manager$', views.report_of_manager, name='report_of_manager'),
     url(r'customer/report_all$', views.report_all, name='report_all'),
     url(r'customer/report_of_staff$', views.report_of_staff, name='report_of_staff'),
+    url(r'customer/report_of_employee$', views.report_of_employee, name='report_of_employee'),
 
     url(r'customer/staff_version$', views.staff_version, name='staff_version'),
     url(r'customer/staff_foreground$', views.staff_foreground, name='staff_foreground'),

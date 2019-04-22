@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import hash_SHA256, no_only_phone_no, phone_format
+from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
 from config.common import rMin
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -964,12 +964,11 @@ def customer_test_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        logSend(AES_DECRYPT_BASE64(rqst['key']))
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     # 고객서버 테이블 삭제 및 초기화
     key = {'key':rqst['key']}
@@ -1000,11 +999,12 @@ def customer_test_step_2(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
     result = []
 
     # 운영 로그인
@@ -1055,11 +1055,11 @@ def customer_test_step_3(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1143,11 +1143,11 @@ def customer_test_step_4(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1227,11 +1227,11 @@ def customer_test_step_5(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1321,11 +1321,11 @@ def customer_test_step_6(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1437,11 +1437,11 @@ def customer_test_step_7(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1576,11 +1576,11 @@ def customer_test_step_8(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1831,11 +1831,11 @@ def customer_test_step_9(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -1948,11 +1948,11 @@ def customer_test_step_A(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -2100,12 +2100,11 @@ def employee_test_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        logSend(AES_DECRYPT_BASE64(rqst['key']))
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -2141,11 +2140,11 @@ def employee_test_step_2(request):
     else:
         rqst = request.GET
 
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
     result = []
 
     # 운영 로그인
@@ -2234,11 +2233,11 @@ def employee_test_step_3(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
     # 고객 : 로그인
@@ -2392,11 +2391,11 @@ def employee_test_step_4(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
     # 고객 : 로그인
@@ -2599,11 +2598,11 @@ def employee_test_step_5(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
-        result = {'message':'사용 권한이 없습니다.'}
-        logSend(result['message'])
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response(result)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
 
@@ -2717,7 +2716,6 @@ def sms_install_mng(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
 
     # msg = '이지체크\n'\
     #       '새로운 업무를 앱에서 확인해주세요.\n'\

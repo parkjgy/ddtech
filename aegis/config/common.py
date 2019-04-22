@@ -5,6 +5,7 @@ from Crypto.Hash import SHA256
 
 from .log import logSend
 from .status_collection import *
+from .secret import AES_DECRYPT_BASE64
 
 
 # # Cross-Origin Read Allow Rule
@@ -118,3 +119,38 @@ def rMin(min) -> int:
     """
     random_value = random.randint(0, 10)
     return min - 5 + random_value
+
+def is_parameter_ok(rqst, key_list) -> dict:
+    """
+    API 의 파라미터를 검사
+    - key_list 의 key에 '_!' 가 붙어 있으면 암호환된 값을 복호화 한다. ex) key_! << 키는 key 이고 복호화 해서 정상인지 확인한다는 뜻
+    :param rqst:
+    :param key_list:
+    :return:
+        is_ok: True     # 에러 발생 여부
+        results:[...]   # 에러가 있으면 에러 메세지
+        parameter['key']=value,  # 검사가 끝난 파라미터들
+    """
+    results = {'is_ok':True, 'results':[], 'parameters':{}}
+    for key in key_list:
+        is_decrypt = '_!' in key
+        if is_decrypt:
+            key = key.replace('_!', '')
+        if not key in rqst:
+            # key 가 parameter 에 포함되어 있지 않으면
+            results['is_ok'] = False
+            results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
+        else:
+            if is_decrypt:
+                # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
+                plain = AES_DECRYPT_BASE64(rqst[key])
+                if plain == '__error':
+                    results['is_ok'] = False
+                    results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
+                else:
+                    results['parameters'][key] = plain
+            else:
+                results['parameters'][key] = rqst[key]
+    return results
+
+

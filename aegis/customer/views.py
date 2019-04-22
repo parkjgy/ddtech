@@ -8,7 +8,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log, status422
+from config.common import func_begin_log, func_end_log, status422, is_parameter_ok
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -2659,6 +2659,86 @@ def report_of_staff(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
+@cross_origin_read_allow
+@session_is_none_403
+def report_of_employee(request):
+    """
+    근로자의 월별 근태내역
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report_of_employee?work_id=_LdMng5jDTwK-LMNlj22Vw&employee_id=iZ_rkELjhh18ZZauMq2vQw&year_month=2019-04
+    GET
+        work_id = 업무 id         # 사업장에서 선택된 업무의 id
+        employee_id = 근로자 id    # 업무에서 선택된 근로자의 id
+        year_month = "2019-04"   # 근태내역의 연월
+    response
+        STATUS 200
+            {
+              "arr_work": [
+                {
+                  "work_place_name": "효성 1공장",
+                  "name": "조립",
+                  "contractor_name": "대덕기공",
+                  "type": "주간",
+                  "staff_name": "홍길동",
+                  "staff_pNo": "010-1111-2222",
+                  "arr_employee": [
+                    {
+                      "id": "암호화된 id",
+                      "name": "강호동",
+                      "pNo": "010-3333-7777",
+                      "is_active": "근무중"
+                    },
+                    ......
+                  ]
+                },
+                ......
+              ]
+            }
+        STATUS 503
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'employee_id_!', 'year_month'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    work_id = parameter_check['parameters']['work_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    year_month = parameter_check['parameters']['year_month']
+
+    # result = {'parameters': [work_id, employee_id, year_month]}
+    # func_end_log(func_name)
+    # return REG_200_SUCCESS.to_json_response(result)
+
+    # employees = Employee.objects.filter(id=employee_id, work_id=work_id)
+
+    parameters = {"employee_id": rqst['employee_id'],
+                  "dt":year_month
+                  }
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
+
+    result = {'working': r.json()['working']}
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
 
 @cross_origin_read_allow
 def staff_version(request):
@@ -2989,12 +3069,11 @@ def staff_background(request):
     else:
         rqst = request.GET
 
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
+    parameter_check = is_parameter_ok(rqst, ['id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    staff_id = parameter_check['parameters']['id']
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
@@ -3062,19 +3141,14 @@ def staff_employees_from_work(request):
     else:
         rqst = request.GET
 
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-    if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
-    if not 'day' in rqst: # day 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'day\' 가 없어요'})
+    parameter_check = is_parameter_ok(rqst, ['id_!', 'work_id_!', 'day'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    if work_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
+    staff_id = parameter_check['parameters']['id']
+    work_id = parameter_check['parameters']['work_id']
+    day = parameter_check['parameters']['day']
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
@@ -3087,7 +3161,7 @@ def staff_employees_from_work(request):
     if work.staff_id != app_user.id:
         # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
         logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
-    target_day = datetime.datetime.strptime(rqst['day'] + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
+    target_day = datetime.datetime.strptime(day + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
     logSend(target_day, ' ', work.dt_begin)
     if target_day < work.dt_begin:
         # 근로 내역을 원하는 날짜가 업무 시작일 보다 적은 경우 - 아직 업무가 시작되지도 않은 근로 내역을 요청한 경우
