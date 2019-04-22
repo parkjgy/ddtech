@@ -2223,12 +2223,12 @@ def list_employee(request):
                     state = "승락"
                 else:
                     state = "거부"
-            view_employee = {'id':AES_ENCRYPT_BASE64(str(employee.id)),
-                             'name':employee.name,
-                             'pNo':phone_format(employee.pNo),
-                             'dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-                             'dt_end':employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-                             'state':state,
+            view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                             'name': employee.name,
+                             'pNo': phone_format(employee.pNo),
+                             'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                             'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                             'state': state,
                              }
             arr_employee.append(view_employee)
     else:
