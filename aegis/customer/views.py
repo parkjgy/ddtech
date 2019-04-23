@@ -1,3 +1,8 @@
+"""
+Customer view
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
 import random
 import requests
 import datetime
@@ -884,7 +889,7 @@ def login(request):
         STATUS 200
         {
           "message": "정상적으로 처리되었습니다.",
-          "staff_permisstion": {
+          "staff_permission": {
             "is_site_owner": false,
             "is_manager": false
           },
@@ -1960,6 +1965,7 @@ def employee_work_accept_for_employee(request):
         {
             'worker_id': 'cipher_id'  # 운영직원 id
             'work_id':'암호화된 work_id',
+            'employee_id': employee id  # 근로자 서버의 근로자 id
             'employee_name':employee.name,
             'employee_pNo':01011112222,
             'is_accept':True
@@ -1983,8 +1989,7 @@ def employee_work_accept_for_employee(request):
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-    logSend('   from operation server : op staff id ', worker_id)
-    print('   from operation server : op staff id ', worker_id)
+    logSend('   from operation server : operation staff id ', worker_id)
 
     logSend(rqst['work_id'])
     logSend(rqst['employee_name'])
@@ -2006,7 +2011,68 @@ def employee_work_accept_for_employee(request):
     employee.employee_id = rqst['employee_id']
     employee.name = rqst['employee_name']
     employee.is_accept_work = rqst['is_accept']
-    print(employee)
+    employee.save()
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def update_employee_for_employee(request):
+    """
+    <<<근로자 서버용>>> 근로자 수정
+    * 서버 to 서버 통신 work_id 필요
+        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/employee_work_accept_for_employee?worker_id=qgf6YHf1z2Fx80DR8o_Lvg&staff_id=qgf6YHf1z2Fx80DR8o_Lvg
+    POST
+        {
+            'worker_id': 'cipher_id'  # 운영직원 id
+            'work_id':'암호화된 work_id',
+            'employee_pNo':01011112222,
+            'new_name':name,
+            'new_pNo':pNo
+        }
+    response
+        STATUS 200
+            {
+                'msg': '정상처리되었습니다.',
+                'login_id': staff.login_id,
+            }
+        STATUS 542
+            {'message':'파견사 측에 근로자 정보가 없습니다.'}
+        STATUS 422  # 개발자 수정사항
+            {'message':'업무 참여 시간이 종료되었습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
+    logSend('   from employee server : operation staff id ', worker_id)
+
+    logSend(rqst['work_id'])
+    logSend(rqst['employee_pNo'])
+    logSend(rqst['new_name'])
+    logSend(rqst['new_pNo'])
+
+    works = Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_id']), dt_end__gt=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    if len(works) == 0:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'종료된 업무라서 변경할 필요가 없습니다.'})
+    work = works[0]
+
+    employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
+    if len(employees) != 1:
+        func_end_log(func_name)
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'파견사 측에 근로자 정보가 없습니다.'})
+
+    employee = employees[0]
+    employee.name = rqst['new_name']
+    employee.pNo = rqst['new_pNo']
     employee.save()
 
     func_end_log(func_name)
@@ -2971,7 +3037,7 @@ def staff_foreground(request):
                             'y':employee.y,
                             }
             # 가상 데이터 생성
-            # employee_dic = virsual_employee(isWorkStart, employee_dic)
+            # employee_dic = virtual_employee(isWorkStart, employee_dic)
             employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
             arr_employee.append(employee_dic)
@@ -2988,7 +3054,7 @@ def staff_foreground(request):
                     'employees':arr_employee
                     }
         # 가상 데이터 생성
-        # work_dic = virsual_work(isWorkStart, work_dic)
+        # work_dic = virtual_work(isWorkStart, work_dic)
         arr_work.append(work_dic)
     result['works'] = arr_work
     app_user.is_app_login = True
@@ -3013,7 +3079,7 @@ def employee_day_working_from_employee(employee_dic, day):
     return employee_dic
 
 
-def virsual_employee(isWorkStart, employee) -> dict:
+def virtual_employee(isWorkStart, employee) -> dict:
     if isWorkStart:
         employee['is_accept_work'] = '수락'
         if random.randint(0,100) > 90:
@@ -3038,7 +3104,7 @@ def virsual_employee(isWorkStart, employee) -> dict:
     return employee
 
 
-def virsual_work(isWorkStart, work) -> dict:
+def virtual_work(isWorkStart, work) -> dict:
     if isWorkStart:
         work['dt_begin'] = (datetime.datetime.now() - datetime.timedelta(days=9)).strftime("%Y-%m-%d %H:%M:%S")
     else:
@@ -3187,7 +3253,7 @@ def staff_employees_from_work(request):
                         }
 
         # 가상 데이터 생성
-        employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee,
               'dt_work':target_day.strftime("%Y-%m-%d")
@@ -3325,7 +3391,7 @@ def staff_change_time(request):
                         }
         employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # 가상 데이터 생성
-        # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}
@@ -3435,7 +3501,7 @@ def staff_change_work_time(request):
                         }
         employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # 가상 데이터 생성
-        # employee_dic = virsual_employee(True, employee_dic)  # isWorkStart = True
+        # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
     result = {'emplyees':arr_employee}

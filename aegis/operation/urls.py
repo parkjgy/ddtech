@@ -4,6 +4,8 @@ from operation import views
 from operation.views import OperationView
 
 urlpatterns = [
+    url(r'operation/logControl$', views.logControl, name='logControl'),
+
     url(r'operation/testEnv$', views.testEnv, name='testEnv'),
     url(r'operation/currentEnv$', views.currentEnv, name='currentEnv'),
     url(r'operation/updateEnv$', views.updateEnv, name='updateEnv'),

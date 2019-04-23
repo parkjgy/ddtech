@@ -1,3 +1,9 @@
+"""
+Config view
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
+
 import json
 import os
 import time

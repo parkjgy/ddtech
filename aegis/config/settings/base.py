@@ -127,6 +127,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'resources/media/')
 # the site admins on every HTTP 500 error when DEBUG=False.
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+
+IS_LOG = True
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,

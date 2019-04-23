@@ -1,3 +1,9 @@
+"""
+Employee view
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
+
 import random
 import inspect
 
@@ -40,12 +46,6 @@ def table_reset_and_clear_for_operation(request):
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'key\' 가 없어요'}
             {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'}
-
-            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
-            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -53,52 +53,11 @@ def table_reset_and_clear_for_operation(request):
     else:
         rqst = request.GET
 
-    # key = is_ok_request_key_decrypt(rqst, 'key', is_decrypt=True)
-    # if not key[0]:
-    #     return status422(func_name, key[1])
-    #
-    # if key[1] != 'thinking':
-    #     func_end_log(func_name)
-    #     return REG_403_FORBIDDEN.to_json_response({'message':'사용 권한이 없습니다.'})
-
-    # parameter_check = is_parameter_ok(rqst, ['key_!', 'id_!', 'aa'])
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     print(parameter_check['parameters'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
-
-        # return status422(func_name, {'message':parameter_check['results']})
-
-    # if not 'key' in rqst: # key 가 들어왔는지 검사
-    #     return status422(func_name, {'message':'ClientError: parameter \'key\' 가 없어요'})
-    #
-    # if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
-    #     return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
-    # if not 'year_month' in rqst: # year_month 가 들어왔는지 검사
-    #     return status422(func_name, {'message':'ClientError: parameter \'year_month\' 가 없어요'})
-    #
-    # key = AES_DECRYPT_BASE64(rqst['key'])
-    # if key == '__error':
-    #     return status422(func_name, {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'})
-    #
-    # employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-    # if employee_id == '__error':
-    #     return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
-    #
-    # app_users = Staff.objects.filter(id=staff_id)
-    # if len(app_users) != 1:
-    #     return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
-    # employees = Employee.objects.filter(id=employee_id)
-    # if len(employees) != 1:
-    #     return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
-    # employee = employees[0]
-    #
-    # if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
-    #     result = {'message':'사용 권한이 없습니다.'}
-    #     logSend(result['message'])
-    #     func_end_log(func_name)
-    #     return REG_403_FORBIDDEN.to_json_response(result)
 
     Beacon.objects.all().delete()
     Beacon_History.objects.all().delete()
@@ -439,7 +398,7 @@ def notification_accept(request):
         )
         employee.save()
         logSend('ERROR: 출입자가 근로자가 아닌 경우 - 발생하면 안됨 employee_id:', employee_id)
-    print(employee.name)
+    logSend(employee.name)
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -454,7 +413,7 @@ def notification_accept(request):
     }
     logSend(request_data)
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
-    print(response_customer)
+    logSend(response_customer.json())
     if response_customer.status_code != 200:
         func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
@@ -1097,10 +1056,18 @@ def update_my_info(request):
     passer = Passer.objects.get(id=passer_id)
     employee = Employee.objects.get(id=passer.employee_id)
 
+    update_employee_of_customer = {'is_upate': False}
     if 'name' in rqst:
         if len(rqst['name']) < 2:
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'이름은 2자 이상이어야 합니다.'})
+        #
+        # 고객사 업무의 근로자 이름도 변경되어야 함.
+        #
+        update_employee_of_customer['is_upate'] = True
+        update_employee_of_customer['old_name'] = employee.name
+        update_employee_of_customer['new_name'] = rqst['name']
+
         employee.name = rqst['name'];
         logSend('   ' + rqst['name']);
     if 'pNo' in rqst:
@@ -1108,6 +1075,13 @@ def update_my_info(request):
         if len(pNo) < 9:
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 확인해 주세요.'})
+        #
+        # 고객사 업무의 근로자 전화번호도 변경되어야 함.
+        #
+        update_employee_of_customer['is_upate'] = True
+        update_employee_of_customer['old_pNo'] = passer.pNo
+        update_employee_of_customer['new_pNo'] = pNo
+
         passer.pNo = pNo;
         passer.save()
         logSend('   ' + pNo);
@@ -1126,6 +1100,26 @@ def update_my_info(request):
         logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
 
     employee.save()
+
+    #
+    # to customer server
+    # 고객사 근로자의 이름과 전화번호 변경
+    #
+    if update_employee_of_customer['is_upate'] and employee.work_id > 0:
+        request_data = {
+            'worker_id': AES_ENCRYPT_BASE64('thinking'),
+            'work_id': AES_ENCRYPT_BASE64(str(employee.work_id)),
+            'employee_pNo': update_employee_of_customer['old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
+            'new_name': update_employee_of_customer['old_name'] if 'new_name' in update_employee_of_customer else employee.name,
+            'new_pNo': update_employee_of_customer['new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
+        }
+        logSend(request_data)
+        response_customer = requests.post(settings.CUSTOMER_URL + 'update_employee_for_employee', json=request_data)
+        logSend(response_customer.json())
+        if response_customer.status_code != 200:
+            func_end_log(func_name)
+            return ReqLibJsonResponse(response_customer)
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 

@@ -1,5 +1,7 @@
 # -*- encoding:utf-8-*-
 
+from django.conf import settings
+
 import logging
 
 logger_log = logging.getLogger("aegis.log")
@@ -18,6 +20,8 @@ def logSend(*args):
     :returns: R: json 양식으로된 게시물이다. {'title': '임신 중 ', 'text': '<!DOCTYPE html><html>...', 'published_date': '2018-10-04', 'author':'Thinking'}
     """
     try:
+        if not settings.IS_LOG:
+            return
         str_list = []
         for arg in args:
             str_list.append(str(arg))

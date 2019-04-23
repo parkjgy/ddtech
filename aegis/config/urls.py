@@ -1,3 +1,8 @@
+"""
+Main urls
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
 """config URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:

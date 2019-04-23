@@ -1,3 +1,9 @@
+"""
+Operation view
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
+
 import json
 import datetime
 from datetime import timedelta
@@ -315,8 +321,58 @@ class OperationView(APIView):
 
 
 @cross_origin_read_allow
+@session_is_none_403_with_operation
+def logControl(request):
+    """
+    로그를 Start, Stop 한다.
+    http://0.0.0.0:8000/operation/logControl?action=Stop
+    POST
+        {
+            'action': 'Start'   # Stop
+        }
+    response
+        STATUS 200
+        STATUS 524
+            {'message':'수정 권한이 없습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'action\' 가 없어요'}
+            {'message': '처리할 수 없는 action(%s) 입니다.' % action}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    if not worker.login_id == 'thinking':
+        func_end_log(func_name)
+        return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
+
+    parameter_check = is_parameter_ok(rqst, ['action'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    action =  parameter_check['parameters']['action']
+    if action == 'Start':
+        settings.IS_LOG = True
+    elif action == 'Stop':
+        settings.IS_LOG = False
+    # elif action == 'Remove':
+    #     # aegis.log 파일 삭제
+    else:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '처리할 수 없는 action(%s) 입니다.' % action})
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
 def login(request):
     """
+
     로그인
     http://0.0.0.0:8000/operation/login?id=thinking&pw=a~~~8282
     POST
@@ -340,7 +396,6 @@ def login(request):
 
     staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw_))
     if len(staffs) == 0:
-        print('530')
         func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
@@ -351,7 +406,6 @@ def login(request):
     # 추후 0000은 permission 에 할당
     request.session['op_id'] = 'O0000' + str(staff.id)
     request.session.save()
-    print('200')
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
