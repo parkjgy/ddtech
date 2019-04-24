@@ -47,25 +47,32 @@ urlpatterns = [
     url(r'customer/report_of_employee$', views.report_of_employee, name='report_of_employee'),
 
     url(r'customer/staff_version$', views.staff_version, name='staff_version'),
-    url(r'customer/staff_foreground$', views.staff_foreground, name='staff_foreground'),
+    url(r'customer/staff_fg$', views.staff_fg, name='staff_fg'),
+    # url(r'customer/staff_foreground$', views.staff_foreground, name='staff_foreground'),
+
+    url(r'customer/staff_employees_at_day$', views.staff_employees_at_day, name='staff_employees_at_day'),
+    url(r'customer/staff_employees$', views.staff_employees, name='staff_employees'),
+
+    # url(r'customer/staff_bg$', views.staff_bg, name='staff_bg'),
     url(r'customer/staff_background$', views.staff_background, name='staff_background'),
+
     url(r'customer/staff_change_time$', views.staff_change_time, name='staff_change_time'),
     url(r'customer/staff_change_work_time$', views.staff_change_work_time, name='staff_change_work_time'),
     url(r'customer/staff_employee_working$', views.staff_employee_working, name='staff_employee_working'),
-    url(r'customer/staff_employees_from_work$', views.staff_employees_from_work, name='staff_employees_from_work'),
+    # url(r'customer/staff_employees_from_work$', views.staff_employees_from_work, name='staff_employees_from_work'),
     url(r'customer/staff_update_employee$', views.staff_update_employee, name='staff_update_employee'),
 
     # 이하 사용 보류
-    url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),
-    url(r'customer/staff_request_certification_no$', views.staff_request_certification_no,
-        name='staff_request_certification_no'),
-    url(r'customer/staff_verify_certification_no$', views.staff_verify_certification_no,
-        name='staff_verify_certification_no'),
-    url(r'customer/staff_reg_my_work$', views.staff_reg_my_work, name='staff_reg_my_work'),
-    url(r'customer/staff_update_my_work$', views.staff_update_my_work, name='staff_update_my_work'),
-    url(r'customer/staff_list_my_work$', views.staff_list_my_work, name='staff_list_my_work'),
-    url(r'customer/staff_work_list_employee$', views.staff_work_list_employee, name='staff_work_list_employee'),
-    url(r'customer/staff_work_update_employee$', views.staff_work_update_employee, name='staff_work_update_employee'),
+    # url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),
+    # url(r'customer/staff_request_certification_no$', views.staff_request_certification_no,
+    #     name='staff_request_certification_no'),
+    # url(r'customer/staff_verify_certification_no$', views.staff_verify_certification_no,
+    #     name='staff_verify_certification_no'),
+    # url(r'customer/staff_reg_my_work$', views.staff_reg_my_work, name='staff_reg_my_work'),
+    # url(r'customer/staff_update_my_work$', views.staff_update_my_work, name='staff_update_my_work'),
+    # url(r'customer/staff_list_my_work$', views.staff_list_my_work, name='staff_list_my_work'),
+    # url(r'customer/staff_work_list_employee$', views.staff_work_list_employee, name='staff_work_list_employee'),
+    # url(r'customer/staff_work_update_employee$', views.staff_work_update_employee, name='staff_work_update_employee'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
