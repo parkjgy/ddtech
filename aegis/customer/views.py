@@ -3610,8 +3610,9 @@ def staff_employees_from_work(request):
 @cross_origin_read_allow
 def staff_change_time(request):
     """
-    현장 소장 - 작업 중 특정 근로자의 근무시간을 변경할 때 호출
+    현장 소장 - 업무에 투입 중인 근로자 중에서 일부를 선택해서 근무시간(30분 연장, ...)을 변경할 때 호출
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
+    - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
     https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     POST
         id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
@@ -3747,7 +3748,7 @@ def staff_change_time(request):
 @cross_origin_read_allow
 def staff_change_work_time(request):
     """
-    현장 소장 - 작업 중 작업 시간이 변경되었을 때 호출
+    현장 소장 - 업무 중인 근로자 모두에게 작업 시간이 변경되었을 때 호출
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     POST
