@@ -143,6 +143,8 @@ def reg_customer_for_operation(request):
             co_name=customer.corp_name,
             pNo=staff_pNo,
             email=staff_email,
+            dt_app_login=datetime.datetime.now(),
+            dt_login=datetime.datetime.now(),
             is_site_owner=True,
             is_manager=True
         )
@@ -850,6 +852,8 @@ def reg_staff(request):
         co_name=worker.co_name,
         position=position,
         department=department,
+        dt_app_login=datetime.datetime.now(),
+        dt_login=datetime.datetime.now(),
         pNo=phone_no,
         email=email
     )

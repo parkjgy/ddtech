@@ -964,6 +964,7 @@ def customer_test_step_1(request):
     else:
         rqst = request.GET
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        logSend(AES_DECRYPT_BASE64(rqst['key']))
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(func_name)
@@ -2078,6 +2079,10 @@ def customer_test_step_A(request):
     return REG_200_SUCCESS.to_json_response({'result':result})
 
 
+def check_test_key(rqst) ->bool:
+    return True
+
+
 @cross_origin_read_allow
 def employee_test_step_1(request):
     """
@@ -2098,6 +2103,7 @@ def employee_test_step_1(request):
     else:
         rqst = request.GET
     if (not 'key' in rqst) or (len(rqst['key']) == 0) or (AES_DECRYPT_BASE64(rqst['key']) != 'thinking'):
+        logSend(AES_DECRYPT_BASE64(rqst['key']))
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
         func_end_log(func_name)
