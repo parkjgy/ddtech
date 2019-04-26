@@ -2949,6 +2949,7 @@ def staff_fg(request):
                     'staff_phone':phone_format(work.staff_pNo),
                     'dt_begin':work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                     'dt_end':work.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                    'is_start_work': True if work.dt_begin < datetime.datetime.now() else False,
                     }
         # 가상 데이터 생성
         # work_dic = virtual_work(isWorkStart, work_dic)
