@@ -4,6 +4,8 @@ from operation import views
 from operation.views import OperationView
 
 urlpatterns = [
+    url(r'operation/logControl$', views.logControl, name='logControl'),
+
     url(r'operation/testEnv$', views.testEnv, name='testEnv'),
     url(r'operation/currentEnv$', views.currentEnv, name='currentEnv'),
     url(r'operation/updateEnv$', views.updateEnv, name='updateEnv'),
@@ -41,6 +43,7 @@ urlpatterns = [
     url(r'operation/employee_test_step_3', views.employee_test_step_3, name='employee_test_step_3'),
     url(r'operation/employee_test_step_4', views.employee_test_step_4, name='employee_test_step_4'),
     url(r'operation/employee_test_step_5', views.employee_test_step_5, name='employee_test_step_5'),
+    url(r'operation/sms_install_mng', views.sms_install_mng, name='sms_install_mng'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

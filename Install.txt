@@ -59,6 +59,10 @@ find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 find . -path "*/migrations/*.pyc"  -delete
 python manage.py showmigrations
 
+$ python manage.py migrate --fake employee zero
+$ python manage.py flush
+
+
 
 json_data = {
 		'passer_id' : 'qgf6YHf1z2Fx80DR8o/Lvg',

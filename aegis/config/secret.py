@@ -8,17 +8,21 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # POST 에서 사용
 
 # log import
-from config.common import logSend
+from config.log import logSend
+from urllib.parse import quote
 
-AESkey = "\x3B\x2F\x2A\x20\x4E\x36\x3F\x67\x2D\x6B\x3B\x2C\x3B\x6B\x50\x31\x29\x5A\x47\x6C\x49\x79\x4C\x5F\x5C\x5A\x2C\x67\x73\x3A\x50\x47"
-AESiv = "\x31\x47\x42\x75\x42\x7C\x6D\x31\x47\x7B\x22\x5F\x3B\x7B\x2D\x58"
 
 from Crypto.Cipher import AES
 from Crypto.Util.py3compat import *
 import base64
 
 
+AESkey: str = "\x3B\x2F\x2A\x20\x4E\x36\x3F\x67\x2D\x6B\x3B\x2C\x3B\x6B"\
+            "\x50\x31\x29\x5A\x47\x6C\x49\x79\x4C\x5F\x5C\x5A\x2C\x67\x73\x3A\x50\x47"
+AESiv = "\x31\x47\x42\x75\x42\x7C\x6D\x31\x47\x7B\x22\x5F\x3B\x7B\x2D\x58"
+
 # 기존 PKCS5 -> PKCS7 Padding
+
 
 def pad(data_to_pad, block_size, style='pkcs7'):
     if isinstance(data_to_pad, str):
@@ -96,7 +100,7 @@ def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
     msg = base64.urlsafe_b64decode(bytes(msg, encoding='utf-8'))
     return AES_DECRYPT(msg)
 
-from urllib.parse   import quote
+
 @csrf_exempt
 def testEncryptionStr(request):
     """

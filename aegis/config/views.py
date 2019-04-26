@@ -1,3 +1,9 @@
+"""
+Config view
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
+
 import json
 import os
 import time
@@ -173,6 +179,17 @@ def beta_employee_app_download(request):
     with open(os.path.join(APK_FILE_PATH, "desc_worker.txt")) as desc_file:
         return render(request, 'root/beta_app_download.html', json.loads(desc_file.read()))
 
+
+# appLink           다운로드에 사용할 링크
+def beta_manager_app_download(request):
+    with open(os.path.join(APK_FILE_PATH, "desc_worker.txt")) as desc_file:
+        return render(request, 'root/beta_app_mng_download.html', json.loads(desc_file.read()))
+
+
+# appLink           약관
+def tnc_privacy(request):
+    with open(os.path.join(APK_FILE_PATH, "desc_worker.txt")) as desc_file:
+        return render(request, 'root/tnc_privacy.html', json.loads(desc_file.read()))
 
 # upload_app ( POST )
 # -- Params
