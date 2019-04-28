@@ -3175,12 +3175,10 @@ def staff_foreground(request):
 
 
 def employee_day_working_from_employee(employee_dic, day):
-    logSend('employee_day_working_from_employee - ', day)
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
-    # dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
-    logSend(dt_day)
     logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
+        # 근로자 서버에 특정 날짜의 근로자 근로 내역을 가져온다.
         employee_infor = {'employee_id':employee_dic['employee_id'],
                           'dt':dt_day.strftime("%Y-%m-%d")
                           }
@@ -3309,7 +3307,7 @@ def staff_employees_at_day(request):
     for employee in employees:
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
@@ -3406,7 +3404,7 @@ def staff_employees(request):
     for employee in employees:
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
