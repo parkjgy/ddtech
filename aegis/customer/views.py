@@ -3176,6 +3176,7 @@ def staff_foreground(request):
 
 def employee_day_working_from_employee(employee_dic, day):
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
+    logSend(dt_day)
     logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
         employee_infor = {'employee_id':employee_dic['employee_id'],
@@ -3719,6 +3720,7 @@ def staff_change_time(request):
     #
     arr_employee = []
     for employee in employees:
+        logSend(employee.name)
         employee.overtime = overtime_type
         employee.save()
         employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
