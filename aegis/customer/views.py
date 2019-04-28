@@ -3175,8 +3175,9 @@ def staff_foreground(request):
 
 
 def employee_day_working_from_employee(employee_dic, day):
-    logSend(day)
+    logSend('employee_day_working_from_employee - ', day)
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
+    # dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
     logSend(dt_day)
     logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
@@ -3616,7 +3617,9 @@ def staff_change_time(request):
     현장 소장 - 업무에 투입 중인 근로자 중에서 일부를 선택해서 근무시간(30분 연장, ...)을 변경할 때 호출
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
+    - 오늘이 아니면 고칠 수 없음 - 오늘이 아니면 호출하지 말것.
     https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
+    http://0.0.0.0:8000/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
     POST
         id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
@@ -3721,7 +3724,6 @@ def staff_change_time(request):
     #
     arr_employee = []
     for employee in employees:
-        logSend(employee.name)
         employee.overtime = overtime_type
         employee.save()
         employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
@@ -3738,8 +3740,7 @@ def staff_change_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        logSend(employee.dt_begin, ' ', employee.overtime)
-        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d"))
         # 가상 데이터 생성
         # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
