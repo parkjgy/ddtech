@@ -3275,6 +3275,8 @@ def staff_employees_at_day(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys:
+        logSend('   ', key, ' - ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month_day'])
     if not parameter_check['is_ok']:
@@ -3375,6 +3377,8 @@ def staff_employees(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys:
+        logSend('   ', key, ' - ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!'])
     if not parameter_check['is_ok']:
