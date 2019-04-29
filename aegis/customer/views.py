@@ -3848,7 +3848,7 @@ def staff_change_work_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d"))
         # 가상 데이터 생성
         # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
