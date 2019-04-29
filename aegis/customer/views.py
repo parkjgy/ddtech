@@ -2949,6 +2949,7 @@ def staff_fg(request):
                     'staff_phone':phone_format(work.staff_pNo),
                     'dt_begin':work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                     'dt_end':work.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                    'is_start_work': True if work.dt_begin < datetime.datetime.now() else False,
                     }
         # 가상 데이터 생성
         # work_dic = virtual_work(isWorkStart, work_dic)
@@ -3177,6 +3178,7 @@ def employee_day_working_from_employee(employee_dic, day):
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
     logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
+        # 근로자 서버에 특정 날짜의 근로자 근로 내역을 가져온다.
         employee_infor = {'employee_id':employee_dic['employee_id'],
                           'dt':dt_day.strftime("%Y-%m-%d")
                           }
@@ -3305,7 +3307,7 @@ def staff_employees_at_day(request):
     for employee in employees:
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
@@ -3402,7 +3404,7 @@ def staff_employees(request):
     for employee in employees:
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
@@ -3610,9 +3612,12 @@ def staff_employees_from_work(request):
 @cross_origin_read_allow
 def staff_change_time(request):
     """
-    현장 소장 - 작업 중 특정 근로자의 근무시간을 변경할 때 호출
+    현장 소장 - 업무에 투입 중인 근로자 중에서 일부를 선택해서 근무시간(30분 연장, ...)을 변경할 때 호출
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
+    - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
+    - 오늘이 아니면 고칠 수 없음 - 오늘이 아니면 호출하지 말것.
     https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
+    http://0.0.0.0:8000/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
     POST
         id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
@@ -3733,7 +3738,7 @@ def staff_change_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d"))
         # 가상 데이터 생성
         # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type
@@ -3747,7 +3752,7 @@ def staff_change_time(request):
 @cross_origin_read_allow
 def staff_change_work_time(request):
     """
-    현장 소장 - 작업 중 작업 시간이 변경되었을 때 호출
+    현장 소장 - 업무 중인 근로자 모두에게 작업 시간이 변경되었을 때 호출
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     http://0.0.0.0:8000/customer/staff_change_work_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     POST
