@@ -3239,7 +3239,8 @@ def staff_employees_at_day(request):
         STATUS 200
         {
           "message": "정상적으로 처리되었습니다.",
-          "2019-04-23": [
+          "year_month_day":"2019-04-23",
+          "employees": [
             {
               "is_accept_work": "수락",
               "employee_id": "iZ_rkELjhh18ZZauMq2vQw",
@@ -3275,6 +3276,8 @@ def staff_employees_at_day(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ' - ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month_day'])
     if not parameter_check['is_ok']:
@@ -3325,7 +3328,9 @@ def staff_employees_at_day(request):
         employee_dic = employee_day_working_from_employee(employee_dic, year_month_day)
         # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
         arr_employee.append(employee_dic)
-    result = {year_month_day: arr_employee}
+    result = {'year_month_day': year_month_day,
+              'employees': arr_employee
+              }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
@@ -3375,6 +3380,8 @@ def staff_employees(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ' - ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!'])
     if not parameter_check['is_ok']:
@@ -3848,7 +3855,7 @@ def staff_change_work_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d"))
         # 가상 데이터 생성
         # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
         # employee_dic['overtime_type'] = overtime_type

@@ -103,6 +103,7 @@ class Env(object):
             logSend('       next load time + 24 hours')
         logSend('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
         logSend('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        settings.IS_TEST = False
         func_end_log(func_name)
         return
 
@@ -633,9 +634,8 @@ def reg_customer(request):
                '아이디 ' + response_customer_json['login_id'] + '\n'
                '비밀번호 happy_day!!!'
     }
-    if settings.IS_TEST:
-        r = requests.post('https://apis.aligo.in/send/', data=rData)
-        logSend(r.json())
+    r = requests.post('https://apis.aligo.in/send/', data=rData)
+    logSend('SMS Result: ', r.json())
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
@@ -674,6 +674,11 @@ def sms_customer_staff(request):
         func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
+
+    if settings.IS_TEST:
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': ['id/pw to SMS(실제로 보내지는 않음)', response_customer_json['login_id'], 'happy_day!!!']})
+
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
