@@ -3277,7 +3277,7 @@ def staff_employees_at_day(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ' - ', rqst[key])
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month_day'])
     if not parameter_check['is_ok']:
