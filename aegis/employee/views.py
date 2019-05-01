@@ -1161,6 +1161,8 @@ def employee_day_working_from_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     passer_id = AES_DECRYPT_BASE64(rqst['employee_id'])
     dt = rqst['dt']
@@ -1272,6 +1274,8 @@ def my_work_histories_for_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt'])
     if not parameter_check['is_ok']:
@@ -1291,13 +1295,6 @@ def my_work_histories_for_customer(request):
         return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee.id })
     passer = passers[0]
 
-    # cipher_passer_id = rqst["passer_id"]
-    # print(cipher_passer_id)
-    # passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    # logSend('\t\t\t\t\t' + passer_id)
-    # print('work_list : passer_id', passer_id)
-    # passer = Passer.objects.get(id=passer_id)
-    # employee = Employee.objects.get(id=passer.employee_id)
     dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_today = datetime.datetime.now()
     if dt_today.strftime('%Y-%m') == year_month:
@@ -1314,13 +1311,11 @@ def my_work_histories_for_customer(request):
     logSend(dt_begin, ' ', dt_end)
     year_month = dt_begin.strftime('%Y-%m')
     last_day = dt_end - datetime.timedelta(hours=1)
-    print(last_day)
     s = requests.session()
     workings = []
     day_infor = {'employee_id':AES_ENCRYPT_BASE64(str(passer.id))}
     for day in range(1, int(last_day.strftime('%d')) + 1):
         day_infor['dt'] = year_month + '-%02d'%day
-        print(day_infor)
         r = s.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=day_infor)
         logSend({'url': r.url, 'POST': day_infor, 'STATUS': r.status_code, 'R': r.json()})
         if 'dt' in r.json():
@@ -1438,88 +1433,19 @@ def my_work_histories(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
+    #
+    # 근로자 서버로 근로자의 월 근로 내역을 요청
+    #
+    employee_info = {
+            'employee_id' : rqst["passer_id"],
+            'dt' : rqst['dt'],
+        }
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
+    logSend(response_employee)
 
-    cipher_passer_id = rqst["passer_id"]
-    print(cipher_passer_id)
-    str_dt = rqst["dt"]
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    print('work_list : passer_id', passer_id)
-    passer = Passer.objects.get(id=passer_id)
-    employee = Employee.objects.get(id=passer.employee_id)
-    print('work_list :', employee.name, ' 현재 가상 데이터 표출')
-    dt_begin = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-    dt_end = datetime.datetime.strptime(str_dt + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-    if dt_end.month + 1 == 13:
-        month = 1
-        dt_end = dt_end.replace(month=1, year=dt_end.year + 1)
-    else:
-        dt_end = dt_end.replace(month=dt_end.month + 1)
-    # dt_end = dt_end + timedelta(days=31)
-    print(dt_begin, dt_end)
-    passes = Pass.objects.filter(passer_id=passer.id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end)
-    print('work_list :', len(passes))
-    #
-    # 가상 데이터 생성
-    #
-    workings = []
-    for day in range(30):
-        if random.randint(0,7) > 5: # 7일에 5일 꼴로 쉬는 날
-            continue
-        working = {}
-        action = 0
-        if random.randint(0,30) > 27: # 한달에 3번꼴로 지각
-            action = 200
-            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:45:00'
-        else :
-            action = 100
-            working['dt_begin'] = str_dt + '-%02d'%day + ' 08:25:00'
-        if random.randint(0,30) > 29: # 한달에 1번꼴로 조퇴
-            action += 20
-            working['dt_end'] = str_dt + '-%02d'%day + ' 15:33:00'
-        elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
-            action += 40
-            working['dt_end'] = str_dt + '-%02d'%day + ' 18:35:00'
-        else:
-            action += 10
-            working['dt_end'] = str_dt + '-%02d' % day + ' 17:35:00'
-        outing = (random.randint(0,30) - 28) % 3 # 한달에 2번꼴로 외출
-        outings = []
-        if outing > 0:
-            for i in range(outing):
-                print(i)
-                outings.append({'dt_begin':str_dt + str(day) + ' ' + str(i+13) + ':00:00',
-                               'dt_end':str_dt + str(day) + ' ' + str(i+13) + ':30:00'})
-        working['outing'] = outings
-        working['action'] = action + outing
-        print(working)
-        workings.append(working)
-    # print(workings)
-    result = {'working': workings}
-    # result = {
-    #     'working': [
-    #         {'action': 112, 'dt_begin': '2018-12-03 08:25:00', 'dt_end': '2018-12-03 17:33:00', 'outing': [
-    #             {'dt_begin': '2018-12-03 12:30:00', 'dt_end': '2018-12-03 13:30:00'}]},
-    #         {'action': 110, 'dt_begin': '2018-12-04 08:25:00', 'dt_end': '2018-12-04 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-05 08:25:00', 'dt_end': '2018-12-05 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-06 08:25:00', 'dt_end': '2018-12-06 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-07 08:25:00', 'dt_end': '2018-12-07 17:33:00', 'outing': []},
-    #
-    #         {'action': 210, 'dt_begin': '2018-12-10 08:55:00', 'dt_end': '2018-12-10 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-11 08:25:00', 'dt_end': '2018-12-11 17:33:00', 'outing': []},
-    #         {'action': 120, 'dt_begin': '2018-12-12 08:25:00', 'dt_end': '2018-12-12 15:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-13 08:25:00', 'dt_end': '2018-12-13 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-14 08:25:00', 'dt_end': '2018-12-14 17:33:00', 'outing': []},
-    #
-    #         {'action': 110, 'dt_begin': '2018-12-17 08:25:00', 'dt_end': '2018-17-12 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-18 08:25:00', 'dt_end': '2018-18-14 17:33:00', 'outing': []},
-    #         {'action': 112, 'dt_begin': '2018-12-19 08:25:00', 'dt_end': '2018-19-15 17:33:00', 'outing': [
-    #             {'dt_begin': '2018-12-01 12:30:00', 'dt_end': '2018-12-01 13:30:00'}]},
-    #         {'action': 110, 'dt_begin': '2018-12-20 08:25:00', 'dt_end': '2018-12-20 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-21 08:25:00', 'dt_end': '2018-12-21 17:33:00', 'outing': []},
-    #         {'action': 110, 'dt_begin': '2018-12-31 08:25:00', 'dt_end': '2018-12-31 17:33:00', 'outing': []},
-    #     ]
-    # }
+    result = response_employee.json()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
