@@ -23,9 +23,9 @@ DATABASES = {
     }
 }
 
-CUSTOMER_URL = 'https://api.aegisfac.com/customer/'
-OPERATION_URL = 'https://api.aegisfac.com/operation/'
-EMPLOYEE_URL = 'https://api.aegisfac.com/employee/'
+CUSTOMER_URL = 'https://api.ezchek.co.kr/customer/'
+OPERATION_URL = 'https://api.ezchek.co.kr/operation/'
+EMPLOYEE_URL = 'https://api.ezchek.co.kr/employee/'
 
 SMS_SENDER_PN = '1899-3832'
 
