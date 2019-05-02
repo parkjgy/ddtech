@@ -4004,15 +4004,20 @@ def staff_update_employee(request):
         return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
     work = works[0]
 
-    print(str_dt_begin, str_dt_end, overtime_type)
     if not '' == str_dt_begin:
-        dt_begin = datetime.datetime.strptime(str_dt_begin, "%Y-%m-%d")
+        if len(str_dt_begin.split(' ')) > 1:
+            dt_begin = datetime.datetime.strptime(str_dt_begin, "%Y-%m-%d %H:%M:%S")
+        else:
+            dt_begin = datetime.datetime.strptime(str_dt_begin, "%Y-%m-%d")
         if dt_begin < work.dt_begin:
             return status422(func_name, {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'})
         employee.dt_begin = dt_begin
 
     if not '' == str_dt_end:
-        dt_end = datetime.datetime.strptime(str_dt_end, "%Y-%m-%d")
+        if len(str_dt_end.split(' ')) > 1:
+            dt_end = datetime.datetime.strptime(str_dt_end, "%Y-%m-%d %H:%M:%S")
+        else:
+            dt_end = datetime.datetime.strptime(str_dt_end, "%Y-%m-%d")
         if work.dt_end < dt_end:
             return status422(func_name, {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'})
         employee.dt_end = dt_end
