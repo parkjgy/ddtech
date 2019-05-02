@@ -209,7 +209,7 @@ def reg_employee_for_customer(request):
     msg = '이지체크\n'\
           '새로운 업무를 앱에서 확인해주세요.\n'\
           '앱 설치\n'\
-          'https://api-dev.aegisfac.com/app'
+          'https://api.ezchek.co.kr/app'
 
     # print(len(msg))
 
