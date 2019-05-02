@@ -3950,9 +3950,10 @@ def staff_update_employee(request):
     현장 소장 - 업무에 투입된 근로자의 근무 기간, 연장 근무 변경 요청
     - 담당자(현장 소장, 관리자), 근로자, 근무 기간, 당일의 연장 근무
     - 근로자의 근무 기간은 업무의 기간을 벗아나지 못한다.
-    http://0.0.0.0:8000/customer/staff_update_employee?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_begin=2019-03-01&dt_end=2019-04-30&overtime_type=0
+    - 값을 넣은 것만 변경한다.
+    http://0.0.0.0:8000/customer/staff_update_employee?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_begin=2019-03-01&dt_end=2019-04-30&overtime_type=0
     POST
-        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         employee_id : 근로자 id
         dt_begin : 2019-04-01   # 근로 시작 날짜
         dt_end : 2019-04-13     # 근로 종료 날짜
@@ -3967,36 +3968,29 @@ def staff_update_employee(request):
             {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
-            {'message':'ClientError: parameter \'dt_begin\', \'dt_end\' 가 업무의 날짜 범위를 벗어났습니다.'}
+            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'}
+            {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'}
+            {'message':'ClientError: parameter \'overtime_type\'이 범위를 벗어났습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-    if not 'employee_id' in rqst: # employee_id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 없어요'})
-    if not 'dt_begin' in rqst: # dt_begin 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'dt_begin\' 가 없어요'})
-    dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
-    if not 'dt_end' in rqst: # dt_end 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'dt_end\' 가 없어요'})
-    dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
-    if not 'overtime_type' in rqst: # overtime_type 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 가 없어요'})
-    overtime_type = rqst['overtime_type']
-
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
-    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-    if employee_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'employee_id_!', 'dt_begin', 'dt_end', 'overtime_type'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    staff_id = parameter_check['parameters']['staff_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    str_dt_begin = parameter_check['parameters']['dt_begin']
+    str_dt_end = parameter_check['parameters']['dt_end']
+    overtime_type = parameter_check['parameters']['overtime_type']
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
@@ -4009,12 +4003,25 @@ def staff_update_employee(request):
     if len(works) != 1:
         return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
     work = works[0]
-    if dt_begin < work.dt_begin or work.dt_end < dt_end:
-        return status422(func_name, {'message':'ClientError: parameter \'dt_begin\', \'dt_end\' 가 업무의 날짜 범위를 벗어났습니다.'})
 
-    employee.dt_begin = dt_begin
-    employee.dt_end = dt_end
-    employee.overtime = overtime_type
+    print(str_dt_begin, str_dt_end, overtime_type)
+    if not '' == str_dt_begin:
+        dt_begin = datetime.datetime.strptime(str_dt_begin, "%Y-%m-%d")
+        if dt_begin < work.dt_begin:
+            return status422(func_name, {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'})
+        employee.dt_begin = dt_begin
+
+    if not '' == str_dt_end:
+        dt_end = datetime.datetime.strptime(str_dt_end, "%Y-%m-%d")
+        if work.dt_end < dt_end:
+            return status422(func_name, {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'})
+        employee.dt_end = dt_end
+
+    if not '' == overtime_type:
+        if overtime_type < -1 or 6 < overtime_type:
+            return status422(func_name, {'message':'ClientError: parameter \'overtime_type\'이 범위를 벗어났습니다.'})
+        employee.overtime = overtime_type
+
     employee.save()
 
     result = {'update_dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
