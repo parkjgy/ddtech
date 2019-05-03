@@ -4112,8 +4112,8 @@ def staff_recognize_employee(request):
     #
     # employee server 에서 적용시켜야 한다.
     #
-    result = {'update_dt_arrive':employee.dt_begin_touch.strftime("%Y-%m-%d %H:%M:%S"),
-              'update_dt_leave':employee.dt_end_touch.strftime("%Y-%m-%d %H:%M:%S")
+    result = {'update_dt_arrive':dt_null(employee.dt_begin_touch),
+              'update_dt_leave':dt_null(employee.dt_end_touch)
               }
 
     func_end_log(func_name)
