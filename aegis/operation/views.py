@@ -306,6 +306,7 @@ class OperationView(APIView):
         phone_no = no_only_phone_no(rqst['pNo'])
         id_ = rqst['id']
         pw = rqst['pw']
+        logSend(id, ' ', pw)
 
         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
         if len(staffs) > 0:
