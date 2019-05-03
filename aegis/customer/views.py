@@ -3961,12 +3961,12 @@ def staff_update_employee(request):
     response
         STATUS 200
         STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
             {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
             {'message':'ClientError: parameter \'dt_begin\' 가 없어요'}
             {'message':'ClientError: parameter \'dt_end\' 가 없어요'}
             {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
-            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
@@ -4028,10 +4028,92 @@ def staff_update_employee(request):
         employee.overtime = overtime_type
 
     employee.save()
-
+    #
+    # employee server 에서 적용시켜야 한다.
+    #
     result = {'update_dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
               'update_dt_end':employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
               'update_overtime':employee.overtime
+              }
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_recognize_employee(request):
+    """
+    현장 소장 - 근로자의 출퇴근 시간이 잘못되었을 때 현장 소장이 출퇴근 시간을 인정하고 변경하는 기능
+    - 담당자(현장 소장, 관리자), 근로자, 출근시간, 퇴근 시간
+    - 출근시간과 퇴근시간은 "yyyy-mm-dd hh:mm:ss" 양식으로 보낸다.
+    - 값을 넣은 것만 변경한다.
+    http://0.0.0.0:8000/customer/staff_recognize_employee?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_arrive=2019-03-01 08:30:00&dt_end=2019-03-01 17:30:00
+    POST
+        staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        employee_id : 근로자 id
+        dt_arrive : 2019-04-01 08:30:00   # 도착 시간 - 출근 시간
+        dt_leave : 2019-04-01 17:30:00    # 떠난 시간 - 퇴근 시간
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_arrive\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_leave\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'}
+            {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
+
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'employee_id_!', 'dt_arrive', 'dt_leave'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    staff_id = parameter_check['parameters']['staff_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    str_dt_arrive = parameter_check['parameters']['dt_arrive']
+    str_dt_leave = parameter_check['parameters']['dt_leave']
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    employees = Employee.objects.filter(id=employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
+    works = Work.objects.filter(id=employee.work_id)
+    if len(works) != 1:
+        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
+    work = works[0]
+
+    if not '' == str_dt_arrive:
+        if len(str_dt_arrive.split(' ')) == 0:
+            return status422(func_name, {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
+        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
+        employee.dt_begin_touch = dt_arrive
+
+    if not '' == str_dt_leave:
+        if len(str_dt_leave.split(' ')) == 0:
+            return status422(func_name, {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
+        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
+        employee.dt_end_touch = dt_leave
+
+    employee.save()
+    #
+    # employee server 에서 적용시켜야 한다.
+    #
+    result = {'update_dt_arrive':employee.dt_begin_touch.strftime("%Y-%m-%d %H:%M:%S"),
+              'update_dt_leave':employee.dt_end_touch.strftime("%Y-%m-%d %H:%M:%S")
               }
 
     func_end_log(func_name)
