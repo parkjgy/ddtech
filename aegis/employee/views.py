@@ -18,7 +18,6 @@ from config.status_collection import *
 from config.decorator import cross_origin_read_allow
 
 from .models import Beacon
-from .models import Beacon_History
 from .models import Employee
 from .models import Notification_Work
 from .models import Work
@@ -60,7 +59,6 @@ def table_reset_and_clear_for_operation(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     Beacon.objects.all().delete()
-    Beacon_History.objects.all().delete()
     Employee.objects.all().delete()
     Notification_Work.objects.all().delete()
     Work.objects.all().delete()
@@ -71,7 +69,6 @@ def table_reset_and_clear_for_operation(request):
     from django.db import connection
     cursor = connection.cursor()
     cursor.execute("ALTER TABLE employee_beacon AUTO_INCREMENT = 1")
-    cursor.execute("ALTER TABLE employee_beacon_history AUTO_INCREMENT = 1")
     cursor.execute("ALTER TABLE employee_employee AUTO_INCREMENT = 1")
     cursor.execute("ALTER TABLE employee_notification_work AUTO_INCREMENT = 1")
     cursor.execute("ALTER TABLE employee_work AUTO_INCREMENT = 1")
@@ -522,64 +519,73 @@ def pass_reg(request):
         }
     response
         STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_arrive\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_leave\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'}
+            {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
-    cipher_passer_id = rqst['passer_id']
-    dt = rqst['dt']
-    is_in = rqst['is_in']
-    major = rqst['major']
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    is_in = parameter_check['parameters']['is_in']
+    major = parameter_check['parameters']['major']
     if request.method == 'POST':
         beacons = rqst['beacons']
     else:
-        beacons = rqst.getlist('beacons')
+        # today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        beacons = [
+            {'minor': 11001, 'dt_begin': '%s 08:25:30'%today, 'rssi': -70},
+            {'minor': 11002, 'dt_begin': '%s 08:25:31'%today, 'rssi': -60},
+            {'minor': 11003, 'dt_begin': '%s 08:25:32'%today, 'rssi': -50}
+        ]
+    logSend(beacons)
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) != 1:
+        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
 
-    # if request.method == 'GET':
-    #     beacons = [
-    #         {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-    #         {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-    #         {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
-    #         # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
-    #         # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-    #         # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-    #     ]
-
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    print(passer_id, dt, is_in, major)
-    print(beacons)
     for i in range(len(beacons)):
         beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
         if len(beacon_list) > 0:
             beacon = beacon_list[0]
             beacon.dt_last = dt
+            beacon.last_employee_id = passer_id
             beacon.save()
         else:
-            # ?? 운영에서 관리하도록 바뀌어야하나?
+            logError('ERROR: 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
                 uuid='12345678-0000-0000-0000-123456789012',
                 # 1234567890123456789012345678901234567890
                 major=major,
                 minor=beacons[i]['minor'],
-                dt_last=dt
+                dt_last=dt,
+                last_emplyee_id=passer_id
             )
             beacon.save()
 
-        beacon_history = Beacon_History(
-            major=major,
-            minor=beacons[i]['minor'],
-            passer_id=passer_id,
-            dt_begin=beacons[i]['dt_begin'],
-            RSSI_begin=beacons[i]['rssi']
-        )
-        beacon_history.save()
-
-    # logSend(is_in + str(is_in_verify(beacons)))
-    print(is_in, str(is_in_verify(beacons)))
+    logSend(is_in + str(is_in_verify(beacons)))
+    #
+    # 휴~~~ 여기 복잡하게 처리하게 생겼네...
+    #
+    #
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
@@ -799,14 +805,6 @@ def beacons_is(request):
             )
             beacon.save()
 
-        beacon_history = Beacon_History(
-            major=major,
-            minor=beacons[i]['minor'],
-            passer_id=passer_id,
-            dt_begin=beacons[i]['dt_begin'],
-            RSSI_begin=beacons[i]['rssi']
-        )
-        beacon_history.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 

@@ -43,6 +43,10 @@ class Work(models.Model):
     staff_name = models.CharField(max_length=127) # 담당자 이름
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
 
+    major = models.IntegerField(default=-1)
+    minor = models.IntegerField(default=-1)
+
+
 class Passer(models.Model):
     """
     출입자
@@ -70,8 +74,8 @@ class Pass(models.Model):
     출입 등록 시간 : dt_reg 
     출입자 확인 시간 : dt_verify
     """
-    passer_id = models.IntegerField()
-    is_in = models.IntegerField() 
+    passer_id = models.IntegerField(default=-1)
+    is_in = models.IntegerField(default=1) 
     dt_reg = models.DateTimeField(null=True, blank=True)
     dt_verify = models.DateTimeField(null=True, blank=True)
 
@@ -89,41 +93,29 @@ class Pass_History(models.Model):
     dt_in_verify = models.DateTimeField(null=True, blank=True)  # 근로자가 출근 버튼을 누른 시간
     dt_out = models.DateTimeField(null=True, blank=True)        # 최종 나간 시간
     dt_out_verify = models.DateTimeField(null=True, blank=True) # 근로자가 퇴근 버튼을 누른 시간
-    minor = models.IntegerField()                               # 외출 횟수
-
-
-class Beacon_History(models.Model):
-    """
-    비콘 history (날짜별)
-    id
-    major
-    minor 
-    출입자 id 
-    begin_dt 
-    begin_RSSI
-    """
-    major = models.IntegerField()
-    minor = models.IntegerField()
-    passer_id = models.IntegerField()
-    dt_begin = models.DateTimeField(null=True, blank=True)
-    RSSI_begin = models.IntegerField()
+    major = models.IntegerField(default=-1)                               # 비콘 지역
+    minor = models.IntegerField(default=-1)                               # 비콘 설치 발주처 - 사업장은 여러곳이 될 수 있음.
+    work_id = models.CharField(max_length = 127, default='')    # 암호화된 Customer 의 Work id 
+    overtime = models.IntegerField(default=0)                   # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+    customer_staff_id = models.IntegerField(default=-1)         # 현장 관리자 id (기본: -1 (현장 소장이 dt_in_verify, dt_out_verify 를 수정하지 않았을 때))
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
 
 
 class Beacon(models.Model):
-#     """
-#     비콘
-#     uuid 
-#     major 
-#     minor 
-#     dt_last
-#     """
+    """
+    설치된 비콘 정보
+    """
     uuid = models.CharField(max_length = 38) # 8-4-4-4-12
-    major = models.IntegerField()
-    minor = models.IntegerField()
+    major = models.IntegerField(default=-1)
+    minor = models.IntegerField(default=-1)
     dt_last = models.DateTimeField(null=True, blank=True)
+    last_employee_id = models.IntegerField(default=-1)        # 마지막으로 비콘 인식된 근로자 id - 비콘의 위치가 바뀌었거나 변경되는 등의 문제가 발생했을 때 파악이 목적
+    dt_battery = models.DateTimeField(null=True, blank=True)    # 마지막 배터리 교체일
+    dt_install = models.DateTimeField(null=True, blank=True)    # 비콘이 설치된 날짜
+    customer_order_id = models.IntegerField(default=-1)      # 비콘이 설치된 발주사 id
+    operation_staff_id = models.IntegerField(default=-1)      # 비콘 관리직원 id
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
