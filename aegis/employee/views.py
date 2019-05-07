@@ -18,6 +18,7 @@ from config.status_collection import *
 from config.decorator import cross_origin_read_allow
 
 from .models import Beacon
+from .models import Beacon_Record
 from .models import Employee
 from .models import Notification_Work
 from .models import Work
@@ -89,6 +90,9 @@ def check_version(request):
     http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
     GET
         v=A.1.0.0.190111
+            # A.     : phone type - A or i
+            # 1.0.0. : 앱의 버전 구분 업그레이드 필요성과 상관 없다.
+            # 190111 : 서버와 호환되는 날짜 - 이 날짜에 의해 서버는 업그레이드 필요를 응답한다.
 
     response
         STATUS 200
@@ -97,6 +101,9 @@ def check_version(request):
             'msg': '업그레이드가 필요합니다.'
             'url': 'http://...' # itune, google play update
         }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'v\' 에 phone type 이 없어요'}
+
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -107,6 +114,7 @@ def check_version(request):
     version = rqst['v']
 
     items = version.split('.')
+    phone_type = items[0]
     ver_dt = items[len(items) - 1]
     print(ver_dt)
     if len(ver_dt) < 6:
@@ -123,8 +131,18 @@ def check_version(request):
     dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
     print(dt_version)
     if dt_version < dt_check:
+        url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.employee"
+        url_iOS = "https://..."
+        url_install = ""
+        if phone_type == 'A':
+            url_install = url_android
+        elif phone_type == 'i':
+            url_install = url_iOS
+        else:
+            return status422(func_name, {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
+
         func_end_log(func_name)
-        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'  # itune, google play update
+        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
                   })
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
@@ -504,7 +522,7 @@ def passer_reg(request):
 def pass_reg(request):
     """
     출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-    http://dev.ddtechi.com:8055/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-24%2013:33:00&is_in=1&major=11001&beacons=
+    http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -518,18 +536,25 @@ def pass_reg(request):
             ]
         }
     response
-        STATUS 200
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
         STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'dt_arrive\' 가 없어요'}
-            {'message':'ClientError: parameter \'dt_leave\' 가 없어요'}
-            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_in\' 가 없어요'}
+            {'message':'ClientError: parameter \'major\' 가 없어요'}
+            {'message':'ClientError: parameter \'beacons\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
-            {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'}
-            {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'}
+            {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+            logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+            logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
+            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -545,7 +570,7 @@ def pass_reg(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
-    is_in = parameter_check['parameters']['is_in']
+    is_in = int(parameter_check['parameters']['is_in'])
     major = parameter_check['parameters']['major']
     if request.method == 'POST':
         beacons = rqst['beacons']
@@ -561,42 +586,111 @@ def pass_reg(request):
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
         return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
+    passer = passers[0]
 
     for i in range(len(beacons)):
+        # 비콘 이상 유무 확인을 위해 비콘 날짜, 인식한 근로자 앱 저장
         beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
         if len(beacon_list) > 0:
             beacon = beacon_list[0]
             beacon.dt_last = dt
-            beacon.last_employee_id = passer_id
+            beacon.last_passer_id = passer_id
             beacon.save()
         else:
-            logError('ERROR: 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+            logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
                 uuid='12345678-0000-0000-0000-123456789012',
                 # 1234567890123456789012345678901234567890
                 major=major,
                 minor=beacons[i]['minor'],
                 dt_last=dt,
-                last_emplyee_id=passer_id
+                last_passer_id=passer_id,
             )
             beacon.save()
+        # 근로자 앱에서 인식된 비콘 값을 모두 저장 - 아직 용도 없음.
+        new_beacon_record = Beacon_Record(
+            major=major,
+            minor=beacons[i]['minor'],
+            dt_begin=beacons[i]['dt_begin'],
+            rssi=beacons[i]['rssi']
+        )
+        new_beacon_record.save()
 
-    logSend(is_in + str(is_in_verify(beacons)))
-    #
-    # 휴~~~ 여기 복잡하게 처리하게 생겼네...
-    #
-    #
+    # 통과 기록 저장
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
         dt_reg=dt
     )
     new_pass.save()
+    #
+    # Pass_History update
+    #
+    dt_beacon = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    if not is_in:
+        # out 일 경우
+        year_month_day = dt_beacon.strftime("%Y-%m-%d")
+        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        if len(pass_histories) == 0:
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            yesterday = dt_beacon - datetime.timedelta(days=1)
+            year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+            if len(pass_histories) == 0:
+                # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
+                logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
+                func_end_log(func_name)
+                return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
+            else:
+                pass_history = pass_histories[0]
+        else:
+            pass_history = pass_histories[0]
+
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
+        dt_out = dt_beacon
+        if (dt_in + datetime.timedelta(hours=12)) < dt_out:
+            # 출근시간 이후 12 시간이 지났으면 무시한다.
+            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
+            func_end_log(func_name)
+            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'})
+
+        pass_history.dt_out = dt_beacon
+    else:
+        # in 일 경우
+        year_month_day = dt_beacon.strftime("%Y-%m-%d")
+        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        if len(pass_histories) == 0:
+            # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                year_month_day=year_month_day,
+                action=0,
+            )
+        else:
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_in == None:
+            pass_history.dt_in = dt_beacon
+
+    # work_id 처리
+    if (pass_history.work_id == None) and (passer.employee_id > 0):
+        employees = Employee.objects.filter(id=passer.employee_id)
+        if len(employees) == 0:
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+        else:
+            if len(employees) > 1:
+                logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+            employee = employees[0]
+            pass_history.work_id = employee.work_id
+
+    pass_history.save()
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
 def is_in_verify(beacons):
+    # 서버에서 beacon 값으로 in out 을 판정 - 2019.5.7. 현재 사용되지 않음.
     in_count = 0
     out_count = 0
 
@@ -613,7 +707,7 @@ def is_in_verify(beacons):
 def pass_verify(request):
     """
     출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
-    http://192.168.219.62:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-01-21 08:25:35&is_in=1
+    http://0.0.0.0:8000/employee/pass_verify?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-06 17:30:00&is_in=0
     POST : json
         {
             'passer_id' : '암호화된 출입자 id',
@@ -621,55 +715,121 @@ def pass_verify(request):
             'is_in' : 1, # 0: out, 1 : in
         }
     response
-        STATUS 200
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_in\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+            logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
+            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
-    cipher_passer_id = rqst['passer_id']
-    dt = rqst['dt']
-    is_in = rqst['is_in']
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    is_in = int(parameter_check['parameters']['is_in'])
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) != 1:
+        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
+    passer = passers[0]
 
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    print(passer_id, dt, is_in)
-    # dt = datetime.datetime.now()
-    dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
-    # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-    # print(dt, str_dt)
+    # 통과 기록 저장
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
         dt_verify=dt,
     )
     new_pass.save()
-    before_pass = Pass.objects.filter(passer_id=passer_id, dt_reg__lt=dt).values('id', 'passer_id','is_in','dt_reg','dt_verify').order_by('dt_reg').first()
+
+    #
+    # Pass_History update
+    #
+    dt_touch = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    if not is_in:
+        # out 일 경우
+        year_month_day = dt_touch.strftime("%Y-%m-%d")
+        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        if len(pass_histories) == 0:
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            yesterday = dt_touch - datetime.timedelta(days=1)
+            year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+            if len(pass_histories) == 0:
+                # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
+                # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+                pass_history = Pass_History(
+                    passer_id=passer_id,
+                    year_month_day=year_month_day,
+                    action=0,
+                )
+                # logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
+                # func_end_log(func_name)
+                # return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
+            else:
+                pass_history = pass_histories[0]
+        else:
+            pass_history = pass_histories[0]
+
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
+        dt_out_verify = dt_touch
+        if (dt_in + datetime.timedelta(hours=12)) < dt_out_verify:
+            # 출근시간 이후 12 시간이 지났으면 무시한다.
+            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
+            func_end_log(func_name)
+            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'})
+
+        pass_history.dt_out_verify = dt_touch
+    else:
+        # in 일 경우
+        year_month_day = dt_touch.strftime("%Y-%m-%d")
+        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        if len(pass_histories) == 0:
+            # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                year_month_day=year_month_day,
+                action=0,
+            )
+        else:
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_in_verify == None:
+            pass_history.dt_in_verify = dt_touch
+
+    # work_id 처리
+    if (pass_history.work_id == None) and (passer.employee_id > 0):
+        employees = Employee.objects.filter(id=passer.employee_id)
+        if len(employees) == 0:
+            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+        else:
+            if len(employees) > 1:
+                logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+            employee = employees[0]
+            pass_history.work_id = employee.work_id
+
+    pass_history.save()
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
-    # 가장 최근에 저장된 값부터 가져옮
-    # before_passes = Pass.objects.filter(passer_id = passer_id).order_by('-dt_reg')
-    # for x in before_passes :
-    #     print(x.dt_reg, x.is_in, x.dt_verify)
-    #     if is_in == x.is_in and x.dt_verify == '':
-    #         print('--- save')
-    #         x.dt_verify = dt
-    #         # s.save()
-    #         break
-    #     elif x.dt_verify != '' :
-    #         print('--- msg')
-    #         result = {'msg': '출근 전에 퇴근이 요청되었습니다.' if is_in else '퇴근 전에 출근이 요청되었습니다.'}
-    #         response = HttpResponse(json.dumps(result, cls=DateTimeEncoder))
-    #         response.status_code = 503
-    #         print(response)
-    #         return response
-    #         break
-    #
-    # response = HttpResponse()
-    # response.status_code = 200
-    # return response
 
 
 @cross_origin_read_allow
