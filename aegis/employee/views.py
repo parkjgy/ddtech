@@ -550,11 +550,12 @@ def pass_reg(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-            logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
-            logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
-            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+        logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+        logError(func_name, ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -627,18 +628,18 @@ def pass_reg(request):
     # Pass_History update
     #
     dt_beacon = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    year_month_day = dt_beacon.strftime("%Y-%m-%d")
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
     if not is_in:
         # out 일 경우
-        year_month_day = dt_beacon.strftime("%Y-%m-%d")
-        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
         if len(pass_histories) == 0:
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_beacon - datetime.timedelta(days=1)
-            year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+            yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
                 # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
-                logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
+                logError(func_name, ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
                 func_end_log(func_name)
                 return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
             else:
@@ -647,18 +648,18 @@ def pass_reg(request):
             pass_history = pass_histories[0]
 
         dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
-        dt_out = dt_beacon
-        if (dt_in + datetime.timedelta(hours=12)) < dt_out:
+        if dt_in == None:
+            # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
+            logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        if (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
             # 출근시간 이후 12 시간이 지났으면 무시한다.
-            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
+            logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
             func_end_log(func_name)
-            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'})
+            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 beacon out 을 무시한다.'})
 
         pass_history.dt_out = dt_beacon
     else:
         # in 일 경우
-        year_month_day = dt_beacon.strftime("%Y-%m-%d")
-        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
         if len(pass_histories) == 0:
             # 오늘 날짜 pass_history 가 없어서 새로 만든다.
             pass_history = Pass_History(
@@ -676,10 +677,10 @@ def pass_reg(request):
     if (pass_history.work_id == None) and (passer.employee_id > 0):
         employees = Employee.objects.filter(id=passer.employee_id)
         if len(employees) == 0:
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+            logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
         else:
             if len(employees) > 1:
-                logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+                logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
             employee = employees[0]
             pass_history.work_id = employee.work_id
 
@@ -727,10 +728,11 @@ def pass_verify(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-            logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
-            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -764,44 +766,50 @@ def pass_verify(request):
     # Pass_History update
     #
     dt_touch = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    year_month_day = dt_touch.strftime("%Y-%m-%d")
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
     if not is_in:
-        # out 일 경우
-        year_month_day = dt_touch.strftime("%Y-%m-%d")
-        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        # out touch 일 경우
         if len(pass_histories) == 0:
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_touch - datetime.timedelta(days=1)
-            year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+            yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
-                # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
-                # 오늘 날짜 pass_history 가 없어서 새로 만든다.
-                pass_history = Pass_History(
-                    passer_id=passer_id,
-                    year_month_day=year_month_day,
-                    action=0,
-                )
-                # logError(func_name, ' passer_id=%s out 인데 어제 오늘 in 기록이 없다.' % passer_id)
-                # func_end_log(func_name)
-                # return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
+                logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                # out 인데 어제, 오늘 in 기록이 없다?
+                #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
+                #   (9시에 퇴근시간이 찍히면 반나절 4시간 근무(휴식 포함 4:30)라고 하면 4:30 출근인데 그럼 오늘 출근이잖아!)
+                #   (로그 찍히니까 계속 감시하는 수 밖에...)
+                if dt_touch.hour < 9:
+                    # 어제 pass_history 가 없어서 새로 만든다.
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=yesterday_year_month_day,
+                        action=0,
+                    )
+                else:
+                    # 오늘 pass_history 가 없어서 새로 만든다.
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=year_month_day,
+                        action=0,
+                    )
             else:
                 pass_history = pass_histories[0]
         else:
             pass_history = pass_histories[0]
 
-        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
-        dt_out_verify = dt_touch
-        if (dt_in + datetime.timedelta(hours=12)) < dt_out_verify:
-            # 출근시간 이후 12 시간이 지났으면 무시한다.
-            logError(func_name, ' passer_id=%s in 으로 부터 12 시간이 지나서 out 을 무시한다.' % passer_id)
-            func_end_log(func_name)
-            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'})
-
         pass_history.dt_out_verify = dt_touch
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
+        if dt_in == None:
+            # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
+            logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        if (dt_in + datetime.timedelta(hours=12)) < dt_touch:
+            # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
+            logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
     else:
-        # in 일 경우
-        year_month_day = dt_touch.strftime("%Y-%m-%d")
-        pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+        # in touch 일 경우
         if len(pass_histories) == 0:
             # 오늘 날짜 pass_history 가 없어서 새로 만든다.
             pass_history = Pass_History(
@@ -819,12 +827,36 @@ def pass_verify(request):
     if (pass_history.work_id == None) and (passer.employee_id > 0):
         employees = Employee.objects.filter(id=passer.employee_id)
         if len(employees) == 0:
-            logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 없음.' % passer.employee_id)
+            logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
         else:
             if len(employees) > 1:
-                logError(func_name, ' passer 의 employee_id=%d 에 해당하는 근로자가 한명 이상임.' % passer.employee_id)
+                logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
             employee = employees[0]
             pass_history.work_id = employee.work_id
+    #
+    # 정상, 지각, 조퇴 처
+    #
+    if not pass_history.dt_in_verify == None:
+        action_in = 100
+        if (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
+            action_in = 200
+    else:
+        action_in = 0
+
+    if pass_history.overtime == -1:
+        # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
+        action_out = 10
+    else:
+        if not pass_history.dt_out_verify == None:
+            action_out = 10
+            dt_out = pass_history.dt_out_verify
+            work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
+            work_out_minute = int(employee.work_start[3:])
+            if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
+                action_out = 20
+        else:
+            action_out = 0
+    pass_history.action = action_in + action_out
 
     pass_history.save()
 
