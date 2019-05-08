@@ -2883,7 +2883,8 @@ def staff_fg(request):
               ]
             }
         STATUS 530
-            {'message':'아이디나 비밀번호가 틀립니다.'}
+            {'message': '아이디가 없습니다.'}
+            {'message': '비밀번호가 틀렸습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'login_id\' 가 없어요'}
             {'message':'ClientError: parameter \'login_pw\' 가 없어요'}

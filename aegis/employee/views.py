@@ -833,30 +833,30 @@ def pass_verify(request):
                 logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
             employee = employees[0]
             pass_history.work_id = employee.work_id
-    #
-    # 정상, 지각, 조퇴 처
-    #
-    if not pass_history.dt_in_verify == None:
-        action_in = 100
-        if (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
-            action_in = 200
-    else:
-        action_in = 0
-
-    if pass_history.overtime == -1:
-        # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
-        action_out = 10
-    else:
-        if not pass_history.dt_out_verify == None:
-            action_out = 10
-            dt_out = pass_history.dt_out_verify
-            work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
-            work_out_minute = int(employee.work_start[3:])
-            if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
-                action_out = 20
+        #
+        # 정상, 지각, 조퇴 처
+        #
+        if not pass_history.dt_in_verify == None:
+            action_in = 100
+            if (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
+                action_in = 200
         else:
-            action_out = 0
-    pass_history.action = action_in + action_out
+            action_in = 0
+
+        if pass_history.overtime == -1:
+            # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
+            action_out = 10
+        else:
+            if not pass_history.dt_out_verify == None:
+                action_out = 10
+                dt_out = pass_history.dt_out_verify
+                work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
+                work_out_minute = int(employee.work_start[3:])
+                if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
+                    action_out = 20
+            else:
+                action_out = 0
+        pass_history.action = action_in + action_out
 
     pass_history.save()
 
@@ -1312,6 +1312,193 @@ def update_my_info(request):
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def pass_record_of_employees_in_day_for_customer(request):
+    """
+    << 고객 서버용 >> 복수 근로자의 날짜별 출퇴근 기록 요청
+    - work 의 시작 날짜 이전을 요청하면 안된다. - work 의 시작 날짜를 검사하지 않는다.
+    - 출퇴근 기록이 없으면 출퇴근 기록을 새로 만든다.
+    - 수정한 시간 오류 검사 X : 출근 시간보다 퇴근 시간이 느리다, ...
+    http://0.0.0.0:8000/employee/pass_record_of_employees_in_day_for_customer?employees=&dt=2019-05-06
+    POST : json
+        {
+            employees: [ employee_id, employee_id, ...],  # 배열: 대상 근로자 (암호화된 값)
+            year_month_day: 2018-12-28,                   # 대상 날짜
+            work_id: work_id,                             # 업무 id (암호화된 값): 암호를 풀어서 -1 이면 업무 특정짓지 않는다.
+
+            #
+            # 아래항은 옵션임 - 값이 없으면 처리하지 않음
+            #
+            overtime: 0,                    # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+            overtime_staff_id: staff_id,    # 처리 직원 id (암호화된 값)
+
+            dt_in_verify: 08:00,            # 수정된 출근시간 (24 시간제)
+            in_staff_id: staff_id,          # 출근 시간 수정 직원 id (암호화됨)
+
+            dt_out_verify: 17:00,            # 수정된 퇴근시간 (24 시간제)
+            out_staff_id: staff_id,          # 퇴근 시간 수정 직원 id (암호화됨)
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'employees\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+
+        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
+
+    #
+    # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
+    #
+    parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    employees = parameter_check['parameters']['employees']
+    year_month_day = parameter_check['parameters']['year_month_day']
+    work_id = int(parameter_check['parameters']['work_id'])
+    employee_ids = []
+    for employee in employees:
+        # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
+        plain = AES_DECRYPT_BASE64(employee)
+        if plain == '__error':
+            return status422(func_name, {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
+        else:
+            employee_ids.append(plain)
+    if work_id == '-1':
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    else:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
+    if len(pass_histories) == 0:
+        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        # func_end_log(func_name)
+        # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
+
+    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    for employee_id in employee_ids:
+        if not int(employee_id) in exist_ids:
+            # 출퇴근 기록이 없으면 새로 만든다.
+            Pass_History(
+                passer_id=int(employee_id),
+                year_month_day=year_month_day,
+                action=0
+            ).save()
+    if work_id == '-1':
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    else:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
+
+    logSend(pass_histories)
+    fail_list = []
+    for pass_history in pass_histories:
+        # 연장 근무 처리
+        if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
+            overtime = int(rqst['overtime'])
+            plain = AES_DECRYPT_BASE64(rqst['overtime_staff_id'])
+            is_ok = True
+            if plain == '__error':
+                is_ok = False
+                fail_list.append(' overtime_staff_id: 비정상')
+            if overtime < -1 or 6 < overtime:
+                is_ok = False
+                fail_list.append(' overtime: 범위 초과')
+            if is_ok:
+                pass_history.overtime = overtime
+                pass_history.overtime_staff_id = int(plain)
+
+        # 출근시간 수정 처리
+        if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
+            plain = AES_DECRYPT_BASE64(rqst['in_staff_id'])
+            is_ok = True
+            if plain == '__error':
+                is_ok = False
+                fail_list.append(' in_staff_id: 비정상')
+            try:
+                dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
+                                                          '%Y-%m-%d %H:%M:%S')
+            except:
+                is_ok = False
+                fail_list.append(' dt_in_verify: 날짜 변경 Error')
+            if is_ok:
+                pass_history.dt_in_verify = dt_in_verify
+                pass_history.in_staff_id = int(plain)
+
+        # 퇴근시간 수정 처리
+        if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
+            plain = AES_DECRYPT_BASE64(rqst['out_staff_id'])
+            is_ok = True
+            if plain == '__error':
+                is_ok = False
+                fail_list.append(' out_staff_id: 비정상')
+            try:
+                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
+                                                          '%Y-%m-%d %H:%M:%S')
+            except:
+                is_ok = False
+                fail_list.append(' dt_out_verify: 날짜 변경 Error')
+            if is_ok:
+                pass_history.dt_out_verify = dt_out_verify
+                pass_history.out_staff_id = int(plain)
+
+        if len(fail_list) > 0:
+            return status422(func_name, {'message':'fail', 'fails': fail_list})
+
+        pass_history.save()
+
+        # *** 출퇴근 시간이 바뀌면 pass_verify 로 변경해야하는데...
+        # 문제 없을까?
+
+    list_pass_history = []
+    for pass_history in pass_histories:
+        pass_history_dict = {
+            'passer_id': pass_history.passer_id,
+            'year_month_day': pass_history.year_month_day,
+            'action': pass_history.action,
+            'work_id': pass_history.work_id,
+            'dt_in': pass_history.dt_in,
+            'dt_in_verify': pass_history.dt_in_verify,
+            'in_staff_id': pass_history.in_staff_id,
+            'dt_out': pass_history.dt_out,
+            'dt_out_verify': pass_history.dt_out_verify,
+            'out_staff_id': pass_history.out_staff_id,
+            'overtime': pass_history.overtime,
+            'overtime_staff_id': pass_history.overtime_staff_id,
+            'x': pass_history.x,
+            'y': pass_history.y,
+        }
+        # for key in pass_history.__dict__.keys():
+        #     logSend(key, ' ', pass_history.__dict__[key])
+        #     json_pass_history[key] = pass_history.__dict__[key]
+        # list_pass_history.append(json_pass_history)
+        list_pass_history.append(pass_history_dict)
+    logSend(list_pass_history)
+    result = {'employees': list_pass_history,
+              'fail_list': fail_list,
+              }
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow

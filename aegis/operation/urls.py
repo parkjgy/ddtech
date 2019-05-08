@@ -44,6 +44,9 @@ urlpatterns = [
     url(r'operation/employee_test_step_4', views.employee_test_step_4, name='employee_test_step_4'),
     url(r'operation/employee_test_step_5', views.employee_test_step_5, name='employee_test_step_5'),
 
+    url(r'operation/employee_test_step_A', views.employee_test_step_A, name='employee_test_step_A'),
+    url(r'operation/employee_test_step_B', views.employee_test_step_B, name='employee_test_step_B'),
+
     url(r'operation/sms_install_mng', views.sms_install_mng, name='sms_install_mng'),
 
     url(r'operation/employee_beacon_step_1', views.employee_beacon_step_1, name='employee_beacon_step_1'),

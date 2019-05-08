@@ -2769,6 +2769,391 @@ def employee_test_step_5(request):
 
 
 @cross_origin_read_allow
+def employee_test_step_A(request):
+    """
+    [[근로자 서버 시험]] Step A:
+    1. 사업장 생성
+    2. 업무 생성
+    3. 근로자 생성
+    4. 근로자 beacon
+    5. 근로자 touch
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    result = []
+    # 고객 : 로그인
+    login_data = {"login_id": "think",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    co_id = r.json()['company_general']['co_id']
+    # 고객 : 발주사 등록
+    relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
+                          'corp_name': '울산광역시',
+                          'staff_name': '송철호',
+                          'staff_pNo': '052-120',
+                          'staff_email': 'ulsan@email.com',
+                          }
+    r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
+    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES', 'is_partner':'NO'})
+    result.append({'url': r.url, 'POST':{'is_orderer':'YES', 'is_partner':'NO'}, 'STATUS': r.status_code, 'R': r.json()})
+    order_id = r.json()['orderers'][0]['id']
+
+    # 고객 : 직원 등록
+    staffs = [['박종기_알', '010-8433-3579', '이사', '대덕테크'],
+              ];
+    index = 1
+    for staff in staffs:
+        staff_data = {'name': staff[0].replace(' ', ''),
+                      'login_id': 'dream',
+                      'position': staff[2].replace(' ', ''),
+                      'department': staff[3],  # option 비워서 보내도 됨
+                      'pNo': staff[1],
+                      'email': 'unknown@email.com',
+                      }
+        r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
+        index += 1
+        result.append({'url': r.url, 'POST':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    staffs = r.json()['staffs']
+    for staff in staffs:
+        if staff['name'] == '박종기_알':
+            manager_id = staff['id']
+            break
+
+    # 고객 : 사업장 등록
+    work_place = {
+        'name': '대왕암',  # 이름
+        'manager_id': manager_id,
+        'order_id': order_id
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
+    result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
+
+    work_place_infor = { 'name':'대왕암',
+                         'manager_name':'',
+                         'manager_phone':'',
+                         'order_name':''
+                         }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
+    result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
+    work_place_id = r.json()['work_places'][0]['id']
+
+    for staff in staffs:
+        if staff['name'] == '박종기':
+            staff_id = staff['id']
+            break
+
+    # 고객 : 업무 등록
+    work = {
+        'name': '조기 청소',
+        'work_place_id': work_place_id,
+        'type': '주간 오전',
+        'dt_begin': '2019-05-01',
+        'dt_end': '2019-05-15',
+        'staff_id': staff_id,
+        'partner_id': co_id,
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
+    result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
+
+    today = datetime.datetime.now() + datetime.timedelta(days=2)
+    next_3_day = (today + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+    next_5_day = (today + datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+    today = today.strftime("%Y-%m-%d")
+
+    # 고객 : 업무 등록
+    work = {
+        'name': '공원 안내',
+        'work_place_id': work_place_id,
+        'type': '주간 오후',
+        'dt_begin': next_5_day,
+        'dt_end': '2019-05-15',
+        'staff_id': staff_id,
+        'partner_id': co_id,
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
+    result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
+
+    work_infor = {'work_place_id':work_place_id,
+                  'dt_begin':'',
+                  'dt_end':''
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
+    result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
+    work_id = r.json()['works'][1]['id']
+    work_id_after = r.json()['works'][0]['id']
+    logSend('work_id = ', work_id)
+
+    # 근로자 등록
+    employees = [['박종기_알', '010-8433-3579', '근로자', '대덕기공'],
+                 ['박종기', '010-2557-3555', '대덕산업'],
+                 ]
+
+    # 고객 : 고객웹에서 근로자 등록
+    next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
+    next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
+    arr_phone_no = [employee[1] for employee in employees]
+    settings.IS_TEST = True
+    employee = {
+        'work_id':work_id,
+        'dt_answer_deadline':next_4_day,
+        'phone_numbers':arr_phone_no
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    settings.IS_TEST = False
+
+    # 근로자 등록
+    employees = [['박종기_알', '010-8433-3579', '근로자', '대덕기공'],
+                 ['박종기', '010-2557-3555', '대덕산업'],
+                 ]
+
+    # 고객 : 고객웹에서 근로자 등록
+    arr_phone_no = [employee[1] for employee in employees]
+    settings.IS_TEST = True
+    employee = {
+        'work_id':work_id_after,
+        'dt_answer_deadline':'2019-04-29 19:00:00',
+        'phone_numbers':arr_phone_no
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    settings.IS_TEST = False
+
+    for employee_ex in employees:
+        # 근로자 : 앱 설치 후 인증번호 요청
+        phone_no = {'phone_no' : employee_ex[1]}
+        settings.IS_TEST = True
+        r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
+        settings.IS_TEST = False
+        # result.append({'url': r.url, 'POST':phone_no, 'STATUS': r.status_code, 'R': r.json()})
+
+        # 근로자 : 인증
+        certification_data = {
+                'phone_no' : employee_ex[1],
+                'cn' : '201903',
+                'phone_type' : 'A', # 안드로이드 폰
+                'push_token' : 'push token'
+            }
+        r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
+        # result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
+        employee = r.json()
+        employee_id = employee['id'] # 등록 근로자 id (passer_id)
+
+        if (not 'name' in employee) and ('bank_list' in employee):
+            # 처음 설치한 경우 : 자기 정보 수정
+            employee_info = {
+                'passer_id': employee_id,
+                'name': employee_ex[0],
+                'bank': '기업은행',
+                'bank_account': '12300000012%03d' % employees.index(employee_ex),
+                'pNo': employee_ex[1],  # 추후 SMS 확인 절차 추가
+                'work_start': '08:30',  # 오전 오후로 표시하지 않는다.
+                'working_time': '09',  # 시간 4 - 12
+                'work_start_alarm': 'X',  # '-60'(한시간 전), '-30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
+                'work_end_alarm': 'X',  # '-30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
+            }
+            r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
+            # result.append({'url': r.url, 'POST':employee_info, 'STATUS': r.status_code, 'R': r.json()})
+
+        # 근로자 : 알림 확인
+        passer = {'passer_id': employee_id}
+        r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+        result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
+        print(r.json())
+        if len(r.json()['notifications']) == 0:
+            # 알림이 없는 출입자 - 대상이 아님
+            continue
+        notification_id = r.json()['notifications'][0]['id']
+
+        # 근로자 : 업무 수락 / 거절
+        accept = {
+            'passer_id': employee_id,  # 암호화된 값임
+            'notification_id': notification_id,
+            'is_accept': 1  # 1 : 업무 수락, 0 : 업무 거부
+        }
+        r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+        result.append({'url': r.url, 'POST': accept, 'STATUS': r.status_code, 'R': r.json()})
+
+        # 근로자 출근 기록 만들기
+        # 3월
+        # months = {5:[32, [5, 12, 19, 26]]}
+        months = {5:[8, [5, 12, 19, 26]]}
+        for m_key in months.keys():
+            month = m_key
+            month_range = months[m_key][0]
+            month_holidays = months[m_key][1]
+            for day in range(1, month_range):
+                if day in month_holidays:
+                    continue
+                beacon_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
+                    'is_in': 1,  # 0: out, 1 : in
+                    'major': 11001,  # 11 (지역) 001(사업장)
+                    'beacons': [
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70}
+                    ]
+                    }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+
+                button_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)),
+                    'is_in': 1,  # 0: out, 1 : in
+                }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
+                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+
+                button_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(35)),
+                    'is_in': 0,  # 0: out, 1 : in
+                }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
+                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+
+                beacon_data = {
+                    'passer_id': employee_id,
+                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
+                    'is_in': 0,  # 0: out, 1 : in
+                    'major': 11001,  # 11 (지역) 001(사업장)
+                    'beacons': [
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70}
+                    ]
+                    }
+                r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def employee_test_step_B(request):
+    """
+    [근로자 서버 시험]] Step B:
+    1. 사업장 생성
+    2. 업무 생성
+    3. 근로자 생성
+    4. 근로자 beacon
+    5. 근로자 touch
+    6. overtime, force dt_in_verify, force dt_in_verify
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    result = []
+
+    login_data = {"login_id": "think",
+                  "login_pw": "parkjong"
+                  }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    """
+    pass_record_of_employees_in_day_for_customer
+            employees: [ employee_id, employee_id, ...],  # 배열: 대상 근로자 (암호화된 값)
+            year_month_day: 2018-12-28,                   # 대상 날짜
+            work_id: work_id,                             # 업무 id (암호화된 값): 암호를 풀어서 -1 이면 업무 특정짓지 않는다.
+
+            #
+            # 아래항은 옵션임 - 값이 없으면 처리하지 않음
+            #
+            overtime: 0,                    # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+            overtime_staff_id: staff_id,    # 처리 직원 id (암호화된 값)
+
+            dt_in_verify: 08:00,            # 수정된 출근시간 (24 시간제)
+            in_staff_id: staff_id,          # 출근 시간 수정 직원 id (암호화됨)
+
+            dt_out_verify: 17:00,            # 수정된 퇴근시간 (24 시간제)
+            out_staff_id: staff_id,          # 퇴근 시간 수정 직원 id (암호화됨)
+    """
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
+                       'year_month_day': '2019-05-08',
+                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       }
+    logSend(employees_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
+                       'year_month_day': '2019-05-08',
+                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'overtime': -2,
+                       'overtime_staff_id': 'qgf6YHf1z2Fx80DR8o_Lv',
+                       'dt_in_verify': '008:30',
+                       'in_staff_id': 'qgf6YHf1z2Fx80DR8o_Lv',
+                       'dt_out_verify': '017:30',
+                       'out_staff_id': 'qgf6YHf1z2Fx80DR8o_Lv',
+                       }
+    logSend(employees_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
+                       'year_month_day': '2019-05-08',
+                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'overtime': 6,
+                       'overtime_staff_id': AES_ENCRYPT_BASE64('1'),
+                       'dt_in_verify': '08:30',
+                       'in_staff_id': AES_ENCRYPT_BASE64('1'),
+                       'dt_out_verify': '20:30',
+                       'out_staff_id': AES_ENCRYPT_BASE64('1'),
+                       }
+    logSend(employees_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
 def sms_install_mng(request):
 
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
