@@ -4088,6 +4088,7 @@ def staff_update_employee(request):
         return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
     work = works[0]
 
+    result = {}
     if not '' == str_dt_begin:
         if len(str_dt_begin.split(' ')) > 1:
             dt_begin = datetime.datetime.strptime(str_dt_begin, "%Y-%m-%d %H:%M:%S")
@@ -4096,6 +4097,14 @@ def staff_update_employee(request):
         if dt_begin < work.dt_begin:
             return status422(func_name, {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'})
         employee.dt_begin = dt_begin
+        employees_infor = {
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+            'dt_begin': dt_begin.strftime("%Y/%m/%d"),
+        }
+        logSend(employees_infor)
+        r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
+        result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
     if not '' == str_dt_end:
         if len(str_dt_end.split(' ')) > 1:
@@ -4105,6 +4114,14 @@ def staff_update_employee(request):
         if work.dt_end < dt_end:
             return status422(func_name, {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'})
         employee.dt_end = dt_end
+        employees_infor = {
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+            'dt_end': dt_end.strftime("%Y/%m/%d"),
+        }
+        logSend(employees_infor)
+        r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
+        result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
     if not '' == overtime_type:
         if overtime_type < -1 or 6 < overtime_type:
@@ -4115,10 +4132,9 @@ def staff_update_employee(request):
     #
     # employee server 에서 적용시켜야 한다.
     #
-    result = {'update_dt_begin':employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-              'update_dt_end':employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-              'update_overtime':employee.overtime
-              }
+    result['update_dt_begin'] = employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S")
+    result['update_dt_end'] = employee.dt_end.strftime("%Y-%m-%d %H:%M:%S")
+    result['update_overtime'] = employee.overtime
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)

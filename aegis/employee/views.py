@@ -1549,6 +1549,102 @@ def update_pass_history(pass_history):
 
 
 @cross_origin_read_allow
+def change_work_period_for_customer(request):
+    """
+    << 고객 서버용 >> 현장 소장이 근로자의 업무 날짜를 조정한다.
+    - work 의 시작 날짜 이전을 요청하면 안된다. - work 의 시작 날짜를 검사하지 않는다.
+    - 출퇴근 기록이 없으면 출퇴근 기록을 새로 만든다.
+    - 수정한 시간 오류 검사 X : 출근 시간보다 퇴근 시간이 느리다, ...
+    http://0.0.0.0:8000/employee/change_work_period_for_customer?employees=&dt=2019-05-06
+    POST : json
+        {
+            employee_id: qgf6YHf1z2Fx80DR8o_Lvg  # 근로자 id (passer_id = customer.employee.employee_id)
+            work_id: qgf6YHf1z2Fx80DR8o_Lvg  # 업무 id (암호화 된 값)
+            dt_begin: 2019-04-01   # 근로 시작 날짜
+            dt_end: 2019-04-13     # 근로 종료 날짜
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'employees\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+
+        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
+
+    #
+    # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
+    #
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    passer_id = parameter_check['parameters']['employee_id']
+    work_id = parameter_check['parameters']['work_id']
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except:
+        return status422(func_name, {'message': '해당 근로자({})가 없다.'.format(passer_id)})
+    if passer.employee_id == -1:
+        return status422(func_name, {'message': '해당 근로자({})의 업무가 등록되지 않았다.'.format(passer_id)})
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except:
+        return status422(func_name, {'message': '해당 근로자({})의 업무를 찾을 수 없다.'.format(passer_id)})
+    logSend('   {}'.format(employee.name))
+    try:
+        work = Work.objects.get(customer_work_id=work_id)
+    except:
+        return status422(func_name, {'message': '해당 업무({})를 찾을 수 없다.'.format(work_id)})
+    if 'dt_begin' not in rqst:
+        dt_begin = work.begin
+    else:
+        dt_begin = rqst['dt_begin']
+
+    if 'dt_end' not in rqst:
+        dt_end = work.end
+    else:
+        dt_end = rqst['dt_end']
+    if employee.work_id == work.id:
+        employee.begin_1 = dt_begin
+        employee.end_1 = dt_end
+        employee.save()
+    elif employee.work_id_2 == work.id:
+        employee.begin_2 = dt_begin
+        employee.end_2 = dt_end
+        employee.save()
+    elif employee.work_id_3 == work.id:
+        employee.begin_3 = dt_begin
+        employee.end_3 = dt_end
+        employee.save()
+    else:
+        return status422(func_name, {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+
+@cross_origin_read_allow
 def employee_day_working_from_customer(request):
     """
     <<<고객 서버용>>> 근로자 한명의 하루 근로 내용
