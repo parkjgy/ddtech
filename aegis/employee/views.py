@@ -1543,7 +1543,8 @@ def update_pass_history(pass_history):
         else:
             action_out = 0
     pass_history.action = action_in + action_out
-    func_end_log(func_name, ' pass_history.action = {}'.format(pass_history.action))
+    pass_history.save()
+    func_end_log(func_name, ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id, employee.name))
     return
 
 
@@ -1732,22 +1733,38 @@ def my_work_histories_for_customer(request):
         if datetime.datetime.now() < dt_end:
             dt_end = datetime.datetime.strptime()
     logSend(dt_begin, ' ', dt_end)
-    year_month = dt_begin.strftime('%Y-%m')
-    last_day = dt_end - datetime.timedelta(hours=1)
-    s = requests.session()
+
+    year_month_day_list = []
+    day = dt_begin
+    while day < dt_end:
+        year_month_day_list.append(day.strftime('%Y-%m-%d'))
+        day = day + datetime.timedelta(days=1)
+    logSend(year_month_day_list)
+    pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list)
     workings = []
-    day_infor = {'employee_id':AES_ENCRYPT_BASE64(str(passer.id))}
-    for day in range(1, int(last_day.strftime('%d')) + 1):
-        day_infor['dt'] = year_month + '-%02d'%day
-        r = s.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=day_infor)
-        logSend({'url': r.url, 'POST': day_infor, 'STATUS': r.status_code, 'R': r.json()})
-        if 'dt' in r.json():
-            work_day = r.json()['dt']
-            working = {'action':work_day['action'],
-                       'dt_begin':work_day['dt_begin_touch'],
-                       'dt_end':work_day['dt_end_touch']
-                       }
-            workings.append(working)
+    for pass_record in pass_record_list:
+        working = {'action': pass_record.action,
+                   'dt_begin': dt_null(pass_record.dt_in_verify),
+                   'dt_end': dt_null(pass_record.dt_out_verify),
+                   }
+        workings.append(working)
+
+    # year_month = dt_begin.strftime('%Y-%m')
+    # last_day = dt_end - datetime.timedelta(hours=1)
+    # s = requests.session()
+    # workings = []
+    # day_infor = {'employee_id':AES_ENCRYPT_BASE64(str(passer.id))}
+    # for day in range(1, int(last_day.strftime('%d')) + 1):
+    #     day_infor['dt'] = year_month + '-%02d'%day
+    #     r = s.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=day_infor)
+    #     logSend({'url': r.url, 'POST': day_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #     if 'dt' in r.json():
+    #         work_day = r.json()['dt']
+    #         working = {'action':work_day['action'],
+    #                    'dt_begin':work_day['dt_begin_touch'],
+    #                    'dt_end':work_day['dt_end_touch']
+    #                    }
+    #         workings.append(working)
     result = {"working":workings}
     #
     # 가상 데이터 생성

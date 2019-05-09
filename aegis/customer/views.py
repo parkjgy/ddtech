@@ -4172,30 +4172,51 @@ def staff_recognize_employee(request):
     if len(app_users) != 1:
         return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
     employees = Employee.objects.filter(id=employee_id)
+    logSend('--- employee id {} '.format(employee_id))
     if len(employees) != 1:
         return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
     employee = employees[0]
+    logSend('--- employee id {} name {} employee_id {}'.format(employee.id, employee.name, employee.employee_id))
     works = Work.objects.filter(id=employee.work_id)
     if len(works) != 1:
         return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
     work = works[0]
 
+    #
+    # employee server 에서 적용시켜야 한다.
+    #
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64(str(employee.employee_id))],
+                       # 'year_month_day': dt_arrive.strftime('%Y-%m-%d'),
+                       'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+                       }
     if not '' == str_dt_arrive:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(func_name, {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
         dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
         employee.dt_begin_touch = dt_arrive
+        employees_infor['year_month_day'] = dt_arrive.strftime('%Y-%m-%d')
+        employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
+        employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
 
     if not '' == str_dt_leave:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(func_name, {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
         dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
         employee.dt_end_touch = dt_leave
+        employees_infor['year_month_day'] = dt_leave.strftime('%Y-%m-%d')
+        employees_infor['dt_out_verify'] = dt_leave.strftime('%H:%M')
+        employees_infor['out_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
 
     employee.save()
     #
     # employee server 에서 적용시켜야 한다.
     #
+    r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    if len(r.json()['fail_list']):
+        logError(func_name, ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
+    pass_records = r.json()['employees']
+    fail_list = r.json()['fail_list']
+
     result = {'update_dt_arrive':dt_null(employee.dt_begin_touch),
               'update_dt_leave':dt_null(employee.dt_end_touch)
               }
