@@ -3176,18 +3176,83 @@ def staff_foreground(request):
 
 
 def employee_day_working_from_employee(employee_dic, day):
+    """
+    << 고객 서버용 >> 복수 근로자의 날짜별 출퇴근 기록 요청
+    - work 의 시작 날짜 이전을 요청하면 안된다. - work 의 시작 날짜를 검사하지 않는다.
+    - 출퇴근 기록이 없으면 출퇴근 기록을 새로 만든다.
+    - 수정한 시간 오류 검사 X : 출근 시간보다 퇴근 시간이 느리다, ...
+    http://0.0.0.0:8000/employee/pass_record_of_employees_in_day_for_customer?employees=&dt=2019-05-06
+    POST : json
+        {
+            employees: [ employee_id, employee_id, ...],  # 배열: 대상 근로자 (암호화된 값)
+            year_month_day: 2018-12-28,                   # 대상 날짜
+            work_id: work_id,                             # 업무 id (암호화된 값): 암호를 풀어서 -1 이면 업무 특정짓지 않는다.
+
+            #
+            # 아래항은 옵션임 - 값이 없으면 처리하지 않음
+            #
+            overtime: 0,                    # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+            overtime_staff_id: staff_id,    # 처리 직원 id (암호화된 값)
+
+            dt_in_verify: 08:00,            # 수정된 출근시간 (24 시간제)
+            in_staff_id: staff_id,          # 출근 시간 수정 직원 id (암호화됨)
+
+            dt_out_verify: 17:00,            # 수정된 퇴근시간 (24 시간제)
+            out_staff_id: staff_id,          # 퇴근 시간 수정 직원 id (암호화됨)
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'employees\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+                employee_dic = {'is_accept_work':'응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+                        'employee_id':AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                        'name':employee.name,
+                        'phone':phone_format(employee.pNo),
+                        'dt_begin':dt_null(employee.dt_begin),
+                        'dt_end':dt_null(employee.dt_end),
+                        'dt_begin_beacon':dt_null(employee.dt_begin_beacon),
+                        'dt_end_beacon':dt_null(employee.dt_end_beacon),
+                        'dt_begin_touch':dt_null(employee.dt_begin_touch),
+                        'dt_end_touch':dt_null(employee.dt_end_touch),
+                        'overtime':employee.overtime,
+                        'x':employee.x,
+                        'y':employee.y,
+                        }
+    day_work = {'dt_begin_beacon':dt_null(pass_history.dt_in),
+                'dt_end_beacon':dt_null(pass_history.dt_out),
+                'dt_begin_touch':dt_null(pass_history.dt_in_verify),
+                'dt_end_touch':dt_null(pass_history.dt_out_verify),
+                'action':pass_history.action,
+                }
+
+    """
     dt_day = datetime.datetime.strptime(day, "%Y-%m-%d")
     logSend(datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S"), ' vs ', dt_day)
     if datetime.datetime.strptime(employee_dic['dt_begin'], "%Y-%m-%d %H:%M:%S") < dt_day:
         # 근로자 서버에 특정 날짜의 근로자 근로 내역을 가져온다.
-        employee_infor = {'employee_id':employee_dic['employee_id'],
-                          'dt':dt_day.strftime("%Y-%m-%d")
+        employee_infor = {'employees': [employee_dic['employee_id']],
+                          'year_month_day': dt_day.strftime("%Y-%m-%d"),
+                          'work_id': AES_ENCRYPT_BASE64('-1')
                           }
-        r = requests.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=employee_infor)
+        r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employee_infor)
         logSend(r.json())
-        dt = r.json()['dt']
-        for dt_key in dt.keys():
-            employee_dic[dt_key] = dt[dt_key]
+        employees = r.json()['employees']
+        employee = employees[0]
+        employee_dic['dt_begin_beacon'] = dt_null(employee['dt_in'])
+        employee_dic['dt_end_beacon'] = dt_null(employee['dt_out'])
+        employee_dic['dt_begin_touch'] = dt_null(employee['dt_in_verify'])
+        employee_dic['dt_end_touch'] = dt_null(employee['dt_out_verify'])
+        employee_dic['action'] = employee['action']
     return employee_dic
 
 
@@ -3306,9 +3371,23 @@ def staff_employees_at_day(request):
         func_end_log(func_name)
         return status422(func_name, {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
-    employees = Employee.objects.filter(work_id=work.id)
+    employee_list = Employee.objects.filter(work_id=work.id)
+    employee_ids = [AES_ENCRYPT_BASE64(str(employee.id)) for employee in employee_list]
+    employees_infor = {'employees': employee_ids,
+                       'year_month_day': year_month_day,
+                       # 'work_id': AES_ENCRYPT_BASE64(work_id),
+                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       }
+    r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    pass_records = r.json()['employees']
+    pass_record_dic = {}
+    for pass_record in pass_records:
+        employee_id = int(AES_DECRYPT_BASE64(pass_record['passer_id']))
+        pass_record_dic[employee_id] = pass_record
+
     arr_employee = []
-    for employee in employees:
+    for employee in employee_list:
+        pass_record = pass_record_dic[employee.id]
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
@@ -3316,18 +3395,16 @@ def staff_employees_at_day(request):
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
             'dt_end': dt_null(employee.dt_end),
-            'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
-            'dt_end_beacon': dt_null(employee.dt_end_beacon),
-            'dt_begin_touch': dt_null(employee.dt_begin_touch),
-            'dt_end_touch': dt_null(employee.dt_end_touch),
-            'overtime': employee.overtime,
-            'x': employee.x,
-            'y': employee.y,
-            }
-        # 가상 데이터 생성
-        # employee_dic = virtual_employee(isWorkStart, employee_dic)
-        employee_dic = employee_day_working_from_employee(employee_dic, year_month_day)
-        # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
+
+            'dt_begin_beacon': pass_record['dt_in'],
+            'dt_end_beacon': pass_record['dt_out'],
+            'dt_begin_touch': pass_record['dt_in_verify'],
+            'dt_end_touch': pass_record['dt_out_verify'],
+            'overtime': pass_record['overtime'],
+            'x': pass_record['x'],
+            'y': pass_record['y'],
+        }
+
         arr_employee.append(employee_dic)
     result = {'year_month_day': year_month_day,
               'employees': arr_employee

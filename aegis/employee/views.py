@@ -1469,11 +1469,12 @@ def pass_record_of_employees_in_day_for_customer(request):
 
         # *** 출퇴근 시간이 바뀌면 pass_verify 로 변경해야하는데...
         # 문제 없을까?
+        # action 처리가 안된다.
 
     list_pass_history = []
     for pass_history in pass_histories:
         pass_history_dict = {
-            'passer_id': pass_history.passer_id,
+            'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
             'year_month_day': pass_history.year_month_day,
             'action': pass_history.action,
             'work_id': pass_history.work_id,
@@ -1493,7 +1494,7 @@ def pass_record_of_employees_in_day_for_customer(request):
         #     json_pass_history[key] = pass_history.__dict__[key]
         # list_pass_history.append(json_pass_history)
         list_pass_history.append(pass_history_dict)
-    logSend(list_pass_history)
+    # logSend(list_pass_history)
     result = {'employees': list_pass_history,
               'fail_list': fail_list,
               }

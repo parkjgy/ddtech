@@ -2232,6 +2232,7 @@ def employee_test_step_2(request):
     settings.IS_TEST = False  # sms pass
     result.append({'url': r.url, 'POST':customer_data, 'STATUS': r.status_code, 'R': r.json()})
     init_login_id = r.json()['message'][1]
+    logSend(init_login_id)
     # 고객 : 로그인
     login_data = {"login_id": init_login_id,
                   "login_pw": "happy_day!!!"
