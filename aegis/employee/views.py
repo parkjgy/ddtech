@@ -397,23 +397,37 @@ def notification_accept(request):
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
     notification = notifications[0]
 
-    is_accept = 1 if rqst['is_accept'] == '1' else 0
+    is_accept = 1 if int(rqst['is_accept']) == 1 else 0
     logSend('is_accept = ', rqst['is_accept'], ' ', is_accept)
+
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) != 1:
+        logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id, len(employees)))
+    employee = employees[0]
     #
-    # 근로자 정보에 업무를 등록
+    # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
-    if passer.employee_id > 0:
-        employee = Employee.objects.get(id=passer.employee_id)
-        if employee.work_id != -1:
-            # 2개가 모두 있을 때 처리는 version 2.0 에서
-            employee.work_id_2 = notification.work_id
-    else:
-        employee = Employee(
-            work_id=notification.work_id
-        )
+    if is_accept == 1:
+        work = Work.objects.get(id=notification.work_id)
+        if passer.employee_id > 0:
+            if employee.work_id != -1:
+                # 2개가 모두 있을 때 처리는 version 2.0 에서
+                employee.work_id_2 = notification.work_id
+                employee.begin_2 = work.begin
+                employee.end_2 = work.end
+            else:
+                employee.work_id = notification.work_id
+                employee.begin_1 = work.begin
+                employee.end_1 = work.end
+        else:
+            logError(func_name, ' ERROR: 출입자가 근로자가 아닌 경우 - 발생하면 안됨 passer_id:', passer.id)
+            employee = Employee(
+                work_id=notification.work_id,
+                begin_1=work.begin,
+                end_1=work.end,
+            )
         employee.save()
-        logSend('ERROR: 출입자가 근로자가 아닌 경우 - 발생하면 안됨 employee_id:', employee_id)
-    logSend(employee.name)
+        logSend(employee.name)
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -670,11 +684,11 @@ def pass_reg(request):
         else:
             pass_history = pass_histories[0]
 
-        if pass_history.dt_in == None:
+        if pass_history.dt_in is None:
             pass_history.dt_in = dt_beacon
 
     # work_id 처리
-    if (pass_history.work_id == None) and (passer.employee_id > 0):
+    if (pass_history.work_id == -1) and (passer.employee_id > 0):
         employees = Employee.objects.filter(id=passer.employee_id)
         if len(employees) == 0:
             logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
@@ -801,8 +815,8 @@ def pass_verify(request):
             pass_history = pass_histories[0]
 
         pass_history.dt_out_verify = dt_touch
-        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
-        if dt_in == None:
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         if (dt_in + datetime.timedelta(hours=12)) < dt_touch:
@@ -820,43 +834,13 @@ def pass_verify(request):
         else:
             pass_history = pass_histories[0]
 
-        if pass_history.dt_in_verify == None:
+        if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
 
-    # work_id 처리
-    if (pass_history.work_id == None) and (passer.employee_id > 0):
-        employees = Employee.objects.filter(id=passer.employee_id)
-        if len(employees) == 0:
-            logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        else:
-            if len(employees) > 1:
-                logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
-            employee = employees[0]
-            pass_history.work_id = employee.work_id
-        #
-        # 정상, 지각, 조퇴 처
-        #
-        if not pass_history.dt_in_verify == None:
-            action_in = 100
-            if (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
-                action_in = 200
-        else:
-            action_in = 0
-
-        if pass_history.overtime == -1:
-            # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
-            action_out = 10
-        else:
-            if not pass_history.dt_out_verify == None:
-                action_out = 10
-                dt_out = pass_history.dt_out_verify
-                work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
-                work_out_minute = int(employee.work_start[3:])
-                if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
-                    action_out = 20
-            else:
-                action_out = 0
-        pass_history.action = action_in + action_out
+    #
+    # 정상, 지각, 조퇴 처리 -  pass_record_of_employees_in_day_for_customer
+    #
+    update_pass_history(pass_history)
 
     pass_history.save()
 
@@ -1372,13 +1356,18 @@ def pass_record_of_employees_in_day_for_customer(request):
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
     #
-    parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id_!'])
+    parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     employees = parameter_check['parameters']['employees']
     year_month_day = parameter_check['parameters']['year_month_day']
-    work_id = int(parameter_check['parameters']['work_id'])
+    customer_work_id = parameter_check['parameters']['work_id']
+    try:
+        work = Work.objects.get(customer_work_id=customer_work_id)
+        work_id = work.id
+    except:
+        work_id = -1
     employee_ids = []
     for employee in employees:
         # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
@@ -1387,7 +1376,9 @@ def pass_record_of_employees_in_day_for_customer(request):
             return status422(func_name, {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
         else:
             employee_ids.append(plain)
-    if work_id == '-1':
+
+    # logSend('--- pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
+    if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
@@ -1395,22 +1386,24 @@ def pass_record_of_employees_in_day_for_customer(request):
         logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
         # func_end_log(func_name)
         # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
-
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    logSend('--- pass_histories passer_ids {}'.format(exist_ids))
     for employee_id in employee_ids:
-        if not int(employee_id) in exist_ids:
+        if int(employee_id) not in exist_ids:
             # 출퇴근 기록이 없으면 새로 만든다.
+            logSend('   --- new pass_history passer_id {}'.format(employee_id))
             Pass_History(
                 passer_id=int(employee_id),
                 year_month_day=year_month_day,
                 action=0
             ).save()
-    if work_id == '-1':
+    if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
 
-    logSend(pass_histories)
+    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    logSend('--- pass_histories passer_ids {}'.format(exist_ids))
     fail_list = []
     for pass_history in pass_histories:
         # 연장 근무 처리
@@ -1444,6 +1437,7 @@ def pass_record_of_employees_in_day_for_customer(request):
             if is_ok:
                 pass_history.dt_in_verify = dt_in_verify
                 pass_history.in_staff_id = int(plain)
+                update_pass_history(pass_history)
 
         # 퇴근시간 수정 처리
         if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
@@ -1459,8 +1453,10 @@ def pass_record_of_employees_in_day_for_customer(request):
                 is_ok = False
                 fail_list.append(' dt_out_verify: 날짜 변경 Error')
             if is_ok:
+                pass_history.action = 0
                 pass_history.dt_out_verify = dt_out_verify
                 pass_history.out_staff_id = int(plain)
+                update_pass_history(pass_history)
 
         if len(fail_list) > 0:
             return status422(func_name, {'message':'fail', 'fails': fail_list})
@@ -1500,6 +1496,55 @@ def pass_record_of_employees_in_day_for_customer(request):
               }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
+
+
+def update_pass_history(pass_history):
+    """
+    출퇴근 시간에 맞추어 지각, 조퇴 처리
+    to use:
+        pass_record_of_employees_in_day_for_customer
+        pass_verify
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    try:
+        passer = Passer.objects.get(id=pass_history.passer_id)
+    except:
+        func_end_log(func_name)
+        return
+    if passer.employee_id <= 0:
+        func_end_log(func_name)
+        return
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) == 0:
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        func_end_log(func_name)
+        return
+    if len(employees) > 1:
+        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    employee = employees[0]
+    if pass_history.dt_in_verify is not None:
+        action_in = 100
+        if (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
+            action_in = 200
+    else:
+        action_in = 0
+
+    if pass_history.overtime == -1:
+        # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
+        action_out = 10
+    else:
+        if pass_history.dt_out_verify is not None:
+            action_out = 10
+            dt_out = pass_history.dt_out_verify
+            work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
+            work_out_minute = int(employee.work_start[3:])
+            if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
+                action_out = 20
+        else:
+            action_out = 0
+    pass_history.action = action_in + action_out
+    func_end_log(func_name, ' pass_history.action = {}'.format(pass_history.action))
+    return
 
 
 @cross_origin_read_allow

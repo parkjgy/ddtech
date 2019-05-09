@@ -2529,6 +2529,7 @@ def employee_test_step_4(request):
     settings.IS_TEST = False
     result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
 
+    settings.IS_LOG = False
     for employee_ex in employees:
         # 근로자 : 앱 설치 후 인증번호 요청
         phone_no = {'phone_no' : employee_ex[1]}
@@ -2586,7 +2587,8 @@ def employee_test_step_4(request):
 
         # 근로자 출근 기록 만들기
         # 3월
-        months = {3:[32, [3, 10, 17, 24, 31]], 4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
+        # months = {3:[32, [3, 10, 17, 24, 31]], 4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
+        months = {4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
         for m_key in months.keys():
             month = m_key
             month_range = months[m_key][0]
@@ -2600,9 +2602,9 @@ def employee_test_step_4(request):
                     'is_in': 1,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
-                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
-                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
-                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70}
+                        {'minor': 11001, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70}
                     ]
                     }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
@@ -2610,7 +2612,7 @@ def employee_test_step_4(request):
 
                 button_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)),
+                    'dt': '2019-{}-{} 08:{}:00'.format(month, day, rMin(29)),
                     'is_in': 1,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
@@ -2618,7 +2620,7 @@ def employee_test_step_4(request):
 
                 button_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(35)),
+                    'dt': '2019-{}-{} 08:{}:00'.format(month, day, rMin(31)),
                     'is_in': 0,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
@@ -2630,13 +2632,14 @@ def employee_test_step_4(request):
                     'is_in': 0,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
-                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
-                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
-                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70}
+                        {'minor': 11001, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(35)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(35)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(35)), 'rssi': -70}
                     ]
                     }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
                 #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+    settings.IS_LOG = True
 
     logSend(result)
     func_end_log(func_name)
@@ -2868,11 +2871,11 @@ def employee_test_step_A(request):
 
     # 고객 : 업무 등록
     work = {
-        'name': '조기 청소',
+        'name': '공원 청소',
         'work_place_id': work_place_id,
         'type': '주간 오전',
         'dt_begin': '2019-05-01',
-        'dt_end': '2019-05-15',
+        'dt_end': '2019-05-31',
         'staff_id': staff_id,
         'partner_id': co_id,
     }
@@ -2890,7 +2893,7 @@ def employee_test_step_A(request):
         'work_place_id': work_place_id,
         'type': '주간 오후',
         'dt_begin': next_5_day,
-        'dt_end': '2019-05-15',
+        'dt_end': '2019-05-31',
         'staff_id': staff_id,
         'partner_id': co_id,
     }
@@ -2903,11 +2906,11 @@ def employee_test_step_A(request):
                   }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
     result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
-    work_id = r.json()['works'][1]['id']
-    work_id_after = r.json()['works'][0]['id']
+    work_id = r.json()['works'][0]['id']
+    work_id_after = r.json()['works'][1]['id']
     logSend('work_id = ', work_id)
 
-    # 근로자 등록
+    # 근로자 등록 - 업무 시작 전인 업무(공원 안내)
     employees = [['박종기_알', '010-8433-3579', '근로자', '대덕기공'],
                  ['박종기', '010-2557-3555', '대덕산업'],
                  ]
@@ -2918,7 +2921,7 @@ def employee_test_step_A(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id,
+        'work_id':work_id_after,
         'dt_answer_deadline':next_4_day,
         'phone_numbers':arr_phone_no
     }
@@ -2926,7 +2929,7 @@ def employee_test_step_A(request):
     result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
 
-    # 근로자 등록
+    # 근로자 등록 - 업무 시작 후인 업무(공원 청소)
     employees = [['박종기_알', '010-8433-3579', '근로자', '대덕기공'],
                  ['박종기', '010-2557-3555', '대덕산업'],
                  ]
@@ -2935,7 +2938,7 @@ def employee_test_step_A(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id_after,
+        'work_id':work_id,
         'dt_answer_deadline':'2019-04-29 19:00:00',
         'phone_numbers':arr_phone_no
     }
@@ -2945,7 +2948,7 @@ def employee_test_step_A(request):
 
     for employee_ex in employees:
         # 근로자 : 앱 설치 후 인증번호 요청
-        phone_no = {'phone_no' : employee_ex[1]}
+        phone_no = {'phone_no': employee_ex[1]}
         settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
         settings.IS_TEST = False
@@ -2983,11 +2986,10 @@ def employee_test_step_A(request):
         passer = {'passer_id': employee_id}
         r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
         result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
-        print(r.json())
         if len(r.json()['notifications']) == 0:
             # 알림이 없는 출입자 - 대상이 아님
             continue
-        notification_id = r.json()['notifications'][0]['id']
+        notification_id = r.json()['notifications'][1]['id']
 
         # 근로자 : 업무 수락 / 거절
         accept = {
@@ -3001,7 +3003,7 @@ def employee_test_step_A(request):
         # 근로자 출근 기록 만들기
         # 3월
         # months = {5:[32, [5, 12, 19, 26]]}
-        months = {5:[8, [5, 12, 19, 26]]}
+        months = {5:[9, [4, 5, 6, 11, 12, 18, 19, 25, 26]]}
         for m_key in months.keys():
             month = m_key
             month_range = months[m_key][0]
@@ -3115,7 +3117,7 @@ def employee_test_step_B(request):
     """
     employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
                        'year_month_day': '2019-05-08',
-                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
                        }
     logSend(employees_infor)
     r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
@@ -3123,7 +3125,7 @@ def employee_test_step_B(request):
 
     employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
                        'year_month_day': '2019-05-08',
-                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
                        'overtime': -2,
                        'overtime_staff_id': 'qgf6YHf1z2Fx80DR8o_Lv',
                        'dt_in_verify': '008:30',
@@ -3137,12 +3139,12 @@ def employee_test_step_B(request):
 
     employees_infor = {'employees': [AES_ENCRYPT_BASE64('1'), AES_ENCRYPT_BASE64('2')],
                        'year_month_day': '2019-05-08',
-                       'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
                        'overtime': 6,
                        'overtime_staff_id': AES_ENCRYPT_BASE64('1'),
-                       'dt_in_verify': '08:30',
+                       'dt_in_verify': '08:35',
                        'in_staff_id': AES_ENCRYPT_BASE64('1'),
-                       'dt_out_verify': '20:30',
+                       'dt_out_verify': '20:25',
                        'out_staff_id': AES_ENCRYPT_BASE64('1'),
                        }
     logSend(employees_infor)

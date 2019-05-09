@@ -3379,7 +3379,10 @@ def staff_employees_at_day(request):
                        'work_id': AES_ENCRYPT_BASE64('-1'),
                        }
     r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    if len(r.json()['fail_list']):
+        logError(func_name, ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
     pass_records = r.json()['employees']
+    fail_list = r.json()['fail_list']
     pass_record_dic = {}
     for pass_record in pass_records:
         employee_id = int(AES_DECRYPT_BASE64(pass_record['passer_id']))
@@ -3407,7 +3410,8 @@ def staff_employees_at_day(request):
 
         arr_employee.append(employee_dic)
     result = {'year_month_day': year_month_day,
-              'employees': arr_employee
+              'employees': arr_employee,
+              'fail_list': fail_list,
               }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
@@ -3704,15 +3708,16 @@ def staff_change_time(request):
     https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     http://0.0.0.0:8000/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
     POST
-        id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
+        year_month_day: 2019-05-09 # 처리할 날짜
         overtime_type : 0        # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
         employee_ids : [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
     response
         STATUS 200
             {
               "message": "정상적으로 처리되었습니다.",
-              "emplyees": [
+              "employees": [
                 {
                   "is_accept_work": true,
                   "employee_id": "i52bN-IdKYwB4fcddHRn-g",
@@ -3733,11 +3738,13 @@ def staff_change_time(request):
               ]
             }
         STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
             {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_ids\' 가 없어요'}
             {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'}
-            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
             {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
@@ -3747,43 +3754,39 @@ def staff_change_time(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
-    if not 'id' in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
-    if not 'work_id' in rqst: # work_id 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 없어요'})
-    if not 'overtime_type' in rqst: # overtime_type 가 들어왔는지 검사
-        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 가 없어요'})
-    overtime_type = int(rqst['overtime_type'])
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month_day', 'overtime_type', 'employee_ids'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    staff_id = parameter_check['parameters']['staff_id']
+    work_id = parameter_check['parameters']['work_id']
+    year_month_day = parameter_check['parameters']['year_month_day']
+    overtime_type = int(parameter_check['parameters']['overtime_type'])
+    employee_ids = parameter_check['parameters']['employee_ids']
+
     if overtime_type < -1 or 6 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
         return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'})
 
-    staff_id = AES_DECRYPT_BASE64(rqst['id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'})
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    if work_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'})
-
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
         return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+    app_user = app_users[0]
     works = Work.objects.filter(id=work_id)
     if len(works) != 1:
         return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id })
-    app_user = app_users[0]
     work = works[0]
     if work.staff_id != app_user.id:
         # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
         logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
 
-    if request.method == 'POST':
-        employee_ids = rqst['employee_ids']
-    else:
+    if request.method == 'GET':
         employee_ids = rqst.getlist('employee_ids')
 
-    # employee_ids = rqst['employee_ids']
     logSend(employee_ids)
     employee_id_list = []
     for employee_id in employee_ids:
@@ -3792,19 +3795,24 @@ def staff_change_time(request):
         else:
             employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
     logSend(employee_id_list)
-
     employees = Employee.objects.filter(work_id=work.id, id__in=employee_id_list)
-    # employees = Employee.objects.filter(id__in=employee_id_list)
-    # employee_list = []
+    # employee_ids = []
     # for employee in employees:
-    #     # employee_list.append({'a':employee.id, 'b':employee.name, 'c':employee.overtime})
-    #     employee_list.append([employee.id, employee.name, employee.overtime])
-    # result = {'employees':employee_list}
-    # # result = {'employees':[AES_ENCRYPT_BASE64(str(employee.id)) for employee in employees]}
-    #
-    # func_end_log(func_name)
-    # return REG_200_SUCCESS.to_json_response(result)
-    #
+    #     employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
+    employee_passer_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employees]
+    employees_infor = {'employees': employee_passer_ids,
+                       'year_month_day': year_month_day,
+                       'work_id': AES_ENCRYPT_BASE64(work_id),
+                       # 'work_id': AES_ENCRYPT_BASE64('-1'),
+                       'overtime': overtime_type,
+                       'overtime_staff_id': AES_ENCRYPT_BASE64(staff_id),
+                       }
+    r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    if len(r.json()['fail_list']):
+        logError(func_name, ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
+    pass_records = r.json()['employees']
+    fail_list = r.json()['fail_list']
+
     arr_employee = []
     for employee in employees:
         employee.overtime = overtime_type
@@ -3823,12 +3831,10 @@ def staff_change_time(request):
                         'x':employee.x,
                         'y':employee.y,
                         }
-        employee_dic = employee_day_working_from_employee(employee_dic, datetime.datetime.now().strftime("%Y-%m-%d"))
-        # 가상 데이터 생성
-        # employee_dic = virtual_employee(True, employee_dic)  # isWorkStart = True
-        # employee_dic['overtime_type'] = overtime_type
         arr_employee.append(employee_dic)
-    result = {'emplyees':arr_employee}
+    result = {'employees': arr_employee,
+              'fail_list': fail_list
+              }
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
