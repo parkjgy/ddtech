@@ -678,7 +678,7 @@ def sms_customer_staff(request):
 
     if settings.IS_TEST:
         func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response({'message': ['id/pw to SMS(실제로 보내지는 않음)', response_customer_json['login_id'], 'happy_day!!!']})
+        return REG_200_SUCCESS.to_json_response({'message': 'id/pw to SMS(실제로 보내지는 않음)', 'login_id':response_customer_json['login_id'], 'first_pw': 'happy_day!!!' })
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -1143,8 +1143,10 @@ def customer_test_step_3(request):
     for cust in customer_list:
         logSend(cust)
         if cust['corp_name'] == customer_data['customer_name']:
+            logSend(cust['corp_name'])
             customer = cust
     logSend(customer['staff_id'], ' ', AES_DECRYPT_BASE64(customer['staff_id']))
+    logSend(customer['staff_name'])
     customer_staff_id = customer['staff_id']
 
     # 운영 : 고객사 담당자 SMS 다시 보냄
