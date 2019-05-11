@@ -3472,7 +3472,7 @@ def staff_employees(request):
     staff_id = int(parameter_check['parameters']['staff_id'])
     work_id = int(parameter_check['parameters']['work_id'])
 
-    staffs = Work.objects.filter(id=staff_id)
+    staffs = Staff.objects.filter(id=staff_id)
     if len(staffs) != 1:
         logError(func_name, ' ServerError: Staff 에 staff_id=[{}] 이(가) 없거나 중복됨'.format(staff_id))
         return status422(func_name, {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
