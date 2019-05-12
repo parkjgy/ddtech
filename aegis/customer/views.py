@@ -868,22 +868,22 @@ def reg_staff(request):
     # login_id = login_id.replace('\n', '')
 
     if login_id.find(' ') > -1:
-        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
+        logError(func_name, ' 로그인 id에 space 들어왔다. \"{}\"'.format(login_id))
         temp = login_id.replace(' ', '')
         login_id = temp
         # func_end_log(func_name)
         # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
     if login_id.find('\n') > -1:
-        logError(func_name, ' 로그인 id에  line feed 들어왔다. \"{}\"'.format(login_id))
+        logError(func_name, ' 로그인 id에 line feed 들어왔다. \"{}\"'.format(login_id))
         temp = login_id.replace('\n', '')
         login_id = temp
     if login_id.find('\x0D') > -1:
-        logError(func_name, ' 로그인 id에  carriage return 들어왔다. \"{}\"'.format(login_id))
+        logError(func_name, ' 로그인 id에 carriage return 들어왔다. \"{}\"'.format(login_id))
         temp = login_id.replace('\x0D', '')
         login_id = temp
+    logSend('   login_id = \"{}\"'.format(login_id))
 
-    phone_no = no_only_phone_no(no_only_phone_no(rqst['pNo']))
-
+    phone_no = no_only_phone_no(rqst['pNo'])
     staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
     if len(staffs) > 0:
         func_end_log(func_name)
@@ -2334,7 +2334,7 @@ def list_employee(request):
                              'pNo': phone_format(employee.pNo),
                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-                             'state': "비고", # state,
+                             'state': state,
                              }
             arr_employee.append(view_employee)
     else:
@@ -2369,7 +2369,7 @@ def list_employee(request):
                              'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
                              'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
                              'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
-                             'state': state
+                             'state': ".", # state,
                              }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
