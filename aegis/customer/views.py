@@ -885,15 +885,18 @@ def reg_staff(request):
 
     phone_no = no_only_phone_no(rqst['pNo'])
     staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
+    logSend(staff.name for staff in staffs)
+    staffs = Staff.objects.filter(login_id=login_id)
+    logSend(staff.name for staff in staffs)
+    staffs = Staff.objects.filter(pNo=phone_no)
+    logSend(staff.name for staff in staffs)
     if len(staffs) > 0:
         func_end_log(func_name)
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
 
     name = rqst['name']
-    login_id = rqst['login_id']
     position = rqst['position']
     department = rqst['department']
-    phone_no = no_only_phone_no(rqst['pNo'])
     email = rqst['email']
     new_staff = Staff(
         name=name,
