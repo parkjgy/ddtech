@@ -869,15 +869,18 @@ def reg_staff(request):
 
     if login_id.find(' ') > -1:
         logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace(' ', '')
+        temp = login_id.replace(' ', '')
+        login_id = temp
         # func_end_log(func_name)
         # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
     if login_id.find('\n') > -1:
-        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace('\n', '')
+        logError(func_name, ' 로그인 id에  line feed 들어왔다. \"{}\"'.format(login_id))
+        temp = login_id.replace('\n', '')
+        login_id = temp
     if login_id.find('\x0D') > -1:
-        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace('\x0D', '')
+        logError(func_name, ' 로그인 id에  carriage return 들어왔다. \"{}\"'.format(login_id))
+        temp = login_id.replace('\x0D', '')
+        login_id = temp
 
     phone_no = no_only_phone_no(no_only_phone_no(rqst['pNo']))
 
@@ -2331,7 +2334,7 @@ def list_employee(request):
                              'pNo': phone_format(employee.pNo),
                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-                             'state': state,
+                             'state': "비고", # state,
                              }
             arr_employee.append(view_employee)
     else:
