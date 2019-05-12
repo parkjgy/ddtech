@@ -864,15 +864,20 @@ def reg_staff(request):
     logint_id = "abCD0123!@#$%^"
     print(r_p.search(logint_id)
     """
-    login_id = login_id.replace(' ', '')
-    login_id = login_id.replace('\n', '')
+    # login_id = login_id.replace(' ', '')
+    # login_id = login_id.replace('\n', '')
 
-    if login_id.find(' ') == -1:
-        func_end_log(func_name)
-        return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
-    if login_id.find('\n') == -1:
-        func_end_log(func_name)
-        return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 줄바꿈을 사용할 수 없습니다.'})
+    if login_id.find(' ') > -1:
+        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
+        login_id = login_id.replace(' ', '')
+        # func_end_log(func_name)
+        # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
+    if login_id.find('\n') > -1:
+        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
+        login_id = login_id.replace('\n', '')
+    if login_id.find('\x0D') > -1:
+        logError(func_name, ' 로그인 id에  space 들어왔다. \"{}\"'.format(login_id))
+        login_id = login_id.replace('\x0D', '')
 
     phone_no = no_only_phone_no(no_only_phone_no(rqst['pNo']))
 
