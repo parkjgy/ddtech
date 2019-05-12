@@ -818,7 +818,7 @@ def reg_staff(request):
     """
     고객사 직원을 등록한다.
     - 차후 전화번호 변경 부분과 중복 처리가 필요함.
-    - 초기 pw 는 HappyDay365!!
+    - 초기 pw 는 happy_day!!!
         주)	response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_staff?name=이요셉&login_id=hello&login_pw=A~~~8282&position=책임&department=개발&pNo=010-2450-5942&email=hello@ddtechi.com
     POST
@@ -834,15 +834,52 @@ def reg_staff(request):
         STATUS 200
         STATUS 542
             {'message':'전화번호나 아이디가 중복되었습니다.'}
+        STATUS 532
+            {'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'}
+            {'message':'아이디에는 줄바꿈을 사용할 수 없습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
+
+    login_id = rqst['login_id']
+    """
+    import re
+
+    r_p = re.compile('^(?=\S{6,20}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])')
+    this code will validate your password with :
+    
+    min length is 6 and max length is 20
+    at least include a digit number,
+    at least a upcase and a lowcase letter
+    at least a special characters
+    
+    logint_id = "abCD0123!@#$%^"
+    print(r_p.search(logint_id)
+    """
+    login_id = login_id.replace(' ', '')
+    login_id = login_id.replace('\n', '')
+
+    if login_id.find(' ') == -1:
+        func_end_log(func_name)
+        return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
+    if login_id.find('\n') == -1:
+        func_end_log(func_name)
+        return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 줄바꿈을 사용할 수 없습니다.'})
+
+    phone_no = no_only_phone_no(no_only_phone_no(rqst['pNo']))
+
+    staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
+    if len(staffs) > 0:
+        func_end_log(func_name)
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
 
     name = rqst['name']
     login_id = rqst['login_id']
@@ -850,11 +887,6 @@ def reg_staff(request):
     department = rqst['department']
     phone_no = no_only_phone_no(rqst['pNo'])
     email = rqst['email']
-
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
-    if len(staffs) > 0:
-        func_end_log(func_name)
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
         name=name,
         login_id=login_id,
@@ -2275,10 +2307,10 @@ def list_employee(request):
     employees = Employee.objects.filter(work_id=work_id)
     arr_employee = []
     today = datetime.datetime.now()
-    print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
+    # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
     # if False:
     if work.dt_begin > today:
-        print('--- 업무 시작 전')
+        # print('--- 업무 시작 전')
         # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
         for employee in employees:
             state = "잘못된 전화번호"
@@ -2298,35 +2330,42 @@ def list_employee(request):
                              }
             arr_employee.append(view_employee)
     else:
-        print('--- 업무 시작 후')
+        # print('--- 업무 시작 후')
         # 업무가 시작되었으면 당일의 근태내역을 표시
         # 근로자 서버에서 가져오나?
-        # 임시로 근태 내역을 표시
+        # employees_infor = {
+        #     'employees': [],
+        #     'year_month_day': rqst['dt'],
+        #     'work_id': rqst['dt'],
+        # }
+        # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+        # employees = r.json()['employees']
         for employee in employees:
-            today_str = today.strftime("%Y-%m-%d ")
-            employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
-            employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
-            employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
-            employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
-            print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-            state = ""
-            if employee.pNo == '01033334444':
-                state = "SMS"
-                employee.dt_begin_beacon = None
-                employee.dt_end_beacon = None
-            print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            # 주석처리된 부분은 임시 데이터를 만드는 부분
+            # today_str = today.strftime("%Y-%m-%d ")
+            # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
+            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            # state = ""
+            # if employee.pNo == '01033334444':
+            #     state = "SMS"
+            #     employee.dt_begin_beacon = None
+            #     employee.dt_end_beacon = None
+            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
             view_employee = {'id':AES_ENCRYPT_BASE64(str(employee.id)),
                              'name':employee.name,
                              'pNo':phone_format(employee.pNo),
-                             'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon != None else "",
-                             'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch != None else "",
-                             'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon != None else "",
-                             'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch != None else "",
+                             'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon is not None else "",
+                             'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
+                             'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
+                             'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
                              'state': state
                              }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
-        print('   >>> request: working history')
+        logSend('   *** request: working history')
         #
         #
         # 근로자 서버에 근태 내역 요청
