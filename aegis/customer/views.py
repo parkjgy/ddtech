@@ -869,30 +869,30 @@ def reg_staff(request):
 
     if login_id.find(' ') > -1:
         logError(func_name, ' 로그인 id에 space 들어왔다. \"{}\"'.format(login_id))
-        temp = login_id.replace(' ', '')
-        login_id = temp
+        login_id = login_id.replace(' ', '')
         # func_end_log(func_name)
         # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
     if login_id.find('\n') > -1:
         logError(func_name, ' 로그인 id에 line feed 들어왔다. \"{}\"'.format(login_id))
-        temp = login_id.replace('\n', '')
-        login_id = temp
+        login_id = login_id.replace('\n', '')
     if login_id.find('\x0D') > -1:
         logError(func_name, ' 로그인 id에 carriage return 들어왔다. \"{}\"'.format(login_id))
-        temp = login_id.replace('\x0D', '')
-        login_id = temp
+        login_id = login_id.replace('\x0D', '')
     logSend('   login_id = \"{}\"'.format(login_id))
 
     phone_no = no_only_phone_no(rqst['pNo'])
-    staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
-    logSend(staff.name for staff in staffs)
+    # staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
+    # logSend([staff.name for staff in staffs])
     staffs = Staff.objects.filter(login_id=login_id)
-    logSend(staff.name for staff in staffs)
-    staffs = Staff.objects.filter(pNo=phone_no)
-    logSend(staff.name for staff in staffs)
+    # logSend([staff.name for staff in staffs])
     if len(staffs) > 0:
         func_end_log(func_name)
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '다른 사람이 이미 사용하는 아이디입니다.'})
+    staffs = Staff.objects.filter(pNo=phone_no)
+    # logSend([staff.name for staff in staffs])
+    if len(staffs) > 0:
+        func_end_log(func_name)
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '이미 등록되어 있는 전화번호입니다.'})
 
     name = rqst['name']
     position = rqst['position']
