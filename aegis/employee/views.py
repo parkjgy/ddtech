@@ -887,15 +887,12 @@ def pass_sms(request):
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
     passer_id = passer.id
-    logSend(phone_no, passer.id, dt, is_in)
-    # dt = datetime.datetime.now()
-    dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
-    # str_dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-    # print(dt, str_dt)
+    dt_sms = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    logSend(' {}  {}  {}  {}'.format(phone_no, passer.id, dt, is_in))
     new_pass = Pass(
         passer_id=passer.id,
         is_in=is_in,
-        dt_verify=dt
+        dt_verify=dt_sms
     )
     new_pass.save()
 
