@@ -1097,7 +1097,7 @@ def certification_no_to_sms(request):
     passer.cn = certificateNo
     passer.dt_cn = datetime.datetime.now() + datetime.timedelta(minutes=3)
     passer.save()
-    print(certificateNo)
+    logSend('   phone: {} certificateNo: {}'.format(phone_no, certificateNo))
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -1114,10 +1114,10 @@ def certification_no_to_sms(request):
         return REG_200_SUCCESS.to_json_response(rData)
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-    print(rSMS.status_code)
-    print(rSMS.headers['content-type'])
-    print(rSMS.text)
-    print(rSMS.json())
+    # print(rSMS.status_code)
+    # print(rSMS.headers['content-type'])
+    # print(rSMS.text)
+    # print(rSMS.json())
     logSend(json.dumps(rSMS.json(), cls=DateTimeEncoder))
     # rJson = rSMS.json()
     # rJson['vefiry_no'] = str(certificateNo)
