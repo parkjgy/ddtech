@@ -2791,6 +2791,9 @@ def report_of_employee(request):
         STATUS 200
         {
             "message": "정상적으로 처리되었습니다.",
+            "working_days": 26,
+            "work_type": "주간 오전",
+            "employee_name": "이순신", 
             "working": [
               {
                 "action": 120,
