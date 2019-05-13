@@ -1871,15 +1871,16 @@ def my_work_histories_for_customer(request):
     employee_id = parameter_check['parameters']['employee_id']
     year_month = parameter_check['parameters']['dt']
 
-    employees = Employee.objects.filter(id=employee_id)
-    if len(employees) != 1:
-        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
-    employee = employees[0]
 
-    passers = Passer.objects.filter(employee_id=employee.id)
+    passers = Passer.objects.filter(id=employee_id)
     if len(passers) != 1:
         return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee.id })
     passer = passers[0]
+
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) != 1:
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+    employee = employees[0]
 
     dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_today = datetime.datetime.now()
@@ -1904,10 +1905,17 @@ def my_work_histories_for_customer(request):
     logSend(year_month_day_list)
     pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list)
     workings = []
+    overtime_values = [0., 0., .5, 1., 1.5, 2., 2.5, 3.]
     for pass_record in pass_record_list:
+        working_time = int(employee.working_time)
+        working_hour = (working_time // 4) * 4
+        break_hour = working_time - working_hour
         working = {'action': pass_record.action,
                    'dt_begin': dt_null(pass_record.dt_in_verify),
                    'dt_end': dt_null(pass_record.dt_out_verify),
+                   'overtime': overtime_values[pass_record.overtime + 1],
+                   'working_hour': working_hour,
+                   'break_hour': break_hour,
                    }
         workings.append(working)
 

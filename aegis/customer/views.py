@@ -2789,28 +2789,20 @@ def report_of_employee(request):
         year_month = "2019-04"   # 근태내역의 연월
     response
         STATUS 200
-            {
-              "arr_work": [
-                {
-                  "work_place_name": "효성 1공장",
-                  "name": "조립",
-                  "contractor_name": "대덕기공",
-                  "type": "주간",
-                  "staff_name": "홍길동",
-                  "staff_pNo": "010-1111-2222",
-                  "arr_employee": [
-                    {
-                      "id": "암호화된 id",
-                      "name": "강호동",
-                      "pNo": "010-3333-7777",
-                      "is_active": "근무중"
-                    },
-                    ......
-                  ]
-                },
-                ......
+        {
+            "message": "정상적으로 처리되었습니다.",
+            "working": [
+              {
+                "action": 120,
+                "dt_begin": "2019-04-01 08:24:00",
+                "dt_end": "2019-04-01 08:28:00",
+                "overtime": 0.0,
+                "working_hour": 8,
+                "break_hour": 1
+              },
+              ...
               ]
-            }
+        }
         STATUS 503
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
@@ -2826,6 +2818,8 @@ def report_of_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2838,7 +2832,7 @@ def report_of_employee(request):
     work_id = parameter_check['parameters']['work_id']
     employee_id = parameter_check['parameters']['employee_id']
     year_month = parameter_check['parameters']['year_month']
-
+    logSend(work_id, ' ', employee_id)
     # result = {'parameters': [work_id, employee_id, year_month]}
     # func_end_log(func_name)
     # return REG_200_SUCCESS.to_json_response(result)
@@ -2850,8 +2844,8 @@ def report_of_employee(request):
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
-
-    result = {'working': r.json()['working']}
+    working = r.json()['working']
+    result = {'working': working}
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
@@ -4039,6 +4033,8 @@ def staff_employee_working(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     if not 'id' in rqst: # id 가 들어왔는지 검사
         return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
@@ -4066,8 +4062,8 @@ def staff_employee_working(request):
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-            'employee_id' : AES_ENCRYPT_BASE64(str(employee.employee_id)),
-            'dt' : rqst['year_month'],
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'dt': rqst['year_month'],
         }
     logSend(employee_info)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
