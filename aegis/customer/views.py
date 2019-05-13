@@ -2812,6 +2812,9 @@ def report_of_employee(request):
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
 
             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+
+            {'message': '업무가 없어요.'}
+            {'message': '해당 근로자가 없어요.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -2830,7 +2833,15 @@ def report_of_employee(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     work_id = parameter_check['parameters']['work_id']
+    try:
+        work = Work.objects.get(id=work_id)
+    except:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무가 없어요.'})
     employee_id = parameter_check['parameters']['employee_id']
+    try:
+        employee = Employee.objects.get(id=employee_id)
+    except:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '해당 근로자가 없어요.'})
     year_month = parameter_check['parameters']['year_month']
     logSend(work_id, ' ', employee_id)
     # result = {'parameters': [work_id, employee_id, year_month]}
@@ -2845,7 +2856,11 @@ def report_of_employee(request):
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
     working = r.json()['working']
-    result = {'working': working}
+    result = {'working': working,
+              'working_days': len(working),
+              'work_type': work.type,
+              'employee_name': employee.name,
+              }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
