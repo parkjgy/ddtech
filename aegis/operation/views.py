@@ -1714,9 +1714,11 @@ def customer_test_step_8(request):
                 'phone_type' : 'A', # 안드로이드 폰
                 'push_token' : 'push token'
             }
+        settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
+        settings.IS_TEST = False
         result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
-        print(r.json())
+        logSend(r.json())
 
         employee_info = {
             'passer_id': r.json()['id'],
