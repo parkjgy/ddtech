@@ -95,6 +95,7 @@ class Env(object):
         logSend('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
         logSend('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
         logSend('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
+        logSend('   >>> request timee gap = ' + str(settings.REQUEST_TIME_GAP))
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + self.curEnv.timeCheckServer
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
@@ -305,7 +306,7 @@ class OperationView(APIView):
         # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
         if (request.session['func_name'] == func_name) and \
                 (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-                 datetime.timedelta(seconds=5) > datetime.datetime.now()):
+                 datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
             logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
             func_end_log(func_name)
             return REG_409_CONFLICT.to_json_response()
@@ -509,7 +510,7 @@ def update_staff(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -650,7 +651,7 @@ def reg_customer(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1468,7 +1469,7 @@ def customer_test_step_6(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     result = []
-
+    settings.REQUEST_TIME_GAP = 0.
     # 고객 : 로그인
     login_data = {"login_id": "thinking",
                   "login_pw": "parkjong"
@@ -1551,7 +1552,8 @@ def customer_test_step_6(request):
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
-    print(result)
+    settings.REQUEST_TIME_GAP = 5.
+
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -1585,6 +1587,8 @@ def customer_test_step_7(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
+    settings.REQUEST_TIME_GAP = 0.
+
     result = []
 
     # 고객 : 로그인
@@ -1603,7 +1607,7 @@ def customer_test_step_7(request):
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
-    print(r.json())
+    logSend(r.json())
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 직원 리스트
@@ -1692,7 +1696,8 @@ def customer_test_step_7(request):
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
     result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
-    print(result)
+    settings.REQUEST_TIME_GAP = 5.
+
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -1726,6 +1731,7 @@ def customer_test_step_8(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
+    settings.REQUEST_TIME_GAP = 0.
     result = []
 
     # 고객 : 로그인
@@ -1956,7 +1962,7 @@ def customer_test_step_8(request):
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
-    print(result)
+    settings.REQUEST_TIME_GAP = 5.
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -1986,6 +1992,7 @@ def customer_test_step_9(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
+    settings.REQUEST_TIME_GAP = 0.
     result = []
 
     # 고객 : 로그인
@@ -2075,6 +2082,7 @@ def customer_test_step_9(request):
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
+    settings.REQUEST_TIME_GAP = 5.
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
@@ -2104,6 +2112,7 @@ def customer_test_step_A(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
+    settings.REQUEST_TIME_GAP = 0.
     result = []
 
     # 고객 : 로그인
@@ -2221,6 +2230,7 @@ def customer_test_step_A(request):
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
+    settings.REQUEST_TIME_GAP = 5.
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})

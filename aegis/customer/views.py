@@ -345,7 +345,7 @@ def update_customer(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -504,7 +504,7 @@ def reg_relationship(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -762,7 +762,7 @@ def update_relationship(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -905,7 +905,7 @@ def reg_staff(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1190,7 +1190,7 @@ def update_staff(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1404,7 +1404,7 @@ def reg_work_place(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1486,7 +1486,7 @@ def update_work_place(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1671,7 +1671,7 @@ def reg_work(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -1766,7 +1766,7 @@ def update_work(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -2091,7 +2091,7 @@ def reg_employee(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -2268,7 +2268,7 @@ def update_employee_for_employee(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
@@ -2347,7 +2347,7 @@ def update_employee(request):
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
     if (request.session['func_name'] == func_name) and \
             (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
         return REG_409_CONFLICT.to_json_response()
