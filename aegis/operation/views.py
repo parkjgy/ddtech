@@ -292,6 +292,8 @@ class OperationView(APIView):
                 }
             response
                 STATUS 200
+                STATUS 409
+                    {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         """
         func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if request.method == 'POST':
@@ -300,6 +302,16 @@ class OperationView(APIView):
             rqst = request.GET
         for key in rqst.keys():
             logSend('  ', key, ': ', rqst[key])
+        # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
+        if (request.session['func_name'] == func_name) and \
+                (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+                 datetime.timedelta(seconds=5) > datetime.datetime.now()):
+            logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
+            func_end_log(func_name)
+            return REG_409_CONFLICT.to_json_response()
+        request.session['func_name'] = func_name
+        request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        request.session.save()
 
         worker_id = request.session['op_id'][5:]
         worker = Staff.objects.get(id=worker_id)
@@ -419,6 +431,8 @@ def login(request):
 
     # 추후 0000은 permission 에 할당
     request.session['op_id'] = 'O0000' + str(staff.id)
+    request.session['func_name'] = func_name
+    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     request.session.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
@@ -443,6 +457,10 @@ def logout(request):
     staff.dt_login = datetime.datetime.now()
     staff.save()
     del request.session['op_id']
+    del request.session['dt_last']
+    del request.session['func_name']
+    request.session.save()
+
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
@@ -474,6 +492,8 @@ def update_staff(request):
     response
         STATUS 200
             {'message': '비밀번호가 초기화 되었습니다.'}
+        STATUS 409
+            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 531
             {'message': '비밀번호가 틀립니다.'}
         STATUS 542
@@ -486,6 +506,16 @@ def update_staff(request):
         rqst = request.GET
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
+    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
+    if (request.session['func_name'] == func_name) and \
+            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
+        func_end_log(func_name)
+        return REG_409_CONFLICT.to_json_response()
+    request.session['func_name'] = func_name
+    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    request.session.save()
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -607,6 +637,8 @@ def reg_customer(request):
         }
     response
         STATUS 200
+        STATUS 409
+            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -615,6 +647,16 @@ def reg_customer(request):
         rqst = request.GET
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
+    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
+    if (request.session['func_name'] == func_name) and \
+            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+             datetime.timedelta(seconds=5) > datetime.datetime.now()):
+        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
+        func_end_log(func_name)
+        return REG_409_CONFLICT.to_json_response()
+    request.session['func_name'] = func_name
+    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    request.session.save()
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
