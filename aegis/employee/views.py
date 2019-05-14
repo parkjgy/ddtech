@@ -52,6 +52,8 @@ def table_reset_and_clear_for_operation(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     print(parameter_check['parameters'])
@@ -110,6 +112,8 @@ def check_version(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     version = rqst['v']
 
@@ -189,6 +193,8 @@ def reg_employee_for_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # print(rqst["customer_work_id"])
     # print(rqst["work_place_name"])
@@ -320,6 +326,8 @@ def notification_list(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) != 1:
@@ -373,6 +381,8 @@ def notification_accept(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
@@ -470,6 +480,8 @@ def passer_list(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     phone_no = no_only_phone_no(rqst['phone_no'])
 
@@ -513,6 +525,8 @@ def passer_reg(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     pass_type = rqst['pass_type']
     if request.method == 'POST':
@@ -992,6 +1006,8 @@ def beacons_is(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     cipher_passer_id = rqst['passer_id']
     dt = rqst['dt']
@@ -1055,6 +1071,8 @@ def certification_no_to_sms(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     phone_no = rqst['phone_no']
 
@@ -1162,6 +1180,8 @@ def reg_from_certification_no(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # logSend('--- ', rqst['phone_no'])
     phone_no = no_only_phone_no(rqst['phone_no'])
@@ -1271,6 +1291,8 @@ def update_my_info(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     cipher_passer_id = rqst['passer_id']
     passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
@@ -2074,6 +2096,8 @@ def generation_pass_history(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     cipher_passer_id = rqst['passer_id']
     name = rqst['name']
@@ -2177,6 +2201,8 @@ def analysys(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
@@ -2229,6 +2255,8 @@ def rebuild_pass_history(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     passes = Pass.objects.filter()
 
@@ -2336,6 +2364,8 @@ def beacon_status(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     dic_passer = get_dic_passer()
     pass_histories = Pass_History.objects.filter()

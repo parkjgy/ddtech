@@ -150,6 +150,8 @@ def testEnv(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     global env
     result = {}
@@ -175,6 +177,8 @@ def currentEnv(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     envirenments = Environment.objects.filter().order_by('-dt')
     array_env = []
@@ -215,6 +219,8 @@ def updateEnv(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     global env
 
@@ -292,6 +298,8 @@ class OperationView(APIView):
             rqst = json.loads(request.body.decode("utf-8"))
         else:
             rqst = request.GET
+        for key in rqst.keys():
+            logSend('   ', key, ': ', rqst[key])
 
         worker_id = request.session['op_id'][5:]
         worker = Staff.objects.get(id=worker_id)
@@ -345,6 +353,8 @@ def logControl(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -392,6 +402,8 @@ def login(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     id_ = rqst['id']
     pw_ = rqst['pw']
@@ -472,6 +484,8 @@ def update_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -543,6 +557,8 @@ def list_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -597,6 +613,8 @@ def reg_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -661,6 +679,8 @@ def sms_customer_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -740,6 +760,8 @@ def list_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -996,6 +1018,8 @@ def dt_android_upgrade(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # worker_id = request.session['op_id'][5:]
     # worker = Staff.objects.get(id=worker_id)
@@ -1024,6 +1048,8 @@ def customer_test_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1059,6 +1085,8 @@ def customer_test_step_2(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1115,6 +1143,8 @@ def customer_test_step_3(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1205,6 +1235,8 @@ def customer_test_step_4(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1289,6 +1321,8 @@ def customer_test_step_5(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1383,6 +1417,8 @@ def customer_test_step_6(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1499,6 +1535,8 @@ def customer_test_step_7(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1638,6 +1676,8 @@ def customer_test_step_8(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -1896,6 +1936,8 @@ def customer_test_step_9(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2012,6 +2054,8 @@ def customer_test_step_A(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2164,6 +2208,8 @@ def employee_test_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2203,6 +2249,8 @@ def employee_test_step_2(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2298,6 +2346,8 @@ def employee_test_step_3(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2456,6 +2506,8 @@ def employee_test_step_4(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2666,6 +2718,8 @@ def employee_test_step_5(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -2797,6 +2851,8 @@ def employee_test_step_A(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -3086,6 +3142,8 @@ def employee_test_step_B(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
@@ -3185,6 +3243,8 @@ def sms_install_mng(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # msg = '이지체크\n'\
     #       '새로운 업무를 앱에서 확인해주세요.\n'\
@@ -3274,6 +3334,8 @@ def employee_beacon_step_1(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:

@@ -47,6 +47,9 @@ def table_reset_and_clear_for_operation(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
+
     if AES_DECRYPT_BASE64(rqst['key']) != 'thinking':
         result = {'message':'사용 권한이 없습니다.'}
         logSend(result['message'])
@@ -112,6 +115,8 @@ def reg_customer_for_operation(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
@@ -199,6 +204,8 @@ def sms_customer_staff_for_operation(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
@@ -261,6 +268,8 @@ def list_customer_for_operation(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
@@ -329,6 +338,8 @@ def update_customer(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -474,6 +485,8 @@ def reg_relationship(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -552,6 +565,8 @@ def list_relationship(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -626,6 +641,8 @@ def detail_relationship(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -714,6 +731,8 @@ def update_relationship(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -973,6 +992,8 @@ def login(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     login_id = rqst['login_id'].replace(' ', '')
     login_pw = rqst['login_pw'].replace(' ', '')
@@ -1108,6 +1129,8 @@ def update_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1269,6 +1292,8 @@ def list_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1306,6 +1331,8 @@ def reg_work_place(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1374,6 +1401,8 @@ def update_work_place(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1479,6 +1508,8 @@ def list_work_place(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1543,6 +1574,8 @@ def reg_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1624,6 +1657,8 @@ def update_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1742,6 +1777,8 @@ def list_work_from_work_place(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1839,6 +1876,8 @@ def list_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -1931,6 +1970,8 @@ def reg_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2029,6 +2070,8 @@ def employee_work_accept_for_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
@@ -2092,6 +2135,8 @@ def update_employee_for_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
@@ -2157,6 +2202,8 @@ def update_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2308,6 +2355,8 @@ def list_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2441,6 +2490,8 @@ def report(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2553,6 +2604,8 @@ def report_of_manager(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2648,6 +2701,8 @@ def report_all(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2732,6 +2787,8 @@ def report_of_staff(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
@@ -2895,6 +2952,8 @@ def staff_version(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     version = rqst['v']
     items = version.split('.')
@@ -2959,6 +3018,8 @@ def staff_fg(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['login_id', 'login_pw'])
     if not parameter_check['is_ok']:
@@ -3139,6 +3200,8 @@ def staff_foreground(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     if not 'login_id' in rqst:
         return status422(func_name, {'message':'ClientError: parameter \'login_id\' 가 없어요'})
@@ -3633,6 +3696,8 @@ def staff_background(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
     if not parameter_check['is_ok']:
@@ -3705,6 +3770,8 @@ def staff_employees_from_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['id_!', 'work_id_!', 'day'])
     if not parameter_check['is_ok']:
@@ -3954,6 +4021,8 @@ def staff_change_work_time(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     if not 'id' in rqst: # id 가 들어왔는지 검사
         return status422(func_name, {'message':'ClientError: parameter \'id\' 가 없어요'})
@@ -4339,6 +4408,8 @@ def staff_update_me(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     id = rqst['id']  # 암호화된 id
     login_id = rqst['login_id']  # id 로 사용
@@ -4409,6 +4480,8 @@ def staff_request_certification_no(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     phone_no = rqst['phone_no']
     if len(phone_no) == 0:
@@ -4477,6 +4550,8 @@ def staff_verify_certification_no(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     phone_no = rqst['phone_no']
     cipher_cn = rqst['cn']
@@ -4540,6 +4615,8 @@ def staff_list_my_work(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     cipher_id = rqst['id']
     app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
@@ -4577,6 +4654,8 @@ def staff_work_list_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     cipher_id = rqst['id']
     app_user = Staff.objects.get(id = AES_DECRYPT_BASE64(cipher_id))
@@ -4622,6 +4701,8 @@ def staff_work_update_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    for key in rqst.keys():
+        logSend('   ', key, ': ', rqst[key])
 
     id = rqst['id']  # 암호화된 id
     login_id = rqst['login_id']  # id 로 사용
