@@ -1317,8 +1317,8 @@ def customer_test_step_4(request):
     staff_data = {}
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
     result.append({'url': r.url, 'GET':staff_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    print(r.json()['staffs'][1])
+    logSend(r.json())
+    logSend(r.json()['staffs'][1])
     # 고객 : 고객사 정보 수정
     customer_infor = {'staff_id': r.json()['staffs'][1]['id']}
     r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
