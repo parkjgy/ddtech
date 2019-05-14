@@ -1882,17 +1882,21 @@ def my_work_histories_for_customer(request):
     dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_today = datetime.datetime.now()
     if dt_today.strftime('%Y-%m') == year_month:
+        # 근무 내역 요청이 이번달이면 근무 마지막 날을 오늘로 한다.
         dt_end = datetime.datetime.strptime(dt_today.strftime('%Y-%m-%d') + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
         dt_end = dt_end + timedelta(hours=24)
     else:
+        # 이번달이 아니면 그 달의 마지막 날을 계산한다.
         dt_end = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
         if dt_end.month + 1 == 13:
+            # 12월이면 다음 해 1월로
             dt_end = dt_end.replace(month=1, year=dt_end.year + 1)
         else:
             dt_end = dt_end.replace(month=dt_end.month + 1)
-        if datetime.datetime.now() < dt_end:
-            dt_end = datetime.datetime.strptime()
-    logSend(dt_begin, ' ', dt_end)
+        dt_end = dt_end - timedelta(days=1)
+        # if dt_today < dt_end:
+        #     dt_end = datetime.datetime.strptime()
+    logSend(' dt_begin: {}  dt_end: {}'.format(dt_begin, dt_end))
 
     year_month_day_list = []
     day = dt_begin

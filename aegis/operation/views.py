@@ -3101,18 +3101,6 @@ def employee_test_step_B(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    sms_infor = {
-        "phone_no": "01074648939",
-        "dt": "2019-05-13 15:25:52",
-        "sms": "출근합니다"
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
-
-    logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
-
     report_infor = {
         'work_id': '_LdMng5jDTwK-LMNlj22Vw',
         'employee_id': 'iZ_rkELjhh18ZZauMq2vQw',
@@ -3230,6 +3218,17 @@ def sms_install_mng(request):
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    #
+    # SMS 출근 시험
+    #
+    # sms_infor = {
+    #     "phone_no": "01074648939",
+    #     "dt": "2019-05-13 15:25:52",
+    #     "sms": "출근합니다"
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
