@@ -1195,7 +1195,7 @@ def reg_from_certification_no(request):
     phone_no = parameter_check['parameters']['phone_no']
     cn = parameter_check['parameters']['cn']
     phone_type = parameter_check['parameters']['phone_type']
-    push_token = parameter_check['parameters']['push_token']
+    push_token = rqst['push_token']
     phone_no = no_only_phone_no(phone_no)
 
     passers = Passer.objects.filter(pNo=phone_no)
