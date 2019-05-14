@@ -53,7 +53,7 @@ def table_reset_and_clear_for_operation(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     print(parameter_check['parameters'])
@@ -113,7 +113,7 @@ def check_version(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     version = rqst['v']
 
@@ -194,7 +194,7 @@ def reg_employee_for_customer(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     # print(rqst["customer_work_id"])
     # print(rqst["work_place_name"])
@@ -327,7 +327,7 @@ def notification_list(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) != 1:
@@ -382,7 +382,7 @@ def notification_accept(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
@@ -481,7 +481,7 @@ def passer_list(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     phone_no = no_only_phone_no(rqst['phone_no'])
 
@@ -526,7 +526,7 @@ def passer_reg(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     pass_type = rqst['pass_type']
     if request.method == 'POST':
@@ -591,7 +591,7 @@ def pass_reg(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
     if not parameter_check['is_ok']:
@@ -768,7 +768,7 @@ def pass_verify(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
     if not parameter_check['is_ok']:
@@ -882,7 +882,7 @@ def pass_sms(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     phone_no = no_only_phone_no(rqst['phone_no'])
     dt = rqst['dt']
@@ -1007,7 +1007,7 @@ def beacons_is(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     cipher_passer_id = rqst['passer_id']
     dt = rqst['dt']
@@ -1072,7 +1072,7 @@ def certification_no_to_sms(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     phone_no = rqst['phone_no']
 
@@ -1186,7 +1186,7 @@ def reg_from_certification_no(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type'])  #, 'push_token'])
     if not parameter_check['is_ok']:
@@ -1303,7 +1303,7 @@ def update_my_info(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
     if not parameter_check['is_ok']:
@@ -1461,7 +1461,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
@@ -1700,7 +1700,7 @@ def change_work_period_for_customer(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
@@ -1792,7 +1792,7 @@ def employee_day_working_from_customer(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     passer_id = AES_DECRYPT_BASE64(rqst['employee_id'])
     dt = rqst['dt']
@@ -1905,7 +1905,7 @@ def my_work_histories_for_customer(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt'])
     if not parameter_check['is_ok']:
@@ -2092,7 +2092,7 @@ def my_work_histories(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
@@ -2122,7 +2122,7 @@ def generation_pass_history(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     cipher_passer_id = rqst['passer_id']
     name = rqst['name']
@@ -2227,7 +2227,7 @@ def analysys(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
@@ -2281,7 +2281,7 @@ def rebuild_pass_history(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     passes = Pass.objects.filter()
 
@@ -2390,7 +2390,7 @@ def beacon_status(request):
     else:
         rqst = request.GET
     for key in rqst.keys():
-        logSend('   ', key, ': ', rqst[key])
+        logSend('  ', key, ': ', rqst[key])
 
     dic_passer = get_dic_passer()
     pass_histories = Pass_History.objects.filter()

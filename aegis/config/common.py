@@ -56,13 +56,13 @@ def func_begin_log(*args) -> str:
     return func_name
 
 
-def func_end_log(func_name, message = None):
+def func_end_log(func_name, message=None):
     """
     호출하는 쪽에서 필수 : import inspect
     """
     log = '<<< ' + func_name
-    if message != None:
-        log += ' >>> ' + message
+    if message is not None:
+        log += ': ' + message
     logSend(log)
     return
 
@@ -109,7 +109,8 @@ def dt_null(dt) -> str:
     :param dt:
     :return:
     """
-    return None if dt == None else dt.strftime("%Y-%m-%d %H:%M:%S")
+    return None if dt is None else dt.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def rMin(min) -> int:
     """
@@ -119,6 +120,7 @@ def rMin(min) -> int:
     """
     random_value = random.randint(0, 10)
     return min - 5 + random_value
+
 
 def is_parameter_ok(rqst, key_list) -> dict:
     """
@@ -136,7 +138,7 @@ def is_parameter_ok(rqst, key_list) -> dict:
         is_decrypt = '_!' in key
         if is_decrypt:
             key = key.replace('_!', '')
-        if not key in rqst:
+        if key not in rqst:
             # key 가 parameter 에 포함되어 있지 않으면
             results['is_ok'] = False
             results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
