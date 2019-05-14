@@ -2797,8 +2797,7 @@ def report_of_employee(request):
             "working": [
               {
                 "action": 120,
-                "dt_begin": "2019-04-01 08:24:00",
-                "dt_end": "2019-04-01 08:28:00",
+                "day": "01",
                 "overtime": 0.0,
                 "working_hour": 8,
                 "break_hour": 1
