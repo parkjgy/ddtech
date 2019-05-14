@@ -2858,9 +2858,13 @@ def report_of_employee(request):
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
-    working = r.json()['working']
-    result = {'working': working,
-              'working_days': len(working),
+    month_working = r.json()['working']
+    for working in month_working:
+        working['day'] = working['dt_begin'][8:10]
+        del working['dt_begin']
+        del working['dt_end']
+    result = {'working': month_working,
+              'working_days': len(month_working),
               'work_type': work.type,
               'employee_name': employee.name,
               }
