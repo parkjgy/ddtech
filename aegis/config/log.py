@@ -60,7 +60,7 @@ def logError(*args):
         str_list = []
         for arg in args:
             str_list.append(str(arg))
-        print(''.join(str_list))
+        print('ERROR: {}'.format(''.join(str_list)))
         logger_error.debug(''.join(str_list))
     except Exception as e:
         logger_error.error(str(e))

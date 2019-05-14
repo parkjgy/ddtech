@@ -1174,6 +1174,11 @@ def reg_from_certification_no(request):
         {
             'id': '암호화된 id'
         }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
+            {'message':'ClientError: parameter \'cn\' 가 없어요'}
+            {'message':'ClientError: parameter \'phone_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'push_token\' 가 없어요'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1183,13 +1188,15 @@ def reg_from_certification_no(request):
     for key in rqst.keys():
         logSend('   ', key, ': ', rqst[key])
 
-    # logSend('--- ', rqst['phone_no'])
-    phone_no = no_only_phone_no(rqst['phone_no'])
-    cn = rqst['cn']
-    phone_type = rqst['phone_type']
-    push_token = rqst['push_token']
-    for key in rqst.keys():
-        logSend(key, ' : ', rqst[key])
+    parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type'])  #, 'push_token'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    phone_no = parameter_check['parameters']['phone_no']
+    cn = parameter_check['parameters']['cn']
+    phone_type = parameter_check['parameters']['phone_type']
+    push_token = parameter_check['parameters']['push_token']
+    phone_no = no_only_phone_no(phone_no)
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) > 1:
@@ -1285,6 +1292,10 @@ def update_my_info(request):
             {'message':'이름은 2자 이상이어야 합니다.'}
             {'message':'전화번호를 확인해 주세요.'}
             {'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ServerError: 근로자 id 확인이 필요해요.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1294,11 +1305,25 @@ def update_my_info(request):
     for key in rqst.keys():
         logSend('   ', key, ': ', rqst[key])
 
-    cipher_passer_id = rqst['passer_id']
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    passer_id = parameter_check['parameters']['passer_id']
     logSend('   ' + passer_id)
-    passer = Passer.objects.get(id=passer_id)
-    employee = Employee.objects.get(id=passer.employee_id)
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        # 출입자에 없는 사람을 수정하려는 경우
+        logError(func_name, ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
+        return status422(func_name, {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except Exception as e:
+        # 출입자에 근로자 정보가 없는 경우
+        logError(func_name, ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
+        return status422(func_name, {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
 
     update_employee_of_customer = {'is_upate': False}
     if 'name' in rqst:
