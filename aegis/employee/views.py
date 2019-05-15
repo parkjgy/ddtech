@@ -1983,7 +1983,7 @@ def my_work_histories_for_customer(request):
     #                    'dt_end':work_day['dt_end_touch']
     #                    }
     #         workings.append(working)
-    result = {"working":workings}
+    result = {"working": workings}
     #
     # 가상 데이터 생성
     #

@@ -3044,13 +3044,13 @@ def report_of_employee(request):
     work_id = parameter_check['parameters']['work_id']
     try:
         work = Work.objects.get(id=work_id)
-    except:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무가 없어요.'})
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무가 없어요.({})'.format(e)})
     employee_id = parameter_check['parameters']['employee_id']
     try:
         employee = Employee.objects.get(id=employee_id)
-    except:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '해당 근로자가 없어요.'})
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '해당 근로자가 없어요.({})'.format(e)})
     year_month = parameter_check['parameters']['year_month']
     logSend(work_id, ' ', employee_id)
     # result = {'parameters': [work_id, employee_id, year_month]}
@@ -3060,7 +3060,7 @@ def report_of_employee(request):
     # employees = Employee.objects.filter(id=employee_id, work_id=work_id)
 
     parameters = {"employee_id": rqst['employee_id'],
-                  "dt":year_month
+                  "dt": year_month
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)

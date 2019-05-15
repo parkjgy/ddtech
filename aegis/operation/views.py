@@ -3224,6 +3224,9 @@ def employee_test_step_B(request):
     r = s.post(settings.CUSTOMER_URL + 'report_of_employee', json=report_infor)
     result.append({'url': r.url, 'POST': report_infor, 'STATUS': r.status_code, 'R': r.json()})
 
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result':result})
