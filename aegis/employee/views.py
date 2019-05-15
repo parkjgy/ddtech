@@ -675,10 +675,10 @@ def pass_reg(request):
         else:
             pass_history = pass_histories[0]
 
-        dt_in = pass_history.dt_in if pass_history.dt_in_verify == None else pass_history.dt_in_verify
-        if dt_in == None:
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+            logError(func_name, ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
         if (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
             # 출근시간 이후 12 시간이 지났으면 무시한다.
             logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
