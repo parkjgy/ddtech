@@ -3059,7 +3059,7 @@ def report_of_employee(request):
 
     # employees = Employee.objects.filter(id=employee_id, work_id=work_id)
 
-    parameters = {"employee_id": rqst['employee_id'],
+    parameters = {"employee_id": AES_ENCRYPT_BASE64(str(employee.employee_id)),
                   "dt": year_month
                   }
     s = requests.session()

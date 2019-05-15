@@ -777,9 +777,10 @@ def pass_verify(request):
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
+
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
+        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없거나 중복됨'.format(passer_id) })
     passer = passers[0]
 
     # 통과 기록 저장
@@ -802,30 +803,45 @@ def pass_verify(request):
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_touch - datetime.timedelta(days=1)
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
-            if len(pass_histories) == 0:
+            yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
+            if len(yesterday_pass_histories) == 0:
                 logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
                 # out 인데 어제, 오늘 in 기록이 없다?
                 #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
                 #   (9시에 퇴근시간이 찍히면 반나절 4시간 근무(휴식 포함 4:30)라고 하면 4:30 출근인데 그럼 오늘 출근이잖아!)
                 #   (로그 찍히니까 계속 감시하는 수 밖에...)
                 if dt_touch.hour < 9:
-                    # 어제 pass_history 가 없어서 새로 만든다.
+                    logSend('  어제 오늘 출퇴근 기록이 없고 9시 이전이라 어제 날짜로 처리한다.')
+                    # 퇴근 누른 시간이 오전 9시 이전이면 어제 pass_history 가 없어서 새로 만든다.
                     pass_history = Pass_History(
                         passer_id=passer_id,
                         year_month_day=yesterday_year_month_day,
                         action=0,
                     )
                 else:
+                    logSend('  어제 오늘 출퇴근 기록이 없고 9시 이후라 오늘 날짜로 처리한다.')
                     # 오늘 pass_history 가 없어서 새로 만든다.
                     pass_history = Pass_History(
                         passer_id=passer_id,
                         year_month_day=year_month_day,
                         action=0,
                     )
+            elif dt_touch.hour < 9:
+                # 오늘 출퇴근 내역은 없어도 어제건 있다.
+                #   어제 출근처리가 안된것으로 판단하고 어제 출근해서 퇴근한걸로 처리하기 위해 어제 출퇴근에 넣는다.
+                logSend('  퇴근시간이 9시 이전이고 어제 출퇴근 기록이 있으면 어제 기록에 넣는다.')
+                pass_history = yesterday_pass_histories[0]
             else:
-                pass_history = pass_histories[0]
+                logSend('  퇴근시간이 9시 이후이면 오늘 출근 처리가 안되고 퇴근하는 것으로 본다.')
+                # 오늘 pass_history 가 없어서 새로 만든다.
+                pass_history = Pass_History(
+                    passer_id=passer_id,
+                    year_month_day=year_month_day,
+                    action=0,
+                )
         else:
+            logSend('  오늘 출퇴근 기록이 있어서 오늘에 넣는다.')
+            # 오늘 출퇴근이 있으면 오늘 처리한다.
             pass_history = pass_histories[0]
 
         pass_history.dt_out_verify = dt_touch
@@ -834,7 +850,7 @@ def pass_verify(request):
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
-            # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
+            # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
             logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
     else:
         # in touch 일 경우
@@ -1000,6 +1016,15 @@ def beacons_is(request):
         }
     response
         STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt\' 가 없어요'}
+            {'message': 'ClientError: parameter \'is_in\' 가 없어요'}
+            {'message': 'ClientError: parameter \'major\' 가 없어요'}
+            {'message': 'ClientError: parameter \'beacons\' 가 없어요'}
+            {'message': 'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1009,41 +1034,54 @@ def beacons_is(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    cipher_passer_id = rqst['passer_id']
-    dt = rqst['dt']
-    is_in = rqst['is_in']
-    major = rqst['major']
-    beacons = rqst['beacons']
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    is_in = parameter_check['parameters']['is_in']
+    major = parameter_check['parameters']['major']
+    beacons = parameter_check['parameters']['beacons']
+
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) != 1:
+        logError(func_name, ' ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id)
+        return status422(func_name, {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'})
 
     if request.method == 'GET':
         beacons = [
-            {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-            {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-            {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+            {'minor': 11001, 'dt_begin': '2019-02-21 08:25:30', 'rssi': -70},
+            {'minor': 11002, 'dt_begin': '2019-02-21 08:25:31', 'rssi': -70},
+            {'minor': 11003, 'dt_begin': '2019-02-21 08:25:32', 'rssi': -70}
             # {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70},
             # {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
             # {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
         ]
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    # print(passer_id, dt, is_in, major)
-    print(beacons)
-    for i in range(len(beacons)):
-        beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
-        if len(beacon_list) > 0:
-            beacon = beacon_list[0]
+    logSend(beacons)
+
+    # ?? 비콘 등록은 운영에서 관리하도록 바뀌어야하나?
+    minors = [beacon['minor'] for beacon in beacons]
+    logSend(minors)
+    beacon_list = Beacon.objects.filter(major=major, minor__in=minors)
+    for beacon in beacon_list:
+        if beacon.minor in minors:
             beacon.dt_last = dt
             beacon.save()
-        else:
-            # ?? 운영에서 관리하도록 바뀌어야하나?
-            beacon = Beacon(
-                uuid='12345678-0000-0000-0000-123456789012',
-                # 1234567890123456789012345678901234567890
-                major=major,
-                minor=beacons[i]['minor'],
-                dt_last=dt
-            )
-            beacon.save()
-
+            minors.remove(beacon.minor)
+    logSend(minors)
+    if len(minors) > 0:
+        for beacon in beacons:
+            if beacon['minor'] in minors:
+                new_beacon = Beacon(
+                    uuid='12345678-0000-0000-0000-123456789012',
+                    # 1234567890123456789012345678901234567890
+                    major=major,
+                    minor=beacon['minor'],
+                    dt_last=dt
+                )
+                new_beacon.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
@@ -1476,7 +1514,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     try:
         work = Work.objects.get(customer_work_id=customer_work_id)
         work_id = work.id
-    except:
+    except Exception as e:
         work_id = -1
     employee_ids = []
     for employee in employees:
@@ -1541,9 +1579,9 @@ def pass_record_of_employees_in_day_for_customer(request):
             try:
                 dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
                                                           '%Y-%m-%d %H:%M:%S')
-            except:
+            except Exception as e:
                 is_ok = False
-                fail_list.append(' dt_in_verify: 날짜 변경 Error')
+                fail_list.append(' dt_in_verify: 날짜 변경 Error ({})'.format(e))
             if is_ok:
                 pass_history.dt_in_verify = dt_in_verify
                 pass_history.in_staff_id = int(plain)
@@ -1557,11 +1595,10 @@ def pass_record_of_employees_in_day_for_customer(request):
                 is_ok = False
                 fail_list.append(' out_staff_id: 비정상')
             try:
-                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
-                                                          '%Y-%m-%d %H:%M:%S')
-            except:
+                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']), '%Y-%m-%d %H:%M:%S')
+            except Exception as e:
                 is_ok = False
-                fail_list.append(' dt_out_verify: 날짜 변경 Error')
+                fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
             if is_ok:
                 pass_history.action = 0
                 pass_history.dt_out_verify = dt_out_verify
@@ -1618,8 +1655,8 @@ def update_pass_history(pass_history):
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
-    except:
-        func_end_log(func_name)
+    except Exception as e:
+        func_end_log(func_name, e)
         return
     if passer.employee_id <= 0:
         func_end_log(func_name)
@@ -1915,15 +1952,14 @@ def my_work_histories_for_customer(request):
     employee_id = parameter_check['parameters']['employee_id']
     year_month = parameter_check['parameters']['dt']
 
-
     passers = Passer.objects.filter(id=employee_id)
     if len(passers) != 1:
-        return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee.id })
+        return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id })
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) != 1:
-        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % passer.employee_id })
     employee = employees[0]
 
     dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')

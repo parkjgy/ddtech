@@ -3204,28 +3204,67 @@ def employee_test_step_B(request):
 
     result = []
 
-    login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
-                  }
+    # login_data = {"login_id": "thinking",
+    #               "login_pw": "parkjong"
+    #               }
+    # s = requests.session()
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    pass_data = {
+            'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+            'dt': '2018-05-14 08:30:00',
+            'is_in': 1,  # 0: out, 1 : in
+        }
     s = requests.session()
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    report_infor = {
-        'work_id': '_LdMng5jDTwK-LMNlj22Vw',
-        'employee_id': 'iZ_rkELjhh18ZZauMq2vQw',
-        'year_month': '2019-04',
-    }
-    # http://0.0.0.0:8000/customer/report_of_employee?work_id=_LdMng5jDTwK-LMNlj22Vw&employee_id=iZ_rkELjhh18ZZauMq2vQw&year_month=2019-04
-    # GET
-    #     work_id = 업무 id         # 사업장에서 선택된 업무의 id
-    #     employee_id = 근로자 id    # 업무에서 선택된 근로자의 id
-    #     year_month = "2019-04"   # 근태내역의 연월
-    r = s.post(settings.CUSTOMER_URL + 'report_of_employee', json=report_infor)
-    result.append({'url': r.url, 'POST': report_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 20:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # s = requests.session()
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 21:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # s = requests.session()
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    pass_data = {
+            'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+            'dt': '2018-05-15 17:30:00',
+            'is_in': 0,  # 0: out, 1 : in
+        }
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: report_of_employee
+    # ---------------------------------------------------------------------------------------
+    # report_infor = {
+    #     'work_id': '_LdMng5jDTwK-LMNlj22Vw',
+    #     'employee_id': 'iZ_rkELjhh18ZZauMq2vQw',
+    #     'year_month': '2019-04',
+    # }
+    # # http://0.0.0.0:8000/customer/report_of_employee?work_id=_LdMng5jDTwK-LMNlj22Vw&employee_id=iZ_rkELjhh18ZZauMq2vQw&year_month=2019-04
+    # # GET
+    # #     work_id = 업무 id         # 사업장에서 선택된 업무의 id
+    # #     employee_id = 근로자 id    # 업무에서 선택된 근로자의 id
+    # #     year_month = "2019-04"   # 근태내역의 연월
+    # r = s.post(settings.CUSTOMER_URL + 'report_of_employee', json=report_infor)
+    # result.append({'url': r.url, 'POST': report_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)

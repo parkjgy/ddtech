@@ -3,7 +3,7 @@
 import random
 from Crypto.Hash import SHA256
 
-from .log import logSend
+from .log import logSend, logError
 from .status_collection import *
 from .secret import AES_DECRYPT_BASE64
 
@@ -68,6 +68,7 @@ def func_end_log(func_name, message=None):
 
 
 def status422(func_name, _message):
+    logError(func_name, ' ', _message['message'])
     func_end_log(func_name, _message['message'])
     return REG_422_UNPROCESSABLE_ENTITY.to_json_response(_message)
 
