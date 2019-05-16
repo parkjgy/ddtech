@@ -1814,7 +1814,7 @@ def update_work(request):
         for employee in employees:
             is_update_employee = False
             if employee.dt_begin < work.dt_begin:
-                employee.dt_begin = work.dt_end
+                employee.dt_begin = work.dt_begin
                 is_update_employee = True
             if work.dt_end < employee.dt_end:
                 employee.dt_end = work.dt_end
@@ -1856,7 +1856,7 @@ def update_work(request):
     update_employee_work_infor = {
         'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
         'work_place_name': work.work_place_name,
-        'work_name_type': work.type,
+        'work_name_type': '{} ({})'.format(work.name, work.type),
         'begin': work.dt_begin.strftime('%Y/%m/%d'),
         'end': work.dt_end.strftime('%Y/%m/%d'),
         'staff_name': work.staff_name,
