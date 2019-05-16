@@ -2160,7 +2160,7 @@ def reg_employee(request):
         )
         new_employee.save()
         arr_employee.append(new_employee)
-    print('duplicat pNo', duplicate_pNo)
+    logSend('duplicat pNo', duplicate_pNo)
 
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
@@ -2175,15 +2175,15 @@ def reg_employee(request):
                          "staff_phone": work.staff_pNo,
                          "phones": phones
                          }
-    print(new_employee_data)
+    logSend(new_employee_data)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
-    print(response_employee)
+    logSend(response_employee)
     if response_employee.status_code != 200:
         func_end_log(func_name)
         return ReqLibJsonResponse(response_employee)
 
     sms_result = response_employee.json()['result']
-    print(sms_result)
+    logSend(sms_result)
     for employee in arr_employee:
         employee.employee_id = sms_result[employee.pNo]
         employee.save()

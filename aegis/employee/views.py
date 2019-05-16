@@ -201,7 +201,7 @@ def reg_employee_for_customer(request):
     # print(rqst["work_name_type"])
     # print(rqst["dt_begin"])
     # print(rqst["dt_end"])
-    print(rqst["dt_answer_deadline"])
+    logSend('  답변 시한 {}'.format(rqst["dt_answer_deadline"]))
     # print(rqst["staff_name"])
     # print(rqst["staff_phone"])
 
@@ -210,7 +210,7 @@ def reg_employee_for_customer(request):
         phone_numbers = rqst['phones']
     else:
         phone_numbers = rqst.getlist('phones')
-    print(phone_numbers, rqst['phones'])
+    logSend(phone_numbers, rqst['phones'])
 
     find_works = Work.objects.filter(customer_work_id=rqst['customer_work_id'])
     if len(find_works) == 0:
@@ -232,8 +232,6 @@ def reg_employee_for_customer(request):
           '앱 설치\n'\
           'https://api.ezchek.co.kr/app'
 
-    # print(len(msg))
-
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
@@ -242,26 +240,25 @@ def reg_employee_for_customer(request):
         'msg_type': 'SMS',
         'msg': msg,
     }
-    # if settings.DEBUG:
-    #     rData['testmode_yn'] = 'Y'
 
     phones_state = {}
     for i in range(len(phone_numbers)):
-        print('DDD ', phone_numbers[i])
+        logSend('DDD ', phone_numbers[i])
         notification_list = Notification_Work.objects.filter(customer_work_id=rqst["customer_work_id"], employee_pNo=phone_numbers[i])
+        logSend('  {}'.format(notification_list))
         if len(notification_list) > 0:
-            print('--- sms 알려서 안보냄 ', phone_numbers[i])
+            logSend('--- sms 알려서 안보냄 ', phone_numbers[i])
             # 이전에 SMS 를 보낸적있는 전화번호는 전화번호 출입자가 저장하고 있는 근로자 id 만 확인해서 보낸다.
             find_passers = Passer.objects.filter(pNo=phone_numbers[i])
             phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
         else:
             if not settings.IS_TEST:
-                print('--- sms 보냄', phone_numbers[i])
+                logSend('--- sms 보냄', phone_numbers[i])
                 # SMS 를 보낸다.
                 rData['receiver'] = phone_numbers[i]
                 rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
                 logSend('SMS result', rSMS.json())
-                print('--- ', rSMS.json())
+                logSend('--- ', rSMS.json())
             # if int(rSMS.json()['result_code']) < 0:
             if len(phone_numbers[i]) < 11:
                 # 전화번호 에러로 문자를 보낼 수 없음.
@@ -271,9 +268,9 @@ def reg_employee_for_customer(request):
                 find_passers = Passer.objects.filter(pNo=phone_numbers[i])
                 phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
                 new_notification = Notification_Work(
-                    work_id = work.id,
+                    work_id=work.id,
                     customer_work_id=rqst["customer_work_id"],
-                    employee_id= phones_state[phone_numbers[i]],
+                    employee_id=phones_state[phone_numbers[i]],
                     employee_pNo=phone_numbers[i],
                     dt_answer_deadline=rqst["dt_answer_deadline"],
                 )
@@ -383,17 +380,21 @@ def notification_list(request):
         logSend('  ', key, ': ', rqst[key])
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
-    if len(passers) != 1:
+    if len(passers) == 0:
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
     passer = passers[0]
     dt_today = datetime.datetime.now()
-    print(passer.pNo)
+    logSend(passer.pNo)
     # notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
     notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo)
-    print(notification_list)
+    logSend(notification_list)
     arr_notification = []
     for notification in notification_list:
+        # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
+        if notification_work.dt_answer_deadline < datetime.datetime.now():
+            notification_work.delete()
+            continue
         work = Work.objects.get(id=notification.work_id)
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
@@ -934,14 +935,17 @@ def pass_verify(request):
 @cross_origin_read_allow
 def pass_sms(request):
     """
-    출입확인 : 전화 사용자가 문자로 출근(퇴근)을 서버로 전송
+    문자로 출근/퇴근, 업무 수락/거절: 스마트폰이 아닌 사용자가 문자로 출근(퇴근), 업무 수락/거절을 서버로 전송
+      - 수락/거절은 복수의 수락/거절에 모두 답하는 문제를 안고 있다.
+      - 수락/거절하게 되먼 수락/거절한 업무가 여러개라도 모두 sms 로 보낸다. (업무, 담당자, 담당자 전화번호, 기간)
+      - 수락/거절은 이름이 안들어 오면 에러처리한다.
     http://0.0.0.0:8000/employee/pass_sms?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
     POST : json
         {
             'phone_no': '문자 보낸 사람 전화번호',
             'dt': '2018-12-28 12:53:36',
             'sms': '출근했어요' # '퇴근했어요', '지금 외출 나갑니다', '먼저 퇴근합니다', '외출했다가 왔습니다', '오늘 조금 지각했습니다'
-                new message: '수락 이름', '거부'
+                new message: '수락 이름', '거절 이름'
         }
     response
         STATUS 200
@@ -954,12 +958,92 @@ def pass_sms(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    phone_no = no_only_phone_no(rqst['phone_no'])
+    phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호가 없을 가능성이 없다.
     dt = rqst['dt']
     sms = rqst['sms']
     logSend(phone_no, dt, sms)
 
-    if '출근' in sms:
+    if '수락' or '거절' in sms:
+        # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
+        notification_work_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+        # 하~~~ 피처폰인데 업무 요청 여러개가 들어오면 처리할 방법이 없네... > 에이 모르겠다 몽땅 보내!!!
+        # 수락한 내용을 SMS 로 보내줘야할까? (문자를 무한사용? 답답하네...)
+        is_accept = True if '수락' in sms else False
+        if is_accept:
+            name = sms.replace('수락', '').replace(' ', '')
+        else:
+            name = sms.replace('거절', '').replace(' ', '')
+        logSend('  name = {}'.format(name))
+        if len(name) < 2:
+            # 이름이 2자가 안되면 SMS 로 이름이 안들어왔다고 보내야 하나? (휴~~~)
+            logError(func_name, ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+            sms_data = {
+                'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+                'user_id': 'yuadocjon22',
+                'sender': settings.SMS_SENDER_PN,
+                'receiver': phone_no,
+                'msg_type': 'SMS',
+                'msg': '이지체크\n'
+                       '수락/거절 문자를 보내실 때는 꼭 이름을 같이 넣어주세요.\n'
+                       '예 \"수락 홍길동\"',
+            }
+            rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
+            logSend('SMS result', rSMS.json())
+            return status422(func_name, {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+        sms_data = {
+            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+            'user_id': 'yuadocjon22',
+            'sender': settings.SMS_SENDER_PN,
+            'receiver': phone_no,
+            'msg_type': 'SMS',
+        }
+
+        for notification_work in notification_work_list:
+            # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
+            if notification_work.dt_answer_deadline < datetime.datetime.now():
+                notification_work.delete()
+                continue
+
+            # 근로자를 강제로 새로 등록한다. (으~~~ 괜히 SMS 기능 넣었나?)
+            passer_list = Passer.objects.filter(pNo=phone_no)
+            if len(passer_list) == 0:
+                # 이 전화번호를 사용하는 근로자가 없기 때문에 새로 만든다.
+                employee = Employee(
+                    name=name
+                )
+                employee.save()
+                passer = Passer(
+                    pNo=phone_no,
+                    pType=0,  # 피쳐폰 10:아이폰, 20:안드로이드폰
+                    employee_id=employee.id,
+                )
+                passer.save()
+            else:
+                # 이경우 골치 아픈데... > 급하니까 첫번째 만 대상으로 한다.
+                passer = passer_list[0]
+
+            accept_infor = {
+                'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
+                'notification_id': AES_ENCRYPT_BASE64(str(notification_work.id)),
+                'is_accept': '1' if is_accept else '0',
+            }
+            r = requests.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept_infor)
+            logSend({'url': r.url, 'POST': accept_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+            if is_accept:
+                work = Work.objects.get(id=notification_work.work_id)
+                sms_data['msg'] = '수락됐어요\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
+                                                                          work.work_name_type,
+                                                                          work.begin,
+                                                                          work.end,
+                                                                          work.staff_name,
+                                                                          phone_format(work.staff_pNo))
+                rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
+                logSend('SMS result', rSMS.json())
+
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response()
+    elif '출근' in sms:
         is_in = True
     elif '퇴근' in sms:
         is_in = False
