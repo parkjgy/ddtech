@@ -3204,28 +3204,26 @@ def employee_test_step_B(request):
 
     result = []
 
-    # login_data = {"login_id": "thinking",
-    #               "login_pw": "parkjong"
-    #               }
-    # s = requests.session()
-    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    pass_data = {
-            'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
-            'dt': '2018-05-14 08:30:00',
-            'is_in': 1,  # 0: out, 1 : in
-        }
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
     s = requests.session()
-    r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
-    result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 08:30:00',
+    #         'is_in': 1,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # pass_data = {
     #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
     #         'dt': '2018-05-14 20:30:00',
     #         'is_in': 0,  # 0: out, 1 : in
     #     }
-    # s = requests.session()
     # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
     # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
 
@@ -3234,18 +3232,37 @@ def employee_test_step_B(request):
     #         'dt': '2018-05-14 21:30:00',
     #         'is_in': 0,  # 0: out, 1 : in
     #     }
-    # s = requests.session()
     # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
     # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    pass_data = {
-            'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
-            'dt': '2018-05-15 17:30:00',
-            'is_in': 0,  # 0: out, 1 : in
-        }
-    s = requests.session()
-    r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
-    result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-15 17:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    reg_employee_infor = {
+        'work_id': AES_ENCRYPT_BASE64('1'),
+        'dt_answer_deadline': '2019-05-16 19:00:00',
+        'phone_numbers': ['010-2557-3555']
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    work_infor = {
+        'work_id': AES_ENCRYPT_BASE64('1'),
+        'name': '비콘 교체',
+        'work_place_id': AES_ENCRYPT_BASE64('1'),
+        'type': '주간 3교대',
+        'dt_begin': '2019-05-16',  # 업무 시작 날짜
+        'dt_end': '2019-07-31',  # 업무 종료 날짜
+        'staff_id': AES_ENCRYPT_BASE64('2'),
+        'partner_id': AES_ENCRYPT_BASE64('1'),
+    }
+    r = s.post(settings.CUSTOMER_URL + 'update_work', json=work_infor)
+    result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: report_of_employee

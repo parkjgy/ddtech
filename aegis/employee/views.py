@@ -278,10 +278,63 @@ def reg_employee_for_customer(request):
                     dt_answer_deadline=rqst["dt_answer_deadline"],
                 )
                 new_notification.save()
-    print('--- ',phones_state)
-    logSend({'result':phones_state})
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':phones_state})
+    return REG_200_SUCCESS.to_json_response({'result': phones_state})
+
+
+@cross_origin_read_allow
+def update_work_for_customer(request):
+    """
+    <<<고객 서버용>>> 고객사에서 보낸 업무 배정 SMS로 알림 (보냈으면 X)
+    http://0.0.0.0:8000/employee/reg_employee_for_customer?customer_work_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
+    POST : json
+        {
+          "customer_work_id":qgf6YHf1z2Fx80DR8o_Lvg,
+          "work_place_name": "효성1공장",
+          "work_name_type": "경비(주간)",
+          "dt_begin": "2019/03/04",
+          "dt_end": "2019/03/31",
+          "dt_answer_deadline": 2019-03-03 19:00:00,
+          "staff_name": "이수용",
+          "staff_phone": "01099993333",
+        }
+    response
+        STATUS 200
+            {"message": "정상적으로 처리되었습니다."}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    find_works = Work.objects.filter(customer_work_id=rqst['customer_work_id'])
+    if len(find_works) == 0:
+        work = Work(
+            customer_work_id=rqst["customer_work_id"],
+            work_place_name=rqst["work_place_name"],
+            work_name_type=rqst["work_name_type"],
+            begin=rqst["dt_begin"],
+            end=rqst["dt_end"],
+            staff_name=rqst["staff_name"],
+            staff_pNo=rqst["staff_phone"],
+        )
+        work.save()
+    else:
+        work = find_works[0]
+        # work.customer_work_id = rqst['customer_work_id']
+        work.work_place_name = rqst['work_place_name']
+        work.work_name_type = rqst['work_name_type']
+        work.begin = rqst['begin']
+        work.end = rqst['end']
+        work.staff_name = rqst['staff_name']
+        work.staff_pNo = rqst['staff_pNo']
+        work.save()
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -354,7 +407,7 @@ def notification_list(request):
         }
         arr_notification.append(view_notification)
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'notifications':arr_notification})
+    return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
 
 
 @cross_origin_read_allow
@@ -885,9 +938,10 @@ def pass_sms(request):
     http://0.0.0.0:8000/employee/pass_sms?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
     POST : json
         {
-            'phone_no' : '문자 보낸 사람 전화번호',
-            'dt' : '2018-12-28 12:53:36',
-            'sms' : '출근했어요' # '퇴근했어요', '지금 외출 나갑니다', '먼저 퇴근합니다', '외출했다가 왔습니다', '오늘 조금 지각했습니다'
+            'phone_no': '문자 보낸 사람 전화번호',
+            'dt': '2018-12-28 12:53:36',
+            'sms': '출근했어요' # '퇴근했어요', '지금 외출 나갑니다', '먼저 퇴근합니다', '외출했다가 왔습니다', '오늘 조금 지각했습니다'
+                new message: '수락 이름', '거부'
         }
     response
         STATUS 200

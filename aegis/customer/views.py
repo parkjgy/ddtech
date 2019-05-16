@@ -1796,18 +1796,31 @@ def update_work(request):
     is_update_dt_begin = False
     if ('dt_begin' in rqst) and (len(rqst['dt_begin']) > 0):
         work.dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
-        #
-        # 근로자 시간 변경?
-        #
         is_update_dt_begin = True
 
     is_update_dt_end = False
     if ('dt_end' in rqst) and (len(rqst['dt_end']) > 0):
         work.dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
-        #
-        # 근로자 시간 변경?
-        #
         is_update_dt_end = True
+
+    #
+    # 근로자 시간 변경
+    #   근로자의 업무 시작시간이 새로운 시간보다 빠르면 새로운 시간으로 변경
+    #   근로자의 업무 종료시간이 새로운 종료시간보다 느리면 새로운 시간으로 변경
+    #
+    if is_update_dt_begin or is_update_dt_end:
+        employees = Employee.objects.filter(work_id=work.id)
+        logSend('  employees = {}'.format([employee.pNo for employee in employees]))
+        for employee in employees:
+            is_update_employee = False
+            if employee.dt_begin < work.dt_begin:
+                employee.dt_begin = work.dt_end
+                is_update_employee = True
+            if work.dt_end < employee.dt_end:
+                employee.dt_end = work.dt_end
+                is_update_employee = True
+            if is_update_employee:
+                employee.save()
 
     is_update_work_place = False
     if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
@@ -1839,14 +1852,30 @@ def update_work(request):
             is_update_staff = True
 
     work.save()
+
+    update_employee_work_infor = {
+        'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
+        'work_place_name': work.work_place_name,
+        'work_name_type': work.type,
+        'begin': work.dt_begin.strftime('%Y/%m/%d'),
+        'end': work.dt_end.strftime('%Y/%m/%d'),
+        'staff_name': work.staff_name,
+        'staff_pNo': work.staff_pNo,
+    }
+    r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
+    logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+    is_update_employee = True if r.status_code == 200 else False
+
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'is_update_type':is_update_type,
-                                             'is_update_dt_begin':is_update_dt_begin,
-                                             'is_update_dt_end':is_update_dt_end,
-                                             'is_update_work_place':is_update_work_place,
-                                             'is_update_partner':is_update_partner,
-                                             'is_update_staff':is_update_staff,
-                                             'is_update_name':is_update_name})
+    return REG_200_SUCCESS.to_json_response({'is_update_type': is_update_type,
+                                             'is_update_dt_begin': is_update_dt_begin,
+                                             'is_update_dt_end': is_update_dt_end,
+                                             'is_update_work_place': is_update_work_place,
+                                             'is_update_partner': is_update_partner,
+                                             'is_update_staff': is_update_staff,
+                                             'is_update_name': is_update_name,
+                                             'is_update_employee': is_update_employee
+                                             })
 
 
 @cross_origin_read_allow
