@@ -313,8 +313,8 @@ def update_work_for_customer(request):
             customer_work_id=rqst["customer_work_id"],
             work_place_name=rqst["work_place_name"],
             work_name_type=rqst["work_name_type"],
-            begin=rqst["dt_begin"],
-            end=rqst["dt_end"],
+            begin=rqst["begin"],
+            end=rqst["end"],
             staff_name=rqst["staff_name"],
             staff_pNo=rqst["staff_phone"],
         )
