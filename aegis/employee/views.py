@@ -2093,7 +2093,7 @@ def my_work_histories_for_customer(request):
 
     passers = Passer.objects.filter(id=employee_id)
     if len(passers) != 1:
-        return status422(func_name, {'message':'ServerError: Passer 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id })
+        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % employee_id })
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
@@ -2126,14 +2126,15 @@ def my_work_histories_for_customer(request):
         year_month_day_list.append(day.strftime('%Y-%m-%d'))
         day = day + datetime.timedelta(days=1)
     logSend(year_month_day_list)
-    pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list)
+    pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list).order_by('year_month_day')
     workings = []
     overtime_values = [0., 0., .5, 1., 1.5, 2., 2.5, 3.]
     for pass_record in pass_record_list:
         working_time = int(employee.working_time)
         working_hour = (working_time // 4) * 4
         break_hour = working_time - working_hour
-        working = {'action': pass_record.action,
+        working = {'year_month_day': pass_record.year_month_day,
+                   'action': pass_record.action,
                    'dt_begin': dt_null(pass_record.dt_in_verify),
                    'dt_end': dt_null(pass_record.dt_out_verify),
                    'overtime': overtime_values[pass_record.overtime + 1],
@@ -2235,6 +2236,56 @@ def virtual_working_data(dt_begin : datetime, dt_end : datetime)->dict:
 
 @cross_origin_read_allow
 def my_work_histories(request):
+    """
+    근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'
+        dt = '2018-01'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+    #
+    # 근로자 서버로 근로자의 월 근로 내역을 요청
+    #
+    employee_info = {
+            'employee_id' : rqst["passer_id"],
+            'dt' : rqst['dt'],
+        }
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
+    logSend(response_employee)
+
+    result = response_employee.json()
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def my_work_records(request):
     """
     근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
     action 설명
