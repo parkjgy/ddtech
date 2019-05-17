@@ -3218,7 +3218,7 @@ def employee_test_step_B(request):
         'passer_id': AES_ENCRYPT_BASE64('2'),
         'dt': '2019-05'
     }
-    r = s.post(settings.CUSTOMER_URL + 'my_work_histories', json=my_work_histories_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'my_work_histories', json=my_work_histories_infor)
     result.append({'url': r.url, 'POST': my_work_histories_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
