@@ -3096,8 +3096,8 @@ def report_of_employee(request):
     month_working = r.json()['working']
     for working in month_working:
         working['day'] = working['year_month_day'][8:10]
-        del working['dt_begin']
-        del working['dt_end']
+        # del working['dt_begin']
+        # del working['dt_end']
     result = {'working': month_working,
               'working_days': len(month_working),
               'work_type': work.type,
