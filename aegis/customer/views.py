@@ -2294,16 +2294,19 @@ def update_employee_for_employee(request):
         rqst = request.GET
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
+    #
+    # 서버 to 서버 에 적용할 수 없어 삭제 2019-05-17
+    #
     # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-    if (request.session['func_name'] == func_name) and \
-            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-        func_end_log(func_name)
-        return REG_409_CONFLICT.to_json_response()
-    request.session['func_name'] = func_name
-    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    request.session.save()
+    # if (request.session['func_name'] == func_name) and \
+    #         (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+    #          datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
+    #     logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
+    #     func_end_log(func_name)
+    #     return REG_409_CONFLICT.to_json_response()
+    # request.session['func_name'] = func_name
+    # request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # request.session.save()
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
