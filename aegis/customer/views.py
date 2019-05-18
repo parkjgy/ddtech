@@ -280,7 +280,7 @@ def list_customer_for_operation(request):
     staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
 
-    customers = Customer.objects.filter(is_constractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
+    customers = Customer.objects.filter(is_contractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
