@@ -1104,8 +1104,26 @@ def customer_test_step_1(request):
     response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
     logSend(response.json())
 
-    result = {'message': 'Customer all tables deleted$ '}
-    logSend(result['message'])
+    result = [{'message': 'Customer all tables deleted '}]
+
+    new_staff = Staff(
+        login_id='thinking',
+        login_pw=hash_SHA256('parkjong'),
+        pNo='01025573555',
+        dt_app_login=datetime.datetime.now(),
+        dt_login=datetime.datetime.now(),
+    )
+    new_staff.save()
+
+    # # 운영 로그인
+    # login_data = {"pNo": "010-2557-3555",
+    #               "id": "thinking",
+    #               "pw": "parkjong"
+    #               }
+    # s = requests.session()
+    # r = s.post(settings.OPERATION_URL + 'reg_staff', json=login_data)
+    # result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 

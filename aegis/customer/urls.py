@@ -74,6 +74,7 @@ urlpatterns = [
     # url(r'customer/staff_list_my_work$', views.staff_list_my_work, name='staff_list_my_work'),
     # url(r'customer/staff_work_list_employee$', views.staff_work_list_employee, name='staff_work_list_employee'),
     # url(r'customer/staff_work_update_employee$', views.staff_work_update_employee, name='staff_work_update_employee'),
+    url(r'customer/ddtech_update_syatem$', views.ddtech_update_syatem, name='ddtech_update_syatem'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

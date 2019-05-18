@@ -274,14 +274,13 @@ def list_customer_for_operation(request):
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
     logSend('   from operation server : op staff id ', worker_id)
-    print('   from operation server : op staff id ', worker_id)
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
     staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
 
-    customers = Customer.objects.filter().values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
+    customers = Customer.objects.filter(is_constractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
                                                  'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
@@ -2557,7 +2556,7 @@ def list_employee(request):
         for employee in employees:
             state = "잘못된 전화번호"
             if employee.employee_id != -101:
-                if employee.is_accept_work == None:
+                if employee.is_accept_work is None:
                     state = "답변 X"
                 elif employee.is_accept_work:
                     state = "승락"
@@ -4929,6 +4928,56 @@ def staff_work_update_employee(request):
     if len(email) > 0:
         staff.email = email
     staff.save()
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def ddtech_update_syatem(request):
+    """
+    << 운영 서버용 >> 운영서버에서 고객서버의 변경이 발생했을 때 사용
+    http://0.0.0.0:8000/customer/ddtech_update_syatem
+    GET
+        id= 암호화된 id # 처음이거나 15분 이상 지났으면 login_id, login_pw 를 보낸다.
+        work_id= 업무에 근로중인 근로자
+    response
+        STATUS 200
+        STATUS 422
+            {'message': '이 기능을 사용할 수 있는 기간(~{})이 지났다.'.format(dt_execute.strftime('%Y-%m-%d %H:%M:%S'))}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    # ---------------------------------------------------------------------------------------
+    # Update: Customer Model + is_constractor
+    # ---------------------------------------------------------------------------------------
+    dt_execute = datetime.datetime.strptime('2019-05-19 09:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_today = datetime.datetime.now()
+    if dt_execute < dt_today:
+        return status422(func_name, {'message': '이 기능을 사용할 수 있는 기간(~{})이 지났다.'.format(dt_execute.strftime('%Y-%m-%d %H:%M:%S'))})
+
+    # 협력사 발주사 리스트에서 도급업체 id 를 찾는다.
+    list_contractor_id = []
+    list_relationship = Relationship.objects.all()
+    for relationship in list_relationship:
+        if relationship.contractor_id not in list_contractor_id:
+            list_contractor_id.append(relationship.contractor_id)
+    logSend(list_contractor_id)
+
+    # 고객사 에서 위에서 찾은 업체만 is_contractor 를 True 로 설정한다.
+    list_customer = Customer.objects.all()
+    for customer in list_customer:
+        if customer.id in list_contractor_id:
+            customer.is_contractor = True
+        else:
+            customer.is_contractor = False
+        customer.save()
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()

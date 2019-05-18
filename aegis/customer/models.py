@@ -26,6 +26,7 @@ class Customer(models.Model):
 
     business_reg_id = models.IntegerField(default=-1) # 사업자등록 id
     dt_payment = models.DateTimeField(null=True, blank=True) # 결재일
+    is_contractor = models.BooleanField(default=False) # 도급업체(우리고객사)인가? 
 
 
 class Relationship(models.Model):
