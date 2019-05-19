@@ -3036,6 +3036,8 @@ def report_of_employee(request):
               {
                 "action": 120,
                 "day": "01",
+                "in_hour_min": "08:30",
+                "out_hour_min": "17:30",
                 "overtime": 0.0,
                 "working_hour": 8,
                 "break_hour": 1
@@ -3098,8 +3100,10 @@ def report_of_employee(request):
     month_working = r.json()['working']
     for working in month_working:
         working['day'] = working['year_month_day'][8:10]
-        # del working['dt_begin']
-        # del working['dt_end']
+        working['in_hour_min'] = working['dt_begin'][11:16]
+        working['out_hour_min'] = working['dt_end'][11:16]
+        del working['dt_begin']
+        del working['dt_end']
     result = {'working': month_working,
               'working_days': len(month_working),
               'work_type': work.type,
