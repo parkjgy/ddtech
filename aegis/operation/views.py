@@ -289,7 +289,7 @@ class OperationView(APIView):
                 {
                     'pNo': '010-1111-2222',
                     'id': 'thinking',
-                    'pw': 'a~~~8282'    # AES 256
+                    'pw': 'a~~~8282'
                 }
             response
                 STATUS 200
@@ -327,7 +327,7 @@ class OperationView(APIView):
         phone_no = no_only_phone_no(rqst['pNo'])
         id_ = rqst['id']
         pw = rqst['pw']
-        logSend(id, ' ', pw)
+        logSend('--- 등록 요청 id:{}, pw:{}'.format(id_, pw))
 
         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
         if len(staffs) > 0:
@@ -339,6 +339,7 @@ class OperationView(APIView):
             pNo=phone_no
         )
         new_staff.save()
+        logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
 
@@ -3250,13 +3251,13 @@ def employee_test_step_B(request):
     # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
     # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
-    sms_infor = {
-            'phone_no': '010-2557-3555',
-            'dt': '2019-05-17 07:00:00',
-            'sms': '출근!!!',
-        }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # sms_infor = {
+    #         'phone_no': '010-2557-3555',
+    #         'dt': '2019-05-17 07:00:00',
+    #         'sms': '출근!!!',
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험
@@ -3625,6 +3626,147 @@ def employee_beacon_step_1(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
     result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
+
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result':result})
+
+
+@cross_origin_read_allow
+def test_go_go(request):
+    """
+    [[ 서버 시험]] 단순한 기능 시험
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    result = []
+    s = requests.session()
+
+    login_data = {"id": "thinking",
+                  "pw": "parkjong"
+                  }
+    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    new_staff = {"pNo": "01084333579",
+                 "id": "parkjke",
+                 "pw": "parkjong"
+                 }
+    r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
+    result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
+    # ---------------------------------------------------------------------------------------
+    # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
+    # ---------------------------------------------------------------------------------------
+    # my_work_histories_infor = {
+    #     'passer_id': AES_ENCRYPT_BASE64('2'),
+    #     'dt': '2019-05'
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'my_work_records', json=my_work_histories_infor)
+    # result.append({'url': r.url, 'POST': my_work_histories_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: pass_sms SMS 로 업무 수락/거부 시험
+    # ---------------------------------------------------------------------------------------
+    # reg_employee_infor = {
+    #     'work_id': AES_ENCRYPT_BASE64('1'),
+    #     'dt_answer_deadline': '2019-05-17 19:00:00',
+    #     'phone_numbers': ['010-2557-3555']
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # sms_infor = {
+    #         'phone_no': '010-2557-3555',
+    #         'dt': '2019-05-17 07:00:00',
+    #         'sms': '출근!!!',
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # ---------------------------------------------------------------------------------------
+    # TEST: pass_verify 출퇴근 버튼 처리 시험
+    # ---------------------------------------------------------------------------------------
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 08:30:00',
+    #         'is_in': 1,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 20:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-14 21:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # pass_data = {
+    #         'passer_id': AES_ENCRYPT_BASE64('1'),  # '암호화된 출입자 id',
+    #         'dt': '2018-05-15 17:30:00',
+    #         'is_in': 0,  # 0: out, 1 : in
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_data)
+    # result.append({'url': r.url, 'POST': pass_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: update_work 고객웹에서 업무를 업데이트 했을 때 연관 데이터(근로자 서버의 업무, 근로자 업무 시작일/종료일) 동기화
+    # ---------------------------------------------------------------------------------------
+    # reg_employee_infor = {
+    #     'work_id': AES_ENCRYPT_BASE64('1'),
+    #     'dt_answer_deadline': '2019-05-16 19:00:00',
+    #     'phone_numbers': ['010-2557-3555']
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # work_infor = {
+    #     'work_id': AES_ENCRYPT_BASE64('1'),
+    #     'name': '비콘 교체',
+    #     'work_place_id': AES_ENCRYPT_BASE64('1'),
+    #     'type': '주간 3교대',
+    #     'dt_begin': '2019-05-16',  # 업무 시작 날짜
+    #     'dt_end': '2019-07-31',  # 업무 종료 날짜
+    #     'staff_id': AES_ENCRYPT_BASE64('2'),
+    #     'partner_id': AES_ENCRYPT_BASE64('1'),
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'update_work', json=work_infor)
+    # result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: report_of_employee
+    # ---------------------------------------------------------------------------------------
+    # report_infor = {
+    #     'work_id': '_LdMng5jDTwK-LMNlj22Vw',
+    #     'employee_id': 'iZ_rkELjhh18ZZauMq2vQw',
+    #     'year_month': '2019-04',
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'report_of_employee', json=report_infor)
+    # result.append({'url': r.url, 'POST': report_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)
