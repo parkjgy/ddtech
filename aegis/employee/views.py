@@ -962,9 +962,9 @@ def pass_sms(request):
     phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호가 없을 가능성이 없다.
     dt = rqst['dt']
     sms = rqst['sms']
-    logSend(phone_no, dt, sms)
+    logSend('---parameter: phone_no: {}, dt: {}, sms: {}'.format(phone_no, dt, sms))
 
-    if '수락' or '거절' in sms:
+    if ('수락' in sms) or ('거절' in sms):
         # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
         notification_work_list = Notification_Work.objects.filter(employee_pNo=phone_no)
         # 하~~~ 피처폰인데 업무 요청 여러개가 들어오면 처리할 방법이 없네... > 에이 모르겠다 몽땅 보내!!!
@@ -1044,6 +1044,7 @@ def pass_sms(request):
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
+
     elif '출근' in sms:
         is_in = True
     elif '퇴근' in sms:

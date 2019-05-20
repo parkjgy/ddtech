@@ -3222,7 +3222,7 @@ def employee_test_step_B(request):
 
     result = []
 
-    login_data = {"login_id": "think",
+    login_data = {"login_id": "thinking",
                   "login_pw": "parkjong"
                   }
     s = requests.session()
@@ -3230,14 +3230,14 @@ def employee_test_step_B(request):
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
-    # TEST: pass_sms SMS 로 업무 수락/거부 시험
+    # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
     # ---------------------------------------------------------------------------------------
-    my_work_histories_infor = {
-        'passer_id': AES_ENCRYPT_BASE64('2'),
-        'dt': '2019-05'
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'my_work_records', json=my_work_histories_infor)
-    result.append({'url': r.url, 'POST': my_work_histories_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # my_work_histories_infor = {
+    #     'passer_id': AES_ENCRYPT_BASE64('2'),
+    #     'dt': '2019-05'
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'my_work_records', json=my_work_histories_infor)
+    # result.append({'url': r.url, 'POST': my_work_histories_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: pass_sms SMS 로 업무 수락/거부 시험
@@ -3250,13 +3250,13 @@ def employee_test_step_B(request):
     # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
     # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
-    # sms_infor = {
-    #         'phone_no': '010-2557-3555',
-    #         'dt': '2019-05-17 07:00:00',
-    #         'sms': '수락 박종기',
-    #     }
-    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    sms_infor = {
+            'phone_no': '010-2557-3555',
+            'dt': '2019-05-17 07:00:00',
+            'sms': '출근!!!',
+        }
+    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험
