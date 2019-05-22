@@ -70,7 +70,7 @@ class Passer(models.Model):
     근로자 id : null (근로자 아님)
     """
     pNo = models.CharField(max_length = 19)
-    pType = models.IntegerField(default = 0)        # 0:unkown, 10:iPhone, 20:Android
+    pType = models.IntegerField(default = 0)        # 0:unkown, 10:iPhone, 20:Android, 30:피쳐폰
     push_token = models.CharField(max_length = 255, default='')
 
     employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자

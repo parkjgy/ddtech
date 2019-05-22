@@ -3654,18 +3654,35 @@ def test_go_go(request):
     result = []
     s = requests.session()
 
-    login_data = {"id": "thinking",
-                  "pw": "parkjong"
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
                   }
-    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    new_staff = {"pNo": "01084333579",
-                 "id": "parkjke",
-                 "pw": "parkjong"
+    recognize_data = {"dt_leave": "",
+                 "staff_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+                 "employee_id": "_LdMng5jDTwK-LMNlj22Vw",
+                 "dt_arrive": "2019-05-21 08:30:38",
                  }
-    r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
-    result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
+    result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: reg_staff 운영 직원 등록 시험
+    # ---------------------------------------------------------------------------------------
+    # login_data = {"id": "thinking",
+    #               "pw": "parkjong"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # new_staff = {"pNo": "01084333579",
+    #              "id": "parkjke",
+    #              "pw": "parkjong"
+    #              }
+    # r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
+    # result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
     # ---------------------------------------------------------------------------------------
     # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
     # ---------------------------------------------------------------------------------------
