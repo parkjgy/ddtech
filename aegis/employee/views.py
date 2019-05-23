@@ -2194,13 +2194,17 @@ def my_work_histories_for_customer(request):
     year_month = parameter_check['parameters']['dt']
 
     passers = Passer.objects.filter(id=employee_id)
-    if len(passers) != 1:
-        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % employee_id })
+    if len(passers) == 0:
+        return status422(func_name, {'message':'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
+    elif len(passers) > 1:
+        logError(func_name, ' Passer(id:{})가 중복되었다.'.format(employee_id))
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
-    if len(employees) != 1:
-        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % passer.employee_id })
+    if len(employees) == 0:
+        return status422(func_name, {'message':'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
+    elif len(employees) > 1:
+        logError(func_name, ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
 
     dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')

@@ -3186,6 +3186,9 @@ def report_of_employee(request):
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
+    if r.status_code != 200:
+        func_end_log(func_name)
+        return ReqLibJsonResponse(r)
     month_working = r.json()['working']
     for working in month_working:
         working['day'] = working['year_month_day'][8:10]
