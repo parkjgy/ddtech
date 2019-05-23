@@ -304,6 +304,8 @@ def list_customer_for_operation(request):
         customer['dt_payment'] = None if customer['dt_payment'] is None else \
             customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
         customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['staff_id']))
+        customer['staff_pNo'] = phone_format(customer['staff_pNo'])
+        customer['manager_pNo'] = phone_format(customer['manager_pNo'])
         arr_customer.append(customer)
     result = {'customers': arr_customer}
     func_end_log(func_name)
