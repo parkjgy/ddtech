@@ -3191,9 +3191,14 @@ def report_of_employee(request):
         return ReqLibJsonResponse(r)
     month_working = r.json()['working']
     for working in month_working:
-        working['day'] = working['year_month_day'][8:10]
-        working['in_hour_min'] = working['dt_begin'][11:16]
-        working['out_hour_min'] = working['dt_end'][11:16]
+        try:
+            working['day'] = working['year_month_day'][8:10]
+            working['in_hour_min'] = working['dt_begin'][11:16]
+            working['out_hour_min'] = working['dt_end'][11:16]
+        except Exception as e:
+            logError(func_name, ' working data 의 날짜 시간 변경 오류 {} {} {}'.format(working['year_month_day'], working['dt_begin'], working['dt_end']))
+            del working
+            continue
         del working['dt_begin']
         del working['dt_end']
     result = {'working': month_working,
