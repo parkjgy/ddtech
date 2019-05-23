@@ -3789,6 +3789,16 @@ def test_go_go(request):
         're_sms': 'NO',
         'customer_name': '대덕 서울',
         'staff_name': '박종기',
+        'staff_pNo': '01084333579',
+        'staff_email': 'thinking@ddtech.com',
+    }
+    r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
+    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    customer_data = {
+        're_sms': 'NO',
+        'customer_name': '대덕 서울',
+        'staff_name': '박종기',
         'staff_pNo': '01084333479',
         'staff_email': 'parkjgy@daam.co.kr',
     }

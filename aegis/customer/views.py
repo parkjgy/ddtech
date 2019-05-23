@@ -284,7 +284,7 @@ def list_customer_for_operation(request):
 
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-    logSend('   from operation server : op staff id ', worker_id)
+    logSend('  --- from operation server : op staff id '.format(AES_DECRYPT_BASE64(worker_id)))
 
     customer_name = rqst['customer_name']
     staff_name = rqst['staff_name']
@@ -297,6 +297,7 @@ def list_customer_for_operation(request):
                                                                    'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
+        logSend('id: {}, corp_name: {}'.format(customer.id, customer.corp_name))
         customer['id'] = AES_ENCRYPT_BASE64(str(customer['id']))
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_accept'] = None if customer['dt_accept'] is None else \
