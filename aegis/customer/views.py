@@ -2167,7 +2167,7 @@ def reg_employee(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     work_id = parameter_check['parameters']['work_id']
-    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M:%S")
+    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M")
     phone_numbers = parameter_check['parameters']['phone_numbers']
 
     work_list = Work.objects.filter(id=work_id)
@@ -3118,18 +3118,17 @@ def report_of_employee(request):
         STATUS 200
         {
             "message": "정상적으로 처리되었습니다.",
-            "working_days": 26,
-            "work_type": "주간 오전",
-            "employee_name": "이순신",
-            "working": [
+            "working_days": 26,             # 근로 일수
+            "work_type": "주간 오전",         # 근로 조건
+            "employee_name": "이순신",        # 근로자 이름
+            "working": [                    # 월의 날짜별 근로 내역
               {
-                "action": 120,
-                "day": "01",
-                "in_hour_min": "08:30",
-                "out_hour_min": "17:30",
-                "overtime": 0.0,
-                "working_hour": 8,
-                "break_hour": 1
+                "day": "01",                # 날짜
+                "in_hour_min": "08:30",     # 출근 시간
+                "out_hour_min": "17:30",    # 퇴근 시간
+                "overtime": 0.0,            # 연장근무 시간 (1.5 << 1:30)
+                "working_hour": 8,          # 근무시간
+                "break_hour": 1             # 근무시간 대비 의무 휴게시
               },
               ...
               ]
