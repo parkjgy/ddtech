@@ -2459,7 +2459,7 @@ def update_employee(request):
 
     employee_id = parameter_check['parameters']['employee_id']
     phone_no = parameter_check['parameters']['phone_no']
-    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M:%S")
+    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M")
     dt_begin = datetime.datetime.strptime(parameter_check['parameters']['dt_begin'], "%Y-%m-%d")
     dt_end = datetime.datetime.strptime(parameter_check['parameters']['dt_end'], "%Y-%m-%d")
     is_active = rqst['is_active']
