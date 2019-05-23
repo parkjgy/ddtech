@@ -621,7 +621,7 @@ def list_relationship(request):
         types.append(12)
     if rqst['is_orderer'].upper() == 'YES':
         types.append(10)
-    relationships = Relationship.objects.filter(contractor_id = worker.co_id, type__in = types)
+    relationships = Relationship.objects.filter(contractor_id=worker.co_id, type__in=types).exclude(contractor_id=worker.co_id)
     relationship_ids = [relationship.corp_id for relationship in relationships]
     corps = Customer.objects.filter(id__in=relationship_ids).values('id',
                                                                     'staff_name',
