@@ -823,25 +823,18 @@ def list_customer(request):
         'staff_email': staff_email,
     }
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
-    print(response_customer.json())
     if response_customer.status_code != 200:
         func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
+    customer_types = ['발주업체', '파견업체', '협력업체']
     arr_customer = response_customer.json()['customers']
-    print(arr_customer)
-    op_arr_customer = []
     for customer in arr_customer:
         customer['name'] = customer['corp_name']
-        print(customer['corp_name'], customer['name'])
-        op_customer = customer
-        del op_customer['id']
-        if op_customer['type'] == 12:
-            continue
-        op_customer['type'] = '발주업체' if op_customer['type'] == 10 else '파견업체'
-        op_arr_customer.append(op_customer)
-    logSend(op_arr_customer)
+        del customer['corp_name']
+        del customer['id']
+        customer['type'] = customer_types[customer['type'] - 10]
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'customers': op_arr_customer})
+    return REG_200_SUCCESS.to_json_response({'customers': arr_customer})
 
 
 @cross_origin_read_allow
