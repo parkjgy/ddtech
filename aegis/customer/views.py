@@ -2462,8 +2462,6 @@ def update_employee(request):
     dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M")
     dt_begin = datetime.datetime.strptime(parameter_check['parameters']['dt_begin'], "%Y-%m-%d")
     dt_end = datetime.datetime.strptime(parameter_check['parameters']['dt_end'], "%Y-%m-%d")
-    is_active = rqst['is_active']
-    message = rqst['message']
     #
     # 답변 시한 검사
     #
@@ -2509,16 +2507,13 @@ def update_employee(request):
                              }
         # print(new_employee_data)
         response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
-        print('--- ', response_employee.json())
+        logSend('--- ', response_employee.json())
         if response_employee.status_code != 200:
             func_end_log(func_name)
             return ReqLibJsonResponse(response_employee)
         employee.employee_id = response_employee.json()['result'][employee.pNo]
-    if 'dt_begin' in rqst and len(rqst['dt_begin']) > 0:
-        employee.dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
-    if 'dt_end' in rqst and len(rqst['dt_end']) > 0:
-        employee.dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
-        employee.is_active = 0 if employee.dt_end < datetime.datetime.now() else 1  # 업무 종료일이 오늘 이전이면 업무 종료
+
+    employee.is_active = 0 if employee.dt_end < datetime.datetime.now() else 1  # 업무 종료일이 오늘 이전이면 업무 종료
     if 'is_active' in rqst and len(rqst['is_active']) > 0:
         employee.is_active = True if rqst['is_active'].upper() == 'YES' else False
     if 'message' in rqst and len(rqst['message']) > 0:
