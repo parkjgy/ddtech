@@ -3654,10 +3654,10 @@ def test_go_go(request):
     result = []
     s = requests.session()
 
-    login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # login_data = {"login_id": "thinking",
+    #               "login_pw": "parkjong"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # recognize_data = {"dt_leave": "",
@@ -3671,11 +3671,11 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: reg_staff 운영 직원 등록 시험
     # ---------------------------------------------------------------------------------------
-    # login_data = {"id": "thinking",
-    #               "pw": "parkjong"
-    #               }
-    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    login_data = {"id": "thinking",
+                  "pw": "parkjong"
+                  }
+    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
     #
     # new_staff = {"pNo": "01084333579",
     #              "id": "parkjke",
@@ -3696,21 +3696,21 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: pass_sms SMS 로 업무 수락/거부 시험 (+ reg_employee )
     # ---------------------------------------------------------------------------------------
-    reg_employee_infor = {
-        'work_id': AES_ENCRYPT_BASE64('1'),
-        'dt_answer_deadline': '2019-05-23 19:00:00',
-        'phone_numbers': ['010-2557-3555']
-    }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
-    result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
-
-    sms_infor = {
-            'phone_no': '010-2557-3555',
-            'dt': '2019-05-23 15:33:00:00',
-            'sms': '   거절    ',
-        }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # reg_employee_infor = {
+    #     'work_id': AES_ENCRYPT_BASE64('1'),
+    #     'dt_answer_deadline': '2019-05-23 19:00:00',
+    #     'phone_numbers': ['010-2557-3555']
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # sms_infor = {
+    #         'phone_no': '010-2557-3555',
+    #         'dt': '2019-05-23 15:33:00:00',
+    #         'sms': '   거절    ',
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험
@@ -3782,8 +3782,31 @@ def test_go_go(request):
     # r = s.post(settings.CUSTOMER_URL + 'report_of_employee', json=report_infor)
     # result.append({'url': r.url, 'POST': report_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # ---------------------------------------------------------------------------------------
+    # TEST: /operation/reg_customer 운영 웹에서 고객사 등록
+    # ---------------------------------------------------------------------------------------
+    customer_data = {
+        're_sms': 'NO',
+        'customer_name': '대덕 서울',
+        'staff_name': '박종기',
+        'staff_pNo': '01084333479',
+        'staff_email': 'parkjgy@daam.co.kr',
+    }
+    r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
+    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    customer_data = {
+        'customer_name': '대덕기공',
+        'staff_name': '홍길동',
+        'staff_pNo': '010-1111-2222',
+        'staff_email': 'id@daeducki.com',
+    }
+    r = s.post(settings.OPERATION_URL + 'list_customer', json=customer_data)
+    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.OPERATION_URL + 'logout', json={})
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)

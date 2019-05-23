@@ -122,10 +122,20 @@ def reg_customer_for_operation(request):
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
     logSend('   from operation server : operation staff id ', worker_id)
 
-    customer_name = rqst["customer_name"]
-    staff_name = rqst["staff_name"]
-    staff_pNo = no_only_phone_no(rqst["staff_pNo"])
-    staff_email = rqst["staff_email"]
+    parameter_check = is_parameter_ok(rqst, ['customer_name', 'staff_name', 'staff_pNo', 'staff_email'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    customer_name = parameter_check['parameters']['customer_name']
+    staff_name = parameter_check['parameters']['staff_name']
+    staff_pNo = no_only_phone_no(parameter_check['parameters']['staff_pNo'])
+    staff_email = parameter_check['parameters']['staff_email']
+
+    # customer_name = rqst["customer_name"]
+    # staff_name = rqst["staff_name"]
+    # staff_pNo = no_only_phone_no(rqst["staff_pNo"])
+    # staff_email = rqst["staff_email"]
 
     customers = Customer.objects.filter(corp_name=customer_name, staff_pNo=staff_pNo)
     # 파견기업 등록
@@ -141,7 +151,8 @@ def reg_customer_for_operation(request):
             staff_email=staff_email,
             manager_name=staff_name,
             manager_pNo=staff_pNo,
-            manager_email=staff_email
+            manager_email=staff_email,
+            is_contractor=True,
         )
         customer.save()
 
@@ -149,7 +160,7 @@ def reg_customer_for_operation(request):
             contractor_id=customer.id,
             type=12,
             corp_id=customer.id,
-            corp_name=customer_name
+            corp_name=customer_name,
         )
         relationship.save()
 
@@ -164,7 +175,7 @@ def reg_customer_for_operation(request):
             dt_app_login=datetime.datetime.now(),
             dt_login=datetime.datetime.now(),
             is_site_owner=True,
-            is_manager=True
+            is_manager=True,
         )
         staff.save()
         customer.staff_id = str(staff.id)
@@ -280,14 +291,18 @@ def list_customer_for_operation(request):
     staff_pNo = no_only_phone_no(rqst['staff_pNo'])
     staff_email = rqst['staff_email']
 
-    customers = Customer.objects.filter(is_contractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg', 'dt_accept', 'type', 'staff_id', 'staff_name', 'staff_pNo', 'staff_email',
-                                                 'manager_name', 'manager_pNo', 'manager_email', 'dt_payment')
+    customers = Customer.objects.filter(is_contractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg',
+                                                                   'dt_accept', 'type', 'staff_id', 'staff_name',
+                                                                   'staff_pNo', 'staff_email', 'manager_name',
+                                                                   'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
         customer['id'] = AES_ENCRYPT_BASE64(str(customer['id']))
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
-        customer['dt_accept'] = None if customer['dt_accept'] is None else customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
-        customer['dt_payment'] = None if customer['dt_payment'] is None else customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
+        customer['dt_accept'] = None if customer['dt_accept'] is None else \
+            customer['dt_accept'].strftime("%Y-%m-%d %H:%M:%S")
+        customer['dt_payment'] = None if customer['dt_payment'] is None else \
+            customer['dt_payment'].strftime("%Y-%m-%d %H:%M:%S")
         customer['staff_id'] = AES_ENCRYPT_BASE64(str(customer['staff_id']))
         arr_customer.append(customer)
     result = {'customers': arr_customer}
