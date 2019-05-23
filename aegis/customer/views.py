@@ -2468,7 +2468,7 @@ def update_employee(request):
     if dt_begin < dt_answer_deadline:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'})
-    if dt_end > dt_begin:
+    if dt_end < dt_begin:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'})
 
