@@ -153,9 +153,12 @@ def reg_customer_for_operation(request):
             manager_pNo=staff_pNo,
             manager_email=staff_email,
             is_contractor=True,
+            type=11,
         )
         customer.save()
 
+        # 파견업체는 동시에 협력사로 등록 되어 있어야 한다.
+        # - 차후 업무에서 업체를 선택할 때 사용할 수 있다.
         relationship = Relationship(
             contractor_id=customer.id,
             type=12,
@@ -547,6 +550,7 @@ def reg_relationship(request):
         staff_name=staff_name,
         staff_pNo=staff_pNo,
         staff_email=staff_email,
+        type=type,
     )
     if 'manager_name' in rqst:
         corp.manager_name = rqst['manager_name']

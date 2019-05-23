@@ -674,7 +674,7 @@ def reg_customer(request):
         'customer_name': customer_name,
         'staff_name': staff_name,
         'staff_pNo': staff_pNo,
-        'staff_email': staff_email
+        'staff_email': staff_email,
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
