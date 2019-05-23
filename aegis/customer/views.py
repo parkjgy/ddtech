@@ -297,7 +297,7 @@ def list_customer_for_operation(request):
                                                                    'manager_pNo', 'manager_email', 'dt_payment')
     arr_customer = []
     for customer in customers:
-        logSend('id: {}, corp_name: {}'.format(customer.id, customer.corp_name))
+        logSend('id: {}, corp_name: {}'.format(customer['id'], customer['corp_name']))
         customer['id'] = AES_ENCRYPT_BASE64(str(customer['id']))
         customer['dt_reg'] = customer['dt_reg'].strftime("%Y-%m-%d %H:%M:%S")
         customer['dt_accept'] = None if customer['dt_accept'] is None else \
