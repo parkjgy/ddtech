@@ -3196,11 +3196,13 @@ def report_of_employee(request):
             working['in_hour_min'] = working['dt_begin'][11:16]
             working['out_hour_min'] = working['dt_end'][11:16]
         except Exception as e:
-            logSend(func_name, ' working data 의 날짜 시간 변경 오류 {} {} {}'.format(working['year_month_day'], working['dt_begin'], working['dt_end']))
+            logSend(func_name, ' working data 의 날짜 시간 변경 오류 {} {} {} ({})'.format(working['year_month_day'], working['dt_begin'], working['dt_end'], str(e)))
             working['in_hour_min'] = "08:30"
             working['out_hour_min'] = "17:30"
             # del working
             # continue
+        del working['action']
+        del working['year_month_day']
         del working['dt_begin']
         del working['dt_end']
     result = {'working': month_working,
