@@ -3660,13 +3660,13 @@ def test_go_go(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    recognize_data = {"dt_leave": "",
-                 "staff_id": "qgf6YHf1z2Fx80DR8o_Lvg",
-                 "employee_id": "_LdMng5jDTwK-LMNlj22Vw",
-                 "dt_arrive": "2019-05-21 08:30:38",
-                 }
-    r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
-    result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
+    # recognize_data = {"dt_leave": "",
+    #              "staff_id": "qgf6YHf1z2Fx80DR8o_Lvg",
+    #              "employee_id": "_LdMng5jDTwK-LMNlj22Vw",
+    #              "dt_arrive": "2019-05-21 08:30:38",
+    #              }
+    # r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
+    # result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: reg_staff 운영 직원 등록 시험
@@ -3694,23 +3694,23 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': my_work_histories_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
-    # TEST: pass_sms SMS 로 업무 수락/거부 시험
+    # TEST: pass_sms SMS 로 업무 수락/거부 시험 (+ reg_employee )
     # ---------------------------------------------------------------------------------------
-    # reg_employee_infor = {
-    #     'work_id': AES_ENCRYPT_BASE64('1'),
-    #     'dt_answer_deadline': '2019-05-17 19:00:00',
-    #     'phone_numbers': ['010-2557-3555']
-    # }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
-    # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
-    #
-    # sms_infor = {
-    #         'phone_no': '010-2557-3555',
-    #         'dt': '2019-05-17 07:00:00',
-    #         'sms': '출근!!!',
-    #     }
-    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    reg_employee_infor = {
+        'work_id': AES_ENCRYPT_BASE64('1'),
+        'dt_answer_deadline': '2019-05-23 19:00:00',
+        'phone_numbers': ['010-2557-3555']
+    }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    sms_infor = {
+            'phone_no': '010-2557-3555',
+            'dt': '2019-05-23 15:33:00:00',
+            'sms': '   거절    ',
+        }
+    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
     #
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험

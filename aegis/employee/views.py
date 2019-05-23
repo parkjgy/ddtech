@@ -453,21 +453,25 @@ def notification_accept(request):
     passers = Passer.objects.filter(id=rqst['passer_id'])
     if len(passers) != 1:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
 
     notifications = Notification_Work.objects.filter(id=rqst['notification_id'])
     if len(notifications) != 1:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 알림입니다.'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 알림입니다.'})
     notification = notifications[0]
 
     is_accept = 1 if int(rqst['is_accept']) == 1 else 0
     logSend('is_accept = ', rqst['is_accept'], ' ', is_accept)
 
     employees = Employee.objects.filter(id=passer.employee_id)
-    if len(employees) != 1:
-        logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id, len(employees)))
+    if len(employees) == 0:
+        return status422(func_name, ' passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id))
+    else:
+        if len(employees) > 1:
+            logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
+                                                                                     len(employees)))
     employee = employees[0]
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
@@ -493,6 +497,26 @@ def notification_accept(request):
             )
         employee.save()
         logSend(employee.name)
+    else:
+        # 근로자 정보에 work_id 가 있으면 삭제
+        if employee.work_id_3 == notification.work_id:
+            employee.work_id_3 = -1
+        if employee.work_id_2 == notification.work_id:
+            employee.work_id_2 = -1
+        if employee.work_id == notification.work_id:
+            employee.work_id = -1
+        # 근로자 정보에 첫번째 work_id 가 없으면서 뒤에 있으면 앞으로 당김
+        if employee.work_id == -1 and employee.work_id_2 != -1:
+            employee.work_id = employee.work_id_2
+            employee.work_id_2 = -1
+        if employee.work_id_2 == -1 and employee.work_id_3 != -1:
+            employee.work_id_2 = employee.work_id_3
+            employee.work_id_3 = -1
+        if employee.work_id == -1 and employee.work_id_2 != -1:
+            employee.work_id = employee.work_id_2
+            employee.work_id_2 = -1
+        employee.save()
+
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -807,10 +831,12 @@ def pass_verify(request):
             {'message':'ClientError: parameter \'dt\' 가 없어요'}
             {'message':'ClientError: parameter \'is_in\' 가 없어요'}
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
-            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)}
+            {'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)}
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
+        logError(func_name, ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
         logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
         logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
@@ -834,10 +860,26 @@ def pass_verify(request):
     is_in = int(parameter_check['parameters']['is_in'])
 
     passers = Passer.objects.filter(id=passer_id)
-    if len(passers) != 1:
-        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없거나 중복됨'.format(passer_id) })
+    if len(passers) == 0:
+        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
+    elif len(passers) > 1:
+        logError(func_name, ' passer id: {} 중복되었다.'.format(passer_id))
     passer = passers[0]
-
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) == 0:
+        return status422(func_name, {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
+    elif len(employees) > 1:
+        logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
+    employee = employees[0]
+    if employee.work_id == -1:
+        return status422(func_name, {'message': '업무가 없다'})
+    #
+    # 지금은 무조건 첫번째 업무에 출퇴근처리한다.
+    #   > 투잡일 때는 업무 시간으로 구분한다.
+    #   > 투잡 시간을 잘못 넣으면 어쩔 수 없다. 앱에서 업무 시간을 넣을 때 두 업무가 중복되는지 검사
+    #   > 차후 개발 필요
+    #
+    work_id = employee.work_id
     # 통과 기록 저장
     new_pass = Pass(
         passer_id=passer_id,
@@ -872,6 +914,7 @@ def pass_verify(request):
                         passer_id=passer_id,
                         year_month_day=yesterday_year_month_day,
                         action=0,
+                        work_id=work_id,
                     )
                 else:
                     logSend('  어제 오늘 출퇴근 기록이 없고 9시 이후라 오늘 날짜로 처리한다.')
@@ -880,6 +923,7 @@ def pass_verify(request):
                         passer_id=passer_id,
                         year_month_day=year_month_day,
                         action=0,
+                        work_id=work_id,
                     )
             elif dt_touch.hour < 9:
                 # 오늘 출퇴근 내역은 없어도 어제건 있다.
@@ -893,6 +937,7 @@ def pass_verify(request):
                     passer_id=passer_id,
                     year_month_day=year_month_day,
                     action=0,
+                    work_id=work_id,
                 )
         else:
             logSend('  오늘 출퇴근 기록이 있어서 오늘에 넣는다.')
@@ -915,6 +960,7 @@ def pass_verify(request):
                 passer_id=passer_id,
                 year_month_day=year_month_day,
                 action=0,
+                work_id=work_id,
             )
         else:
             pass_history = pass_histories[0]
@@ -950,6 +996,12 @@ def pass_sms(request):
         }
     response
         STATUS 200
+        STATUS 422
+            {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)}
+            {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
+    error log
+        logError(func_name, ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -983,12 +1035,16 @@ def pass_sms(request):
                     'receiver': phone_no,
                     'msg_type': 'SMS',
                     'msg': '이지체크\n'
-                           '수락/거절 문자를 보내실 때는 꼭 이름을 같이 넣어주세요.\n'
-                           '예 \"수락 홍길동\"',
+                           '수락 문자를 보내실 때는 꼭 이름을 같이 넣어주세요.\n'
+                           '예시 \"수락 홍길동\"',
                 }
                 rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
                 logSend('SMS result', rSMS.json())
                 return status422(func_name, {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+        else:
+            name = sms.replace('거절', '').replace(' ', '')
+            if len(name) == 0:
+                name = '====='
         sms_data = {
             'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
             'user_id': 'yuadocjon22',
@@ -996,7 +1052,7 @@ def pass_sms(request):
             'receiver': phone_no,
             'msg_type': 'SMS',
         }
-
+        logSend('  name: \'{}\''.format(name))
         for notification_work in notification_work_list:
             # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
             if notification_work.dt_answer_deadline < datetime.datetime.now():
@@ -1010,17 +1066,33 @@ def pass_sms(request):
                 employee = Employee(
                     name=name,
                     work_id=notification_work.work_id,
-                )
-                employee.save()
+                ).save()
                 passer = Passer(
                     pNo=phone_no,
                     pType=30,  # 30: 피쳐폰, 10: 아이폰, 20: 안드로이드폰
                     employee_id=employee.id,
-                )
-                passer.save()
+                ).save()
             else:
                 # 이경우 골치 아픈데... > 급하니까 첫번째 만 대상으로 한다.
+                # 결국 복잡해도 하네...
+                if len(passer_list) > 1:
+                    logError(func_name, ' 전화번호({})가 중복되었다.'.format(phone_no))
                 passer = passer_list[0]
+                employee_list = Employee.objects.filter(id=passer.employee_id)
+                if len(employee_list) == 0:
+                    logError(func_name, ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
+                    employee = Employee(
+                        name=name,
+                        work_id=notification_work.work_id,
+                    ).save()
+                    passer.employee_id = employee.id
+                    passer.save()
+                else:
+                    if len(employee_list) > 1:
+                        logError(func_name, ' employee({})가 중복되었다.'.format(passer.employee_id))
+                    employee = employee_list[0]
+                    employee.name = name
+                    employee.save()
 
             accept_infor = {
                 'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),

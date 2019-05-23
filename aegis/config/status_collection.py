@@ -16,7 +16,7 @@ class StatusCollection(object):
             response_body.update(_body)
         resp = JsonResponse(response_body)
         resp.status_code = self.status
-        logSend('  ', resp.status_code, ' ', response_body)
+        logSend('  {} {}'.format(resp.status_code, response_body))
         return resp
 
     def to_response(self, _body=None):

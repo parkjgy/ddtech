@@ -2550,7 +2550,7 @@ def list_employee(request):
     today = datetime.datetime.now()
     # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
     # if False:
-    if work.dt_begin > today:
+    if today < work.dt_begin:
         # print('--- 업무 시작 전')
         # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
         for employee in employees:
