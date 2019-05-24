@@ -1,7 +1,12 @@
-from django.conf.urls import url
+from django.conf.urls import url, include
+from django.contrib.auth.models import User
+from . import views
 
-from operation import views
-from operation.views import OperationView
+# from operation import views
+# from operation.views import OperationView
+
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     url(r'operation/logControl$', views.logControl, name='logControl'),
@@ -10,7 +15,8 @@ urlpatterns = [
     url(r'operation/currentEnv$', views.currentEnv, name='currentEnv'),
     url(r'operation/updateEnv$', views.updateEnv, name='updateEnv'),
 
-    url(r'operation/reg_staff$', OperationView.reg_staff, name='reg_staff'),
+    # url(r'operation/reg_staff$', OperationView.reg_staff, name='reg_staff'),
+    url(r'operation/reg_staff$', views.reg_staff, name='reg_staff'),
     url(r'operation/login$', views.login, name='login'),
     url(r'operation/logout$', views.logout, name='logout'),
     url(r'operation/update_staff$', views.update_staff, name='update_staff'),

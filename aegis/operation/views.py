@@ -267,81 +267,148 @@ def updateEnv(request):
     return REG_200_SUCCESS.to_json_response()
 
 
-class OperationView(APIView):
-    staff_login_form = AutoSchema(manual_fields=[
-        coreapi.Field("pNo", required=True, location="form", type="string", description="partner number field",
-                      example="010-2557-3555"),
-        coreapi.Field("id", required=True, location="form", type="string", description="id field", example="thinking"),
-        coreapi.Field("pw", required=True, location="form", type="string", description="password field",
-                      example="a~~~8282")]
-    )
-
-    @api_view(['POST'])
-    @schema(staff_login_form)
-    @cross_origin_read_allow
-    @session_is_none_403_with_operation
-    def reg_staff(request):
-        """
-        운영 직원 등록
-        - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-            http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
-            POST
-                {
-                    'pNo': '010-1111-2222',
-                    'id': 'thinking',
-                    'pw': 'a~~~8282'
-                }
-            response
-                STATUS 200
-                STATUS 409
-                    {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
-        """
-        func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        if request.method == 'POST':
-            rqst = json.loads(request.body.decode("utf-8"))
-        else:
-            rqst = request.GET
-        for key in rqst.keys():
-            logSend('  ', key, ': ', rqst[key])
-        # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-        if (request.session['func_name'] == func_name) and \
-                (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-                 datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-            logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-            func_end_log(func_name)
-            return REG_409_CONFLICT.to_json_response()
-        request.session['func_name'] = func_name
-        request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        request.session.save()
-
-        worker_id = request.session['op_id'][5:]
-        worker = Staff.objects.get(id=worker_id)
-        # try:
-        #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-        #         func_end_log(func_name)
-        #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-        # except Exception as e:
-        #     func_end_log(func_name)
-        #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
-
-        phone_no = no_only_phone_no(rqst['pNo'])
-        id_ = rqst['id']
-        pw = rqst['pw']
-        logSend('--- 등록 요청 id:{}, pw:{}'.format(id_, pw))
-
-        staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
-        if len(staffs) > 0:
-            func_end_log(func_name)
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
-        new_staff = Staff(
-            login_id=id_,
-            login_pw=hash_SHA256(pw),
-            pNo=phone_no
-        )
-        new_staff.save()
-        logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
+@cross_origin_read_allow
+@session_is_none_403_with_operation
+def reg_staff(request):
+    """
+    운영 직원 등록
+    - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
+        http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+        POST
+            {
+                'pNo': '010-1111-2222',
+                'id': 'thinking',
+                'pw': 'a~~~8282'
+            }
+        response
+            STATUS 200
+            STATUS 409
+                {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
+    if (request.session['func_name'] == func_name) and \
+            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
+        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
         func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response()
+        return REG_409_CONFLICT.to_json_response()
+    request.session['func_name'] = func_name
+    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    request.session.save()
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+    # try:
+    #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+    #         func_end_log(func_name)
+    #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+    # except Exception as e:
+    #     func_end_log(func_name)
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+
+    phone_no = no_only_phone_no(rqst['pNo'])
+    id_ = rqst['id']
+    pw = rqst['pw']
+    logSend('--- 등록 요청 id:{}, pw:{}'.format(id_, pw))
+
+    staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
+    if len(staffs) > 0:
+        func_end_log(func_name)
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+    new_staff = Staff(
+        login_id=id_,
+        login_pw=hash_SHA256(pw),
+        pNo=phone_no,
+        dt_app_login=datetime.datetime.now(),
+        dt_login=datetime.datetime.now(),
+    )
+    new_staff.save()
+    logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+# class OperationView(APIView):
+#     staff_login_form = AutoSchema(manual_fields=[
+#         coreapi.Field("pNo", required=True, location="form", type="string", description="partner number field",
+#                       example="010-2557-3555"),
+#         coreapi.Field("id", required=True, location="form", type="string", description="id field", example="thinking"),
+#         coreapi.Field("pw", required=True, location="form", type="string", description="password field",
+#                       example="a~~~8282")]
+#     )
+#
+#     @api_view(['POST'])
+#     @schema(staff_login_form)
+#     @cross_origin_read_allow
+#     @session_is_none_403_with_operation
+#     def reg_staff(request):
+#         """
+#         운영 직원 등록
+#         - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
+#             http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
+#             POST
+#                 {
+#                     'pNo': '010-1111-2222',
+#                     'id': 'thinking',
+#                     'pw': 'a~~~8282'
+#                 }
+#             response
+#                 STATUS 200
+#                 STATUS 409
+#                     {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+#         """
+#         func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+#         if request.method == 'POST':
+#             rqst = json.loads(request.body.decode("utf-8"))
+#         else:
+#             rqst = request.GET
+#         for key in rqst.keys():
+#             logSend('  ', key, ': ', rqst[key])
+#         # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
+#         if (request.session['func_name'] == func_name) and \
+#                 (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
+#                  datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
+#             logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
+#             func_end_log(func_name)
+#             return REG_409_CONFLICT.to_json_response()
+#         request.session['func_name'] = func_name
+#         request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#         request.session.save()
+#
+#         worker_id = request.session['op_id'][5:]
+#         worker = Staff.objects.get(id=worker_id)
+#         # try:
+#         #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
+#         #         func_end_log(func_name)
+#         #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
+#         # except Exception as e:
+#         #     func_end_log(func_name)
+#         #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
+#
+#         phone_no = no_only_phone_no(rqst['pNo'])
+#         id_ = rqst['id']
+#         pw = rqst['pw']
+#         logSend('--- 등록 요청 id:{}, pw:{}'.format(id_, pw))
+#
+#         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
+#         if len(staffs) > 0:
+#             func_end_log(func_name)
+#             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
+#         new_staff = Staff(
+#             login_id=id_,
+#             login_pw=hash_SHA256(pw),
+#             pNo=phone_no
+#         )
+#         new_staff.save()
+#         logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
+#         func_end_log(func_name)
+#         return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -3664,18 +3731,18 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: reg_staff 운영 직원 등록 시험
     # ---------------------------------------------------------------------------------------
-    # login_data = {"id": "thinking",
-    #               "pw": "parkjong"
-    #               }
-    # r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-    #
-    # new_staff = {"pNo": "01084333579",
-    #              "id": "parkjke",
-    #              "pw": "parkjong"
-    #              }
-    # r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
-    # result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
+    login_data = {"id": "thinking",
+                  "pw": "parkjong"
+                  }
+    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    new_staff = {"pNo": "01084333579",
+                 "id": "parkjke",
+                 "pw": "parkjong"
+                 }
+    r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
+    result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
     # ---------------------------------------------------------------------------------------
     # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
     # ---------------------------------------------------------------------------------------
@@ -3689,13 +3756,13 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: pass_sms SMS 로 업무 수락/거부 시험 (+ reg_employee )
     # ---------------------------------------------------------------------------------------
-    reg_employee_infor = {
-        'work_id': AES_ENCRYPT_BASE64('1'),
-        'dt_answer_deadline': '2019-05-25 19:00',
-        'phone_numbers': ['010-2557-3555', '010-9999-99', '010-1111-99', '010-2222-99']
-    }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
-    result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # reg_employee_infor = {
+    #     'work_id': AES_ENCRYPT_BASE64('1'),
+    #     'dt_answer_deadline': '2019-05-25 19:00',
+    #     'phone_numbers': ['010-2557-3555', '010-9999-99', '010-1111-99', '010-2222-99']
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
+    # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # sms_infor = {
     #         'phone_no': '010-2557-3555',

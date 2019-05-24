@@ -32,9 +32,9 @@ class Staff(models.Model):
     push_token = models.CharField(max_length = 256, default='unknown')
     email = models.CharField(max_length = 512, default='unknown') # 이메일
     is_app_login = models.BooleanField(default=False) # 앱에서 로그인이 되었는가?
-    dt_app_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_app_login = models.DateTimeField(blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_login = models.BooleanField(default=False) # 로그인이 되었는가?
-    dt_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
+    dt_login = models.DateTimeField(blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
 
 """
 사업장
