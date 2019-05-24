@@ -2105,7 +2105,8 @@ def list_work(request):
 def reg_employee(request):
     """
     근로자 등록 - 업무 선택 >> 전화번호 목록 입력 >> [등록 SMS 안내 발송]
-    response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
+    - SMS 를 보내지 못한 전화번호는 근로자 등록을 하지 않는다.
+    - response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
         주)	response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_employee?work_id=qgf6YHf1z2Fx80DR8o_Lvg&dt_answer_deadline=2019-03-01 19:00:00&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
     POST
@@ -2127,7 +2128,12 @@ def reg_employee(request):
                 "010-3333-5555",
                 "010-5555-7777",
                 "010-7777-9999"
-              ]
+              ],
+              "bad_pNo": [
+                "010999999",
+                "010111199",
+                "010222299"
+                ]
             }
         STATUS 416
             {'message': '답변 시한은 현재 시각 이후여야 합니다.'}
@@ -2190,28 +2196,12 @@ def reg_employee(request):
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
 
-    duplicate_pNo = []
-    arr_employee = []
+    find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
+    duplicate_pNo = [employee.pNo for employee in find_employee_list]
+    new_phone_list = []
     for phone in phones:
-        find_employee = Employee.objects.filter(work_id=work.id, pNo=phone)
-        if len(find_employee) > 0:
-            # 이미 SMS 등록된 전화번호를 걸러낸다.
-            find_employee[0].is_accept_work=None
-            find_employee[0].save()
-            duplicate_pNo.append(phone)
-            continue
-        new_employee = Employee(
-            is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
-            is_active=0, # 근무 중 아님
-            dt_begin=work.dt_begin,
-            dt_end=work.dt_end,
-            work_id=work.id,
-            pNo=phone,
-        )
-        new_employee.save()
-        arr_employee.append(new_employee)
-    logSend('duplicat pNo', duplicate_pNo)
-
+        if phone not in duplicate_pNo:
+            new_phone_list.append(phone)
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
     #
@@ -2223,23 +2213,37 @@ def reg_employee(request):
                          "dt_answer_deadline": rqst['dt_answer_deadline'],
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,
-                         "phones": phones
+                         "phones": new_phone_list,
                          }
-    logSend(new_employee_data)
+    # logSend(new_employee_data)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
-    logSend(response_employee)
+    # logSend(response_employee)
     if response_employee.status_code != 200:
         func_end_log(func_name)
         return ReqLibJsonResponse(response_employee)
 
     sms_result = response_employee.json()['result']
-    logSend(sms_result)
-    for employee in arr_employee:
-        employee.employee_id = sms_result[employee.pNo]
-        employee.save()
+    # sms_result = {'01033335555': -101, '01055557777': 5}
+    bad_phone_list = []
+    for phone in new_phone_list:
+        if sms_result[phone] == -101:
+            # 잘못된 전화번호 근로자 등록 안함
+            bad_phone_list.append(phone_format(phone))
+        else:
+            # 업무 수락을 기다리는 근로자로 등록
+            new_employee = Employee(
+                employee_id=sms_result[phone],
+                is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
+                is_active=0,  # 근무 중 아님
+                dt_begin=work.dt_begin,
+                dt_end=work.dt_end,
+                work_id=work.id,
+                pNo=phone,
+            )
+            new_employee.save()
 
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'duplicate_pNo':duplicate_pNo})
+    return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list})
 
 
 @cross_origin_read_allow
@@ -2691,7 +2695,7 @@ def list_employee(request):
                              'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
                              'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
                              'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
-                             'state': ".", # state,
+                             'state': "", # state,
                              }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':

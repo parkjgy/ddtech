@@ -3692,18 +3692,18 @@ def test_go_go(request):
     reg_employee_infor = {
         'work_id': AES_ENCRYPT_BASE64('1'),
         'dt_answer_deadline': '2019-05-25 19:00',
-        'phone_numbers': ['010-2557-3555']
+        'phone_numbers': ['010-2557-3555', '010-9999-99', '010-1111-99', '010-2222-99']
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
     result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    sms_infor = {
-            'phone_no': '010-2557-3555',
-            'dt': '2019-05-23 15:33:00:00',
-            'sms': '   거절    ',
-        }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # sms_infor = {
+    #         'phone_no': '010-2557-3555',
+    #         'dt': '2019-05-23 15:33:00:00',
+    #         'sms': '   거절    ',
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험

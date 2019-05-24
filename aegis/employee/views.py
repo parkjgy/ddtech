@@ -1778,12 +1778,13 @@ def pass_record_of_employees_in_day_for_customer(request):
         if int(employee_id) not in exist_ids:
             # 출퇴근 기록이 없으면 새로 만든다.
             logSend('   --- new pass_history passer_id {}'.format(employee_id))
-            Pass_History(
+            pass_history = Pass_History(
                 passer_id=int(employee_id),
                 year_month_day=year_month_day,
                 action=0,
                 work_id=work_id,
-            ).save()
+            )
+            pass_history.save()
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
