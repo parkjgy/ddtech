@@ -1067,11 +1067,13 @@ def pass_sms(request):
                     name=name,
                     work_id=notification_work.work_id,
                 ).save()
+                logSend('---1 name: {}, phone: {}'.format(name, phone_no))
                 passer = Passer(
                     pNo=phone_no,
                     pType=30,  # 30: 피쳐폰, 10: 아이폰, 20: 안드로이드폰
                     employee_id=employee.id,
                 ).save()
+                logSend('---2 name: {}, phone: {}'.format(name, phone_no))
             else:
                 # 이경우 골치 아픈데... > 급하니까 첫번째 만 대상으로 한다.
                 # 결국 복잡해도 하네...
@@ -1080,6 +1082,7 @@ def pass_sms(request):
                 passer = passer_list[0]
                 employee_list = Employee.objects.filter(id=passer.employee_id)
                 if len(employee_list) == 0:
+                    logSend('---3 name: {}, phone: {}'.format(name, phone_no))
                     logError(func_name, ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
                     employee = Employee(
                         name=name,
@@ -1088,10 +1091,12 @@ def pass_sms(request):
                     passer.employee_id = employee.id
                     passer.save()
                 else:
+                    logSend('---4 name: {}, phone: {}'.format(name, phone_no))
                     if len(employee_list) > 1:
                         logError(func_name, ' employee({})가 중복되었다.'.format(passer.employee_id))
                     employee = employee_list[0]
                     employee.name = name
+                    employee.work_id = notification_work.work_id
                     employee.save()
 
             accept_infor = {
