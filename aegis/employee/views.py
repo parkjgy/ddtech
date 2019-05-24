@@ -1066,13 +1066,15 @@ def pass_sms(request):
                 employee = Employee(
                     name=name,
                     work_id=notification_work.work_id,
-                ).save()
-                logSend('---1 name: {}, phone: {}'.format(name, phone_no))
+                )
+                employee.save()
+                logSend('---1 name: {}, phone: {} employee id {}'.format(name, phone_no, employee.id))
                 passer = Passer(
                     pNo=phone_no,
                     pType=30,  # 30: 피쳐폰, 10: 아이폰, 20: 안드로이드폰
                     employee_id=employee.id,
-                ).save()
+                )
+                passer.save()
                 logSend('---2 name: {}, phone: {}'.format(name, phone_no))
             else:
                 # 이경우 골치 아픈데... > 급하니까 첫번째 만 대상으로 한다.
@@ -1087,7 +1089,8 @@ def pass_sms(request):
                     employee = Employee(
                         name=name,
                         work_id=notification_work.work_id,
-                    ).save()
+                    )
+                    employee.save()
                     passer.employee_id = employee.id
                     passer.save()
                 else:
