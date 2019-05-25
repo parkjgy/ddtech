@@ -2173,14 +2173,18 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
+    #
+    # 상용 서버에 적용하기 전에 임시로 사용 - dt_begin 이 비어 있어도 에러처리를 하지 않는다.
+    #
     parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'dt_begin', 'phone_numbers'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'phone_numbers'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     work_id = parameter_check['parameters']['work_id']
     dt_answer_deadline = str_to_datetime(parameter_check['parameters']['dt_answer_deadline'])
-    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    # dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     phone_numbers = parameter_check['parameters']['phone_numbers']
 
     work_list = Work.objects.filter(id=work_id)
@@ -2189,6 +2193,13 @@ def reg_employee(request):
     elif len(work_list) > 1:
         logError(func_name, ' Work(id:{})가 중복되었다.'.format(work_id))
     work = work_list[0]
+    #
+    # 상용 서버를 위한 일시적 방법
+    #
+    if 'dt_begin' in rqst:
+        dt_begin = work.dt_begin
+    else:
+        dt_begin = str_to_datetime(rqst['dt_begin'])
 
     if request.method == 'POST':
         phones = rqst['phone_numbers']
