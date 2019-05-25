@@ -18,7 +18,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
-from config.common import rMin
+from config.common import rMin, str_to_datetime
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
@@ -3731,18 +3731,18 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: reg_staff 운영 직원 등록 시험
     # ---------------------------------------------------------------------------------------
-    login_data = {"id": "thinking",
-                  "pw": "parkjong"
-                  }
-    r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    new_staff = {"pNo": "01084333579",
-                 "id": "parkjke",
-                 "pw": "parkjong"
-                 }
-    r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
-    result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
+    # login_data = {"id": "thinking",
+    #               "pw": "parkjong"
+    #               }
+    # r = s.post(settings.OPERATION_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # new_staff = {"pNo": "01084333579",
+    #              "id": "parkjke",
+    #              "pw": "parkjong"
+    #              }
+    # r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
+    # result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
     # ---------------------------------------------------------------------------------------
     # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
     # ---------------------------------------------------------------------------------------
@@ -3874,9 +3874,24 @@ def test_go_go(request):
     # r = s.post(settings.OPERATION_URL + 'list_customer', json=customer_data)
     # result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
 
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
+    # ---------------------------------------------------------------------------------------
+    employee_data = {
+        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+        'dt_answer_deadline': '2019-05-28 19:00',
+        'dt_begin': '2019-05-29',
+        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+            [
+                '010-2557-3555', '011-8888-9999',
+            ]
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)

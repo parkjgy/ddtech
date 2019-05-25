@@ -15,7 +15,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log, status422, is_parameter_ok
 # secret import
-from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null
+from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -2105,6 +2105,7 @@ def list_work(request):
 def reg_employee(request):
     """
     근로자 등록 - 업무 선택 >> 전화번호 목록 입력 >> [등록 SMS 안내 발송]
+    - 업무가 시작되고 나서 추가되는 근로자를 등록하기 위해 "출근 날짜" 추가 - 2019/05/25
     - SMS 를 보내지 못한 전화번호는 근로자 등록을 하지 않는다.
     - response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
         주)	response 는 추후 추가될 예정이다.
@@ -2113,7 +2114,8 @@ def reg_employee(request):
         {
             'work_id':'사업장 업무 id',
             'dt_answer_deadline':2019-03-01 19:00:00  # 업무 수락/거부 답변 시한
-            'phone_numbers':   # 업무에 배치할 근로자들의 전화번호
+            'dt_begin': 2019-05-25  # 등록하는 근로자의 실제 출근 시작 날짜 (업무의 시작 후에 추가되는 근로자를 위한 날짜)
+            'phone_numbers':        # 업무에 배치할 근로자들의 전화번호
             [
                 '010-3333-5555', '010-5555-7777', '010-7777-8888', ...
             ]
@@ -2136,12 +2138,16 @@ def reg_employee(request):
                 ]
             }
         STATUS 416
+            {'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'}
+            {'message': '출근 날짜는 오늘 이후여야 합니다.'}
+            {'message': '답변 시한이 출근 날짜는 먼저이면 안됩니다.'}
             {'message': '답변 시한은 현재 시각 이후여야 합니다.'}
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
             {'message':'ClientError: parameter \'dt_answer_deadline\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_begin\' 이 없어요'}
             {'message':'ClientError: parameter \'phone_numbers\' 가 없어요'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Work 에 id={} 가 없다'.format(work_id)}
@@ -2167,13 +2173,14 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'phone_numbers'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'dt_begin', 'phone_numbers'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     work_id = parameter_check['parameters']['work_id']
-    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M")
+    dt_answer_deadline = str_to_datetime(parameter_check['parameters']['dt_answer_deadline'])
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     phone_numbers = parameter_check['parameters']['phone_numbers']
 
     work_list = Work.objects.filter(id=work_id)
@@ -2192,6 +2199,15 @@ def reg_employee(request):
     #
     # 답변시한 검사
     #
+    if dt_begin < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'})
+    if dt_begin < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 오늘 이후여야 합니다.'})
+    if dt_begin < dt_answer_deadline:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한이 출근 날짜는 먼저이면 안됩니다.'})
     if dt_answer_deadline < datetime.datetime.now():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
@@ -2208,7 +2224,8 @@ def reg_employee(request):
     new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
                          "work_place_name": work.work_place_name,
                          "work_name_type": work.name + ' (' + work.type + ')',
-                         "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
+                         # "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
+                         "dt_begin": dt_begin.strftime('%Y/%m/%d'),  # 업무 시작일을 웹에서 받는다. 2019/05/25
                          "dt_end": work.dt_end.strftime('%Y/%m/%d'),
                          "dt_answer_deadline": rqst['dt_answer_deadline'],
                          "staff_name": work.staff_name,
@@ -2235,7 +2252,7 @@ def reg_employee(request):
                 employee_id=sms_result[phone],
                 is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
                 is_active=0,  # 근무 중 아님
-                dt_begin=work.dt_begin,
+                dt_begin=dt_begin,
                 dt_end=work.dt_end,
                 work_id=work.id,
                 pNo=phone,

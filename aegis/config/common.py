@@ -6,6 +6,7 @@ from Crypto.Hash import SHA256
 from .log import logSend, logError
 from .status_collection import *
 from .secret import AES_DECRYPT_BASE64
+import datetime
 
 
 # # Cross-Origin Read Allow Rule
@@ -157,3 +158,30 @@ def is_parameter_ok(rqst, key_list) -> dict:
     return results
 
 
+def str_to_datetime(date_time):
+    """
+    string to datetime
+    - 정해진 양식을 지켜야 한다.
+    - 양식 YYYY-MM-DD HH:MM:SS
+    - 사용 예
+        '2019-05'				2019-05-01 00:00:00
+        '2019-05-05'			2019-05-05 00:00:00
+        '2019-05-05 17'			2019-05-05 17:00:00
+        '2019-05-05 17:30'		2019-05-05 17:30:00
+        '2019-05-05 17:30:50'	2019-05-05 17:30:50
+    """
+    date_time_divide = date_time.split()
+    date = date_time_divide[0]
+    date_divide = date.split('-')
+    if len(date_divide) == 2:
+        return datetime.datetime.strptime(date_divide[0] + '-' + date_divide[1]+'-01 00:00:00', "%Y-%m-%d %H:%M:%S")
+    if len(date_time_divide) == 1:
+        return datetime.datetime.strptime(date + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
+    else:
+        time = date_time_divide[1]
+        time_divide = time.split(':')
+        if len(time_divide) == 1:
+            return datetime.datetime.strptime(date + ' ' + time + ':00:00', "%Y-%m-%d %H:%M:%S")
+        if len(time_divide) == 2:
+            return datetime.datetime.strptime(date + ' ' + time + ':00', "%Y-%m-%d %H:%M:%S")
+    return datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
