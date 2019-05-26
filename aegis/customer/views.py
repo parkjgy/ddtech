@@ -377,102 +377,96 @@ def update_customer(request):
     worker = Staff.objects.get(id=worker_id)
 
     customer = Customer.objects.get(id=worker.co_id)
-    logSend(customer.corp_name)
-    logSend(str(customer.staff_id))
-    logSend(str(customer.manager_id))
+    logSend('--- corp_name{}, worker_id: {}, staff_id: {}, manager_id: {}'.format(customer.corp_name, worker_id, customer.staff_id,
+                                                                                customer.manager_id))
+    # 담당자(is_site_owner) 나 관리자(is_manager)가 아니면 권한이 없다.
     if not(worker.is_site_owner or worker.is_manager):
-        logSend('담당자나 관리자만 변경 가능합니다.')
         func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
-    if customer.staff_id != worker.id and customer.manager_id != worker.id:
-        logSend('담당자나 관리자만 변경 가능합니다.')
+    # 작업자(worker.id) 가 고객사의 담당자(staff_id)나 관리자(staff_id)가 아니면 권한이 없다. - id 로 확인한다.
+    if worker.id not in [customer.staff_id, customer.manager_id]:
         func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
-    if 'staff_id' in rqst:
-        logSend('staff_id 있음')
-        staff_id = rqst['staff_id']
-        if len(staff_id) > 0:
-            logSend('staff_id 값이 있음')
-            # staff_id 복호화에서 에러나면 처리 방법이 없음.
-            staff_id = AES_DECRYPT_BASE64(staff_id)
-            # 로그인 직원과 담당자가 같은면 처리 안함
-            logSend(worker_id, staff_id)
-            if str(staff_id) != str(worker_id):
-                staffs = Staff.objects.filter(id=staff_id)
-                if len(staffs) > 0:
-                    staff = staffs[0]
-                    customer.staff_id = staff.id
-                    customer.staff_name = staff.name
-                    customer.staff_pNo = no_only_phone_no(staff.pNo)
-                    customer.staff_email = staff.email
+
+    is_logout = False # 담당자나 관리자가 바뀌면 로그아웃할 flag
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
+    if parameter_check['is_ok']:
+        staff_id = int(parameter_check['parameters']['staff_id'])
+        # 기존 담당자(customer.staff_id) 와 새로운 담당자(staff_id)가 같으면 처리할 필요 없다.
+        if customer.staff_id != staff_id:
+            staffs = Staff.objects.filter(id=staff_id)
+            if len(staffs) == 0:
+                logError(func_name, ' Staff(id:{})가 없어서 담당자가 교체되지 않았다.'.format(staff_id))
+            else:
+                if len(staffs) > 1:
+                    logError(func_name, ' Staff(id:{})가 중복되었다.'.format(staff_id))
+                staff = staffs[0]
+                customer.staff_id = staff.id
+                customer.staff_name = staff.name
+                customer.staff_pNo = no_only_phone_no(staff.pNo)
+                customer.staff_email = staff.email
+                customer.save()
+
+                staff.is_site_owner = True
+                staff.save()
+
+                is_logout = True
+
+                if customer.manager_id == worker.id:
+                    # 관리자가 담당자를 바꾸었기 때문에 로그아웃하지 않는다.
+                    is_logout = False
+
+                worker.is_site_owner = False
+                worker.is_login = False
+                worker.dt_login = datetime.datetime.now()
+                worker.save()
+
+    parameter_check = is_parameter_ok(rqst, ['manager_id_!'])
+    if parameter_check['is_ok']:
+        manager_id = int(parameter_check['parameters']['manager_id'])
+        # 작업자(work_id)가 관리자(customer.manager_id)가 아니면 처리하지 않는다.
+        if customer.manager_id == worker_id:
+            # 기존 관리자(customer.manager_id)와 새로운 관리자(manager_id)가 같으면 처리하지 않는다.
+            if customer.manager_id != manager_id:
+                managers = Staff.objects.filter(id=manager_id)
+                if len(managers) == 0:
+                    logError(func_name, ' Staff(id:{})가 없어서 관리자가 교체되지 않았다.'.format(manager_id))
+                else:
+                    if len(managers) > 1:
+                        logError(func_name, ' Staff(id:{})가 중복되었다.'.format(manager_id))
+                    manager = managers[0]
+                    customer.manager_id = manager.id
+                    customer.manager_name = manager.name
+                    customer.manager_pNo = no_only_phone_no(manager.pNo)
+                    customer.manager_email = manager.email
                     customer.save()
-                    staff.is_site_owner = True
-                    staff.save()
 
-                    if customer.manager_id == worker.id:
-                        # 관리자가 담당자를 바꾸었기 때문에 로그아웃하지 않는다.
-                        func_end_log(func_name)
-                        return REG_200_SUCCESS.to_json_response()
+                    manager.is_manager = True
+                    manager.save()
 
-                    worker.is_site_owner = False
+                    worker.is_manager = False
                     worker.is_login = False
                     worker.dt_login = datetime.datetime.now()
                     worker.save()
-                    del request.session['id']
 
-                    func_end_log(func_name)
-                    return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'staff_id 가 잘못된 값입니다.'})
-
-    if 'manager_id' in rqst:
-        logSend('manager_id 있음')
-        manager_id = rqst['manager_id']
-        if len(manager_id) > 0:
-            logSend('manager_id 값이 있음')
-            # staff_id 복호화에서 에러나면 처리 방법이 없음.
-            manager_id = AES_DECRYPT_BASE64(manager_id)
-            # 로그인 직원과 담당자가 같은면 처리 안함
-            logSend(worker_id, manager_id)
-            if str(manager_id) != str(worker_id):
-                managers = Staff.objects.filter(id=manager_id)
-                if len(managers) > 0:
-                    if worker.is_manager:
-                        manager = managers[0]
-                        customer.manager_id = manager.id
-                        customer.manager_name = manager.name
-                        customer.manager_pNo = no_only_phone_no(manager.pNo)
-                        customer.manager_email = manager.email
-                        customer.save()
-                        manager.is_manager = True
-                        manager.save()
-
-                        worker.is_manager = False
-                        worker.is_login = False
-                        worker.dt_login = datetime.datetime.now()
-                        worker.save()
-                        del request.session['id']
-
-                        func_end_log(func_name)
-                        return REG_200_SUCCESS.to_json_response({'message': '관리자가 바뀌어 로그아웃되었습니다.'})
-                    else:
-                        func_end_log(func_name)
-                        return REG_521_MODIFY_MANAGER_ONLY.to_json_response()
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'manager_id 가 잘못된 값입니다.'})
+                    is_logout = True
 
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, customer)
 
-    if 'dt_payment' in rqst:
-        dt_payment = rqst['dt_payment']
-        if len(dt_payment) > 0:
-            str_dt_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print(str_dt_now)
-            str_dt_now = str_dt_now[:8] + dt_payment + str_dt_now[10:]
-            print(str_dt_now)
-            customer.dt_payment = datetime.datetime.strptime(str_dt_now, '%Y-%m-%d %H:%M:%S')
+    parameter_check = is_parameter_ok(rqst, ['dt_payment'])
+    if parameter_check['is_ok']:
+        dt_payment = parameter_check['parameters']['dt_payment']
+        dt_payment = datetime.datetime.now().strftime('%Y-%m-') + dt_payment + ' 16:00:00'
+        customer.dt_payment = datetime.datetime.strptime(dt_payment, '%Y-%m-%d %H:%M:%S')
+        logSend('--- dt_payment: {}'.format(customer.dt_payment))
         customer.save()
+
+    if is_logout:
+        # 담당자나 관리자가 바뀌었으면 로그아웃한다.
+        del request.session['id']
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': '담당자가 바뀌어 로그아웃되었습니다.'})
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
