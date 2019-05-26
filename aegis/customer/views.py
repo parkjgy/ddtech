@@ -377,33 +377,33 @@ def update_customer(request):
     worker = Staff.objects.get(id=worker_id)
 
     customer = Customer.objects.get(id=worker.co_id)
-    print(customer.corp_name)
-    print(str(customer.staff_id))
-    print(str(customer.manager_id))
+    logSend(customer.corp_name)
+    logSend(str(customer.staff_id))
+    logSend(str(customer.manager_id))
     if not(worker.is_site_owner or worker.is_manager):
-        print('담당자나 관리자만 변경 가능합니다.')
+        logSend('담당자나 관리자만 변경 가능합니다.')
         func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
     if customer.staff_id != worker.id and customer.manager_id != worker.id:
-        print('담당자나 관리자만 변경 가능합니다.')
+        logSend('담당자나 관리자만 변경 가능합니다.')
         func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
     if 'staff_id' in rqst:
-        print('staff_id 있음')
+        logSend('staff_id 있음')
         staff_id = rqst['staff_id']
         if len(staff_id) > 0:
-            print('staff_id 값이 있음')
+            logSend('staff_id 값이 있음')
             # staff_id 복호화에서 에러나면 처리 방법이 없음.
             staff_id = AES_DECRYPT_BASE64(staff_id)
             # 로그인 직원과 담당자가 같은면 처리 안함
-            print(worker_id, staff_id)
+            logSend(worker_id, staff_id)
             if str(staff_id) != str(worker_id):
                 staffs = Staff.objects.filter(id=staff_id)
                 if len(staffs) > 0:
                     staff = staffs[0]
                     customer.staff_id = staff.id
                     customer.staff_name = staff.name
-                    customer.staff_pNo = phone_format(staff.pNo)
+                    customer.staff_pNo = no_only_phone_no(staff.pNo)
                     customer.staff_email = staff.email
                     customer.save()
                     staff.is_site_owner = True
@@ -426,14 +426,14 @@ def update_customer(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'staff_id 가 잘못된 값입니다.'})
 
     if 'manager_id' in rqst:
-        print('manager_id 있음')
+        logSend('manager_id 있음')
         manager_id = rqst['manager_id']
         if len(manager_id) > 0:
-            print('manager_id 값이 있음')
+            logSend('manager_id 값이 있음')
             # staff_id 복호화에서 에러나면 처리 방법이 없음.
             manager_id = AES_DECRYPT_BASE64(manager_id)
             # 로그인 직원과 담당자가 같은면 처리 안함
-            print(worker_id, manager_id)
+            logSend(worker_id, manager_id)
             if str(manager_id) != str(worker_id):
                 managers = Staff.objects.filter(id=manager_id)
                 if len(managers) > 0:
@@ -441,7 +441,7 @@ def update_customer(request):
                         manager = managers[0]
                         customer.manager_id = manager.id
                         customer.manager_name = manager.name
-                        customer.manager_pNo = phone_format(manager.pNo)
+                        customer.manager_pNo = no_only_phone_no(manager.pNo)
                         customer.manager_email = manager.email
                         customer.save()
                         manager.is_manager = True

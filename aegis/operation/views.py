@@ -3877,17 +3877,39 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
-    employee_data = {
-        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-        'dt_answer_deadline': '2019-05-28 19:00',
-        'dt_begin': '2019-05-29',
-        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-            [
-                '010-2557-3555', '011-8888-9999',
-            ]
+    # employee_data = {
+    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #     'dt_answer_deadline': '2019-05-28 19:00',
+    #     'dt_begin': '2019-05-29',
+    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+    #         [
+    #             '010-2557-3555', '011-8888-9999',
+    #         ]
+    #     }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/reg_staff 고객웹에서 관리자 등록하면 로그인이 안됨
+    # ---------------------------------------------------------------------------------------
+    staff_data = {
+            'name': '홍길동',
+            'login_id': 'hong_guel_dong',
+            'position': '',	   # option 비워서 보내도 됨
+            'department': '',	# option 비워서 보내도 됨
+            'pNo': '010-8433-3579', # '-'를 넣어도 삭제되어 저장 됨
+            'email': 'id@ddtechi.com',
         }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
+    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+
+    login_data = {"login_id": "hong_guel_dong",
+                  "login_pw": "happy_day!!!"
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
