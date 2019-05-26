@@ -388,7 +388,7 @@ def update_customer(request):
         func_end_log(func_name)
         return REG_522_MODIFY_SITE_OWNER_OR_MANAGER_ONLY.to_json_response()
 
-    is_logout = False # 담당자나 관리자가 바뀌면 로그아웃할 flag
+    is_logout = False  # 담당자나 관리자가 바뀌면 로그아웃할 flag
     parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
     if parameter_check['is_ok']:
         staff_id = int(parameter_check['parameters']['staff_id'])

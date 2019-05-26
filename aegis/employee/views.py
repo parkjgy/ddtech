@@ -11,6 +11,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import status422, no_only_phone_no, phone_format, dt_null, is_parameter_ok, str_to_datetime
+from config.common import str_no
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -89,12 +90,18 @@ def table_reset_and_clear_for_operation(request):
 def check_version(request):
     """
     앱 버전을 확인한다. (마지막 190111 은 필히 6자리)
-    http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111
+    - status code:416 이 들오오면 앱의 기존 사용자 데이터를 삭제하고 전화번호 인증부터 다시 받으세요.
+    http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111&i=BbaBa43219999QJ4CSvmpM14fuSxyhyufYQ
     GET
         v=A.1.0.0.190111
             # A.     : phone type - A or i
             # 1.0.0. : 앱의 버전 구분 업그레이드 필요성과 상관 없다.
             # 190111 : 서버와 호환되는 날짜 - 이 날짜에 의해 서버는 업그레이드 필요를 응답한다.
+        i=근로자정보 (전화인증이 끝난 경우만 보낸다.)
+            # 등록할 때 서버에서 받은 암호화된 id: eeeeeeeeeeeeeeeeeeeeee
+            # 전화번호: 010-1111-2222 > aBa11112222
+            # 전화번호 자릿수: 11 > Bb
+            # 근로자 정보: BbaBa11112222eeeeeeeeeeeeeeeeeeeeee << Ba aBa 1111 2222 eeeeeeeeeeeeeeeeeeeeee
 
     response
         STATUS 200
@@ -103,7 +110,11 @@ def check_version(request):
             'msg': '업그레이드가 필요합니다.'
             'url': 'http://...' # itune, google play update
         }
+        STATUS 416 # 개발자 수정사항 - 앱의 기존 사용자 데이터를 삭제하고 전화번호 인증부터 다시 받으세요.
+            {'message': '앱이 리셋됩니다.\n다시 실행해주세요.'}
         STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: 잘못된 id 예요'}  # i 에 들어가는 [암호화된 id] 가 잘못되었다.
+            {'message': "ClientError: parameter 'v' 가 없어요'}
             {'message':'ClientError: parameter \'v\' 에 phone type 이 없어요'}
 
     """
@@ -115,7 +126,34 @@ def check_version(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    version = rqst['v']
+    parameter_check = is_parameter_ok(rqst, ['i'])
+    if parameter_check['is_ok']:
+        info = parameter_check['parameters']['i']
+        phone_count = str_no(info[:2])
+        phone_no = info[2:int(phone_count) + 2]
+        phone_head = str_no(phone_no[:3])
+        phone_no = phone_head + phone_no[3:]
+        cypher_passer_id = info[int(phone_count) + 2:]
+        passer_id = AES_DECRYPT_BASE64(cypher_passer_id)
+        if passer_id == '__error':
+            return status422(func_name, {'message': 'ClientError: 잘못된 id 예요'})
+        try:
+            passer = Passer.objects.get(pNo=phone_no)
+        except Exception as e:
+            logError(func_name, ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
+            func_end_log(func_name)
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
+        if passer.id != int(passer_id):
+            logError(func_name, ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
+            func_end_log(func_name)
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
+
+    parameter_check = is_parameter_ok(rqst, ['v'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # func_end_log(func_name)
+        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    version = parameter_check['parameters']['v']
 
     items = version.split('.')
     phone_type = items[0]

@@ -185,3 +185,22 @@ def str_to_datetime(date_time):
         if len(time_divide) == 2:
             return datetime.datetime.strptime(date + ' ' + time + ':00', "%Y-%m-%d %H:%M:%S")
     return datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
+
+
+def str_no(str_no) -> str:
+    """
+    문자열을 숫자문자로 변경
+    A->0
+    a->0
+    :param str:
+    :return:
+    """
+    result = ''
+    for i in range(len(str_no)):
+        i_char = ord(str_no[i])
+        if i_char < ord('a'):
+            no_char = chr(i_char - ord('A') + ord('0'))
+        else:
+            no_char = chr(i_char - ord('a') + ord('0'))
+        result += no_char
+    return result
