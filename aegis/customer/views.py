@@ -2195,7 +2195,7 @@ def reg_employee(request):
     #
     # 상용 서버를 위한 일시적 방법
     #
-    if 'dt_begin' in rqst:
+    if 'dt_begin' not in rqst:
         dt_begin = work.dt_begin
     else:
         dt_begin = str_to_datetime(rqst['dt_begin'])

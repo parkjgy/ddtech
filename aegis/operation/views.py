@@ -3877,17 +3877,17 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
-    # employee_data = {
-    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-    #     'dt_answer_deadline': '2019-05-28 19:00',
-    #     'dt_begin': '2019-05-29',
-    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-    #         [
-    #             '010-2557-3555', '011-8888-9999',
-    #         ]
-    #     }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    employee_data = {
+        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+        'dt_answer_deadline': '2019-05-28 19:00',
+        # 'dt_begin': '2019-05-29',
+        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+            [
+                '010-2557-3555', '011-8888-9999',
+            ]
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
@@ -3918,18 +3918,18 @@ def test_go_go(request):
     # r = s.post(settings.CUSTOMER_URL + 'staff_background', json={'staff_id': staff_id})
     # result.append({'url': r.url, 'POST': {'staff_id': staff_id}, 'STATUS': r.status_code, 'R': r.json()})
 
-    staff_infor = {'staff_id': AES_ENCRYPT_BASE64('3'),
-                   # 'new_login_id': 'think',
-                   'before_pw': 'happy_day!!!',
-                   'login_pw': 'parkjong_1',
-                   'name': '박종기',
-                   'position': '직책',
-                   'department': '부서 or 소속',
-                   'phone_no': '010-1111-2222',
-                   'email': 'id@ddtechi.com'
-                   }
-    r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_infor)
-    result.append({'url': r.url, 'POST': staff_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # staff_infor = {'staff_id': AES_ENCRYPT_BASE64('3'),
+    #                # 'new_login_id': 'think',
+    #                'before_pw': 'happy_day!!!',
+    #                'login_pw': 'parkjong_1',
+    #                'name': '박종기',
+    #                'position': '직책',
+    #                'department': '부서 or 소속',
+    #                'phone_no': '010-1111-2222',
+    #                'email': 'id@ddtechi.com'
+    #                }
+    # r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_infor)
+    # result.append({'url': r.url, 'POST': staff_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/update_customer 고객웹에서 고객사 정보 수정
