@@ -676,7 +676,7 @@ def list_staff(request):
             'name': staff.name,
             'position': staff.position,
             'department': staff.department,
-            'pNo': staff.pNo,
+            'pNo': phone_format(staff.pNo),
             'pType': staff.pType,
             'email': staff.email,
             'is_worker': True if staff.id == worker.id else False
