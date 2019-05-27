@@ -1063,16 +1063,28 @@ def login(request):
     login_pw = rqst['login_pw'].replace(' ', '')
     logSend(hash_SHA256(login_pw), ' - [', login_pw, ']' )
 
-    staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
+    staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
-        staffs = Staff.objects.filter(login_id=login_id)
-        if len(staffs) > 0:
-            staff = staffs[0]
-            logSend(hash_SHA256(login_pw), ' vs\n', staff.login_pw)
-
         func_end_log(func_name)
-        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message': '아이디가 없습니다.'})
+    elif len(staffs) > 1:
+        logError(func_name, ' login id: {} 가 중복됩니다.')
     staff = staffs[0]
+    logSend('--- server: [{}] vs login [{}]'.format(staff.login_pw, login_pw))
+    if staff.login_pw != login_pw:
+        func_end_log(func_name)
+        return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message': '비밀번호가 틀렸습니다.'})
+
+    # staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
+    # if len(staffs) == 0:
+    #     staffs = Staff.objects.filter(login_id=login_id)
+    #     if len(staffs) > 0:
+    #         staff = staffs[0]
+    #         logSend(hash_SHA256(login_pw), ' vs\n', staff.login_pw)
+    #
+    #     func_end_log(func_name)
+    #     return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
+    # staff = staffs[0]
     staff.dt_login = datetime.datetime.now()
     staff.is_login = True
     staff.save()
