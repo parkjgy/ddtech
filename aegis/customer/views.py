@@ -1315,6 +1315,7 @@ def update_staff(request):
             customer.staff_pNo = parameter['phone_no']
         if 'email' in parameter:
             customer.staff_email = parameter['email']
+        logSend('--- 파견업체: {}, 담당자: {} {} {}'.format(customer.corp_name, customer.staff_name, customer.staff_pNo, customer.staff_email))
         customer.save()
 
     customers = Customer.objects.filter(manager_id=edit_staff.id)
@@ -1325,6 +1326,7 @@ def update_staff(request):
             customer.manager_pNo = parameter['phone_no']
         if 'email' in parameter:
             customer.manager_email = parameter['email']
+        logSend('--- 파견업체: {}, 관리자: {} {} {}'.format(customer.corp_name, customer.manager_name, customer.manager_pNo, customer.manager_email))
         customer.save()
 
     work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
@@ -1335,6 +1337,7 @@ def update_staff(request):
             work_place.manager_pNo = parameter['phone_no']
         if 'email' in parameter:
             work_place.manager_email = parameter['email']
+        logSend('--- 사업장: {}, 관리자: {} {} {}'.format(work_place.name, work_place.manager_name, work_place.manager_pNo, work_place.manager_email))
         work_place.save()
 
     works = Work.objects.filter(staff_id=edit_staff.id)
@@ -1345,6 +1348,7 @@ def update_staff(request):
             work.staff_pNo = parameter['phone_no']
         if 'email' in parameter:
             work.staff_email = parameter['email']
+        logSend('--- 업무: {}, 담당자: {} {} {}'.format(work.name, work.staff_name, work.staff_pNo, work.staff_email))
         work.save()
 
     # id, pw 가 변경되었으면 처리가 끝나고 로그아웃
