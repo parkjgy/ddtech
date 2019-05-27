@@ -331,7 +331,7 @@ def update_work_for_customer(request):
           "dt_end": "2019/03/31",
           "dt_answer_deadline": 2019-03-03 19:00:00,
           "staff_name": "이수용",
-          "staff_phone": "01099993333",
+          "staff_pNo": "01099993333",
         }
     response
         STATUS 200
@@ -354,7 +354,7 @@ def update_work_for_customer(request):
             begin=rqst["begin"],
             end=rqst["end"],
             staff_name=rqst["staff_name"],
-            staff_pNo=rqst["staff_phone"],
+            staff_pNo=rqst["staff_pNo"],
         )
         work.save()
     else:
