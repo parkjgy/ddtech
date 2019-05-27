@@ -1061,7 +1061,7 @@ def login(request):
 
     login_id = rqst['login_id'].replace(' ', '')
     login_pw = rqst['login_pw'].replace(' ', '')
-    logSend(hash_SHA256(login_pw), ' - [', login_pw, ']' )
+    logSend('--- login_id: [{}], pw [{}] - [{}]'.format(login_id, login_pw, hash_SHA256(login_pw)))
 
     staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
@@ -1070,8 +1070,8 @@ def login(request):
     elif len(staffs) > 1:
         logError(func_name, ' login id: {} 가 중복됩니다.')
     staff = staffs[0]
-    logSend('--- server: [{}] vs login [{}]'.format(staff.login_pw, login_pw))
-    if staff.login_pw != login_pw:
+    logSend('--- server: [{}] vs login [{}]'.format(staff.login_pw, hash_SHA256(login_pw)))
+    if staff.login_pw != hash_SHA256(login_pw):
         func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message': '비밀번호가 틀렸습니다.'})
 
