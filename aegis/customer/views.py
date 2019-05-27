@@ -3504,13 +3504,13 @@ def staff_employees_at_day(request):
     year_month_day = parameter_check['parameters']['year_month_day']
 
     staffs = Work.objects.filter(id=staff_id)
-    if len(staffs) != 1:
-        logError(func_name, ' ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id)
+    if len(staffs) == 0:
+        logError(func_name, ' ServerError: Staff 에 staff_id={} 이(가) 없거나 중복됨'.format(staff_id))
         return status422(func_name, {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
 
     works = Work.objects.filter(id=work_id)
-    if len(works) != 1:
-        logError(func_name, ' ServerError: Work 에 work_id=%s 이(가) 없거나 중복됨' % work_id)
+    if len(works) == 0:
+        logError(func_name, ' ServerError: Work 에 work_id={} 이(가) 없거나 중복됨'.format(work_id))
         return status422(func_name, {'message': 'ServerError: 업무가 등록되어 있지 않거나 중복되었다.'})
     work = works[0]
 
@@ -3541,7 +3541,7 @@ def staff_employees_at_day(request):
     for employee in employee_list:
         pass_record = pass_record_dic[employee.id]
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
@@ -3602,8 +3602,8 @@ def staff_employees(request):
             {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
 
-            {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'}
-            {'message': 'ServerError: 업무가 등록되어 있지 않거나 중복되었다.'}
+            {'message': 'ServerError: 등록되지 않은 관리자 입니다.'}
+            {'message': 'ServerError: 등록되지 않은 업무 입니다.'}
             {'message': '이미 업무가 시직되었습니다. >> staff_employees_at_day'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -3622,14 +3622,14 @@ def staff_employees(request):
     work_id = int(parameter_check['parameters']['work_id'])
 
     staffs = Staff.objects.filter(id=staff_id)
-    if len(staffs) != 1:
-        logError(func_name, ' ServerError: Staff 에 staff_id=[{}] 이(가) 없거나 중복됨'.format(staff_id))
-        return status422(func_name, {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
+    if len(staffs) == 0:
+        logError(func_name, ' ServerError: Staff 에 staff_id=[{}] 이(가) 없다'.format(staff_id))
+        return status422(func_name, {'message': 'ServerError: 등록되지 않은 관리자 입니다.'})
 
     works = Work.objects.filter(id=work_id)
-    if len(works) != 1:
-        logError(func_name, ' ServerError: Work 에 work_id=%s 이(가) 없거나 중복됨' % work_id)
-        return status422(func_name, {'message': 'ServerError: 업무가 등록되어 있지 않거나 중복되었다.'})
+    if len(works) == 0:
+        logError(func_name, ' ServerError: Work 에 work_id={} 이(가) 없거나 중복됨'.format(work_id))
+        return status422(func_name, {'message': 'ServerError: 등록되지 않은 업무 입니다.'})
     work = works[0]
 
     is_work_begin = True if work.dt_begin < datetime.datetime.now() else False
@@ -3641,7 +3641,7 @@ def staff_employees(request):
     arr_employee = []
     for employee in employees:
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
