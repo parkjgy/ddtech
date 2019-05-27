@@ -3892,42 +3892,49 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff 고객웹에서 관리자 등록하면 로그인이 안됨
     # ---------------------------------------------------------------------------------------
-    # staff_data = {
-    #         'name': '홍길동',
-    #         'login_id': 'hong_guel_dong',
-    #         'position': '',	   # option 비워서 보내도 됨
-    #         'department': '',	# option 비워서 보내도 됨
-    #         'pNo': '010-8433-3579', # '-'를 넣어도 삭제되어 저장 됨
-    #         'email': 'id@ddtechi.com',
-    #     }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
-    # result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
-    #
-    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    #
-    # login_data = {"login_id": "hong_guel_dong",
-    #               "login_pw": "happy_day!!!"
-    #               }
-    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    staff_data = {
+            'name': '홍길동',
+            'login_id': 'hong_guel_dong',
+            'position': '',	   # option 비워서 보내도 됨
+            'department': '',	# option 비워서 보내도 됨
+            'pNo': '010-8433-3579', # '-'를 넣어도 삭제되어 저장 됨
+            'email': 'id@ddtechi.com',
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
+    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+
+    login_data = {"login_id": "hong_guel_dong",
+                  "login_pw": "happy_day!!!"
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'staff_fg', json=login_data)
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    staff_id = r.json()['staff_id']
+
+    r = s.post(settings.CUSTOMER_URL + 'staff_background', json={'staff_id': staff_id})
+    result.append({'url': r.url, 'POST': {'staff_id': staff_id}, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/update_customer 고객웹에서 고객사 정보 수정
     # ---------------------------------------------------------------------------------------
-    customer_data = {
-            'staff_id': AES_ENCRYPT_BASE64('1'),  #'서버에서 받은 암호화된 id', # 담당자를 변경할 때만 (담당자, 관리자만 변경 가능)
-            'manager_id': AES_ENCRYPT_BASE64('1'),  #'서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
-            'name': '대덕테크',
-            'regNo': '123-00-12345',    # 사업자등록번호
-            'ceoName': '대표자',           # 성명
-            'address': '사업장 소재지',
-            'business_type': '업태',
-            'business_item': '종목',
-            'dt_reg': '2018-03-01',  # 사업자등록일
-            'dt_payment': '25',  # 유료고객의 결제일 (5, 10, 15, 20, 25 중 에서 선택) 담당자, 관리자만 변경 가능
-    	}
-    r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_data)
-    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
+    # customer_data = {
+    #         'staff_id': AES_ENCRYPT_BASE64('1'),  #'서버에서 받은 암호화된 id', # 담당자를 변경할 때만 (담당자, 관리자만 변경 가능)
+    #         'manager_id': AES_ENCRYPT_BASE64('1'),  #'서버에서 받은 암호화된 id', # 관리자를 변경할 때만 (관리자만 변경 가능)
+    #         'name': '대덕테크',
+    #         'regNo': '123-00-12345',    # 사업자등록번호
+    #         'ceoName': '대표자',           # 성명
+    #         'address': '사업장 소재지',
+    #         'business_type': '업태',
+    #         'business_item': '종목',
+    #         'dt_reg': '2018-03-01',  # 사업자등록일
+    #         'dt_payment': '25',  # 유료고객의 결제일 (5, 10, 15, 20, 25 중 에서 선택) 담당자, 관리자만 변경 가능
+    # 	}
+    # r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_data)
+    # result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
