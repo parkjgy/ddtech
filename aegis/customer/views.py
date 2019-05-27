@@ -1040,7 +1040,8 @@ def login(request):
           }
         }
         STATUS 530
-            {'message':'아이디나 비밀번호가 틀립니다.'}
+            {'message': '아이디가 없습니다.'}
+            {'message': '비밀번호가 틀렸습니다.'}
     	STATUS 200
         {
             'co_id': '암호화된 소속회사 id',
