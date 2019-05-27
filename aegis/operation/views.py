@@ -3890,33 +3890,46 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
-    # TEST: /customer/reg_staff 고객웹에서 관리자 등록하면 로그인이 안됨
+    # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
     # ---------------------------------------------------------------------------------------
-    staff_data = {
-            'name': '홍길동',
-            'login_id': 'hong_guel_dong',
-            'position': '',	   # option 비워서 보내도 됨
-            'department': '',	# option 비워서 보내도 됨
-            'pNo': '010-8433-3579', # '-'를 넣어도 삭제되어 저장 됨
-            'email': 'id@ddtechi.com',
-        }
-    r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
-    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    # staff_data = {
+    #         'name': '홍길동',
+    #         'login_id': 'hong_guel_dong',
+    #         'position': '',	   # option 비워서 보내도 됨
+    #         'department': '',	# option 비워서 보내도 됨
+    #         'pNo': '010-8433-3579', # '-'를 넣어도 삭제되어 저장 됨
+    #         'email': 'id@ddtechi.com',
+    #     }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
+    # result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    #
+    # login_data = {"login_id": "hong_guel_dong",
+    #               "login_pw": "happy_day!!!"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'staff_fg', json=login_data)
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    # staff_id = r.json()['staff_id']
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'staff_background', json={'staff_id': staff_id})
+    # result.append({'url': r.url, 'POST': {'staff_id': staff_id}, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-
-    login_data = {"login_id": "hong_guel_dong",
-                  "login_pw": "happy_day!!!"
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    r = s.post(settings.CUSTOMER_URL + 'staff_fg', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-    staff_id = r.json()['staff_id']
-
-    r = s.post(settings.CUSTOMER_URL + 'staff_background', json={'staff_id': staff_id})
-    result.append({'url': r.url, 'POST': {'staff_id': staff_id}, 'STATUS': r.status_code, 'R': r.json()})
+    staff_infor = {'staff_id': AES_ENCRYPT_BASE64('3'),
+                   # 'new_login_id': 'think',
+                   'before_pw': 'happy_day!!!',
+                   'login_pw': 'parkjong_1',
+                   'name': '박종기',
+                   'position': '직책',
+                   'department': '부서 or 소속',
+                   'phone_no': '010-1111-2222',
+                   'email': 'id@ddtechi.com'
+                   }
+    r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_infor)
+    result.append({'url': r.url, 'POST': staff_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/update_customer 고객웹에서 고객사 정보 수정

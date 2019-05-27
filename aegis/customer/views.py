@@ -1198,8 +1198,8 @@ def update_staff(request):
     	    {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
     	STATUS 531
     		{'message': '비밀번호가 틀립니다.'}
-            {'message':'비밀번호는 8자 이상으로 만들어야 합니다.'}
-            {'message':'영문, 숫자, 특수문자가 모두 포합되어야 합니다.'}
+            {'message': '비밀번호는 8자 이상으로 만들어야 합니다.'}
+            {'message': '영문, 숫자, 특수문자가 모두 포합되어야 합니다.'}
     	STATUS 542
     	    {'message':'아이디는 5자 이상으로 만들어야 합니다.'}
     	    {'message':'아이디가 중복됩니다.'}
@@ -1230,140 +1230,128 @@ def update_staff(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    if not 'staff_id' in rqst:
-        return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 가 없어요'})
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요. <암호해독 에러>'})
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    staff_id = parameter_check['parameters']['staff_id']
+
     if int(staff_id) != worker_id:
         # 수정할 직원과 로그인한 직원이 같지 않으면 - 자신의 정보를 자신이 수정할 수는 있지만 관리자가 아니면 다른 사람의 정보 수정이 금지된다.
         if not (worker.is_site_owner or worker.is_manager):
             return status422(func_name, {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'})
     staffs = Staff.objects.filter(id=staff_id)
     if len(staffs) == 0:
-        return status422(func_name, {'message': 'ServerError: parameter \'%s\' 의 직원이 없다.' % staff_id})
+        return status422(func_name, {'message': 'ServerError: staff_id: {} 인 직원이 없다.'.format(staff_id)})
     edit_staff = staffs[0]
     parameter = {}
     for x in rqst.keys():
         parameter[x] = rqst[x]
-    print(parameter)
+    logSend(parameter)
+
+    # 비밀번호 확인
+    if not ('before_pw' in parameter) or \
+            len(parameter['before_pw']) == 0 or \
+            hash_SHA256(parameter['before_pw']) != edit_staff.login_pw:
+        # 현재 비밀번호가 없거나, 비밀번호를 넣지 않았거나 비밀번호가 다르면
+        func_end_log(func_name)
+        return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message': '비밀번호가 틀렸습니다.'})
+
     # 새로운 id 중복 여부 확인
     if 'new_login_id' in parameter:
         new_login_id = parameter['new_login_id']  # 기존 비밀번호
         if len(new_login_id) < 5: # id 글자수 5자 이상으로 제한
             func_end_log(func_name)
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디는 5자 이상으로 만들어야 합니다.'})
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디는 5자 이상으로 만들어야 합니다.'})
         duplicate_staffs = Staff.objects.filter(login_id=new_login_id)
         if len(duplicate_staffs) > 0:
             func_end_log(func_name)
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'아이디가 중복됩니다.'})
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '다른 사람이 사용중인 아이디 입니다.'})
         parameter['login_id'] = new_login_id
         del parameter['new_login_id']
-    print(parameter)
-    # 비밀번호 확인
-    if not ('before_pw' in parameter) or len(parameter['before_pw']) == 0 or hash_SHA256(parameter['before_pw']) != edit_staff.login_pw:
-        # 현재 비밀번호가 없거나, 비밀번호를 넣지 않았거나 비밀번호가 다르면
-        func_end_log(func_name)
-        return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
-    print(parameter)
     # 새로운 pw 8자 이상, alphabet, number, 특수문자 포함여부 확인
     if 'login_pw' in parameter:
         login_pw = parameter['login_pw']
-        if len(login_pw) < 8: # id 글자수 8자 이상으로 제한
+        if len(login_pw) < 8:  # id 글자수 8자 이상으로 제한
             func_end_log(func_name)
-            return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'비밀번호는 8자 이상으로 만들어야 합니다.'})
+            return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message': '비밀번호는 8자 이상으로 만들어야 합니다.'})
+        #
         # alphabet, number, 특수문자 포함여부 확인
-        # func_end_log(func_name)
-        # return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'영문, 숫자, 특수문자가 모두 포합되어야 합니다.'})
+        #
+        if not (any(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' for c in login_pw) and
+                any(c in '0123456789' for c in login_pw) and
+                any(c in '-_!@#$%^&*(){}[]/?' for c in login_pw)):
+            func_end_log(func_name)
+            return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message':'영문, 숫자, 특수문자(-_!@#$%^&*(){}[]/?)가 모두 포합되어야 합니다.'})
         parameter['login_pw'] = hash_SHA256(login_pw)
 
-    print(parameter)
+    logSend(parameter)
     if 'phone_no' in parameter:
-        parameter['phone_no'] = no_only_phone_no(parameter['phone_no'])
+        parameter['pNo'] = no_only_phone_no(parameter['phone_no'])
+        del parameter['phone_no']
     is_update_worker = False
-    for key in ['login_id', 'login_pw', 'name', 'position', 'department', 'phone_no', 'phone_type', 'push_token', 'email']:
-        print('key', key)
+    for key in ['login_id', 'login_pw', 'name', 'position', 'department', 'pNo', 'email']:
+        logSend('key', key)
         if key in parameter:
-            print('     value', parameter[key])
+            logSend('     value', parameter[key])
             edit_staff.__dict__[key] = '' if len(parameter[key]) == 0 else parameter[key]
             is_update_worker = True
     if is_update_worker:
-        print([(x, worker.__dict__[x]) for x in Staff().__dict__.keys() if not x.startswith('_')])
+        logSend([(x, worker.__dict__[x]) for x in Staff().__dict__.keys() if not x.startswith('_')])
         if ('login_id' in parameter) or ('login_pw' in parameter):
             edit_staff.is_login = False
             edit_staff.dt_login = datetime.datetime.now()
             edit_staff.save()
-            del request.session['id']
-            func_end_log(func_name)
-            return REG_403_FORBIDDEN.to_json_response()
         edit_staff.save()
     #
     # 영항 받는 곳 update : Customer, Work_Place, Work - name, pNo, email
     #
-    if ('name' in rqst) and (len(rqst['name']) > 0):
-        customers = Customer.objects.filter(staff_id=edit_staff.id)
-        for customer in customers:
-            customer.staff_name = rqst['name']
-            customer.save()
+    customers = Customer.objects.filter(staff_id=edit_staff.id)
+    for customer in customers:
+        if 'name' in parameter:
+            customer.staff_name = parameter['name']
+        if 'phone_no' in parameter:
+            customer.staff_pNo = parameter['phone_no']
+        if 'email' in parameter:
+            customer.staff_email = parameter['email']
+        customer.save()
 
-        customers = Customer.objects.filter(manager_id=edit_staff.id)
-        for customer in customers:
-            customer.manager_name = rqst['name']
-            customer.save()
+    customers = Customer.objects.filter(manager_id=edit_staff.id)
+    for customer in customers:
+        if 'name' in parameter:
+            customer.manager_name = parameter['name']
+        if 'phone_no' in parameter:
+            customer.manager_pNo = parameter['phone_no']
+        if 'email' in parameter:
+            customer.manager_email = parameter['email']
+        customer.save()
 
-        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
-        for work_place in work_places:
-            work_place.manager_name = rqst['name']
-            work_place.save()
+    work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
+    for work_place in work_places:
+        if 'name' in parameter:
+            work_place.manager_name = parameter['name']
+        if 'phone_no' in parameter:
+            work_place.manager_pNo = parameter['phone_no']
+        if 'email' in parameter:
+            work_place.manager_email = parameter['email']
+        work_place.save()
 
-        works = Work.objects.filter(staff_id=edit_staff.id)
-        for work in works:
-            work.staff_name = rqst['name']
-            work.save()
+    works = Work.objects.filter(staff_id=edit_staff.id)
+    for work in works:
+        if 'name' in parameter:
+            work.staff_name = parameter['name']
+        if 'phone_no' in parameter:
+            work.staff_pNo = parameter['phone_no']
+        if 'email' in parameter:
+            work.staff_email = parameter['email']
+        work.save()
 
-    if ('phone_no' in rqst) and (len(rqst['phone_no']) > 0):
-        customers = Customer.objects.filter(staff_id=edit_staff.id)
-        for customer in customers:
-            customer.staff_pNo = rqst['phone_no']
-            customer.save()
-
-        customers = Customer.objects.filter(manager_id=edit_staff.id)
-        for customer in customers:
-            customer.manager_pNo = rqst['phone_no']
-            customer.save()
-
-        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
-        for work_place in work_places:
-            work_place.manager_pNo = rqst['phone_no']
-            work_place.save()
-
-        works = Work.objects.filter(staff_id=edit_staff.id)
-        for work in works:
-            work.staff_pNo = rqst['phone_no']
-            work.save()
-
-    if ('email' in rqst) and (len(rqst['email']) > 0):
-        customers = Customer.objects.filter(staff_id=edit_staff.id)
-        for customer in customers:
-            customer.staff_email = rqst['email']
-            customer.save()
-
-        customers = Customer.objects.filter(manager_id=edit_staff.id)
-        for customer in customers:
-            customer.manager_email = rqst['email']
-            customer.save()
-
-        work_places = Work_Place.objects.filter(manager_id=edit_staff.id)
-        for work_place in work_places:
-            work_place.manager_email = rqst['email']
-            work_place.save()
-
-        works = Work.objects.filter(staff_id=edit_staff.id)
-        for work in works:
-            work.staff_email = rqst['email']
-            work.save()
-
+    # id, pw 가 변경되었으면 처리가 끝나고 로그아웃
+    if ('login_id' in parameter) or ('login_pw' in parameter):
+        del request.session['id']
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
