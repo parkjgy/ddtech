@@ -625,7 +625,7 @@ def update_staff(request):
     if len(department) > 0:
         staff.department = department
     if len(phone_no) > 0:
-        staff.phone_no = phone_no
+        staff.pNo = phone_no
     if len(phone_type) > 0:
         staff.phone_type = phone_type
     if len(push_token) > 0:
