@@ -1311,8 +1311,8 @@ def update_staff(request):
     for customer in customers:
         if 'name' in parameter:
             customer.staff_name = parameter['name']
-        if 'phone_no' in parameter:
-            customer.staff_pNo = parameter['phone_no']
+        if 'pNo' in parameter:
+            customer.staff_pNo = parameter['pNo']
         if 'email' in parameter:
             customer.staff_email = parameter['email']
         logSend('--- 파견업체: {}, 담당자: {} {} {}'.format(customer.corp_name, customer.staff_name, customer.staff_pNo, customer.staff_email))
@@ -1322,8 +1322,8 @@ def update_staff(request):
     for customer in customers:
         if 'name' in parameter:
             customer.manager_name = parameter['name']
-        if 'phone_no' in parameter:
-            customer.manager_pNo = parameter['phone_no']
+        if 'pNo' in parameter:
+            customer.manager_pNo = parameter['pNo']
         if 'email' in parameter:
             customer.manager_email = parameter['email']
         logSend('--- 파견업체: {}, 관리자: {} {} {}'.format(customer.corp_name, customer.manager_name, customer.manager_pNo, customer.manager_email))
@@ -1333,8 +1333,8 @@ def update_staff(request):
     for work_place in work_places:
         if 'name' in parameter:
             work_place.manager_name = parameter['name']
-        if 'phone_no' in parameter:
-            work_place.manager_pNo = parameter['phone_no']
+        if 'pNo' in parameter:
+            work_place.manager_pNo = parameter['pNo']
         if 'email' in parameter:
             work_place.manager_email = parameter['email']
         logSend('--- 사업장: {}, 관리자: {} {} {}'.format(work_place.name, work_place.manager_name, work_place.manager_pNo, work_place.manager_email))
@@ -1344,8 +1344,8 @@ def update_staff(request):
     for work in works:
         if 'name' in parameter:
             work.staff_name = parameter['name']
-        if 'phone_no' in parameter:
-            work.staff_pNo = parameter['phone_no']
+        if 'pNo' in parameter:
+            work.staff_pNo = parameter['pNo']
         if 'email' in parameter:
             work.staff_email = parameter['email']
         logSend('--- 업무: {}, 담당자: {} {} {}'.format(work.name, work.staff_name, work.staff_pNo, work.staff_email))
