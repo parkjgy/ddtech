@@ -3880,10 +3880,10 @@ def test_go_go(request):
     employee_data = {
         'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
         'dt_answer_deadline': '2019-05-28 19:00',
-        # 'dt_begin': '2019-05-29',
+        'dt_begin': '2019-05-29',
         'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
             [
-                '010-2557-3555', '011-8888-9999',
+                '010-2557-355', '011-8888-999',
             ]
         }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
