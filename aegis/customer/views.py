@@ -2275,8 +2275,8 @@ def reg_employee(request):
     #
     notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
                    '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>' \
-                   '<p style=\"color: #ee3333;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
-                   '<p style=\"text-align: left; padding-left: 30px; color: #808080;\">'
+                   '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
+                   '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
     for bad_phone in bad_phone_list:
         notification += bad_phone + '<br>'
     notification += '</p></body></html>'
