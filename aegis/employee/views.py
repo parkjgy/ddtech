@@ -1938,7 +1938,7 @@ def update_pass_history(pass_history: dict):
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:
-        func_end_log(func_name, e)
+        func_end_log(func_name, ' Error: {}'.format(str(e)))
         return
     if passer.employee_id <= 0:
         func_end_log(func_name)
