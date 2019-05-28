@@ -4315,19 +4315,19 @@ def staff_recognize_employee(request):
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) == 0:
-        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+        return status422(func_name, {'message':' ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)})
     employees = Employee.objects.filter(id=employee_id)
     logSend('--- employee id {} '.format(employee_id))
     if len(employees) == 0:
-        return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+        return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없거나 중복됨'.format(employee_id)})
     employee = employees[0]
     if employee.employee_id == -1:
         func_end_log(func_name)
         return REG_541_NOT_REGISTERED.to_json_response({'message': '업무 수락이 안되어 있는 근로자 입니다.'})
     logSend('--- employee id {} name {} employee_id {}'.format(employee.id, employee.name, employee.employee_id))
     works = Work.objects.filter(id=employee.work_id)
-    if len(works) != 1:
-        return status422(func_name, {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % works })
+    if len(works) == 0:
+        return status422(func_name, {'message': 'ServerError: Work 에 id={} 해당 업무가 없습니다.'.format(works)})
     work = works[0]
 
     #
