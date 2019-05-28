@@ -809,15 +809,25 @@ def update_relationship(request):
         # print([(x, corp.__dict__[x]) for x in Customer().__dict__.keys() if not x.startswith('_')])
         corp.save()
         #
-        # 영향 받는 곳 update : Customer, Work_Place
+        # 영향 받는 곳 update : Relationship, Work_Place, Work
         #
         if 'corp_name' in rqst:
-            # 협력업체나 발주사 상호가 바뀌면 relationship 에 반영
+            # Relationship: 협력업체나 발주사 상호가 바뀌면 반영
             relationships = Relationship.objects.filter(corp_id=corp.id)
             if len(relationships) > 0:
                 relationship = relationships[0]
-                relationship.corp_name = rqst['corp_name']
+                relationship.corp_name = corp.corp_name  # rqst['corp_name']
                 relationship.save()
+            # Work_Place: 발주사 이름 반영
+            work_place_list = Work_Place.objects.filter(order_id=corp.id)
+            for work_place in work_place_list:
+                work_place.order_name = corp.corp_name
+                work_place.save()
+            # Work: 협력사 이름 반영
+            work_list = Work.objects.filter(contractor_id=corp.id)
+            for work in work_list:
+                work.contractor_id = corp.corp_name
+                work.save()
 
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, corp)

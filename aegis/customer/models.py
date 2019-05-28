@@ -11,7 +11,7 @@ class Customer(models.Model):
     dt_accept = models.DateTimeField(null=True, blank=True) # 승인 일
     type = models.IntegerField(default=10) # 10 : 발주업체, 11 : 파견업체, 12 : 협력업체
 
-    # contractor_id = models.IntegerField(default=-1) # 파견업체, 도급업체 id
+    # contractor_id = models.IntegerField(default=-1) # 협력업체일 경우 파견업체(도급업체) id
     # contractor_name = models.CharField(max_length=127, default='') # 파견업체, 도급업체 이름
 
     staff_id = models.IntegerField(default=-1) # 담당자 id
