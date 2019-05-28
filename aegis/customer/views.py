@@ -2206,7 +2206,12 @@ def reg_employee(request):
         phones = rqst['phone_numbers']
     else:
         phones = rqst.getlist('phone_numbers')
-    phones = [no_only_phone_no(pNo) for pNo in phones]
+    phones = []
+    for pNo in phones:
+        if len(pNo) == 0:
+            continue
+        phones.append(pNo)
+    # phones = [no_only_phone_no(pNo) for pNo in phones]
 
     #
     # 답변시한 검사
