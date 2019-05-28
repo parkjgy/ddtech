@@ -2203,11 +2203,11 @@ def reg_employee(request):
         dt_begin = str_to_datetime(rqst['dt_begin'])
 
     if request.method == 'POST':
-        phones = rqst['phone_numbers']
+        phone_numbers = rqst['phone_numbers']
     else:
-        phones = rqst.getlist('phone_numbers')
+        phone_numbers = rqst.getlist('phone_numbers')
     phones = []
-    for pNo in phones:
+    for pNo in phone_numbers:
         if len(pNo) == 0:
             continue
         phones.append(pNo)
@@ -2278,14 +2278,16 @@ def reg_employee(request):
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
-    notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
-                   '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>' \
-                   '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
-                   '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
-    for bad_phone in bad_phone_list:
-        notification += bad_phone + '<br>'
-    notification += '</p></body></html>'
-
+    if len(bad_phone_list) > 0:
+        notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
+                       '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>' \
+                       '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
+                       '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+        for bad_phone in bad_phone_list:
+            notification += bad_phone + '<br>'
+        notification += '</p></body></html>'
+    else:
+        notification = ''
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list, 'notification': notification})
 
