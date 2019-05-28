@@ -826,7 +826,7 @@ def update_relationship(request):
             # Work: 협력사 이름 반영
             work_list = Work.objects.filter(contractor_id=corp.id)
             for work in work_list:
-                work.contractor_id = corp.corp_name
+                work.contractor_name = corp.corp_name
                 work.save()
 
     # 사업자 등록증 내용 변경 or 새로 만들기
@@ -4360,8 +4360,8 @@ def staff_recognize_employee(request):
     pass_records = r.json()['employees']
     fail_list = r.json()['fail_list']
 
-    result = {'update_dt_arrive':dt_null(employee.dt_begin_touch),
-              'update_dt_leave':dt_null(employee.dt_end_touch)
+    result = {'update_dt_arrive': dt_null(employee.dt_begin_touch),
+              'update_dt_leave': dt_null(employee.dt_end_touch)
               }
 
     func_end_log(func_name)

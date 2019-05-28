@@ -1863,6 +1863,7 @@ def pass_record_of_employees_in_day_for_customer(request):
             if is_ok:
                 pass_history.dt_in_verify = dt_in_verify
                 pass_history.in_staff_id = int(plain)
+                logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         # 퇴근시간 수정 처리
@@ -1881,6 +1882,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                 pass_history.action = 0
                 pass_history.dt_out_verify = dt_out_verify
                 pass_history.out_staff_id = int(plain)
+                logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         if len(fail_list) > 0:
@@ -1932,6 +1934,7 @@ def update_pass_history(pass_history):
         pass_sms
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:

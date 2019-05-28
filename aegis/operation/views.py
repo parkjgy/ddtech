@@ -3718,7 +3718,7 @@ def test_go_go(request):
                   "login_pw": "parkjong"
                   }
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+    # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # recognize_data = {"dt_leave": "",
     #              "staff_id": "qgf6YHf1z2Fx80DR8o_Lvg",
@@ -3877,17 +3877,17 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
-    employee_data = {
-        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-        'dt_answer_deadline': '2019-05-28 19:00',
-        'dt_begin': '2019-05-29',
-        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-            [
-                '010-2557-355', '011-8888-999',
-            ]
-        }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    # employee_data = {
+    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #     'dt_answer_deadline': '2019-05-28 19:00',
+    #     'dt_begin': '2019-05-29',
+    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+    #         [
+    #             '010-2557-355', '011-8888-999',
+    #         ]
+    #     }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
@@ -3948,6 +3948,43 @@ def test_go_go(request):
     # 	}
     # r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_data)
     # result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/update_relationship 고객웹에서 협력사나 발주사 정보 수정
+    # ---------------------------------------------------------------------------------------
+    # relationship_data = {'corp_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #                      'corp_name': '울산테크_change',
+    #                      'staff_name': '이울산',
+    #                      'staff_pNo': '010-2450-5942',
+    #                      'staff_email': 'hello@ddtechi.com',
+    #                      'manager_name': '이울산',
+    #                      'manager_pNo': '010-2450-5942',
+    #                      'manager_email': 'hello@ddtechi.com',
+    #                      'name': '울산테크',
+    #                      'regNo': '',
+    #                      'ceoName': '',
+    #                      'address': '',
+    #                      'business_type': '',
+    #                      'business_item': '',
+    #                      'dt_reg': '',
+    #                      'is_reg': 'False',
+    #                      'type': '12',
+    #                      'type_name': '협력사',
+    #                      }
+    # r = s.post(settings.CUSTOMER_URL + 'update_relationship', json=relationship_data)
+    # result.append({'url': r.url, 'POST': relationship_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/staff_recognize_employee 관리자 앱에서 근로자 출퇴근 시간 강제 조정
+    # ---------------------------------------------------------------------------------------
+    recognize_data = {
+        'staff_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+        'employee_id': '_LdMng5jDTwK-LMNlj22Vw',
+        'dt_arrive': '2019-05-29 12:30:39',
+        'dt_leave': '',
+    }
+    r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
+    result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
