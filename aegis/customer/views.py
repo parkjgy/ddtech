@@ -2271,14 +2271,13 @@ def reg_employee(request):
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
-    notification = '<meta charset="UTF-8">' \
-                   '<body>' \
-                   '<p style="color:#333333";><h3>등록되지 않는 전화번호</h3></p>' \
-                   '<p style="color:#ee3333";>SMS 를 보낼 수 없었습니다.</p>' \
-                   '<pre>'
+    notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
+                   '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>' \
+                   '<p style=\"color: #ee3333;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
+                   '<p style=\"text-align: left; padding-left: 30px; color: #808080;\">'
     for bad_phone in bad_phone_list:
         notification += bad_phone + '<br>'
-    notification += '</pre>'
+    notification += '</p></body></html>'
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list, 'notification': notification})
