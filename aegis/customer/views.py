@@ -4282,6 +4282,8 @@ def staff_recognize_employee(request):
         dt_leave : 2019-04-01 17:30:00    # 떠난 시간 - 퇴근 시간
     response
         STATUS 200
+        STATUS 541
+            {'message': '업무 수락이 안되어 있는 근로자 입니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
             {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
@@ -4312,13 +4314,16 @@ def staff_recognize_employee(request):
     str_dt_leave = parameter_check['parameters']['dt_leave']
 
     app_users = Staff.objects.filter(id=staff_id)
-    if len(app_users) != 1:
+    if len(app_users) == 0:
         return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
     employees = Employee.objects.filter(id=employee_id)
     logSend('--- employee id {} '.format(employee_id))
-    if len(employees) != 1:
+    if len(employees) == 0:
         return status422(func_name, {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
     employee = employees[0]
+    if employee.employee_id == -1:
+        func_end_log(func_name)
+        return REG_541_NOT_REGISTERED.to_json_response({'message': '업무 수락이 안되어 있는 근로자 입니다.'})
     logSend('--- employee id {} name {} employee_id {}'.format(employee.id, employee.name, employee.employee_id))
     works = Work.objects.filter(id=employee.work_id)
     if len(works) != 1:

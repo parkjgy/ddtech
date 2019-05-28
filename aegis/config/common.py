@@ -99,6 +99,10 @@ def phone_format(phone_no):
     :param phone_no: 01033335555
     :return: 010-3333-5555
     """
+    if len(phone_no) < 4:
+        return phone_no
+    if len(phone_no) < 8:
+        return phone_no[:3] + '-' + phone_no[3:]
     formatted_phone_no = phone_no[:3] + '-' + \
                         phone_no[3:len(phone_no)-4] + '-' + \
                         phone_no[len(phone_no)-4:]
