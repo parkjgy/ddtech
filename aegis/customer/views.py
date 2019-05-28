@@ -2208,9 +2208,10 @@ def reg_employee(request):
         phone_numbers = rqst.getlist('phone_numbers')
     phones = []
     for pNo in phone_numbers:
-        if len(pNo) == 0:
+        clean_pNo = no_only_phone_no(pNo)
+        if len(clean_pNo) == 0:
             continue
-        phones.append(pNo)
+        phones.append(clean_pNo)
     # phones = [no_only_phone_no(pNo) for pNo in phones]
 
     #
