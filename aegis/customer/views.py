@@ -2135,6 +2135,8 @@ def reg_employee(request):
                 "010111199",
                 "010222299"
                 ]
+                ,
+              "notification": "html message",
             }
         STATUS 416
             {'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'}
