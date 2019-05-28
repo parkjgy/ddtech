@@ -1925,7 +1925,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
-def update_pass_history(pass_history):
+def update_pass_history(pass_history: dict):
     """
     출퇴근 시간에 맞추어 지각, 조퇴 처리
     to use:
