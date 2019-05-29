@@ -534,9 +534,10 @@ def notification_accept(request):
             employee.end_3 = work.end
         else:
             # 더 이상 업무를 받을 수 없기 때문에 "거절" 처리
-            is_accept = False
-            # func_end_log(func_name)
-            # return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 3개가 꽉 찾습니다.'})
+            # 단, 이전에 수락했던건 빼고
+            employee_works = [employee.work_id, employee.work_id_2, employee.work_id_3]
+            if notification.work_id not in employee_works:
+                is_accept = False
         logSend('  - 2.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if is_accept:
             employee.save()

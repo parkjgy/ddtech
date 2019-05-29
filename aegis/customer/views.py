@@ -2237,9 +2237,6 @@ def reg_employee(request):
     logSend('  - duplicate phones: {}'.format(duplicate_pNo))
     new_phone_list = [phone for phone in phones if phone not in duplicate_pNo]
     logSend('  - real phones: {}'.format(new_phone_list))
-    # for phone in phones:
-    #     if phone not in duplicate_pNo:
-    #         new_phone_list.append(phone)
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
     #
