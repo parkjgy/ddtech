@@ -3595,7 +3595,7 @@ def staff_employees_at_day(request):
 
     arr_employee = []
     for employee in employee_list:
-        pass_record = pass_record_dic[employee.id]
+        pass_record = pass_record_dic[employee.employee_id]
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
