@@ -3577,7 +3577,7 @@ def staff_employees_at_day(request):
         return status422(func_name, {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
     employee_list = Employee.objects.filter(work_id=work.id)
-    employee_ids = [AES_ENCRYPT_BASE64(str(employee.id)) for employee in employee_list]
+    employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
     employees_infor = {'employees': employee_ids,
                        'year_month_day': year_month_day,
                        'work_id': AES_ENCRYPT_BASE64(work_id),
