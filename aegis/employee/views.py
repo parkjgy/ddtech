@@ -1054,14 +1054,17 @@ def pass_sms(request):
     sms = rqst['sms']
     logSend('---parameter: phone_no: {}, dt: {}, sms: {}'.format(phone_no, dt, sms))
 
-    if ('수락' in sms) or ('거절' in sms):
+    if ('수락 ' in sms) or ('거절' in sms):
         # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
         notification_work_list = Notification_Work.objects.filter(employee_pNo=phone_no)
         # 하~~~ 피처폰인데 업무 요청 여러개가 들어오면 처리할 방법이 없네... > 에이 모르겠다 몽땅 보내!!!
         # 수락한 내용을 SMS 로 보내줘야할까? (문자를 무한사용? 답답하네...)
-        is_accept = True if '수락' in sms else False
+        is_accept = True if '수락 ' in sms else False
         if is_accept:
-            name = sms.replace('수락', '').replace(' ', '')
+            extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '수락'))]
+            if len(extract_sms) > 1:
+                logError(func_name, ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+            name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) < 2:
                 # 이름이 2자가 안되면 SMS 로 이름이 안들어왔다고 보내야 하나? (휴~~~)
