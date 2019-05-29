@@ -463,11 +463,18 @@ def notification_accept(request):
         }
     response
         STATUS 200
-        STATUS 403
-            {'message':'알 수 없는 사용자입니다.'}
-            {'message':'알 수 없는 알림입니다.'}
+        STATUS 416
+            {'message': '업무 3개가 꽉 찾습니다.'}
         STATUS 542
             {'message':'파견사 측에 근로자 정보가 없습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'notification_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'notification_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 출입자({}) 가 없어요'.format(passer_id)}
+            {'message':'ServerError: Notification_Work 알림({}) 가 없어요'.format(notification_id)}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -480,24 +487,18 @@ def notification_accept(request):
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
         return status422(func_name, parameter['message'])
+    passer_id = parameter['parameters']['passer_id']
+    notification_id = parameter['parameters']['notification_id']
+    is_accept = parameter['parameters']['is_accept']
 
-    logSend(parameter['parameters'])
-    rqst = parameter['parameters']
-
-    # func_end_log(func_name)
-    # return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
-
-    # passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
-    passers = Passer.objects.filter(id=rqst['passer_id'])
-    if len(passers) != 1:
-        func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) == 0:
+        return status422(func_name, '출입자({}) 가 없어요'.format(passer_id))
     passer = passers[0]
 
-    notifications = Notification_Work.objects.filter(id=rqst['notification_id'])
-    if len(notifications) != 1:
-        func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 알림입니다.'})
+    notifications = Notification_Work.objects.filter(id=notification_id)
+    if len(notifications) == 0:
+        return status422(func_name, 'Notification_Work 알림({}) 가 없어요'.format(notification_id))
     notification = notifications[0]
 
     is_accept = 1 if int(rqst['is_accept']) == 1 else 0
@@ -505,54 +506,64 @@ def notification_accept(request):
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, ' passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id))
-    else:
-        if len(employees) > 1:
-            logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
+        return status422(func_name, 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id))
+    elif len(employees) > 1:
+        logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                                      len(employees)))
     employee = employees[0]
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
     if is_accept == 1:
+        logSend('  - 1.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         work = Work.objects.get(id=notification.work_id)
-        if passer.employee_id > 0:
-            if employee.work_id != -1:
-                # 2개가 모두 있을 때 처리는 version 2.0 에서
-                employee.work_id_2 = notification.work_id
-                employee.begin_2 = work.begin
-                employee.end_2 = work.end
-            else:
-                employee.work_id = notification.work_id
-                employee.begin_1 = work.begin
-                employee.end_1 = work.end
+        if employee.work_id == -1:
+            # 업무가 없을 때 추가
+            employee.work_id = notification.work_id
+            employee.begin_1 = work.begin
+            employee.end_1 = work.end
+        elif employee.work_id_2 == -1:
+            # 업무가 1개 있을 때 추가
+            employee.work_id_2 = notification.work_id
+            employee.begin_2 = work.begin
+            employee.end_2 = work.end
+        elif employee.work_id_3 == -1:
+            # 업무가 2개 있을 때 추가
+            employee.work_id_2 = notification.work_id
+            employee.begin_2 = work.begin
+            employee.end_2 = work.end
         else:
-            logError(func_name, ' ERROR: 출입자가 근로자가 아닌 경우 - 발생하면 안됨 passer_id:', passer.id)
-            employee = Employee(
-                work_id=notification.work_id,
-                begin_1=work.begin,
-                end_1=work.end,
-            )
+            # 더 이상 업무를 받을 수 없기 때문에 에러처리
+            func_end_log(func_name)
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 3개가 꽉 찾습니다.'})
+        logSend('  - 2.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         employee.save()
         logSend(employee.name)
     else:
+        logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         # 근로자 정보에 work_id 가 있으면 삭제
         if employee.work_id_3 == notification.work_id:
             employee.work_id_3 = -1
+        logSend('  - 2.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if employee.work_id_2 == notification.work_id:
             employee.work_id_2 = -1
+        logSend('  - 3.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if employee.work_id == notification.work_id:
             employee.work_id = -1
+        logSend('  - 4.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         # 근로자 정보에 첫번째 work_id 가 없으면서 뒤에 있으면 앞으로 당김
         if employee.work_id == -1 and employee.work_id_2 != -1:
             employee.work_id = employee.work_id_2
             employee.work_id_2 = -1
+        logSend('  - 5.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if employee.work_id_2 == -1 and employee.work_id_3 != -1:
             employee.work_id_2 = employee.work_id_3
             employee.work_id_3 = -1
+        logSend('  - 6.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if employee.work_id == -1 and employee.work_id_2 != -1:
             employee.work_id = employee.work_id_2
             employee.work_id_2 = -1
+        logSend('  - 7.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         employee.save()
 
     #
@@ -561,11 +572,11 @@ def notification_accept(request):
     #
     request_data = {
         'worker_id': AES_ENCRYPT_BASE64('thinking'),
-        'work_id':notification.customer_work_id,
-        'employee_id':employee.id,
-        'employee_name':employee.name,
-        'employee_pNo':notification.employee_pNo,
-        'is_accept':is_accept
+        'work_id': notification.customer_work_id,
+        'employee_id': employee.id,
+        'employee_name': employee.name,
+        'employee_pNo': notification.employee_pNo,
+        'is_accept': is_accept
     }
     logSend(request_data)
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
@@ -1083,7 +1094,11 @@ def pass_sms(request):
                 logSend('SMS result', rSMS.json())
                 return status422(func_name, {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
         else:
-            name = sms.replace('거절', '').replace(' ', '')
+            extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '거절'))]
+            if len(extract_sms) > 1:
+                logError(func_name, ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+            name = ''.join(extract_sms)
+            logSend('  name = {}'.format(name))
             if len(name) == 0:
                 name = '====='
         sms_data = {
@@ -1103,10 +1118,9 @@ def pass_sms(request):
             # 근로자를 강제로 새로 등록한다. (으~~~ 괜히 SMS 기능 넣었나?)
             passer_list = Passer.objects.filter(pNo=phone_no)
             if len(passer_list) == 0:
-                # 이 전화번호를 사용하는 근로자가 없기 때문에 새로 만든다.
+                # 이 전화번호를 사용하는 근로자가 없다. > 근로자, 출입자 모두 만든다.
                 employee = Employee(
                     name=name,
-                    work_id=notification_work.work_id,
                 )
                 employee.save()
                 logSend('---1 name: {}, phone: {} employee id {}'.format(name, phone_no, employee.id))
@@ -1118,29 +1132,29 @@ def pass_sms(request):
                 passer.save()
                 logSend('---2 name: {}, phone: {}'.format(name, phone_no))
             else:
-                # 이경우 골치 아픈데... > 급하니까 첫번째 만 대상으로 한다.
+                # 출입자(passer) 는 있다.
                 # 결국 복잡해도 하네...
                 if len(passer_list) > 1:
                     logError(func_name, ' 전화번호({})가 중복되었다.'.format(phone_no))
                 passer = passer_list[0]
                 employee_list = Employee.objects.filter(id=passer.employee_id)
                 if len(employee_list) == 0:
+                    # 그런데 출입자와 연결된 근로자가 없다. > 근로자만 새로 만들어 연결한다.
                     logSend('---3 name: {}, phone: {}'.format(name, phone_no))
                     logError(func_name, ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
                     employee = Employee(
                         name=name,
-                        work_id=notification_work.work_id,
                     )
                     employee.save()
                     passer.employee_id = employee.id
                     passer.save()
                 else:
+                    # 출입자, 근로자 다 있고 연결도 되어있다.
                     logSend('---4 name: {}, phone: {}'.format(name, phone_no))
                     if len(employee_list) > 1:
                         logError(func_name, ' employee({})가 중복되었다.'.format(passer.employee_id))
                     employee = employee_list[0]
                     employee.name = name
-                    employee.work_id = notification_work.work_id
                     employee.save()
 
             accept_infor = {
@@ -1151,7 +1165,11 @@ def pass_sms(request):
             r = requests.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept_infor)
             logSend({'url': r.url, 'POST': accept_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-            if is_accept:
+            if r.status_code == 416:
+                func_end_log(func_name)
+                return ReqLibJsonResponse(r)
+
+            if r.status_code == 200 and is_accept:
                 work = Work.objects.get(id=notification_work.work_id)
                 sms_data['msg'] = '수락됐어요\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
                                                                           work.work_name_type,
