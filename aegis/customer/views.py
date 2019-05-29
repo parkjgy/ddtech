@@ -2212,18 +2212,10 @@ def reg_employee(request):
     else:
         dt_begin = str_to_datetime(rqst['dt_begin'])
 
-    if request.method == 'POST':
-        phone_numbers = rqst['phone_numbers']
-    else:
+    if request.method == 'GET':
         phone_numbers = rqst.getlist('phone_numbers')
-    phones = []
-    for pNo in phone_numbers:
-        clean_pNo = no_only_phone_no(pNo)
-        if len(clean_pNo) == 0:
-            continue
-        phones.append(clean_pNo)
-    # phones = [no_only_phone_no(pNo) for pNo in phones]
-
+    phones = [no_only_phone_no(pNo) for pNo in phone_numbers if len(pNo) > 7]
+    logSend('  - filtering phones: {}'.format(phones))
     #
     # 답변시한 검사
     #
@@ -2242,10 +2234,12 @@ def reg_employee(request):
 
     find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
     duplicate_pNo = [employee.pNo for employee in find_employee_list]
-    new_phone_list = []
-    for phone in phones:
-        if phone not in duplicate_pNo:
-            new_phone_list.append(phone)
+    logSend('  - duplicate phones: {}'.format(duplicate_pNo))
+    new_phone_list = [phone for phone in phones if phone not in duplicate_pNo]
+    logSend('  - real phones: {}'.format(new_phone_list))
+    # for phone in phones:
+    #     if phone not in duplicate_pNo:
+    #         new_phone_list.append(phone)
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
     #

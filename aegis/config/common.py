@@ -83,14 +83,11 @@ def hash_SHA256(password):
 
 def no_only_phone_no(phone_no):
     """
-    전화번호에서 '-'와 space 를 제거한다.
+    전화번호에서 숫자 외의 문자를 지운다.
     :param phone_no: 010-1111 2222
     :return: 01011112222
     """
-    if len(phone_no) > 0:
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
-    return phone_no
+    return ''.join(list(filter(str.isdigit, phone_no)))
 
 
 def phone_format(phone_no):
