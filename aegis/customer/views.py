@@ -3997,7 +3997,7 @@ def staff_change_time(request):
         employee_ids = rqst.getlist('employee_ids')
 
     # logSend(employee_ids)
-    if len(employee_ids):
+    if len(employee_ids) == 0:
         # 연장근무 저장할 근로자 목록이 없다.
         logError(func_name, ' 근로자 연장 근무요청을 했는데 선택된 근로자({})가 없다?'.format(employee_ids))
         func_end_log(func_name)
