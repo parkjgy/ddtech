@@ -529,9 +529,9 @@ def notification_accept(request):
             employee.end_2 = work.end
         elif employee.work_id_3 == -1:
             # 업무가 2개 있을 때 추가
-            employee.work_id_2 = notification.work_id
-            employee.begin_2 = work.begin
-            employee.end_2 = work.end
+            employee.work_id_3 = notification.work_id
+            employee.begin_3 = work.begin
+            employee.end_3 = work.end
         else:
             # 더 이상 업무를 받을 수 없기 때문에 에러처리
             func_end_log(func_name)
