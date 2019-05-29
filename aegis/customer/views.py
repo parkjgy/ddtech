@@ -4010,11 +4010,11 @@ def staff_change_time(request):
         else:
             employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
     # logSend(employee_id_list)
-    if len(employee_id_list):
+    if len(employee_id_list) == 0:
         # 연장근무 저장할 근로자 목록이 없다.
-        logError(func_name, ' 근로자 연장 근무요청을 했는데 선택된 근로자가 없다? (암호화된 근로자 리스트에도 없다.)')
+        logError(func_name, ' 근로자 연장 근무요청을 했는데 선택된 근로자({})가 없다? (암호화된 근로자 리스트에도 없다.)'.format(employee_id_list))
         func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response(result)
+        return REG_200_SUCCESS.to_json_response()
 
     # 고객 서버의 employee 에서 요청된 근로자 선정
     employees = Employee.objects.filter(work_id=work.id, id__in=employee_id_list)
