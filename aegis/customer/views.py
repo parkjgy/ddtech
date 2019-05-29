@@ -2345,13 +2345,13 @@ def employee_work_accept_for_employee(request):
     works = Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_id']))
     if len(works) == 0:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'업무 참여 시간이 종료되었습니다.'})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무 참여 시간이 종료되었습니다.'})
     work = works[0]
 
     employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
     if len(employees) != 1:
         func_end_log(func_name)
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'파견사 측에 근로자 정보가 없습니다.'})
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '파견사 측에 근로자 정보가 없습니다.'})
 
     employee = employees[0]
     employee.employee_id = rqst['employee_id']

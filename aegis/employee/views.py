@@ -533,11 +533,13 @@ def notification_accept(request):
             employee.begin_3 = work.begin
             employee.end_3 = work.end
         else:
-            # 더 이상 업무를 받을 수 없기 때문에 에러처리
-            func_end_log(func_name)
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 3개가 꽉 찾습니다.'})
+            # 더 이상 업무를 받을 수 없기 때문에 "거절" 처리
+            is_accept = False
+            # func_end_log(func_name)
+            # return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 3개가 꽉 찾습니다.'})
         logSend('  - 2.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        employee.save()
+        if is_accept:
+            employee.save()
         logSend(employee.name)
     else:
         logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
