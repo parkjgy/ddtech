@@ -1687,9 +1687,25 @@ def reg_work(request):
         STATUS 200
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
-        STATUS 422
-            {'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'}
+        STATUS 416
+            {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
         STATUS 544
+            {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'name\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 없어요'}
+            {'message': 'ClientError: parameter \'type\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_end\' 가 없어요'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 없어요'}
+
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
 
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
@@ -1713,41 +1729,63 @@ def reg_work(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    is_empty = False
-    blanks = []
-    for key in ['name', 'work_place_id', 'type', 'dt_begin', 'dt_end', 'staff_id', 'partner_id']:
-        if key in rqst:
-            if len(rqst[key]) == 0:
-                blanks.append(key)
-                is_empty = True
-        else:
-            blanks.append(key)
-            is_empty = True
-    if is_empty:
+    parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!', 'partner_id_!'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # func_end_log(func_name)
+        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    name = parameter_check['parameters']['name']
+    work_place_id = parameter_check['parameters']['work_place_id']
+    type = parameter_check['parameters']['type']
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+    staff_id = parameter_check['parameters']['staff_id']
+    partner_id = parameter_check['parameters']['partner_id']
+    if dt_end < dt_begin:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'})
-    works = Work.objects.filter(name=rqst['name'],
-                                type=rqst['type'],
-                                work_place_id=AES_DECRYPT_BASE64(rqst['work_place_id']),
-                                staff_id=AES_DECRYPT_BASE64(rqst['staff_id']),
-                                contractor_id=AES_DECRYPT_BASE64(rqst['partner_id']),
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
+
+    works = Work.objects.filter(name=name,
+                                type=type,
+                                work_place_id=work_place_id,
+                                staff_id=staff_id,
+                                contractor_id=partner_id,
                                 )
+    # is_empty = False
+    # blanks = []
+    # for key in ['name', 'work_place_id', 'type', 'dt_begin', 'dt_end', 'staff_id', 'partner_id']:
+    #     if key in rqst:
+    #         if len(rqst[key]) == 0:
+    #             blanks.append(key)
+    #             is_empty = True
+    #     else:
+    #         blanks.append(key)
+    #         is_empty = True
+    # if is_empty:
+    #     func_end_log(func_name)
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'})
+    # works = Work.objects.filter(name=rqst['name'],
+    #                             type=rqst['type'],
+    #                             work_place_id=AES_DECRYPT_BASE64(rqst['work_place_id']),
+    #                             staff_id=AES_DECRYPT_BASE64(rqst['staff_id']),
+    #                             contractor_id=AES_DECRYPT_BASE64(rqst['partner_id']),
+    #                             )
     if len(works) > 0:
         func_end_log(func_name)
         return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
 
-    work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
-    staff = Staff.objects.get(id=AES_DECRYPT_BASE64(rqst['staff_id']))
-    contractor = Customer.objects.get(id=AES_DECRYPT_BASE64(rqst['partner_id']))
+    work_place = Work_Place.objects.get(id=work_place_id)
+    staff = Staff.objects.get(id=staff_id)
+    contractor = Customer.objects.get(id=partner_id)
     new_work = Work(
-        name=rqst['name'],
+        name=name,
         work_place_id=work_place.id,
         work_place_name=work_place.name,
-        type=rqst['type'],
+        type=type,
         contractor_id=contractor.id,
         contractor_name=contractor.corp_name,
-        dt_begin=datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
-        dt_end=datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d"),
+        dt_begin=dt_begin,  # datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
+        dt_end=dt_end,  # datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d"),
         staff_id=staff.id,
         staff_name=staff.name,
         staff_pNo=staff.pNo,
@@ -1784,8 +1822,16 @@ def update_work(request):
         STATUS 200
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+        STATUS 416
+            {'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
+            {'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -1808,81 +1854,114 @@ def update_work(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work = Work.objects.get(id=AES_DECRYPT_BASE64(rqst['work_id']))
+    parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # func_end_log(func_name)
+        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+
+    works = Work.objects.filter(id=work_id)
+    if len(works) == 0:
+        logError(func_name, ' work id: {} 없음'.format(work_id))
+        return status422(func_name, {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'})
     # if work.contractor_id != worker.co_id:
     #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     #     func_end_log(func_name)
     #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
-    is_update_name = False
-    if ('name' in rqst) and (len(rqst['name']) > 0):
-        work.name = rqst['name']
-        is_update_name = True
-
-    is_update_type = False
-    if ('type' in rqst) and (len(rqst['type']) > 0):
-        work.type = rqst['type']
-        is_update_type = True
-
+    is_update_work = False
+    dt_today = datetime.datetime.now()
     is_update_dt_begin = False
-    if ('dt_begin' in rqst) and (len(rqst['dt_begin']) > 0):
-        work.dt_begin = datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d")
-        is_update_dt_begin = True
+    parameter_check = is_parameter_ok(rqst, ['dt_begin'])
+    if parameter_check['is_ok']:
+        # 업무가 시작되었으면 업무 시작 날짜를 변경할 수 없다. - 업무 시작 날짜가 들어왔더라도 무시한다.
+        if dt_today < work.dt_begin:
+            work.dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+            if work.dt_begin < dt_today:
+                # 업무 시작 날짜를 오늘 이전으로 설정할 수 없다.
+                func_end_log(func_name)
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
+            is_update_dt_begin = True
 
     is_update_dt_end = False
-    if ('dt_end' in rqst) and (len(rqst['dt_end']) > 0):
-        work.dt_end = datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d")
+    parameter_check = is_parameter_ok(rqst, ['dt_end'])
+    if parameter_check['is_ok']:
+        work.dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
         is_update_dt_end = True
-
+    if work.dt_end < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
     #
     # 근로자 시간 변경
-    #   근로자의 업무 시작시간이 새로운 시간보다 빠르면 새로운 시간으로 변경
-    #   근로자의 업무 종료시간이 새로운 종료시간보다 느리면 새로운 시간으로 변경
     #
     if is_update_dt_begin or is_update_dt_end:
         employees = Employee.objects.filter(work_id=work.id)
-        logSend('  employees = {}'.format([employee.pNo for employee in employees]))
+        logSend('  - employees = {}'.format([employee.pNo for employee in employees]))
         for employee in employees:
             is_update_employee = False
             if employee.dt_begin < work.dt_begin:
+                # 근로자의 업무 시작 날짜가 업무 시작 날짜 보다 빠르면 업무 시작 날짜로 바꾼다.
                 employee.dt_begin = work.dt_begin
                 is_update_employee = True
             if work.dt_end < employee.dt_end:
+                # 근로자의 업무 종료 날짜가 업무 종료 날짜 보다 느리면 업무 종료 날짜로 바꾼다.
                 employee.dt_end = work.dt_end
                 is_update_employee = True
             if is_update_employee:
                 employee.save()
 
+    is_update_name = False
+    parameter_check = is_parameter_ok(rqst, ['name'])
+    if parameter_check['is_ok']:
+        work.name = parameter_check['parameters']['name']
+        is_update_name = True
+
+    is_update_type = False
+    parameter_check = is_parameter_ok(rqst, ['type'])
+    if parameter_check['is_ok']:
+        work.type = parameter_check['parameters']['type']
+        is_update_type = True
+
+    # 업무의 사업장이 변경되었을 때 처리
     is_update_work_place = False
-    if ('work_place_id' in rqst) and (len(rqst['work_place_id']) > 0):
-        work_places = Work_Place.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
-        if len(work_places) == 1:
+    parameter_check = is_parameter_ok(rqst, ['work_place_id_!'])
+    if parameter_check['is_ok']:
+        work_place_id = parameter_check['parameters']['work_place_id']
+        work_places = Work_Place.objects.filter(id=work_place_id)
+        if len(work_places) > 0:
             work_place = work_places[0]
             work.work_place_id = work_place.id
             work.work_place_name = work_place.name
             is_update_work_place = True
 
+    # 파견업체가 변경되었을 때 처리
     is_update_partner = False
-    if ('partner_id' in rqst) and (len(rqst['partner_id']) > 0):
-        partners = Customer.objects.filter(id=AES_DECRYPT_BASE64(rqst['partner_id']))
-        if len(partners) == 1:
+    parameter_check = is_parameter_ok(rqst, ['partner_id_!'])
+    if parameter_check['is_ok']:
+        partner_id = parameter_check['parameters']['partner_id']
+        partners = Customer.objects.filter(id=partner_id)
+        if len(partners) > 0:
             partner = partners[0]
             work.contractor_id = partner.id
             work.contractor_name = partner.corp_name
             is_update_partner = True
 
+    # 업무 담당자가 바뀌었을 때 처리
     is_update_staff = False
-    if ('staff_id' in rqst) and (len(rqst['staff_id']) > 0):
-        staffs = Staff.objects.filter(id=AES_DECRYPT_BASE64(rqst['staff_id']))
-        if len(staffs) == 1:
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
+    if parameter_check['is_ok']:
+        staff_id = parameter_check['parameters']['staff_id']
+        staffs = Staff.objects.filter(id=staff_id)
+        if len(staffs) > 0:
             staff = staffs[0]
             work.staff_id = staff.id
             work.staff_name = staff.name
             work.staff_pNo = staff.pNo
             work.staff_email = staff.email
             is_update_staff = True
-
-    work.save()
+    if is_update_dt_begin or is_update_dt_end or is_update_name or is_update_type or is_update_work_place or is_update_partner or is_update_staff:
+        work.save()
 
     update_employee_work_infor = {
         'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
