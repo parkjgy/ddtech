@@ -1869,8 +1869,8 @@ def update_work(request):
     #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     #     func_end_log(func_name)
     #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
+    work = works[0]
 
-    is_update_work = False
     dt_today = datetime.datetime.now()
     is_update_dt_begin = False
     parameter_check = is_parameter_ok(rqst, ['dt_begin'])
