@@ -1403,6 +1403,15 @@ def certification_no_to_sms(request):
             {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
         STATUS 552
             {'message': '인증번호는 3분에 한번씩만 발급합니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -1412,16 +1421,18 @@ def certification_no_to_sms(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    phone_no = rqst['phone_no']
+    parameter_check = is_parameter_ok(rqst, ['phone_no'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    phone_no = no_only_phone_no(parameter_check['parameters']['phone_no'])
 
-    phone_no = phone_no.replace('+82', '0')
-    phone_no = phone_no.replace('-', '')
-    phone_no = phone_no.replace(' ', '')
-    # print(phone_no)
-    if 'passer_id' in rqst and len(rqst['passer_id']) > 6:
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if parameter_check['is_ok']:
+        # 기존에 등록된 근로자 일 경우 - 전화번호를 변경하려 한다.
+        passer_id = no_only_phone_no(parameter_check['parameters']['passer_id'])
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
-        passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
         passers = Passer.objects.filter(pNo=phone_no).exclude(id=passer_id)
         if len(passers) > 0:
             func_end_log(func_name)
@@ -1429,6 +1440,7 @@ def certification_no_to_sms(request):
         passer = Passer.objects.get(id=passer_id)
         passer.pNo = phone_no
     else:
+        # 새로 근로자 등록을 하는 경우 - 전화번호 중복을 확인해야한다.
         # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
         passers = Passer.objects.filter(pNo=phone_no)
         if len(passers) == 0:
@@ -1436,11 +1448,38 @@ def certification_no_to_sms(request):
                 pNo=phone_no
             )
         else:
-            passer = passers[0]
+            func_end_log(func_name)
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+
+    # phone_no = rqst['phone_no']
+    #
+    # phone_no = phone_no.replace('+82', '0')
+    # phone_no = phone_no.replace('-', '')
+    # phone_no = phone_no.replace(' ', '')
+    # # print(phone_no)
+    # if 'passer_id' in rqst and len(rqst['passer_id']) > 6:
+    #     # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
+    #     # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
+    #     passer_id = AES_DECRYPT_BASE64(rqst['passer_id'])
+    #     passers = Passer.objects.filter(pNo=phone_no).exclude(id=passer_id)
+    #     if len(passers) > 0:
+    #         func_end_log(func_name)
+    #         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+    #     passer = Passer.objects.get(id=passer_id)
+    #     passer.pNo = phone_no
+    # else:
+    #     # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
+    #     passers = Passer.objects.filter(pNo=phone_no)
+    #     if len(passers) == 0:
+    #         passer = Passer(
+    #             pNo=phone_no
+    #         )
+    #     else:
+    #         passer = passers[0]
 
     if (passer.dt_cn != None) and (passer.dt_cn > datetime.datetime.now()):
         # 3분 이내에 인증번호 재요청하면
-        print(passer.dt_cn, datetime.datetime.now())
+        logSend('  - dt_cn: {}, today: {}'.format(passer.dt_cn, datetime.datetime.now()))
         func_end_log(func_name)
         return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
 

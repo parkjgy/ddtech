@@ -87,7 +87,15 @@ def no_only_phone_no(phone_no):
     :param phone_no: 010-1111 2222
     :return: 01011112222
     """
-    return ''.join(list(filter(str.isdigit, phone_no)))
+    only_no = ''.join(list(filter(str.isdigit, phone_no)))
+    if len(only_no) > 3 and only_no[:2] == '82':
+        if only_no[2:3] == '0':
+            pNo = only_no[2:]
+        else:
+            pNo = '0' + only_no[2:]
+    else:
+        pNo = only_no
+    return pNo
 
 
 def phone_format(phone_no):
@@ -101,8 +109,8 @@ def phone_format(phone_no):
     if len(phone_no) < 8:
         return phone_no[:3] + '-' + phone_no[3:]
     formatted_phone_no = phone_no[:3] + '-' + \
-                        phone_no[3:len(phone_no)-4] + '-' + \
-                        phone_no[len(phone_no)-4:]
+                         phone_no[3:len(phone_no)-4] + '-' + \
+                         phone_no[len(phone_no)-4:]
     return formatted_phone_no
 
 

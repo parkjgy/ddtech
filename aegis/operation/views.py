@@ -3977,14 +3977,24 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/staff_recognize_employee 관리자 앱에서 근로자 출퇴근 시간 강제 조정
     # ---------------------------------------------------------------------------------------
-    recognize_data = {
-        'staff_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-        'employee_id': '_LdMng5jDTwK-LMNlj22Vw',
-        'dt_arrive': '2019-05-29 12:30:39',
-        'dt_leave': '',
+    # recognize_data = {
+    #     'staff_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #     'employee_id': '_LdMng5jDTwK-LMNlj22Vw',
+    #     'dt_arrive': '2019-05-29 12:30:39',
+    #     'dt_leave': '',
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
+    # result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /employee/certification_no_to_sms 인증번호 요청
+    # ---------------------------------------------------------------------------------------
+    passer_data = {
+        'phone_no': '+i82 10 8433-3579',
+        'staff_id': 'tuqB7wUIVoIKH0pz2J9IfQ',
     }
-    r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
-    result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=passer_data)
+    result.append({'url': r.url, 'POST': passer_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
