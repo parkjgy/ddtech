@@ -1051,6 +1051,7 @@ def pass_sms(request):
         STATUS 422
             {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)}
             {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
+            {'message': '업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format()}
     error log
         logError(func_name, ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
         logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
@@ -1201,15 +1202,8 @@ def pass_sms(request):
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
     passer_id = passer.id
-    dt_sms = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    dt_sms = str_to_datetime(dt)
     logSend(' {}  {}  {}  {}'.format(phone_no, passer.id, dt, is_in))
-    new_pass = Pass(
-        passer_id=passer.id,
-        is_in=is_in,
-        dt_verify=dt_sms
-    )
-    new_pass.save()
-
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
         logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.id, passer.employee_id))
@@ -1218,6 +1212,16 @@ def pass_sms(request):
     elif len(employees) > 1:
         logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     employee = employees[0]
+    if dt_sms < employee.dt_begin_1:
+        logError(func_name, ' dt_sms: {} < employee.dt_begin: {} 업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format(dt_sms.strftime('%Y-%m-%d'), employee.dt_begin_1.strftime('%Y-%m-%d')))
+        func_end_log(func_name)
+        return status422(func_name, {'message': '업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format()})
+    new_pass = Pass(
+        passer_id=passer.id,
+        is_in=is_in,
+        dt_verify=dt_sms,
+    )
+    new_pass.save()
 
     #
     # Pass_History update
