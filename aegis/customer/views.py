@@ -2314,7 +2314,17 @@ def reg_employee(request):
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phone_numbers')
-    phones = [no_only_phone_no(pNo) for pNo in phone_numbers if len(pNo) > 7]
+    # 전화번호에서 숫자 아닌 문자 지우고 중복된 전화번호도 정리한다.
+    phones = []
+    seen = set()
+    for phone_no in phone_numbers:
+        pNo = no_only_phone_no(phone_no)
+        if pNo not in seen and not seen.add(pNo):
+            phones.append(pNo)
+    # phones = [no_only_phone_no(pNo) for pNo in phone_numbers if len(pNo) > 7]
+    # logSend('  - filtering phones: {}'.format(phones))
+    # seen = set()
+    # phones = [pNo for pNo in phones if pNo not in seen and not seen.add(pNo)]
     logSend('  - filtering phones: {}'.format(phones))
     #
     # 답변시한 검사

@@ -225,6 +225,17 @@ def reg_employee_for_customer(request):
                 "01044445555": -1
               }
             }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'customer_work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_place_name\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_name_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_end\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt_answer_deadline\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_name\' 가 없어요'}
+            {'message':'ClientError: parameter \'staff_phone\' 가 없어요'}
+            {'message':'ClientError: parameter \'phones\' 가 없어요'}
+            {'message':'ServerError: Work 에 id={} 가 없다'.format(work_id)}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -234,32 +245,35 @@ def reg_employee_for_customer(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    # print(rqst["customer_work_id"])
-    # print(rqst["work_place_name"])
-    # print(rqst["work_name_type"])
-    # print(rqst["dt_begin"])
-    # print(rqst["dt_end"])
-    logSend('  답변 시한 {}'.format(rqst["dt_answer_deadline"]))
-    # print(rqst["staff_name"])
-    # print(rqst["staff_phone"])
-
-    # pass_type = rqst['pass_type']
-    if request.method == 'POST':
-        phone_numbers = rqst['phones']
-    else:
+    if request.method == 'GET':
         phone_numbers = rqst.getlist('phones')
-    logSend(phone_numbers, rqst['phones'])
+    parameter_check = is_parameter_ok(rqst, ['customer_work_id', 'work_place_name', 'work_name_type', 'dt_begin',
+                                             'dt_end', 'dt_answer_deadline', 'staff_name', 'staff_phone', 'phones'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    customer_work_id = parameter_check['parameters']['customer_work_id']
+    work_place_name = parameter_check['parameters']['work_place_name']
+    work_name_type = parameter_check['parameters']['work_name_type']
+    dt_begin = parameter_check['parameters']['dt_begin']
+    dt_end = parameter_check['parameters']['dt_end']
+    dt_answer_deadline = parameter_check['parameters']['dt_answer_deadline']
+    staff_name = parameter_check['parameters']['staff_name']
+    staff_phone = parameter_check['parameters']['staff_phone']
+    phones_numbers = parameter_check['parameters']['phones']
 
-    find_works = Work.objects.filter(customer_work_id=rqst['customer_work_id'])
+    logSend('  - phone numbers: {}'.format(phone_numbers))
+
+    find_works = Work.objects.filter(customer_work_id=customer_work_id)
     if len(find_works) == 0:
         work = Work(
-            customer_work_id=rqst["customer_work_id"],
-            work_place_name=rqst["work_place_name"],
-            work_name_type=rqst["work_name_type"],
-            begin=rqst["dt_begin"],
-            end=rqst["dt_end"],
-            staff_name=rqst["staff_name"],
-            staff_pNo=rqst["staff_phone"],
+            customer_work_id=customer_work_id,
+            work_place_name=work_place_name,
+            work_name_type=work_name_type,
+            begin=dt_begin,
+            end=dt_end,
+            staff_name=staff_name,
+            staff_pNo=staff_phone,
         )
         work.save()
     else:
@@ -279,40 +293,76 @@ def reg_employee_for_customer(request):
         'msg': msg,
     }
 
+    # notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo__in=phones_numbers)
+    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id)
+    notification_phones = [notification.employee_pNo for notification in notification_list]
+    sms_success = []
     phones_state = {}
-    for i in range(len(phone_numbers)):
-        logSend('DDD ', phone_numbers[i])
-        notification_list = Notification_Work.objects.filter(customer_work_id=rqst["customer_work_id"], employee_pNo=phone_numbers[i])
-        logSend('  {}'.format(notification_list))
-        if len(notification_list) > 0:
-            logSend('--- sms 알려서 안보냄 ', phone_numbers[i])
+    for phone_no in phones_numbers:
+        logSend('  - phone_no: {}'.format(phone_no))
+        # notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo=phone_no)
+        logSend('  - {}'.format(notification_list))
+        if phone_no in notification_phones:
+            logSend('--- sms 이미 보냄 phone: {}'.format(phone_no))
+            sms_success.append(phone_no)
+            phones_state[phone_no] = -1
             # 이전에 SMS 를 보낸적있는 전화번호는 전화번호 출입자가 저장하고 있는 근로자 id 만 확인해서 보낸다.
-            find_passers = Passer.objects.filter(pNo=phone_numbers[i])
-            phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+            # find_passers = Passer.objects.filter(pNo=phone_no)
+            # if len(find_passers) > 1:
+            #     logError(func_name, '출입자 중복 phone_no: {}, id: {}'.format(phone_no, [passer.pNo for passer in find_passers]))
+            # phones_state[phone_no] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
         else:
             if not settings.IS_TEST:
-                logSend('--- sms 보냄', phone_numbers[i])
+                logSend('--- sms 보냄 phone: {}'.format(phone_no))
                 # SMS 를 보낸다.
-                rData['receiver'] = phone_numbers[i]
+                rData['receiver'] = phone_no
                 rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-                logSend('SMS result', rSMS.json())
-                logSend('--- ', rSMS.json())
-            # if int(rSMS.json()['result_code']) < 0:
-            if len(phone_numbers[i]) < 11:
+                logSend('  - SMS result: {}'.format(rSMS.json()))
+            if int(rSMS.json()['result_code']) < 0:
+            # if len(phone_no) < 11:
                 # 전화번호 에러로 문자를 보낼 수 없음.
-                phones_state[phone_numbers[i]] = -101
+                phones_state[phone_no] = -101
             else:
                 # SMS 를 보냈으면 전화번호의 출입자가 앱을 설치하고 알림을 볼 수 있게 저장한다.
-                find_passers = Passer.objects.filter(pNo=phone_numbers[i])
-                phones_state[phone_numbers[i]] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+                # find_passers = Passer.objects.filter(pNo=phone_no)
+                # if len(find_passers) > 1:
+                #     logError(func_name,
+                #              '출입자 중복 phone_no: {}, id: {}'.format(phone_no, [passer.pNo for passer in find_passers]))
+                # phones_state[phone_no] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
                 new_notification = Notification_Work(
                     work_id=work.id,
-                    customer_work_id=rqst["customer_work_id"],
-                    employee_id=phones_state[phone_numbers[i]],
-                    employee_pNo=phone_numbers[i],
-                    dt_answer_deadline=rqst["dt_answer_deadline"],
+                    customer_work_id=customer_work_id,
+                    employee_id=phones_state[phone_no],
+                    employee_pNo=phone_no,
+                    dt_answer_deadline=dt_answer_deadline,
                 )
                 new_notification.save()
+                sms_success.append(phone_no)
+                phones_state[phone_no] = -1
+    logSend('  - sms fail: {}'.format(phones_state))
+    passer_list = Passer.objects.filter(pNo__in=sms_success)
+    employee_id_list = []
+    for passer in passer_list:
+        phones_state[passer.pNo] = passer.id
+        if passer.employee_id != -1:
+            employee_id_list.append(passer.employee_id)
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    for employee in employee_list:
+        # 기존 업무가 있고 업무시간과 새로운 업무 시간이 겹치는가?
+        if employee.work_id != -1 and work.dt_begin < employee.end_1:
+            logSend()
+        if employee.work_id_3 == -1:
+            if employee.work_id_2 == -1:
+                if employee.work_id == -1:
+                    # 아무 업무가 없다.
+                    logSend('  - 업무 없슴')
+                else:
+                    if employee.work_id == work.id:
+                        # 이미 등록되어 있는 업무
+
+
+
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
 
