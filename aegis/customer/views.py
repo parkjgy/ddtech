@@ -2371,11 +2371,9 @@ def reg_employee(request):
     sms_result = response_employee.json()['result']
     # sms_result = {'01033335555': -101, '01055557777': 5}
     bad_phone_list = []
+    bad_condition_list = []
     for phone in new_phone_list:
-        if sms_result[phone] == -101:
-            # 잘못된 전화번호 근로자 등록 안함
-            bad_phone_list.append(phone_format(phone))
-        else:
+        if sms_result[phone] > 0:
             # 업무 수락을 기다리는 근로자로 등록
             new_employee = Employee(
                 employee_id=sms_result[phone],
@@ -2387,6 +2385,12 @@ def reg_employee(request):
                 pNo=phone,
             )
             new_employee.save()
+        elif sms_result[phone] < -100:
+            # 잘못된 전화번호 근로자 등록 안함
+            bad_phone_list.append(phone_format(phone))
+        else:
+            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+            bad_condition_list.append(phone_format(phone))
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
@@ -2397,6 +2401,12 @@ def reg_employee(request):
                        '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
         for bad_phone in bad_phone_list:
             notification += bad_phone + '<br>'
+        if len(bad_condition_list) > 0:
+            notification += '<br><br>' \
+                            '<p style=\"color: #dd0000;\">다른 업무와 겹치는 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for bad_condition in bad_condition_list:
+                notification += bad_condition + '<br>'
         notification += '</p></body></html>'
     else:
         notification = ''

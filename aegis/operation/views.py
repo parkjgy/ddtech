@@ -3877,17 +3877,19 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
-    # employee_data = {
-    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-    #     'dt_answer_deadline': '2019-05-28 19:00',
-    #     'dt_begin': '2019-05-29',
-    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-    #         [
-    #             '010-2557-355', '011-8888-999',
-    #         ]
-    #     }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    settings.IS_TEST = True
+    employee_data = {
+        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+        'dt_answer_deadline': '2019-06-04 18:00',
+        'dt_begin': '2019-06-05',
+        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+            [
+                '+82 010-2557-3555', '010-2557-355', '011-8888-999', '+82 10 8433 3579'
+            ]
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    settings.IS_TEST = False
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
@@ -3989,12 +3991,12 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /employee/certification_no_to_sms 인증번호 요청
     # ---------------------------------------------------------------------------------------
-    passer_data = {
-        'phone_no': '+i82 10 2557 355 5',
-        'passer_id': 'tuqB7wUIVoIKH0pz2J9IfQ',
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=passer_data)
-    result.append({'url': r.url, 'POST': passer_data, 'STATUS': r.status_code, 'R': r.json()})
+    # passer_data = {
+    #     'phone_no': '+i82 10 2557 355 5',
+    #     'passer_id': 'tuqB7wUIVoIKH0pz2J9IfQ',
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=passer_data)
+    # result.append({'url': r.url, 'POST': passer_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})

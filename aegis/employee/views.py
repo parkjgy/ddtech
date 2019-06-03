@@ -11,7 +11,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import status422, no_only_phone_no, phone_format, dt_null, is_parameter_ok, str_to_datetime
-from config.common import str_no
+from config.common import str_no, str_to_dt
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -194,6 +194,10 @@ def check_version(request):
 def reg_employee_for_customer(request):
     """
     <<<고객 서버용>>> 고객사에서 보낸 업무 배정 SMS로 알림 (보냈으면 X)
+    -101 : sms 를 보낼 수 없는 전화번호
+    -11 : 업무가 중복되는 전화번호 - 기간이 맞지 않는다.
+    -21 : 이 업무를 수락했다. - notification 에 넣지 않는다.
+    -22 : 다른 업무를 수락했다. - notification 에 넣지 않는다.
     http://0.0.0.0:8000/employee/reg_employee_for_customer?customer_work_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
     POST : json
         {
@@ -222,7 +226,7 @@ def reg_employee_for_customer(request):
                 "01011112222": -1,
                 "01022223333": -1,
                 "0103333": -101,    # 잘못된 전화번호임
-                "01044445555": -1
+                "01044445555": -11  # 근로자의 남은 업무 종료일 보다 새로운 업무 시작일이 더 빠르다.
               }
             }
         STATUS 422 # 개발자 수정사항
@@ -260,7 +264,7 @@ def reg_employee_for_customer(request):
     dt_answer_deadline = parameter_check['parameters']['dt_answer_deadline']
     staff_name = parameter_check['parameters']['staff_name']
     staff_phone = parameter_check['parameters']['staff_phone']
-    phones_numbers = parameter_check['parameters']['phones']
+    phone_numbers = parameter_check['parameters']['phones']
 
     logSend('  - phone numbers: {}'.format(phone_numbers))
 
@@ -279,6 +283,41 @@ def reg_employee_for_customer(request):
     else:
         work = find_works[0]
 
+    # 업무 요청 전화번호로 등록된 근로자 중에서 업무 요청을 할 수 없는 근로자를 가려낸다.
+    # [phone_numbers] - [업무 중이고 예약된 근로자]
+    passer_list = Passer.objects.filter(pNo__in=phone_numbers)
+    passer_id_dict = {}
+    for passer in passer_list:
+        passer_id_dict[passer.pNo] = passer.id
+    logSend('  - passer_id_dict: {}'.format(passer_id_dict))
+    employee_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    employee_status = {}
+    for employee in employee_list:
+        # 근로자에게 예약된 업무가 있으면 (업무 시작 날짜가 오늘 이후 날짜인 업무가 있으면 예약된 업무가 있다고 본다.)
+        # 새로운 업무를 줄 수 없다.
+        # - 한번 수락하면 취소가 안된다.
+        if employee.work_id != -1 and str_to_dt(work.begin) < str_to_dt(employee.end_1):
+            # 현재 업무가 있고 업무의 끝나는 날보다 새로운 업무의 시작 날짜가 빠르면 업무를 받을 수 없다.
+            employee_status[employee.id] = -11
+        else:
+            if employee.work_id_3 == work.id:
+                # 이미 이 업무를 수락했다.
+                employee_status[employee.id] = -21
+            elif employee.work_id_3 > 0:
+                # 이미 수락한 다른 업무가 있다.
+                employee_status[employee.id] = -22
+            else:
+                employee_status[employee.id] = employee.id
+    logSend('  - bad condition phone: {}'.format(employee_status))
+    phones_state = {}
+    for passer in passer_list:
+        if passer.employee_id > 0:
+            if employee_status[passer.employee_id] < -10:
+                phones_state[passer.pNo] = employee_status[passer.employee_id]
+    last_phone_numbers = [phone_no for phone_no in phone_numbers if phone_no not in phones_state.keys()]
+    logSend('  - last_phone_numbers: {}'.format(last_phone_numbers))
+    # 등록된 근로자 중에서 전화번호로 업무 요청
     msg = '이지체크\n'\
           '새로운 업무를 앱에서 확인해주세요.\n'\
           '앱 설치\n'\
@@ -296,39 +335,27 @@ def reg_employee_for_customer(request):
     # notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo__in=phones_numbers)
     notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id)
     notification_phones = [notification.employee_pNo for notification in notification_list]
-    sms_success = []
-    phones_state = {}
-    for phone_no in phones_numbers:
+    for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
-        # notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo=phone_no)
-        logSend('  - {}'.format(notification_list))
         if phone_no in notification_phones:
-            logSend('--- sms 이미 보냄 phone: {}'.format(phone_no))
-            sms_success.append(phone_no)
-            phones_state[phone_no] = -1
-            # 이전에 SMS 를 보낸적있는 전화번호는 전화번호 출입자가 저장하고 있는 근로자 id 만 확인해서 보낸다.
-            # find_passers = Passer.objects.filter(pNo=phone_no)
-            # if len(find_passers) > 1:
-            #     logError(func_name, '출입자 중복 phone_no: {}, id: {}'.format(phone_no, [passer.pNo for passer in find_passers]))
-            # phones_state[phone_no] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+            logSend(' - sms 이미 보냄 phone: {}'.format(phone_no))
+            phones_state[phone_no] = -1 if phone_no not in passer_id_dict.keys() else passer_id_dict[phone_no]
         else:
             if not settings.IS_TEST:
-                logSend('--- sms 보냄 phone: {}'.format(phone_no))
+                logSend('  - sms 보냄 phone: {}'.format(phone_no))
                 # SMS 를 보낸다.
                 rData['receiver'] = phone_no
                 rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
                 logSend('  - SMS result: {}'.format(rSMS.json()))
-            if int(rSMS.json()['result_code']) < 0:
-            # if len(phone_no) < 11:
+                is_sms_ok = int(rSMS.json()['result_code']) < 0
+            else:
+                is_sms_ok = len(phone_no) < 11
+            if is_sms_ok:
                 # 전화번호 에러로 문자를 보낼 수 없음.
                 phones_state[phone_no] = -101
+                logSend('  - sms send fail phone: {}'.format(phone_no))
             else:
-                # SMS 를 보냈으면 전화번호의 출입자가 앱을 설치하고 알림을 볼 수 있게 저장한다.
-                # find_passers = Passer.objects.filter(pNo=phone_no)
-                # if len(find_passers) > 1:
-                #     logError(func_name,
-                #              '출입자 중복 phone_no: {}, id: {}'.format(phone_no, [passer.pNo for passer in find_passers]))
-                # phones_state[phone_no] = -1 if len(find_passers) == 0 else find_passers[0].employee_id  # 등록된 전화번호 없음 (즉, 앱 설치되지 않음)
+                phones_state[phone_no] = -1 if phone_no not in passer_id_dict.keys() else passer_id_dict[phone_no]
                 new_notification = Notification_Work(
                     work_id=work.id,
                     customer_work_id=customer_work_id,
@@ -337,31 +364,7 @@ def reg_employee_for_customer(request):
                     dt_answer_deadline=dt_answer_deadline,
                 )
                 new_notification.save()
-                sms_success.append(phone_no)
-                phones_state[phone_no] = -1
-    logSend('  - sms fail: {}'.format(phones_state))
-    passer_list = Passer.objects.filter(pNo__in=sms_success)
-    employee_id_list = []
-    for passer in passer_list:
-        phones_state[passer.pNo] = passer.id
-        if passer.employee_id != -1:
-            employee_id_list.append(passer.employee_id)
-    employee_list = Employee.objects.filter(id__in=employee_id_list)
-    for employee in employee_list:
-        # 기존 업무가 있고 업무시간과 새로운 업무 시간이 겹치는가?
-        if employee.work_id != -1 and work.dt_begin < employee.end_1:
-            logSend()
-        if employee.work_id_3 == -1:
-            if employee.work_id_2 == -1:
-                if employee.work_id == -1:
-                    # 아무 업무가 없다.
-                    logSend('  - 업무 없슴')
-                else:
-                    if employee.work_id == work.id:
-                        # 이미 등록되어 있는 업무
-
-
-
+                logSend('  - sms send success phone: {}'.format(phone_no))
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': phones_state})

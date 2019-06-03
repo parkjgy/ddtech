@@ -198,6 +198,15 @@ def str_to_datetime(date_time):
     return datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
 
 
+def str_to_dt(str_dt):
+    """
+    "2019/06/04" > 2019-06-04 00:00:00
+    :param str_dt:
+    :return:
+    """
+    return datetime.datetime.strptime(str_dt, "%Y/%m/%d")
+
+
 def str_no(str_no) -> str:
     """
     문자열을 숫자문자로 변경
