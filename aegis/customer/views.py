@@ -420,6 +420,10 @@ def update_customer(request):
                 worker.is_login = False
                 worker.dt_login = datetime.datetime.now()
                 worker.save()
+    elif parameter_check['is_decryption_error']:
+        logError(func_name, parameter_check['results'])
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
 
     parameter_check = is_parameter_ok(rqst, ['manager_id_!'])
     if parameter_check['is_ok']:
@@ -450,6 +454,10 @@ def update_customer(request):
                     worker.save()
 
                     is_logout = True
+    elif parameter_check['is_decryption_error']:
+        logError(func_name, parameter_check['results'])
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
 
     # 사업자 등록증 내용 변경 or 새로 만들기
     update_business_registration(rqst, customer)
@@ -1934,6 +1942,10 @@ def update_work(request):
             work.work_place_id = work_place.id
             work.work_place_name = work_place.name
             is_update_work_place = True
+    elif parameter_check['is_decryption_error']:
+        logError(func_name, parameter_check['results'])
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
 
     # 파견업체가 변경되었을 때 처리
     is_update_partner = False
@@ -1946,6 +1958,10 @@ def update_work(request):
             work.contractor_id = partner.id
             work.contractor_name = partner.corp_name
             is_update_partner = True
+    elif parameter_check['is_decryption_error']:
+        logError(func_name, parameter_check['results'])
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
 
     # 업무 담당자가 바뀌었을 때 처리
     is_update_staff = False
@@ -1960,6 +1976,11 @@ def update_work(request):
             work.staff_pNo = staff.pNo
             work.staff_email = staff.email
             is_update_staff = True
+    elif parameter_check['is_decryption_error']:
+        logError(func_name, parameter_check['results'])
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
+
     if is_update_dt_begin or is_update_dt_end or is_update_name or is_update_type or is_update_work_place or is_update_partner or is_update_staff:
         work.save()
 

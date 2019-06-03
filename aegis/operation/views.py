@@ -3990,8 +3990,8 @@ def test_go_go(request):
     # TEST: /employee/certification_no_to_sms 인증번호 요청
     # ---------------------------------------------------------------------------------------
     passer_data = {
-        'phone_no': '+i82 10 8433-3579',
-        'staff_id': 'tuqB7wUIVoIKH0pz2J9IfQ',
+        'phone_no': '+i82 10 2557 355 5',
+        'passer_id': 'tuqB7wUIVoIKH0pz2J9IfQ',
     }
     r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=passer_data)
     result.append({'url': r.url, 'POST': passer_data, 'STATUS': r.status_code, 'R': r.json()})

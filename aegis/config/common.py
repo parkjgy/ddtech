@@ -141,10 +141,11 @@ def is_parameter_ok(rqst, key_list) -> dict:
     :param key_list:
     :return:
         is_ok: True     # 에러 발생 여부
+        is_decryption_error: True # 암호 해독 에러 여부
         results:[...]   # 에러가 있으면 에러 메세지
         parameter['key']=value,  # 검사가 끝난 파라미터들
     """
-    results = {'is_ok':True, 'results':[], 'parameters':{}}
+    results = {'is_ok': True, 'is_decryption_error': False, 'results': [], 'parameters': {}}
     for key in key_list:
         is_decrypt = '_!' in key
         if is_decrypt:
@@ -159,6 +160,7 @@ def is_parameter_ok(rqst, key_list) -> dict:
                 plain = AES_DECRYPT_BASE64(rqst[key])
                 if plain == '__error':
                     results['is_ok'] = False
+                    results['is_decryption_error'] = True
                     results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
                 else:
                     results['parameters'][key] = plain
