@@ -1813,6 +1813,107 @@ def update_my_info(request):
 
 
 @cross_origin_read_allow
+def my_work_list(request):
+    """
+    근로자의 진행중이거나 예정된 업무 요청
+    http://0.0.0.0:8000/employee/my_work_list?passer_id=qgf6YHf1z2Fx80DR8o/Lvg
+    POST
+        {
+            'passer_id': '서버로 받아 저장해둔 출입자 id',
+        }
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "works": [
+                {
+                  "begin": "2019/05/20",
+                  "end": "2019/07/18",
+                  "work_place_name": "대덕기공 출입시스템",
+                  "work_name_type": "비콘 시험 (주간 오후)",
+                  "staff_name": "이요셉",
+                  "staff_pNo": "01024505942"
+                },
+                ......
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'}
+            {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+
+    passer_id = parameter_check['parameters']['passer_id']
+    logSend('  - passer_id: ' + passer_id)
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) != 1:
+        # 출입자에 없는 사람을 수정하려는 경우
+        logError(func_name, ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
+        return status422(func_name, {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
+    passer = passers[0]
+    if passer.employee_id == -1:
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'works': []})
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) != 1:
+        # 출입자의 근로자 정보가 없다.
+        logError(func_name, ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
+        return status422(func_name, {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
+    employee = employees[0]
+    work_list = []
+    if employee.work_id != -1:
+        work = {'work_id': employee.work_id,
+                'begin': employee.begin_1,
+                'end': employee.end_1,
+                }
+        work_list.append(work)
+    if employee.work_id_2 != -1:
+        work = {'work_id': employee.work_id_2,
+                'begin': employee.begin_2,
+                'end': employee.end_2,
+                }
+        work_list.append(work)
+    if employee.work_id_3 != -1:
+        work = {'work_id': employee.work_id_3,
+                'begin': employee.begin_3,
+                'end': employee.end_3,
+                }
+        work_list.append(work)
+    if len(work_list) > 0:
+        work_id_list = [work['work_id'] for work in work_list]
+        work_list_db = Work.objects.filter(id__in=work_id_list)
+        for work in work_list:
+            for work_db in work_list_db:
+                if work['work_id'] == work_db.id:
+                    work['work_place_name'] = work_db.work_place_name
+                    work['work_name_type'] = work_db.work_name_type
+                    work['staff_name'] = work_db.staff_name
+                    work['staff_pNo'] = work_db.staff_pNo
+                    if len(work['begin']) == 0:
+                        work['begin'] = work_db.begin
+                    if len(work['end']) == 0:
+                        work['end'] = work_db.end
+                    # del work['work_id']  # 시험할 때만
+                    continue
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'works': work_list})
+
+
+@cross_origin_read_allow
 def pass_record_of_employees_in_day_for_customer(request):
     """
     << 고객 서버용 >> 복수 근로자의 날짜별 출퇴근 기록 요청
