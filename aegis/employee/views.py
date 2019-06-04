@@ -601,32 +601,32 @@ def notification_accept(request):
         if is_accept:
             employee.save()
         logSend('  - name: ', employee.name)
-    else:
-        logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        # 근로자 정보에 work_id 가 있으면 삭제
-        if employee.work_id_3 == notification.work_id:
-            employee.work_id_3 = -1
-        logSend('  - 2.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        if employee.work_id_2 == notification.work_id:
-            employee.work_id_2 = -1
-        logSend('  - 3.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        if employee.work_id == notification.work_id:
-            employee.work_id = -1
-        logSend('  - 4.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        # 근로자 정보에 첫번째 work_id 가 없으면서 뒤에 있으면 앞으로 당김
-        if employee.work_id == -1 and employee.work_id_2 != -1:
-            employee.work_id = employee.work_id_2
-            employee.work_id_2 = -1
-        logSend('  - 5.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        if employee.work_id_2 == -1 and employee.work_id_3 != -1:
-            employee.work_id_2 = employee.work_id_3
-            employee.work_id_3 = -1
-        logSend('  - 6.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        if employee.work_id == -1 and employee.work_id_2 != -1:
-            employee.work_id = employee.work_id_2
-            employee.work_id_2 = -1
-        logSend('  - 7.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        employee.save()
+    # else:
+    #     logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     # 근로자 정보에 work_id 가 있으면 삭제
+    #     if employee.work_id_3 == notification.work_id:
+    #         employee.work_id_3 = -1
+    #     logSend('  - 2.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     if employee.work_id_2 == notification.work_id:
+    #         employee.work_id_2 = -1
+    #     logSend('  - 3.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     if employee.work_id == notification.work_id:
+    #         employee.work_id = -1
+    #     logSend('  - 4.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     # 근로자 정보에 첫번째 work_id 가 없으면서 뒤에 있으면 앞으로 당김
+    #     if employee.work_id == -1 and employee.work_id_2 != -1:
+    #         employee.work_id = employee.work_id_2
+    #         employee.work_id_2 = -1
+    #     logSend('  - 5.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     if employee.work_id_2 == -1 and employee.work_id_3 != -1:
+    #         employee.work_id_2 = employee.work_id_3
+    #         employee.work_id_3 = -1
+    #     logSend('  - 6.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     if employee.work_id == -1 and employee.work_id_2 != -1:
+    #         employee.work_id = employee.work_id_2
+    #         employee.work_id_2 = -1
+    #     logSend('  - 7.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+    #     employee.save()
 
     #
     # to customer server
