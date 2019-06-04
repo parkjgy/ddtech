@@ -2394,15 +2394,16 @@ def reg_employee(request):
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
-    if len(bad_phone_list) > 0:
+    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0:
         notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
-                       '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>' \
-                       '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
-                       '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
-        for bad_phone in bad_phone_list:
-            notification += bad_phone + '<br>'
+                       '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>'
+        if len(bad_phone_list) > 0:
+            notification += '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for bad_phone in bad_phone_list:
+                notification += bad_phone + '<br>'
         if len(bad_condition_list) > 0:
-            notification += '<br><br>' \
+            notification += '<br>' \
                             '<p style=\"color: #dd0000;\">다른 업무와 겹치는 전화번호입니다.</p>' \
                             '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
             for bad_condition in bad_condition_list:
