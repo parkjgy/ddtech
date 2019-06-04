@@ -2411,7 +2411,7 @@ def reg_employee(request):
     else:
         notification = ''
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list, 'notification': notification})
+    return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list, 'bad_condition': bad_condition_list, 'notification': notification})
 
 
 @cross_origin_read_allow
