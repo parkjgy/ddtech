@@ -570,31 +570,37 @@ def notification_accept(request):
     if is_accept == 1:
         logSend('  - 1.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         work = Work.objects.get(id=notification.work_id)
-        if employee.work_id == -1:
-            # 업무가 없을 때 추가
-            employee.work_id = notification.work_id
-            employee.begin_1 = work.begin
-            employee.end_1 = work.end
-        elif employee.work_id_2 == -1:
-            # 업무가 1개 있을 때 추가
-            employee.work_id_2 = notification.work_id
-            employee.begin_2 = work.begin
-            employee.end_2 = work.end
-        elif employee.work_id_3 == -1:
-            # 업무가 2개 있을 때 추가
-            employee.work_id_3 = notification.work_id
-            employee.begin_3 = work.begin
-            employee.end_3 = work.end
+        if employee.work_id_3 == -1:
+            # 업무가 없을 때
+            if employee.work_id != -1 and str_to_dt(work.begin) < str_to_dt(employee.end_1):
+                is_accept = 0
+            else:
+                employee.work_id_3 = notification.work_id
+                employee.begin_1_3 = work.begin
+                employee.end_1_3 = work.end
         else:
-            # 더 이상 업무를 받을 수 없기 때문에 "거절" 처리
-            # 단, 이전에 수락했던건 빼고
-            employee_works = [employee.work_id, employee.work_id_2, employee.work_id_3]
-            if notification.work_id not in employee_works:
-                is_accept = False
+            # 업무가 있기 때문에 승락을 했더라도 거절 처리한다.
+            is_accept = 0
+        # elif employee.work_id_2 == -1:
+        #     # 업무가 1개 있을 때 추가
+        #     employee.work_id_2 = notification.work_id
+        #     employee.begin_2 = work.begin
+        #     employee.end_2 = work.end
+        # elif employee.work_id_3 == -1:
+        #     # 업무가 2개 있을 때 추가
+        #     employee.work_id_3 = notification.work_id
+        #     employee.begin_3 = work.begin
+        #     employee.end_3 = work.end
+        # else:
+        #     # 더 이상 업무를 받을 수 없기 때문에 "거절" 처리
+        #     # 단, 이전에 수락했던건 빼고
+        #     employee_works = [employee.work_id, employee.work_id_2, employee.work_id_3]
+        #     if notification.work_id not in employee_works:
+        #         is_accept = False
         logSend('  - 2.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         if is_accept:
             employee.save()
-        logSend(employee.name)
+        logSend('  - name: ', employee.name)
     else:
         logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
         # 근로자 정보에 work_id 가 있으면 삭제
