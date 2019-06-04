@@ -2169,6 +2169,7 @@ def update_pass_history(pass_history: dict):
         # 출근 터치가 있으면 지각여부 처리한다.
         action_in = 100
         # 하~~~ 근로자 앱을 설치할 때 출근시간, 일하는 시간 미등록도 걸러야 하나...
+        logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, pass_history.dt_in_verify))
         if employee.work_start is None:
             logError(func_name, ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
         if (employee.work_start is not None) and \
