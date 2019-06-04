@@ -2170,7 +2170,8 @@ def update_pass_history(pass_history: dict):
         action_in = 100
         # 하~~~ 근로자 앱을 설치할 때 출근시간, 일하는 시간 미등록도 걸러야 하나...
         logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, pass_history.dt_in_verify))
-        if employee.work_start is None or employee.working_time is None:
+        # if employee.work_start is None or employee.working_time is None:
+        if len(employee.work_start) == 0 or len(employee.working_time) == 0:
             logError(func_name, ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
         else:
             dt_in = pass_history.dt_in_verify
@@ -2194,7 +2195,8 @@ def update_pass_history(pass_history: dict):
             action_out = 10
             dt_out = pass_history.dt_out_verify
             logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, dt_out))
-            if employee.work_start is None or employee.working_time is None:
+            # if employee.work_start is None or employee.working_time is None:
+            if len(employee.work_start) == 0 or len(employee.working_time) == 0:
                 logError(func_name, ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
             else:
                 work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
