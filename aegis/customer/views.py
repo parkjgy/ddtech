@@ -2319,6 +2319,8 @@ def reg_employee(request):
     seen = set()
     for phone_no in phone_numbers:
         pNo = no_only_phone_no(phone_no)
+        if len(pNo) == 0:
+            continue
         if pNo not in seen and not seen.add(pNo):
             phones.append(pNo)
     # phones = [no_only_phone_no(pNo) for pNo in phone_numbers if len(pNo) > 7]
