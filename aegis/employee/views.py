@@ -650,7 +650,7 @@ def notification_accept(request):
     notification.delete()
 
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
 
 
 @cross_origin_read_allow
@@ -1227,6 +1227,7 @@ def pass_sms(request):
             }
             r = requests.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept_infor)
             logSend({'url': r.url, 'POST': accept_infor, 'STATUS': r.status_code, 'R': r.json()})
+            is_accept = r.json()['is_accept']
 
             if r.status_code == 416:
                 func_end_log(func_name)

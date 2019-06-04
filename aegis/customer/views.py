@@ -2444,6 +2444,14 @@ def employee_work_accept_for_employee(request):
             {'message':'파견사 측에 근로자 정보가 없습니다.'}
         STATUS 422  # 개발자 수정사항
             {'message':'업무 참여 시간이 종료되었습니다.'}
+            {'message': 'ClientError: parameter \'worker_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'employee_name\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'employee_pNo\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'is_accept\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -2453,31 +2461,40 @@ def employee_work_accept_for_employee(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
+    parameter_check = is_parameter_ok(rqst, ['worker_id_!', 'work_id_!', 'employee_id_!', 'employee_name', 'employee_pNo', 'is_accept'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    worker_id = parameter_check['parameters']['worker_id']
+    work_id = parameter_check['parameters']['work_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    employee_name = parameter_check['parameters']['employee_name']
+    employee_pNo = parameter_check['parameters']['employee_pNo']
+    is_accept = parameter_check['parameters']['is_accept']
+
     # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
-    worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
     logSend('   from operation server : operation staff id ', worker_id)
 
-    logSend(rqst['work_id'])
-    logSend(rqst['employee_name'])
-    logSend(rqst['employee_pNo'])
-    logSend(rqst['is_accept'])
-
-    works = Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_id']))
+    works = Work.objects.filter(id=work_id)
     if len(works) == 0:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무 참여 시간이 종료되었습니다.'})
     work = works[0]
 
-    employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
-    if len(employees) != 1:
+    employees = Employee.objects.filter(work_id=work.id, pNo=employee_pNo)
+    if len(employees) == 0:
         func_end_log(func_name)
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '파견사 측에 근로자 정보가 없습니다.'})
 
     employee = employees[0]
-    employee.employee_id = rqst['employee_id']
-    employee.name = rqst['employee_name']
-    employee.is_accept_work = rqst['is_accept']
-    employee.save()
+    if employee.dt_begin < datetime.datetime.now() and not is_accept:
+        employee.delete()
+    else:
+        employee.employee_id = employee_id
+        employee.name = employee_name
+        employee.is_accept_work = is_accept
+        employee.save()
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
