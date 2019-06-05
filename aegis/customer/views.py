@@ -2300,7 +2300,7 @@ def reg_employee(request):
 
     work_list = Work.objects.filter(id=work_id)
     if len(work_list) == 0:
-        return status422(func_name, {'message':'ServerError: Work 에 id={} 이(가) 없다'.format(work_id)})
+        return status422(func_name, {'message': 'ServerError: Work 에 id={} 이(가) 없다'.format(work_id)})
     elif len(work_list) > 1:
         logError(func_name, ' Work(id:{})가 중복되었다.'.format(work_id))
     work = work_list[0]
