@@ -374,7 +374,7 @@ def reg_employee_for_customer(request):
 def update_work_for_customer(request):
     """
     <<<고객 서버용>>> 고객사에서 보낸 업무 배정 SMS로 알림 (보냈으면 X)
-    http://0.0.0.0:8000/employee/reg_employee_for_customer?customer_work_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
+    http://0.0.0.0:8000/employee/update_work_for_customer?customer_work_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
     POST : json
         {
           "customer_work_id":qgf6YHf1z2Fx80DR8o_Lvg,
@@ -937,6 +937,8 @@ def pass_verify(request):
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
             {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
             {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 416
+            {'message': '출근처리할 업무가 없습니다.'}  # 출근 버튼을 깜박이고 출퇴근 버튼을 모두 disable 하는 방안을 모색 중...
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'dt\' 가 없어요'}
@@ -983,7 +985,8 @@ def pass_verify(request):
         logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     if employee.work_id == -1:
-        return status422(func_name, {'message': '업무가 없다'})
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     #
     # 지금은 무조건 첫번째 업무에 출퇴근처리한다.
     #   > 투잡일 때는 업무 시간으로 구분한다.

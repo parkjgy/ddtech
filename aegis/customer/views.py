@@ -2319,15 +2319,11 @@ def reg_employee(request):
     seen = set()
     for phone_no in phone_numbers:
         pNo = no_only_phone_no(phone_no)
-        if len(pNo) == 0:
+        if len(pNo) < 8:
             continue
         if pNo not in seen and not seen.add(pNo):
             phones.append(pNo)
-    # phones = [no_only_phone_no(pNo) for pNo in phone_numbers if len(pNo) > 7]
-    # logSend('  - filtering phones: {}'.format(phones))
-    # seen = set()
-    # phones = [pNo for pNo in phones if pNo not in seen and not seen.add(pNo)]
-    logSend('  - filtering phones: {}'.format(phones))
+    logSend('  - 의미 없는 전화번호 필터링 후 phones: {}'.format(phones))
     #
     # 답변시한 검사
     #
@@ -2607,6 +2603,8 @@ def update_employee(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
+            {'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'}
+            {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
             {'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'}
             {'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'}
         STATUS 503
@@ -2616,9 +2614,6 @@ def update_employee(request):
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
             {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)}
@@ -2687,31 +2682,44 @@ def update_employee(request):
     #
     # 근로자에게 업무 시작일 전에 업무 투입을 요청할 때 사용
     #
-    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'phone_no', 'dt_answer_deadline', 'dt_begin', 'dt_end'])
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt_answer_deadline', 'dt_begin', 'dt_end'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     employee_id = parameter_check['parameters']['employee_id']
-    phone_no = parameter_check['parameters']['phone_no']
-    dt_answer_deadline = datetime.datetime.strptime(parameter_check['parameters']['dt_answer_deadline'], "%Y-%m-%d %H:%M")
-    dt_begin = datetime.datetime.strptime(parameter_check['parameters']['dt_begin'], "%Y-%m-%d")
-    dt_end = datetime.datetime.strptime(parameter_check['parameters']['dt_end'], "%Y-%m-%d")
+    # phone_no = parameter_check['parameters']['phone_no']
+    dt_answer_deadline = str_to_datetime(parameter_check['parameters']['dt_answer_deadline'])
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+
+    employee_list = Employee.objects.filter(id=employee_id)
+    if len(employee_list) == 0:
+        return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
+    elif len(employee_list) > 1:
+        logError(func_name, ' Employee(id:{})가 중복되었다.'.format(employee_id))
+    employee = employee_list[0]
+
+    work_list = Work.objects.filter(id=employee.work_id)
+    if len(work_list) == 0:
+        return status422(func_name, {'message': 'ServerError: Work 에 id={} 이(가) 없다'.format(employee.work_id)})
+    elif len(work_list) > 1:
+        logError(func_name, ' Work(id:{})가 중복되었다.'.format(employee.work_id))
+    work = work_list[0]
     #
     # 답변 시한 검사
     #
+    if dt_begin < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'})
+    if work.dt_end < dt_end:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
     if dt_begin < dt_answer_deadline:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'})
     if dt_end < dt_begin:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'})
-
-    employee_list = Employee.objects.filter(id=employee_id)
-    if len(employee_list) == 0:
-        return status422(func_name, {'message':'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
-    elif len(employee_list) > 1:
-        logError(func_name, ' Employee(id:{})가 중복되었다.'.format(employee_id))
-    employee = employee_list[0]
     #
     # 업무 시간 변경 확인
     #
@@ -2723,9 +2731,8 @@ def update_employee(request):
     if 'phone_no' in rqst and len(rqst['phone_no']) > 0:
         if 'dt_answer_deadline' not in rqst or len(rqst['dt_answer_deadline']) == 0:
             func_end_log(func_name)
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 바꾸려면 업무 답변 기한을 꼭 넣어야 합니다.'})
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '전화번호를 바꾸려면 업무 답변 기한을 꼭 넣어야 합니다.'})
         employee.pNo = no_only_phone_no(rqst['phone_no'])
-        work = Work.objects.get(id=employee.work_id)
         #
         # 근로자 서버로 근로자의 업무 의사와 답변을 요청
         #
