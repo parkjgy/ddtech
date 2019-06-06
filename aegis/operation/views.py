@@ -19,15 +19,16 @@ from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
 from config.common import rMin, str_to_datetime, str_to_dt
+from config.common import Works
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
 
 from .models import Environment
 from .models import Staff
-from .models import Employee
 from .models import Work_Place
 from .models import Beacon
+# from .models import Employee
 
 import requests
 from django.http import HttpResponse
@@ -4003,6 +4004,9 @@ def test_go_go(request):
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
+    # ---------------------------------------------------------------------------------------
+    # TEST: /config.common Works 근로자 업무 처리 class
+    # ---------------------------------------------------------------------------------------
     # work_1 = {"id": 1, "begin": "2019/05/01", "end": "2019/05/30"}
     # work_2 = {"id": 2, "begin": "2019/06/01", "end": "2019/06/30"}
     # work_3 = {"id": 3, "begin": "2019/07/01", "end": "2019/07/30"}
@@ -4022,97 +4026,66 @@ def test_go_go(request):
     # employee.set_works(w.data)
     # employee.save()
 
-    employee = Employee.objects.get(id=7)
-    w = employee.get_works()
-    logSend(' len: {}'.format(len(w)))
-    logSend(' {} - {}'.format(w, w[0]))
-    ww = Works(w)
-    logSend(ww.data, '**', ww.data[0], "==", ww.data[1])
-
-
-    # work_data = {'works':
-    #     [
-    #         {
-    #             'work_id': 101,
-    #             'dt_begin': str_to_datetime('2019-06-03'),
-    #             'dt_end': str_to_datetime('2019-06-30'),
-    #         },
-    #         {
-    #             'work_id': 102,
-    #             'dt_begin': str_to_datetime('2019-06-09'),
-    #             'dt_end': str_to_datetime('2019-06-30'),
-    #         },
-    #         {
-    #             'work_id': -1,
-    #             'dt_begin': None,
-    #             'dt_end': None,
-    #         },
-    #     ]
-    # }
-    # work_data = [[100, '2019/05/01', '2019/05/30'], [101, '2019/06/01', '2019/06/30'], [-1, '', '']]
-    # employee = Employee(
-    #     name='근로자',
-    #     work=work_data,
-    # )
-    # employee.save()
-
-    # employee = Employee.objects.get(id=2)
-    # work_data = employee.work
-    # logSend(work_data)
+    # employee = Employee.objects.get(id=1)
+    # w = employee.get_works()
+    # logSend(' len: {}'.format(len(w)))
+    # logSend(' {} - {}'.format(w, w[0]))
+    # ww = Works(w)
+    # logSend(ww.data, '**', ww.data[0], "==", ww.data[1])
 
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
 
 
-class Works(object):
-    """
-    element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
-    """
-    is_update = False
-
-    def __init__(self, x=None):
-        if x is None:
-            self.data = []
-        else:
-            self.data = x
-            # self.__del__()
-
-    def __del__(self):
-        """
-        data 중에 날짜가 지난 항목이 있으면 삭제한다.
-        """
-        today = datetime.datetime.now()
-        for element in self.data:
-            logSend(' {} {} {}'.format(element['id'], element['begin'], element['end']))
-            if str_to_dt(element['end']) < today:
-                self.data.remove(element)
-
-    def add(self, x):
-        """
-        새로운 업무를 추가한다.
-        단, 같은 id 가 있으면 update 한다.
-        :return: None or before data
-        """
-        for element in self.data:
-            if element['id'] == x['id']:
-                before_x = element
-                self.data.remove(element)
-                self.data.append(x)
-                return before_x
-        self.data.append(x)
-        return None
-
-    def is_overlap(self, x):
-        """
-        기간이 겹치는 업무가 있는지 확인한다.
-        """
-        x_begin = str_to_dt(x['begin'])
-        x_end = str_to_dt(x['end'])
-        for element in self.data:
-            e_begin = str_to_dt(element['begin'])
-            e_end = str_to_dt(element['end'])
-            if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
-                return True
-        return False
+# class Works(object):
+#     """
+#     element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
+#     """
+#     is_update = False
+#
+#     def __init__(self, x=None):
+#         if x is None:
+#             self.data = []
+#         else:
+#             self.data = x
+#             self.__del__()
+#
+#     def __del__(self):
+#         """
+#         data 중에 날짜가 지난 항목이 있으면 삭제한다.
+#         """
+#         today = datetime.datetime.now()
+#         for element in self.data:
+#             logSend(' {} {} {}'.format(element['id'], element['begin'], element['end']))
+#             if str_to_dt(element['end']) < today:
+#                 self.data.remove(element)
+#
+#     def add(self, x):
+#         """
+#         새로운 업무를 추가한다.
+#         단, 같은 id 가 있으면 update 한다.
+#         :return: None or before data
+#         """
+#         for element in self.data:
+#             if element['id'] == x['id']:
+#                 before_x = element
+#                 self.data.remove(element)
+#                 self.data.append(x)
+#                 return before_x
+#         self.data.append(x)
+#         return None
+#
+#     def is_overlap(self, x):
+#         """
+#         기간이 겹치는 업무가 있는지 확인한다.
+#         """
+#         x_begin = str_to_dt(x['begin'])
+#         x_end = str_to_dt(x['end'])
+#         for element in self.data:
+#             e_begin = str_to_dt(element['begin'])
+#             e_end = str_to_dt(element['end'])
+#             if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
+#                 return True
+#         return False
 

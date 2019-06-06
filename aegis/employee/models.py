@@ -18,17 +18,24 @@ class Employee(models.Model):
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
 
-    work_id = models.IntegerField(default=-1)  # employee server work id
-    begin_1 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    end_1 = models.CharField(max_length=127, default='') # 근무 종료 날짜
+    works = models.CharField(max_length=1024)  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
 
-    work_id_2 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
-    begin_2 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    end_2 = models.CharField(max_length=127, default='') # 근무 종료 날짜
+    def set_works(self, x):
+        self.works = json.dumps(x)
 
-    work_id_3 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
-    begin_3 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    end_3 = models.CharField(max_length=127, default='') # 근무 종료 날짜
+    def get_works(self):
+        return json.loads(self.works)
+    # work_id = models.IntegerField(default=-1)  # employee server work id
+    # begin_1 = models.CharField(max_length=127, default='') # 근무 시작 날짜
+    # end_1 = models.CharField(max_length=127, default='') # 근무 종료 날짜
+
+    # work_id_2 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
+    # begin_2 = models.CharField(max_length=127, default='') # 근무 시작 날짜
+    # end_2 = models.CharField(max_length=127, default='') # 근무 종료 날짜
+
+    # work_id_3 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
+    # begin_3 = models.CharField(max_length=127, default='') # 근무 시작 날짜
+    # end_3 = models.CharField(max_length=127, default='') # 근무 종료 날짜
 
 
 class Notification_Work(models.Model):

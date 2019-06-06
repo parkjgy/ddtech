@@ -10,20 +10,10 @@ class Environment(models.Model):
     timeCheckServer =  models.CharField(max_length = 15) # 09:00:00 형식의 문자열
 
 
-"""
-직원 (관리자, 담당자)
-id 
-login_id
-login_pw
-이름
-직위
-소속
-전화 번호 : phone_no
-전화 종류 : phone_type 
-push_token
-이메일
-"""
 class Staff(models.Model):
+    """
+    직원
+    """
     login_id = models.CharField(max_length=128) # 로그인 id
     login_pw = models.CharField(max_length=128) # 로그인 pw
     name = models.CharField(max_length=128, default='unknown') # 이름
@@ -38,28 +28,11 @@ class Staff(models.Model):
     is_login = models.BooleanField(default=False) # 로그인이 되었는가?
     dt_login = models.DateTimeField(blank=True, null=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
 
-"""
-사업장
-id
-major
-staff_id
-staff_name
-staff_pNo
-사업장 이름 - (주)효성용연 1공장
-파견업체 id
-파견업체 상호
-관리자 id
-관리자 이름 - 이석호 상무
-관리자 전화번호
-관리자 이메일
-발주사 id
-발주사 이름 - (주)효성
-발주사 담당자 id
-발주사 담당자 이름 - 이석호 상무
-발주사 담당자 전화번호
-발주사 담당자 이메일
-"""
+
 class Work_Place(models.Model):
+    """
+    사업장
+    """
     major = models.IntegerField(default=0) # beacon major
     staff_id = models.IntegerField(default=-1) # 담당자 id
     staff_name = models.CharField(max_length=127, default='unknown') # 담당자 이름
@@ -81,16 +54,11 @@ class Work_Place(models.Model):
     order_staff_pNo = models.CharField(max_length = 19, default='') # 발주사 담당자 전화번호
     order_staff_email = models.CharField(max_length = 320, default='') # 발주사 담당자 이메일
 
-"""
-비콘
-id
-major
-minor
-work_place_id
-dt_last
-uuid
-"""
+
 class Beacon(models.Model):
+    """
+    비콘
+    """
     uuid = models.CharField(max_length = 36, default='12345678-0000-0000-123456789012') # 8-4-4-4-12
     major = models.IntegerField(default=0)
     minor = models.IntegerField(default=0)
@@ -99,13 +67,16 @@ class Beacon(models.Model):
     work_place_id = models.IntegerField(default=-1) # 사업장 id
 
 
-class Employee(models.Model):
-    name = models.CharField(max_length=127, default='unknown')
-    work = models.CharField(max_length=1024)
+# class Employee(models.Model):
+#     """
+#     직원 시험
+#     """
+#     name = models.CharField(max_length=127, default='unknown')
+#     work = models.CharField(max_length=1024)
 
-    def set_works(self, x):
-        self.work = json.dumps(x)
+#     def set_works(self, x):
+#         self.work = json.dumps(x)
 
-    def get_works(self):
-        return json.loads(self.work)
+#     def get_works(self):
+#         return json.loads(self.work)
 

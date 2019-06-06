@@ -224,3 +224,55 @@ def str_no(str_no) -> str:
             no_char = chr(i_char - ord('a') + ord('0'))
         result += no_char
     return result
+
+
+class Works(object):
+    """
+    element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
+    """
+    is_update = False
+
+    def __init__(self, x=None):
+        if x is None:
+            self.data = []
+        else:
+            self.data = x
+            self.__del__()
+
+    def __del__(self):
+        """
+        data 중에 날짜가 지난 항목이 있으면 삭제한다.
+        """
+        today = datetime.datetime.now()
+        for element in self.data:
+            logSend(' {} {} {}'.format(element['id'], element['begin'], element['end']))
+            if str_to_dt(element['end']) < today:
+                self.data.remove(element)
+
+    def add(self, x):
+        """
+        새로운 업무를 추가한다.
+        단, 같은 id 가 있으면 update 한다.
+        :return: None or before data
+        """
+        for element in self.data:
+            if element['id'] == x['id']:
+                before_x = element
+                self.data.remove(element)
+                self.data.append(x)
+                return before_x
+        self.data.append(x)
+        return None
+
+    def is_overlap(self, x):
+        """
+        기간이 겹치는 업무가 있는지 확인한다.
+        """
+        x_begin = str_to_dt(x['begin'])
+        x_end = str_to_dt(x['end'])
+        for element in self.data:
+            e_begin = str_to_dt(element['begin'])
+            e_end = str_to_dt(element['end'])
+            if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
+                return True
+        return False

@@ -12,6 +12,7 @@ from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import status422, no_only_phone_no, phone_format, dt_null, is_parameter_ok, str_to_datetime
 from config.common import str_no, str_to_dt
+from config.common import Works
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1519,8 +1520,7 @@ def certification_no_to_sms(request):
                 pNo=phone_no
             )
         else:
-            func_end_log(func_name)
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+            passer = passers[0]
 
     if (passer.dt_cn is not None) and (datetime.datetime.now() < passer.dt_cn):
         # 3분 이내에 인증번호 재요청하면
