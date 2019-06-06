@@ -1,5 +1,7 @@
 from django.db import models
 
+import json
+
 class Employee(models.Model):
     """
      근로자
