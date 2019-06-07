@@ -2904,15 +2904,34 @@ def list_employee(request):
             #     employee.dt_begin_beacon = None
             #     employee.dt_end_beacon = None
             # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-            view_employee = {'id':AES_ENCRYPT_BASE64(str(employee.id)),
-                             'name':employee.name,
-                             'pNo':phone_format(employee.pNo),
-                             'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon is not None else "",
-                             'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
-                             'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
-                             'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
-                             'state': "", # state,
-                             }
+            if today < employee.dt_begin:
+                if employee.is_accept_work is None:
+                    state = "답변 X"
+                elif employee.is_accept_work:
+                    state = "승락"
+                else:
+                    state = "거부"
+                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                                 'name': employee.name,
+                                 'pNo': phone_format(employee.pNo),
+                                 'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                                 'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                                 'state': state,
+                                 }
+            else:
+                if employee.is_accept_work is None and not employee.is_accept_work:
+                    # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
+                    employee.delete()
+                    continue
+                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                                 'name': employee.name,
+                                 'pNo': phone_format(employee.pNo),
+                                 'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon is not None else "",
+                                 'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
+                                 'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
+                                 'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
+                                 'state': state,
+                                 }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
         logSend('   *** request: working history')

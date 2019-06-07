@@ -289,7 +289,9 @@ class Works(object):
         """
         출퇴근이 가능한 업무가 있다. - 업무가 시작되었다.
         """
+        today = datetime.datetime.now()
         for self.index in range(len(self.data)):
-            if str_to_dt(self.data[self.index]['begin']) < datetime.datetime.now():
+            if str_to_dt(self.data[self.index]['begin']) < today < str_to_dt(self.data[self.index]['end']):
                 return True
         return False
+

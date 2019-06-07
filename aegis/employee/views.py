@@ -1091,7 +1091,7 @@ def pass_sms(request):
         STATUS 422
             {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)}
             {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
-            {'message': '업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format()}
+            {'message': '근무할 업무가 없다.'.format()}
     error log
         logError(func_name, ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
         logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
@@ -1253,10 +1253,12 @@ def pass_sms(request):
     elif len(employees) > 1:
         logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     employee = employees[0]
-    if dt_sms < employee.dt_begin_1:
-        logError(func_name, ' dt_sms: {} < employee.dt_begin: {} 업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format(dt_sms.strftime('%Y-%m-%d'), employee.dt_begin_1.strftime('%Y-%m-%d')))
-        func_end_log(func_name)
-        return status422(func_name, {'message': '업무 시작 날짜가 아닌데 출근/퇴근이 들어왔다.'.format()})
+    employee_works = Works(employee.get_works())
+    if not employee_works.is_active():
+        logError(func_name, '근무할 업무가 없다.'.format())
+        return status422(func_name, {'message': '근무할 업무가 없다.'.format()})
+    employee_work = employee_works.data[employee_works.index]
+    work_id = employee_work['id']
     new_pass = Pass(
         passer_id=passer.id,
         is_in=is_in,
@@ -1289,7 +1291,7 @@ def pass_sms(request):
                         passer_id=passer_id,
                         year_month_day=yesterday_year_month_day,
                         action=0,
-                        work_id=employee.id,
+                        work_id=work_id,
                     )
                 else:
                     # 오늘 pass_history 가 없어서 새로 만든다.
@@ -1297,7 +1299,7 @@ def pass_sms(request):
                         passer_id=passer_id,
                         year_month_day=year_month_day,
                         action=0,
-                        work_id=employee.id,
+                        work_id=work_id,
                     )
             else:
                 pass_history = pass_histories[0]
@@ -1320,7 +1322,7 @@ def pass_sms(request):
                 passer_id=passer_id,
                 year_month_day=year_month_day,
                 action=0,
-                work_id=employee.id,
+                work_id=work_id,
             )
         else:
             pass_history = pass_histories[0]
