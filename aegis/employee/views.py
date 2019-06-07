@@ -658,17 +658,15 @@ def passer_list(request):
         if passer.employee_id > 0:
             employee = Employee.objects.get(id=passer.employee_id)
             passer_info['name'] = employee.name
-            passer_info['work_id'] = employee.work_id
-            passer_info['work_id_2'] = employee.work_id_2
+            passer_info['works'] = employee.get_works()
         else:
             passer_info['name'] = '---'
-            passer_info['work_id'] = 0
-            passer_info['work_id_2'] = 0
+            passer_info['works'] = []
         passer_info['id'] = AES_ENCRYPT_BASE64(str(passer.id))
         passer_info['pNo'] = passer.pNo
         employee_list.append(passer_info)
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'passers':employee_list})
+    return REG_200_SUCCESS.to_json_response({'passers': employee_list})
 
 
 @cross_origin_read_allow
@@ -876,7 +874,7 @@ def pass_reg(request):
             if len(employees) > 1:
                 logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
             employee = employees[0]
-            logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같은 텐데...')
+            logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
             pass_history.work_id = employee.get_works()[0]['id']
 
     pass_history.save()
