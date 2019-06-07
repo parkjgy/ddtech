@@ -230,9 +230,8 @@ class Works(object):
     """
     element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
     """
-    is_update = False
-
     def __init__(self, x=None):
+        self.index = 0
         if x is None:
             self.data = []
         else:
@@ -274,5 +273,14 @@ class Works(object):
             e_begin = str_to_dt(element['begin'])
             e_end = str_to_dt(element['end'])
             if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
+                return True
+        return False
+
+    def find(self, work_id):
+        """
+        work_id 가 있는지 찾는다.
+        """
+        for self.index in range(len(self.data)):
+            if self.data['id'] == work_id:
                 return True
         return False

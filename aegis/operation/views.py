@@ -3880,17 +3880,17 @@ def test_go_go(request):
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
     # settings.IS_TEST = True
-    # employee_data = {
-    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-    #     'dt_answer_deadline': '2019-06-04 18:00',
-    #     'dt_begin': '2019-06-05',
-    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-    #         [
-    #             '+82 010-2557-3555', '010-2557-355', '011-8888-999', '+82 10 8433 3579'
-    #         ]
-    #     }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    employee_data = {
+        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+        'dt_answer_deadline': '2019-06-07 18:00',
+        'dt_begin': '2019-06-08',
+        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+            [
+                '+82 010-2557-3555', '010-2557-355', '011-8888-999', '+82 10 8433 3579'
+            ]
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
     # ---------------------------------------------------------------------------------------

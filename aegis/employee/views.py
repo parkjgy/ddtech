@@ -196,9 +196,8 @@ def reg_employee_for_customer(request):
     """
     <<<고객 서버용>>> 고객사에서 보낸 업무 배정 SMS로 알림 (보냈으면 X)
     -101 : sms 를 보낼 수 없는 전화번호
-    -11 : 업무가 중복되는 전화번호 - 기간이 맞지 않는다.
-    -21 : 이 업무를 수락했다. - notification 에 넣지 않는다.
-    -22 : 다른 업무를 수락했다. - notification 에 넣지 않는다.
+    -11 : 해당 전화번호를 가진 근로자의 업무와 요청 업무의 기간이 겹친다.
+    -21 : 피쳐폰에 이미 업무 요청이 있어서 더 요청할 수 없다.
     http://0.0.0.0:8000/employee/reg_employee_for_customer?customer_work_id=qgf6YHf1z2Fx80DR8o_Lvg&work_place_name=효성1공장&work_name_type=경비 주간&dt_begin=2019/03/04&dt_end=2019/03/31&dt_answer_deadline=2019-03-03 19:00:00&staff_name=이수용&staff_phone=01099993333&phones=01025573555&phones=01046755165&phones=01011112222&phones=01022223333&phones=0103333&phones=01044445555
     POST : json
         {
@@ -287,7 +286,7 @@ def reg_employee_for_customer(request):
     # 업무 요청 전화번호로 등록된 근로자 중에서 업무 요청을 할 수 없는 근로자를 가려낸다.
     # [phone_numbers] - [업무 중이고 예약된 근로자]
     passer_list = Passer.objects.filter(pNo__in=phone_numbers)
-    passer_id_dict = {}
+    passer_id_dict = {}  # passser_id_dict = {'01033335555': 99, '전환번호': passer_id}
     for passer in passer_list:
         passer_id_dict[passer.pNo] = passer.id
     logSend('  - passer_id_dict: {}'.format(passer_id_dict))
@@ -295,21 +294,11 @@ def reg_employee_for_customer(request):
     employee_list = Employee.objects.filter(id__in=employee_id_list)
     employee_status = {}
     for employee in employee_list:
-        # 근로자에게 예약된 업무가 있으면 (업무 시작 날짜가 오늘 이후 날짜인 업무가 있으면 예약된 업무가 있다고 본다.)
-        # 새로운 업무를 줄 수 없다.
-        # - 한번 수락하면 취소가 안된다.
-        if employee.work_id != -1 and str_to_dt(work.begin) < str_to_dt(employee.end_1):
-            # 현재 업무가 있고 업무의 끝나는 날보다 새로운 업무의 시작 날짜가 빠르면 업무를 받을 수 없다.
+        works = Works(employee.get_works())
+        logSend('  - ', works)
+        if works.is_overlap({'id': work.id, 'begin': work.begin, 'end': work.end}):
+            # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
-        else:
-            if employee.work_id_3 == work.id:
-                # 이미 이 업무를 수락했다.
-                employee_status[employee.id] = -21
-            elif employee.work_id_3 > 0:
-                # 이미 수락한 다른 업무가 있다.
-                employee_status[employee.id] = -22
-            else:
-                employee_status[employee.id] = employee.id
     logSend('  - bad condition phone: {}'.format(employee_status))
     phones_state = {}
     for passer in passer_list:
@@ -323,32 +312,58 @@ def reg_employee_for_customer(request):
           '새로운 업무를 앱에서 확인해주세요.\n'\
           '앱 설치\n'\
           'https://api.ezchek.co.kr/app'
-
+    # msg_feature = "이지체크\n"\
+    #               "효성 3공장-포장(3교대)\n"\
+    #               "2019/06/07~2019/06/30\n"\
+    #               "박종기 010-2557-3555".format()
+    msg_feature = '이지체크\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
+                                                       work.work_name_type,
+                                                       work.begin,
+                                                       work.end,
+                                                       work.staff_name,
+                                                       phone_format(work.staff_pNo))
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
         'sender': settings.SMS_SENDER_PN,
         # 'receiver': phone_numbers[i],
         'msg_type': 'SMS',
-        'msg': msg,
+        # 'msg': msg,
     }
 
-    # notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo__in=phones_numbers)
+    # 업무 요청이 등록된 전화번호
     notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id)
     notification_phones = [notification.employee_pNo for notification in notification_list]
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
-        if phone_no in notification_phones:
-            logSend(' - sms 이미 보냄 phone: {}'.format(phone_no))
-            phones_state[phone_no] = -1 if phone_no not in passer_id_dict.keys() else passer_id_dict[phone_no]
+        is_feature_phone = False
+        if phone_no in passer_id_dict.keys():
+            phones_state[phone_no] = passer_id_dict[phone_no]
+            # 피쳐폰 확인
+            for passer in passer_list:
+                if passer.pNo == phone_no:
+                    passer_feature = passer
+            if passer_feature.pType == 30:
+                is_feature_phone = True
+                notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+                if len(notification_list) > 0:
+                    phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
+                    continue
         else:
+            phones_state[phone_no] = -1
+        if phone_no not in notification_phones:
             if not settings.IS_TEST:
                 logSend('  - sms 보냄 phone: {}'.format(phone_no))
                 # SMS 를 보낸다.
                 rData['receiver'] = phone_no
-                rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
-                logSend('  - SMS result: {}'.format(rSMS.json()))
-                is_sms_ok = int(rSMS.json()['result_code']) < 0
+                if is_feature_phone:
+                    # 피쳐폰일 때는 문자형식을 바꾼다.
+                    rData['msg'] = msg_feature
+                else:
+                    rData['msg'] = msg
+                response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
+                logSend('  - SMS result: {}'.format(response_SMS.json()))
+                is_sms_ok = int(response_SMS.json()['result_code']) < 0
             else:
                 is_sms_ok = len(phone_no) < 11
             if is_sms_ok:
@@ -356,7 +371,6 @@ def reg_employee_for_customer(request):
                 phones_state[phone_no] = -101
                 logSend('  - sms send fail phone: {}'.format(phone_no))
             else:
-                phones_state[phone_no] = -1 if phone_no not in passer_id_dict.keys() else passer_id_dict[phone_no]
                 new_notification = Notification_Work(
                     work_id=work.id,
                     customer_work_id=customer_work_id,
@@ -543,7 +557,7 @@ def notification_accept(request):
         return status422(func_name, parameter['message'])
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
-    is_accept = parameter['parameters']['is_accept']
+    is_accept = bool(parameter['parameters']['is_accept'])
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
@@ -555,8 +569,7 @@ def notification_accept(request):
         return status422(func_name, 'Notification_Work 알림({}) 가 없어요'.format(notification_id))
     notification = notifications[0]
 
-    is_accept = 1 if int(rqst['is_accept']) == 1 else 0
-    logSend('is_accept = ', rqst['is_accept'], ' ', is_accept)
+    logSend('  is_accept = {}'.format(is_accept))
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
@@ -565,70 +578,30 @@ def notification_accept(request):
         logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                                      len(employees)))
     employee = employees[0]
+    employee_works = Works(employee.get_works())
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
     if is_accept == 1:
-        logSend('  - 1.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
+        logSend('  - works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
-        if employee.work_id_3 == -1:
-            # 업무가 없을 때
-            if employee.work_id != -1 and str_to_dt(work.begin) < str_to_dt(employee.end_1):
-                is_accept = 0
-            else:
-                employee.work_id_3 = notification.work_id
-                employee.begin_1_3 = work.begin
-                employee.end_1_3 = work.end
+        new_work = {'id': notification.work_id,
+                    'begin': work.begin,
+                    'end': work.end
+                    }
+        if employee_works.is_overlap(new_work):
+            is_accept = False
         else:
-            # 업무가 있기 때문에 승락을 했더라도 거절 처리한다.
-            is_accept = 0
-        # elif employee.work_id_2 == -1:
-        #     # 업무가 1개 있을 때 추가
-        #     employee.work_id_2 = notification.work_id
-        #     employee.begin_2 = work.begin
-        #     employee.end_2 = work.end
-        # elif employee.work_id_3 == -1:
-        #     # 업무가 2개 있을 때 추가
-        #     employee.work_id_3 = notification.work_id
-        #     employee.begin_3 = work.begin
-        #     employee.end_3 = work.end
-        # else:
-        #     # 더 이상 업무를 받을 수 없기 때문에 "거절" 처리
-        #     # 단, 이전에 수락했던건 빼고
-        #     employee_works = [employee.work_id, employee.work_id_2, employee.work_id_3]
-        #     if notification.work_id not in employee_works:
-        #         is_accept = False
-        logSend('  - 2.sms 로 업무를 수락했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-        if is_accept:
+            employee_works.add(new_work)
+            employee.set_works(employee_works.data)
             employee.save()
+        count_work = 0
+        for work in employee_works:
+            if datetime.datetime.now() < str_to_dt(work['begin']):
+                count_work += 1
+        logSend('  - 예약된 업무(시작 날짜가 오늘 이후인 업무): {}'.format(count_work))
+        logSend('  - works: {}'.format([work for work in employee_works.data]))
         logSend('  - name: ', employee.name)
-    # else:
-    #     logSend('  - 1.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     # 근로자 정보에 work_id 가 있으면 삭제
-    #     if employee.work_id_3 == notification.work_id:
-    #         employee.work_id_3 = -1
-    #     logSend('  - 2.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     if employee.work_id_2 == notification.work_id:
-    #         employee.work_id_2 = -1
-    #     logSend('  - 3.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     if employee.work_id == notification.work_id:
-    #         employee.work_id = -1
-    #     logSend('  - 4.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     # 근로자 정보에 첫번째 work_id 가 없으면서 뒤에 있으면 앞으로 당김
-    #     if employee.work_id == -1 and employee.work_id_2 != -1:
-    #         employee.work_id = employee.work_id_2
-    #         employee.work_id_2 = -1
-    #     logSend('  - 5.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     if employee.work_id_2 == -1 and employee.work_id_3 != -1:
-    #         employee.work_id_2 = employee.work_id_3
-    #         employee.work_id_3 = -1
-    #     logSend('  - 6.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     if employee.work_id == -1 and employee.work_id_2 != -1:
-    #         employee.work_id = employee.work_id_2
-    #         employee.work_id_2 = -1
-    #     logSend('  - 7.sms 로 업무를 거부했을 때 1: {}, 2: {}, 3: {}'.format(employee.work_id, employee.work_id_2, employee.work_id_3))
-    #     employee.save()
-
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -1876,40 +1849,32 @@ def my_work_list(request):
         logError(func_name, ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
         return status422(func_name, {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
     employee = employees[0]
+    employee_works = Works(employee.get_works())
     work_list = []
-    if employee.work_id != -1:
-        work = {'work_id': employee.work_id,
-                'begin': employee.begin_1,
-                'end': employee.end_1,
-                }
-        work_list.append(work)
-    if employee.work_id_2 != -1:
-        work = {'work_id': employee.work_id_2,
-                'begin': employee.begin_2,
-                'end': employee.end_2,
-                }
-        work_list.append(work)
-    if employee.work_id_3 != -1:
-        work = {'work_id': employee.work_id_3,
-                'begin': employee.begin_3,
-                'end': employee.end_3,
-                }
-        work_list.append(work)
-    if len(work_list) > 0:
-        work_id_list = [work['work_id'] for work in work_list]
+
+    if len(employee_works.data) > 0:
+        work_id_list = [work['id'] for work in employee_works.data]
         work_list_db = Work.objects.filter(id__in=work_id_list)
-        for work in work_list:
+        for work in employee_works.data:
             for work_db in work_list_db:
-                if work['work_id'] == work_db.id:
-                    work['work_place_name'] = work_db.work_place_name
-                    work['work_name_type'] = work_db.work_name_type
-                    work['staff_name'] = work_db.staff_name
-                    work['staff_pNo'] = work_db.staff_pNo
+                if work['id'] == work_db.id:
+                    new_work = {'work_id': work['id'],
+                                'work_place_name': work_db.work_place_name,
+                                'work_name_type': work_db.work_name_type,
+                                'staff_name': work_db.staff_name,
+                                'staff_pNo': work_db.staff_pNo
+                                }
                     if len(work['begin']) == 0:
-                        work['begin'] = work_db.begin
+                        new_work['begin'] = work_db.begin
+                    else:
+                        new_work['begin'] = work['begin']
                     if len(work['end']) == 0:
-                        work['end'] = work_db.end
-                    # del work['work_id']  # 시험할 때만
+                        new_work['end'] = work_db.end
+                    else:
+                        new_work['end'] = work['end']
+
+                    # del new_work['work_id']  # 시험할 때만
+                    work_list.append(new_work)
                     continue
 
     func_end_log(func_name)
@@ -2224,8 +2189,8 @@ def change_work_period_for_customer(request):
         {
             employee_id: qgf6YHf1z2Fx80DR8o_Lvg  # 근로자 id (passer_id = customer.employee.employee_id)
             work_id: qgf6YHf1z2Fx80DR8o_Lvg  # 업무 id (암호화 된 값)
-            dt_begin: 2019-04-01   # 근로 시작 날짜
-            dt_end: 2019-04-13     # 근로 종료 날짜
+            dt_begin: 2019/04/01   # 근로 시작 날짜
+            dt_end: 2019/04/13     # 근로 종료 날짜
         }
     response
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
@@ -2276,33 +2241,22 @@ def change_work_period_for_customer(request):
     except Exception as e:
         return status422(func_name, {'message': '해당 근로자({})의 업무를 찾을 수 없다. ({})'.format(passer_id, str(e))})
     logSend('   {}'.format(employee.name))
+    employee_works = Works(employee.get_works())
     try:
         work = Work.objects.get(customer_work_id=work_id)
     except Exception as e:
         return status422(func_name, {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
-    if 'dt_begin' not in rqst:
-        dt_begin = work.begin
-    else:
-        dt_begin = rqst['dt_begin']
-
-    if 'dt_end' not in rqst:
-        dt_end = work.end
-    else:
-        dt_end = rqst['dt_end']
-    if employee.work_id == work.id:
-        employee.begin_1 = dt_begin
-        employee.end_1 = dt_end
-        employee.save()
-    elif employee.work_id_2 == work.id:
-        employee.begin_2 = dt_begin
-        employee.end_2 = dt_end
-        employee.save()
-    elif employee.work_id_3 == work.id:
-        employee.begin_3 = dt_begin
-        employee.end_3 = dt_end
-        employee.save()
-    else:
+    if not employee_works.find(work.id):
         return status422(func_name, {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
+    employee_work = employee_works[employee_works.index]
+    if 'dt_begin' in rqst:
+        employee_work['begin'] = rqst['dt_begin']
+    if 'dt_end' in rqst:
+        employee_work['begin'] = rqst['dt_end']
+    employee_works.add(employee_work)
+    employee.set_works(employee_works.data)
+    employee.save()
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 

@@ -20,7 +20,7 @@ class Employee(models.Model):
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
 
-    works = models.CharField(max_length=1024)  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
+    works = models.CharField(max_length=1024, default='')  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
 
     def set_works(self, x):
         self.works = json.dumps(x)
@@ -51,6 +51,22 @@ class Notification_Work(models.Model):
     dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
 
 
+class Work_Record(models.Model):
+    """
+    근로자의 근로한 업무 내역 - 종료된 업무 내역을 근라자 별로 저장해 둔다.
+    """
+    passer_id = models.IntegerField()  # 출입자 id
+    employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자
+    work_id = models.IntegerField()  # 업무 id
+    dt_begin = models.DateTimeField() # 업무 시작 날짜
+    dt_end = models.DateTimeField() # 업무 종료 날짜
+    days_total = models.IntegerField()  # 업무 참여 기간(날 수)
+    days_working = models.IntegerField()  # 출근 날 수
+    count_late = models.IntegerField()  # 지각 횟 수
+    count_leave = models.IntegerField()  # 조퇴 횟 수
+    count_over = models.IntegerField()  # 연장근로 횟 수
+
+        
 class Work(models.Model):
     """
     고객 서버로 부터 받은 업무 내역
