@@ -1892,8 +1892,9 @@ def update_work(request):
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
             is_update_dt_begin = True
         else:
-            func_end_log(func_name)
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무가 시작되면 시작 날짜를 변경할 수 없습니다.'})
+            if str_to_datetime(parameter_check['parameters']['dt_begin']) != work.dt_begin:
+                func_end_log(func_name)
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무가 시작되면 시작 날짜를 변경할 수 없습니다.'})
 
     is_update_dt_end = False
     parameter_check = is_parameter_ok(rqst, ['dt_end'])
