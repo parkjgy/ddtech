@@ -1771,10 +1771,12 @@ def update_my_info(request):
     # to customer server
     # 고객사 근로자의 이름과 전화번호 변경
     #
-    if update_employee_of_customer['is_upate'] and employee.work_id > 0:
+    if update_employee_of_customer['is_upate']:
+        # employee_works = Works(employee.get_works())
+        # employee_works.find()
         request_data = {
             'worker_id': AES_ENCRYPT_BASE64('thinking'),
-            'work_id': AES_ENCRYPT_BASE64(str(employee.work_id)),
+            'work_id': 'all',  #employee.customer_work_id,
             'employee_pNo': update_employee_of_customer['old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
             'new_name': update_employee_of_customer['old_name'] if 'new_name' in update_employee_of_customer else employee.name,
             'new_pNo': update_employee_of_customer['new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
