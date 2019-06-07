@@ -2930,7 +2930,7 @@ def list_employee(request):
                                  'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
                                  'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
                                  'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
-                                 'state': state,
+                                 'state': "",
                                  }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
