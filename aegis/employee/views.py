@@ -961,7 +961,7 @@ def pass_verify(request):
         logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     employee_works = Works(employee.get_works())
-    if not employee.is_active():
+    if not employee_works.is_active():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     #
