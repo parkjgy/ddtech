@@ -960,7 +960,8 @@ def pass_verify(request):
     elif len(employees) > 1:
         logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
-    if employee.work_id == -1:
+    employee_works = Works(employee.get_works())
+    if not employee.is_active():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     #
@@ -969,7 +970,7 @@ def pass_verify(request):
     #   > 투잡 시간을 잘못 넣으면 어쩔 수 없다. 앱에서 업무 시간을 넣을 때 두 업무가 중복되는지 검사
     #   > 차후 개발 필요
     #
-    work_id = employee.work_id
+    work_id = employee_works.data[employee_works.index]['id']
     # 통과 기록 저장
     new_pass = Pass(
         passer_id=passer_id,
@@ -1748,35 +1749,31 @@ def update_my_info(request):
         update_employee_of_customer['old_pNo'] = passer.pNo
         update_employee_of_customer['new_pNo'] = pNo
 
-        passer.pNo = pNo;
+        passer.pNo = pNo
         passer.save()
-        logSend('   ' + pNo);
+        logSend('   ' + pNo)
     if 'bank' in rqst and 'bank_account' in rqst:
         if len(rqst['bank_account']) < 5:
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
-        employee.bank = rqst['bank'];
-        employee.bank_account = rqst['bank_account'];
+        employee.bank = rqst['bank']
+        employee.bank_account = rqst['bank_account']
         logSend('   ' + rqst['bank'], rqst['bank_account'])
     if 'work_start' in rqst and 'working_time' in rqst and 'work_start_alarm' in rqst and 'work_end_alarm' in rqst:
-        employee.work_start = rqst['work_start'];
-        employee.working_time = rqst['working_time'];
-        employee.work_start_alarm = rqst['work_start_alarm'];
-        employee.work_end_alarm = rqst['work_end_alarm'];
+        employee.work_start = rqst['work_start']
+        employee.working_time = rqst['working_time']
+        employee.work_start_alarm = rqst['work_start_alarm']
+        employee.work_end_alarm = rqst['work_end_alarm']
         logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
 
     employee.save()
-
     #
     # to customer server
-    # 고객사 근로자의 이름과 전화번호 변경
+    # 고객 서버에 근로자 이름, 전화번호 변경 적용
     #
     if update_employee_of_customer['is_upate']:
-        # employee_works = Works(employee.get_works())
-        # employee_works.find()
         request_data = {
             'worker_id': AES_ENCRYPT_BASE64('thinking'),
-            'work_id': 'all',  #employee.customer_work_id,
             'employee_pNo': update_employee_of_customer['old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
             'new_name': update_employee_of_customer['old_name'] if 'new_name' in update_employee_of_customer else employee.name,
             'new_pNo': update_employee_of_customer['new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,

@@ -2507,7 +2507,6 @@ def update_employee_for_employee(request):
     POST
         {
             'worker_id': 'cipher_id'  # 운영직원 id
-            'work_id':'암호화된 work_id',
             'employee_pNo':01011112222,
             'new_name':name,
             'new_pNo':pNo
@@ -2550,25 +2549,13 @@ def update_employee_for_employee(request):
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
     logSend('   from employee server : operation staff id ', worker_id)
 
-    logSend(rqst['work_id'])
     logSend(rqst['employee_pNo'])
     logSend(rqst['new_name'])
     logSend(rqst['new_pNo'])
 
-    # works = Work.objects.filter(id=AES_DECRYPT_BASE64(rqst['work_id']), dt_end__gt=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    # if len(works) == 0:
-    #     func_end_log(func_name)
-    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '종료된 업무라서 변경할 필요가 없습니다.'})
-    # work = works[0]
-
-    # employees = Employee.objects.filter(work_id=work.id, pNo=rqst['employee_pNo'])
     employees = Employee.objects.filter(pNo=rqst['employee_pNo'])
-    # if len(employees) != 1:
-    #     func_end_log(func_name)
-    #     return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '파견사 측에 근로자 정보가 없습니다.'})
 
     for employee in employees:
-        # employee = employees[0]
         employee.name = rqst['new_name']
         employee.pNo = rqst['new_pNo']
         employee.save()
