@@ -20,12 +20,14 @@ class Employee(models.Model):
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
 
-    works = models.CharField(max_length=1024, default='')  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
+    works = models.CharField(max_length=1024, default='[]')  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
 
     def set_works(self, x):
         self.works = json.dumps(x)
 
     def get_works(self):
+        if len(self.works) == 0:
+            self.works = "[]"
         return json.loads(self.works)
     # work_id = models.IntegerField(default=-1)  # employee server work id
     # begin_1 = models.CharField(max_length=127, default='') # 근무 시작 날짜

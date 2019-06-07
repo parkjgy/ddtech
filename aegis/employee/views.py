@@ -578,6 +578,8 @@ def notification_accept(request):
         logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                                      len(employees)))
     employee = employees[0]
+    em_arr = employee.get_works()
+    logSend('  - employee array: {}'.format(em_arr))
     employee_works = Works(employee.get_works())
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
@@ -596,7 +598,7 @@ def notification_accept(request):
             employee.set_works(employee_works.data)
             employee.save()
         count_work = 0
-        for work in employee_works:
+        for work in employee_works.data:
             if datetime.datetime.now() < str_to_dt(work['begin']):
                 count_work += 1
         logSend('  - 예약된 업무(시작 날짜가 오늘 이후인 업무): {}'.format(count_work))

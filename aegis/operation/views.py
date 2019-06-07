@@ -3766,13 +3766,13 @@ def test_go_go(request):
     # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
     # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    # sms_infor = {
-    #         'phone_no': '010-2557-3555',
-    #         'dt': '2019-05-23 15:33:00:00',
-    #         'sms': '   거절    ',
-    #     }
-    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    sms_infor = {
+            'phone_no': '010-8433 3579',
+            'dt': '2019-05-23 15:33:00:00',
+            'sms': '   수락 박종    ',
+        }
+    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험
@@ -3880,17 +3880,17 @@ def test_go_go(request):
     # TEST: /customer/reg_employee 고객웹에서 근로자 등록 시험
     # ---------------------------------------------------------------------------------------
     # settings.IS_TEST = True
-    employee_data = {
-        'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-        'dt_answer_deadline': '2019-06-07 18:00',
-        'dt_begin': '2019-06-08',
-        'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
-            [
-                '+82 010-2557-3555', '010-2557-355', '011-8888-999', '+82 10 8433 3579'
-            ]
-        }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
-    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    # employee_data = {
+    #     'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #     'dt_answer_deadline': '2019-06-07 18:00',
+    #     'dt_begin': '2019-06-08',
+    #     'phone_numbers':  # 업무에 배치할 근로자들의 전화번호
+    #         [
+    #             '+82 010-2557-3555', '010-2557-355', '011-8888-999', '+82 10 8433 3579'
+    #         ]
+    #     }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_data)
+    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
     # ---------------------------------------------------------------------------------------
@@ -4037,55 +4037,4 @@ def test_go_go(request):
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
 
-
-# class Works(object):
-#     """
-#     element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
-#     """
-#     is_update = False
-#
-#     def __init__(self, x=None):
-#         if x is None:
-#             self.data = []
-#         else:
-#             self.data = x
-#             self.__del__()
-#
-#     def __del__(self):
-#         """
-#         data 중에 날짜가 지난 항목이 있으면 삭제한다.
-#         """
-#         today = datetime.datetime.now()
-#         for element in self.data:
-#             logSend(' {} {} {}'.format(element['id'], element['begin'], element['end']))
-#             if str_to_dt(element['end']) < today:
-#                 self.data.remove(element)
-#
-#     def add(self, x):
-#         """
-#         새로운 업무를 추가한다.
-#         단, 같은 id 가 있으면 update 한다.
-#         :return: None or before data
-#         """
-#         for element in self.data:
-#             if element['id'] == x['id']:
-#                 before_x = element
-#                 self.data.remove(element)
-#                 self.data.append(x)
-#                 return before_x
-#         self.data.append(x)
-#         return None
-#
-#     def is_overlap(self, x):
-#         """
-#         기간이 겹치는 업무가 있는지 확인한다.
-#         """
-#         x_begin = str_to_dt(x['begin'])
-#         x_end = str_to_dt(x['end'])
-#         for element in self.data:
-#             e_begin = str_to_dt(element['begin'])
-#             e_end = str_to_dt(element['end'])
-#             if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
-#                 return True
-#         return False
 
