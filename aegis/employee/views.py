@@ -292,19 +292,21 @@ def reg_employee_for_customer(request):
     logSend('  - passer_id_dict: {}'.format(passer_id_dict))
     employee_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
-    employee_status = {}
+    employee_status = {}  # {1:-11}
     for employee in employee_list:
         works = Works(employee.get_works())
-        logSend('  - ', works)
+        logSend('  - ', works.data)
         if works.is_overlap({'id': work.id, 'begin': work.begin, 'end': work.end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
-    logSend('  - bad condition phone: {}'.format(employee_status))
+    logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
     phones_state = {}
     for passer in passer_list:
         if passer.employee_id > 0:
-            if employee_status[passer.employee_id] < -10:
-                phones_state[passer.pNo] = employee_status[passer.employee_id]
+            # 출입자에 근로자 정보가 있으면
+            if passer.employee_id in employee_status.keys():
+                # 출입자의 근로자가 기간 중복되는 근로자에 포함되면
+                phones_state[passer.pNo] = -11  # employee_status[passer.employee_id] == -11
     last_phone_numbers = [phone_no for phone_no in phone_numbers if phone_no not in phones_state.keys()]
     logSend('  - last_phone_numbers: {}'.format(last_phone_numbers))
     # 등록된 근로자 중에서 전화번호로 업무 요청
