@@ -281,7 +281,7 @@ class Works(object):
         work_id 가 있는지 찾는다.
         """
         for self.index in range(len(self.data)):
-            if self.data['id'] == work_id:
+            if self.data[self.index]['id'] == work_id:
                 return True
         return False
 
