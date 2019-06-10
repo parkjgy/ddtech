@@ -2895,8 +2895,10 @@ def list_employee(request):
         # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
         # employees = r.json()['employees']
         for employee in employees:
-            if employee.is_accept_work is None or not employee.is_accept_work:
-                employee.delete()
+            if employee.dt_begin < today:
+                # 업무가 시작된 근로자 중에
+                if employee.is_accept_work is None or not employee.is_accept_work:
+                    employee.delete()
         for employee in employees:
             # 주석처리된 부분은 임시 데이터를 만드는 부분
             # today_str = today.strftime("%Y-%m-%d ")
@@ -3737,8 +3739,10 @@ def staff_employees_at_day(request):
 
     employee_list = Employee.objects.filter(work_id=work.id)
     for employee in employee_list:
-        if employee.is_accept_work is None or not employee.is_accept_work:
-            employee.delete()
+        if employee.dt_begin < datetime.datetime.now():
+            # 업무가 시작된 근로자 중에
+            if employee.is_accept_work is None or not employee.is_accept_work:
+                employee.delete()
     employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
     employees_infor = {'employees': employee_ids,
                        'year_month_day': year_month_day,
