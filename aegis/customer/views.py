@@ -2895,6 +2895,9 @@ def list_employee(request):
         # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
         # employees = r.json()['employees']
         for employee in employees:
+            if employee.is_accept_work is None or not employee.is_accept_work:
+                employee.delete()
+        for employee in employees:
             # 주석처리된 부분은 임시 데이터를 만드는 부분
             # today_str = today.strftime("%Y-%m-%d ")
             # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
@@ -3733,6 +3736,9 @@ def staff_employees_at_day(request):
         return status422(func_name, {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
     employee_list = Employee.objects.filter(work_id=work.id)
+    for employee in employee_list:
+        if employee.is_accept_work is None or not employee.is_accept_work:
+            employee.delete()
     employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
     employees_infor = {'employees': employee_ids,
                        'year_month_day': year_month_day,
