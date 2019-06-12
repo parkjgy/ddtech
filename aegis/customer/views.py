@@ -1696,6 +1696,7 @@ def reg_work(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
+            {'message': '업무 시작 날짜는 오늘 이후여야 합니다.'}
             {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
         STATUS 544
             {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'}
@@ -1749,6 +1750,9 @@ def reg_work(request):
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
     partner_id = parameter_check['parameters']['partner_id']
+    if dt_begin < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
     if dt_end < dt_begin:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
@@ -2581,12 +2585,13 @@ def update_employee(request):
     http://0.0.0.0:8000/customer/update_employee?
     POST
         {
+            'work_id': 업무 id,          # 업무 id (암호화된 값)
             'employee_id':'암호화된 id',  # 필수
             'phone_no':'010-3355-7788', # 전화번호가 잘못되었을 때 변경
             'dt_answer_deadline':2019-03-09 19:00:00,
             'dt_begin':2019-03-09,      # 근무 시작일
             'dt_end':2019-03-31,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
-            'is_active':'YES',          # YES: 업무 배정, NO: 업무 배제
+            'is_active':'YES',          # YES: 현재 업무 중, NO: 아직 업무 시작되지 않음
             'message':'업무 종료일이 변경되었거나 업무에 대한 응답이 없어 업무에서 뺐을 때 사유 전달'
         }
         업무 시작 전 수정일 때: employee_id, phone_no, dt_begin, dt_end
@@ -2648,7 +2653,7 @@ def update_employee(request):
 
         employee_list = Employee.objects.filter(id=employee_id)
         if len(employee_list) == 0:
-            return status422(func_name, {'message':'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
+            return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
         employee = employee_list[0]
         if employee.dt_end < dt_end:
             # 근무 날짜가 늘어났다.
@@ -2671,7 +2676,6 @@ def update_employee(request):
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
-
     #
     # 근로자에게 업무 시작일 전에 업무 투입을 요청할 때 사용
     #
@@ -2778,7 +2782,8 @@ def list_employee(request):
                   "pNo": "010-1111-3555",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "답변 X"
+                  "state": "답변 X",
+                  "is_not_begin": "1"
                 },
                 {
                   "id": "gDoPqy_Pea6imtYYzWrEXQ==",
@@ -2786,7 +2791,8 @@ def list_employee(request):
                   "pNo": "010-1111-2222",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "거부"
+                  "state": "거부",
+                  "is_not_begin": "1"
                 },
                 {
                   "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
@@ -2794,7 +2800,8 @@ def list_employee(request):
                   "pNo": "010-4444-5555",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "승락"
+                  "state": "승락",
+                  "is_not_begin": "1"
                 },
                 {
                   "id": "PTs37nITB5mJAWFwUQKixQ==",
@@ -2802,7 +2809,8 @@ def list_employee(request):
                   "pNo": "010-33-3344",
                   "dt_begin": "2019-03-10 13:15:29",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "잘못된 전화번호"
+                  "state": "잘못된 전화번호",
+                  "is_not_begin": "1"
                 }
               ]
             }
@@ -2818,7 +2826,8 @@ def list_employee(request):
                   "dt_begin_touch": "08:31",
                   "dt_end_beacon": "17:48",
                   "dt_end_touch": "17:38",
-                  "state": ""
+                  "state": "",
+                  "is_not_begin": "0"
                 },
                 {
                   "id": "voGxXzbAurv_GvSDv1nciw==",
@@ -2828,7 +2837,17 @@ def list_employee(request):
                   "dt_begin_touch": "08:31",
                   "dt_end_beacon": "",
                   "dt_end_touch": "17:31",
-                  "state": "SMS"
+                  "state": "SMS",
+                  "is_not_begin": "0"
+                },
+                {
+                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==", # 업무가 시작되었지만 아직 업무에 투입되지 않은 근로자 처리
+                  "name": "강감찬",
+                  "pNo": "010-4444-5555",
+                  "dt_begin": "2019-03-08 19:09:30",
+                  "dt_end": "2019-03-14 00:00:00",
+                  "state": "승락",
+                  "is_not_begin": "1"
                 },
                 {
                   "id": "dMNzyCm2k_hGaqkDrFojAA==",
@@ -2838,7 +2857,8 @@ def list_employee(request):
                   "dt_begin_touch": "08:27",
                   "dt_end_beacon": "17:50",
                   "dt_end_touch": "17:33",
-                  "state": ""
+                  "state": "",
+                  "is_not_begin": "0"
                 }
               ]
             }
@@ -2881,6 +2901,7 @@ def list_employee(request):
                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
                              'state': state,
+                             'is_not_begin': True,
                              }
             arr_employee.append(view_employee)
     else:
@@ -2926,6 +2947,7 @@ def list_employee(request):
                                  'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
                                  'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
                                  'state': state,
+                                 'is_not_begin': True,
                                  }
             else:
                 if employee.is_accept_work is None and not employee.is_accept_work:
@@ -2940,6 +2962,7 @@ def list_employee(request):
                                  'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
                                  'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
                                  'state': "",
+                                 'is_not_begin': False,
                                  }
             arr_employee.append(view_employee)
     if rqst['is_working_history'].upper() == 'YES':
@@ -4386,7 +4409,7 @@ def staff_update_employee(request):
             return status422(func_name, {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'})
         employee.dt_begin = dt_begin
         employees_infor = {
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'work_id': AES_ENCRYPT_BASE64(str(work.id)),
             'dt_begin': dt_begin.strftime("%Y/%m/%d"),
         }
@@ -4403,7 +4426,7 @@ def staff_update_employee(request):
             return status422(func_name, {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'})
         employee.dt_end = dt_end
         employees_infor = {
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'work_id': AES_ENCRYPT_BASE64(str(work.id)),
             'dt_end': dt_end.strftime("%Y/%m/%d"),
         }
