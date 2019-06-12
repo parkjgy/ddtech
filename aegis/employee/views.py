@@ -559,7 +559,8 @@ def notification_accept(request):
         return status422(func_name, parameter['message'])
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
-    is_accept = bool(parameter['parameters']['is_accept'])
+    is_accept = bool(int(parameter['parameters']['is_accept']))
+    logSend('  is_accept = {}'.format(is_accept))
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
@@ -570,8 +571,6 @@ def notification_accept(request):
     if len(notifications) == 0:
         return status422(func_name, 'Notification_Work 알림({}) 가 없어요'.format(notification_id))
     notification = notifications[0]
-
-    logSend('  is_accept = {}'.format(is_accept))
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
