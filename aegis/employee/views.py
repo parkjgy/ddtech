@@ -965,12 +965,6 @@ def pass_verify(request):
     if not employee_works.is_active():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
-    #
-    # 지금은 무조건 첫번째 업무에 출퇴근처리한다.
-    #   > 투잡일 때는 업무 시간으로 구분한다.
-    #   > 투잡 시간을 잘못 넣으면 어쩔 수 없다. 앱에서 업무 시간을 넣을 때 두 업무가 중복되는지 검사
-    #   > 차후 개발 필요
-    #
     work_id = employee_works.data[employee_works.index]['id']
     # 통과 기록 저장
     new_pass = Pass(
@@ -1109,6 +1103,7 @@ def pass_sms(request):
     sms = rqst['sms']
     logSend('---parameter: phone_no: {}, dt: {}, sms: {}'.format(phone_no, dt, sms))
 
+    sms = sms.replace('승락', '수락').replace('거부', '거절')
     if ('수락 ' in sms) or ('거절' in sms):
         # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
         notification_work_list = Notification_Work.objects.filter(employee_pNo=phone_no)

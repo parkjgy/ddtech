@@ -2676,7 +2676,6 @@ def update_employee(request):
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
-
     #
     # 근로자에게 업무 시작일 전에 업무 투입을 요청할 때 사용
     #
@@ -4427,7 +4426,7 @@ def staff_update_employee(request):
             return status422(func_name, {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'})
         employee.dt_end = dt_end
         employees_infor = {
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'work_id': AES_ENCRYPT_BASE64(str(work.id)),
             'dt_end': dt_end.strftime("%Y/%m/%d"),
         }
