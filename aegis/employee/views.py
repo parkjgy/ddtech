@@ -2251,7 +2251,7 @@ def change_work_period_for_customer(request):
     if 'dt_begin' in rqst:
         employee_work['begin'] = rqst['dt_begin']
     if 'dt_end' in rqst:
-        employee_work['begin'] = rqst['dt_end']
+        employee_work['end'] = rqst['dt_end']
     employee_works.add(employee_work)
     employee.set_works(employee_works.data)
     employee.save()
