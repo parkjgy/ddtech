@@ -2247,7 +2247,7 @@ def change_work_period_for_customer(request):
         return status422(func_name, {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
     if not employee_works.find(work.id):
         return status422(func_name, {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
-    employee_work = employee_works[employee_works.index]
+    employee_work = employee_works.data[employee_works.index]
     if 'dt_begin' in rqst:
         employee_work['begin'] = rqst['dt_begin']
     if 'dt_end' in rqst:
