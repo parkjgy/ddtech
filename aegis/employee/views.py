@@ -845,7 +845,7 @@ def pass_reg(request):
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(func_name, ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
-        if (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
+        elif (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
             # 출근시간 이후 12 시간이 지났으면 무시한다.
             logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
             func_end_log(func_name)
@@ -2252,7 +2252,7 @@ def change_work_period_for_customer(request):
         return status422(func_name, {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
     if not employee_works.find(work.id):
         return status422(func_name, {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
-    employee_work = employee_works[employee_works.index]
+    employee_work = employee_works.data[employee_works.index]
     if 'dt_begin' in rqst:
         employee_work['begin'] = rqst['dt_begin']
     if 'dt_end' in rqst:
