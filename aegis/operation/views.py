@@ -19,7 +19,7 @@ from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
 from config.common import rMin, str_to_datetime, str_to_dt
-from config.common import Works
+from config.common import Works, status422
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403_with_operation
@@ -3766,13 +3766,13 @@ def test_go_go(request):
     # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=reg_employee_infor)
     # result.append({'url': r.url, 'POST': reg_employee_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    sms_infor = {
-            'phone_no': '010-8433 3579',
-            'dt': '2019-05-23 15:33:00:00',
-            'sms': '   수락 박종    ',
-        }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
-    result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # sms_infor = {
+    #         'phone_no': '010-8433 3579',
+    #         'dt': '2019-05-23 15:33:00:00',
+    #         'sms': '   수락 박종    ',
+    #     }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_sms', json=sms_infor)
+    # result.append({'url': r.url, 'POST': sms_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: pass_verify 출퇴근 버튼 처리 시험

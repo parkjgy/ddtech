@@ -556,7 +556,7 @@ def notification_accept(request):
 
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
-        return status422(func_name, parameter['message'])
+        return status422(func_name, {'message': parameter['message']})
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
     is_accept = bool(int(parameter['parameters']['is_accept']))
@@ -564,17 +564,17 @@ def notification_accept(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
-        return status422(func_name, '출입자({}) 가 없어요'.format(passer_id))
+        return status422(func_name, {'message': '출입자({}) 가 없어요'.format(passer_id)})
     passer = passers[0]
 
     notifications = Notification_Work.objects.filter(id=notification_id)
     if len(notifications) == 0:
-        return status422(func_name, 'Notification_Work 알림({}) 가 없어요'.format(notification_id))
+        return status422(func_name, {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
     notification = notifications[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id))
+        return status422(func_name, {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
     elif len(employees) > 1:
         logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                                      len(employees)))
@@ -779,7 +779,7 @@ def pass_reg(request):
     logSend(beacons)
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        return status422(func_name, {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
+        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
     passer = passers[0]
 
     for i in range(len(beacons)):
@@ -2062,7 +2062,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                 update_pass_history(pass_history)
 
         if len(fail_list) > 0:
-            return status422(func_name, {'message':'fail', 'fails': fail_list})
+            return status422(func_name, {'message': 'fail', 'fails': fail_list})
 
         pass_history.save()
 
@@ -2422,14 +2422,14 @@ def my_work_histories_for_customer(request):
 
     passers = Passer.objects.filter(id=employee_id)
     if len(passers) == 0:
-        return status422(func_name, {'message':'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
+        return status422(func_name, {'message': 'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
     elif len(passers) > 1:
         logError(func_name, ' Passer(id:{})가 중복되었다.'.format(employee_id))
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, {'message':'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
+        return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
     elif len(employees) > 1:
         logError(func_name, ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
