@@ -4409,7 +4409,7 @@ def staff_update_employee(request):
             return status422(func_name, {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'})
         employee.dt_begin = dt_begin
         employees_infor = {
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'work_id': AES_ENCRYPT_BASE64(str(work.id)),
             'dt_begin': dt_begin.strftime("%Y/%m/%d"),
         }
