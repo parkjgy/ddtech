@@ -842,7 +842,7 @@ def pass_reg(request):
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '근로자가 현재 출퇴근하는 업무가 없다.'})
     employee_work = employee_works.data[employee_works.index]
-    work_id = employee_work['dt']
+    work_id = employee_work['id']
     dt_beacon = str_to_datetime(dt)  # datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     year_month_day = dt_beacon.strftime("%Y-%m-%d")
     pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id, year_month_day=year_month_day)
