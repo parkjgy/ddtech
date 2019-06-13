@@ -2378,7 +2378,8 @@ def my_work_histories_for_customer(request):
         두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
     http://0.0.0.0:8000/employee/my_work_histories_for_customer?employee_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
-        employee_id='서버로 받아 저장해둔 출입자 id'
+        employee_id = 서버로 받아 저장해둔 출입자 id'
+        work_id = 고객 서버의 work id   # 암호화되어 있음
         dt = '2018-01'
     response
         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
@@ -2412,12 +2413,13 @@ def my_work_histories_for_customer(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt'])
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_!', 'dt'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     employee_id = parameter_check['parameters']['employee_id']
+    work_id = parameter_check['parameters']['work_id']
     year_month = parameter_check['parameters']['dt']
 
     passers = Passer.objects.filter(id=employee_id)
@@ -2433,8 +2435,11 @@ def my_work_histories_for_customer(request):
     elif len(employees) > 1:
         logError(func_name, ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
-
-    dt_begin = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    #
+    # 이 근로자의 과거 근로 기록을 보여준다.
+    # ? 이 근로자의 현재 업무 과거 기록만 보여줘야하지 않나? - work_id 이용 필요
+    #
+    dt_begin = str_to_datetime(year_month)  # datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_today = datetime.datetime.now()
     if dt_today.strftime('%Y-%m') == year_month:
         # 근무 내역 요청이 이번달이면 근무 마지막 날을 오늘로 한다.
