@@ -1225,7 +1225,7 @@ def update_staff(request):
     	    {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
     	    {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요. <암호해독 에러>'}
     	    {'message':'ClientError: parameter \'staff_id\' 본인의 것만 수정할 수 있는데 본인이 아니다.(담당자나 관리자도 아니다.'}
-    	    {'message':'ServerError: parameter \'%s\' 의 직원이 없다.' % staff_id }
+    	    {'message':'ServerError: parameter \'%s\' 의 직원이 없다.'.format(staff_id)}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -3932,7 +3932,7 @@ def staff_bg(request):
     staff_id = request.session['id']
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        logError('ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id )
+        logError('ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id))
     app_user = app_users[0]
     app_user.is_app_login = False
     app_user.dt_app_login = datetime.datetime.now()
@@ -3956,7 +3956,7 @@ def staff_background(request):
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'id\' 가 없어요'}
             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -3974,7 +3974,7 @@ def staff_background(request):
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        return status422(func_name, {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id })
+        return status422(func_name, {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨'.format(staff_id)})
 
     app_user = app_users[0]
     app_user.is_app_login = False
@@ -4029,7 +4029,7 @@ def staff_employees_from_work(request):
             {'message':'ClientError: parameter \'day\' 가 없어요'}
             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)}
             {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -4051,7 +4051,7 @@ def staff_employees_from_work(request):
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)})
     works = Work.objects.filter(id=work_id)
     if len(works) != 1:
         return status422(func_name, {'message': 'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id })
@@ -4144,7 +4144,7 @@ def staff_change_time(request):
             {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'}
             {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)}
             {'message':'ServerError: Work 에 id=%s 이(가) 없거나 중복됨' % work_id }
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -4172,7 +4172,7 @@ def staff_change_time(request):
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+        return status422(func_name, {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)})
     app_user = app_users[0]
     works = Work.objects.filter(id=work_id)
     if len(works) != 1:
@@ -4291,8 +4291,8 @@ def staff_employee_working(request):
             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)}
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨'.format(employee_id)}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -4302,26 +4302,35 @@ def staff_employee_working(request):
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
 
-    if 'staff_id' not in rqst: # id 가 들어왔는지 검사
-        return status422(func_name, {'message': 'ClientError: parameter \'staff_id\' 가 없어요'})
-    if 'employee_id' not in rqst: # employee_id 가 들어왔는지 검사
-        return status422(func_name, {'message': 'ClientError: parameter \'employee_id\' 가 없어요'})
-    if 'year_month' not in rqst: # year_month 가 들어왔는지 검사
-        return status422(func_name, {'message': 'ClientError: parameter \'year_month\' 가 없어요'})
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'employee_id_!', 'year_month'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    staff_id = parameter_check['parameters']['staff_id']
+    work_id = parameter_check['parameters']['work_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    year_month = parameter_check['parameters']['year_month']
 
-    staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
-    if staff_id == '__error':
-        return status422(func_name, {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'})
-    employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-    if employee_id == '__error':
-        return status422(func_name, {'message': 'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
+    # if 'staff_id' not in rqst:  # id 가 들어왔는지 검사
+    #     return status422(func_name, {'message': 'ClientError: parameter \'staff_id\' 가 없어요'})
+    # if 'employee_id' not in rqst:  # employee_id 가 들어왔는지 검사
+    #     return status422(func_name, {'message': 'ClientError: parameter \'employee_id\' 가 없어요'})
+    # if 'year_month' not in rqst:  # year_month 가 들어왔는지 검사
+    #     return status422(func_name, {'message': 'ClientError: parameter \'year_month\' 가 없어요'})
+    # 
+    # staff_id = AES_DECRYPT_BASE64(rqst['staff_id'])
+    # if staff_id == '__error':
+    #     return status422(func_name, {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'})
+    # employee_id = AES_DECRYPT_BASE64(rqst['employee_id'])
+    # if employee_id == '__error':
+    #     return status422(func_name, {'message': 'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'})
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
-    employees = Employee.objects.filter(id=employee_id)
+        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)})
+    employees = Employee.objects.filter(id=employee_id, work_id=work_id)
     if len(employees) != 1:
-        return status422(func_name, {'message': 'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+        return status422(func_name, {'message': 'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨'.format(employee_id)})
     employee = employees[0]
 
     #
@@ -4329,7 +4338,7 @@ def staff_employee_working(request):
     #
     employee_info = {
             'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
-            'dt': rqst['year_month'],
+            'dt': year_month,
         }
     logSend(employee_info)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
@@ -4365,8 +4374,8 @@ def staff_update_employee(request):
             {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
             {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
-            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨'.format(staff_id)}
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨'.format(employee_id)}
             {'message':'ClientError: parameter \'dt_begin\'이 업무 시작 날짜 이전입니다.'}
             {'message':'ClientError: parameter \'dt_end\'이 업무 종료 날짜 이후입니다.'}
             {'message':'ClientError: parameter \'overtime_type\'이 범위를 벗어났습니다.'}
@@ -4391,10 +4400,10 @@ def staff_update_employee(request):
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
-        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id })
+        return status422(func_name, {'message': 'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨'.format(staff_id)})
     employees = Employee.objects.filter(id=employee_id)
     if len(employees) != 1:
-        return status422(func_name, {'message': 'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id })
+        return status422(func_name, {'message': 'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨'.format(employee_id)})
     employee = employees[0]
     works = Work.objects.filter(id=employee.work_id)
     if len(works) != 1:
@@ -4478,8 +4487,8 @@ def staff_recognize_employee(request):
             {'message':'ClientError: parameter \'dt_leave\' 가 없어요'}
             {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨' % staff_id }
-            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ServerError: Staff 에 staff_id=%s 이(가) 없거나 중복됨'.format(staff_id)}
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨'.format(employee_id)}
             {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'}
             {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'}
     """
