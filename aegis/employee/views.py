@@ -825,7 +825,7 @@ def pass_reg(request):
         # 출입자를 db에서 찾지 못하면
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
-    passer = passer[0]
+    passer = passer_list[0]
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
     if len(employee_list) == 0:
         # db 에 근로자 정보가 없으면 - 출입자 중에 근로자 정보가 없는 경우, 등록하지 않은 경우, 피쳐폰인 경우
