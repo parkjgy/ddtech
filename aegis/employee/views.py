@@ -2661,8 +2661,9 @@ def my_work_records(request):
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-            'employee_id' : rqst["passer_id"],
-            'dt' : rqst['dt'],
+            'employee_id': rqst["passer_id"],
+            'work_id': AES_ENCRYPT_BASE64('-1'),
+            'dt': rqst['dt'],
         }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
     logSend(response_employee)
