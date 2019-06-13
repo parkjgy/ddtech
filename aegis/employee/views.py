@@ -820,16 +820,39 @@ def pass_reg(request):
     #
     # Pass_History update
     #
-    dt_beacon = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    passer_list = Passer.objects.filter(id=passer_id)
+    if len(passer_list) == 0:
+        # 출입자를 db에서 찾지 못하면
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
+    passer = passer[0]
+    employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
+    if len(employee_list) == 0:
+        # db 에 근로자 정보가 없으면 - 출입자 중에 근로자 정보가 없는 경우, 등록하지 않은 경우, 피쳐폰인 경우
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': '근로자 정보가 없다.'})
+    employee = employee_list[0]
+    employee_works = Works(employee.get_works())
+    if len(employee_works.data) == 0:
+        # 근로자 정보에 업무가 없다.
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': '근로자에게 배정된 업무가 없다.'})
+    if not employee_works.is_active():
+        # 현재 하고 있는 없무가 없다.
+        func_end_log(func_name)
+        return REG_200_SUCCESS.to_json_response({'message': '근로자가 현재 출퇴근하는 업무가 없다.'})
+    employee_work = employee_works.data[employee_works.index]
+    work_id = employee_work['dt']
+    dt_beacon = str_to_datetime(dt)  # datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     year_month_day = dt_beacon.strftime("%Y-%m-%d")
-    pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id, year_month_day=year_month_day)
     if not is_in:
         # out 일 경우
         if len(pass_histories) == 0:
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_beacon - datetime.timedelta(days=1)
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id, year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
                 # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
                 logError(func_name, ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
@@ -857,6 +880,7 @@ def pass_reg(request):
             # 오늘 날짜 pass_history 가 없어서 새로 만든다.
             pass_history = Pass_History(
                 passer_id=passer_id,
+                work_id=work_id,
                 year_month_day=year_month_day,
                 action=0,
             )
@@ -865,21 +889,19 @@ def pass_reg(request):
 
         if pass_history.dt_in is None:
             pass_history.dt_in = dt_beacon
-
-    # work_id 처리
-    if (pass_history.work_id == -1) and (passer.employee_id > 0):
-        employees = Employee.objects.filter(id=passer.employee_id)
-        if len(employees) == 0:
-            logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        else:
-            if len(employees) > 1:
-                logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
-            employee = employees[0]
-            logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
-            employee_works = Works(employee.get_works())
-            if len(employee_works.data) > 0:
-                pass_history.work_id = employee.get_works()[0]['id']
-
+    # # work_id 처리
+    # if (pass_history.work_id == -1) and (passer.employee_id > 0):
+    #     employees = Employee.objects.filter(id=passer.employee_id)
+    #     if len(employees) == 0:
+    #         logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+    #     else:
+    #         if len(employees) > 1:
+    #             logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    #         employee = employees[0]
+    #         logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
+    #         employee_works = Works(employee.get_works())
+    #         if len(employee_works.data) > 0:
+    #             pass_history.work_id = employee.get_works()[0]['id']
     pass_history.save()
 
     func_end_log(func_name)

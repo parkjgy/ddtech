@@ -3893,6 +3893,20 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
+    # beacon_data = {
+    #     'passer_id': AES_ENCRYPT_BASE64('1'),
+    #     'dt': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(20)),
+    #     'is_in': 1,  # 0: out, 1 : in
+    #     'major': 11001,  # 11 (지역) 001(사업장)
+    #     'beacons': [
+    #         {'minor': 11001, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70},
+    #         {'minor': 11002, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70},
+    #         {'minor': 11003, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70}
+    #     ]
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+    # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
     # ---------------------------------------------------------------------------------------
