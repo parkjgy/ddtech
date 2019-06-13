@@ -876,7 +876,9 @@ def pass_reg(request):
                 logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
             employee = employees[0]
             logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
-            pass_history.work_id = employee.get_works()[0]['id']
+            employee_works = Works(employee.get_works())
+            if len(employee_works.data) > 0:
+                pass_history.work_id = employee.get_works()[0]['id']
 
     pass_history.save()
 
