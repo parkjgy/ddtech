@@ -2259,7 +2259,7 @@ def reg_employee(request):
         STATUS 416
             {'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'}
             {'message': '출근 날짜는 오늘 이후여야 합니다.'}
-            {'message': '답변 시한이 출근 날짜는 먼저이면 안됩니다.'}
+            {'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'}
             {'message': '답변 시한은 현재 시각 이후여야 합니다.'}
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
@@ -2296,14 +2296,14 @@ def reg_employee(request):
     # 상용 서버에 적용하기 전에 임시로 사용 - dt_begin 이 비어 있어도 에러처리를 하지 않는다.
     #
     parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'dt_begin', 'phone_numbers'])
-    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'phone_numbers'])
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'phone_numbers'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
 
     work_id = parameter_check['parameters']['work_id']
     dt_answer_deadline = str_to_datetime(parameter_check['parameters']['dt_answer_deadline'])
-    # dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     phone_numbers = parameter_check['parameters']['phone_numbers']
 
     work_list = Work.objects.filter(id=work_id)
@@ -2315,10 +2315,10 @@ def reg_employee(request):
     #
     # 상용 서버를 위한 일시적 방법
     #
-    if 'dt_begin' not in rqst:
-        dt_begin = work.dt_begin
-    else:
-        dt_begin = str_to_datetime(rqst['dt_begin'])
+    # if 'dt_begin' not in rqst:
+    #     dt_begin = work.dt_begin
+    # else:
+    #     dt_begin = str_to_datetime(rqst['dt_begin'])
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phone_numbers')
@@ -2343,7 +2343,7 @@ def reg_employee(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 오늘 이후여야 합니다.'})
     if dt_begin < dt_answer_deadline:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한이 출근 날짜는 먼저이면 안됩니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'})
     if dt_answer_deadline < datetime.datetime.now():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
@@ -2416,7 +2416,9 @@ def reg_employee(request):
                 notification += bad_condition + '<br>'
         notification += '</p></body></html>'
     else:
-        notification = ''
+        notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
+                       '<h3><span style=\"color: #808080;\">정상적으로 처리되었습니다.</span></h3>' \
+                       '</body></html>'
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'duplicate_pNo': duplicate_pNo, 'bad_pNo': bad_phone_list, 'bad_condition': bad_condition_list, 'notification': notification})
 
@@ -2750,6 +2752,7 @@ def update_employee(request):
             func_end_log(func_name)
             return ReqLibJsonResponse(response_employee)
         employee.employee_id = response_employee.json()['result'][employee.pNo]
+    employee.is_accept_work = None
     employee.save()
 
     func_end_log(func_name)
