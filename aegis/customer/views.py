@@ -2230,7 +2230,7 @@ def reg_employee(request):
     POST
         {
             'work_id':'사업장 업무 id',
-            'dt_answer_deadline':2019-03-01 19:00:00  # 업무 수락/거부 답변 시한
+            'dt_answer_deadline':2019-03-01 19:00:00  # 업무 수락/거절 답변 시한
             'dt_begin': 2019-05-25  # 등록하는 근로자의 실제 출근 시작 날짜 (업무의 시작 후에 추가되는 근로자를 위한 날짜)
             'phone_numbers':        # 업무에 배치할 근로자들의 전화번호
             [
@@ -2426,7 +2426,7 @@ def reg_employee(request):
 @cross_origin_read_allow
 def employee_work_accept_for_employee(request):
     """
-    <<<근로자 서버용>>> 근로자가 업무 수락/거부했을 때 고객서버가 처리할 일
+    <<<근로자 서버용>>> 근로자가 업무 수락/거절했을 때 고객서버가 처리할 일
     * 서버 to 서버 통신 work_id 필요
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
             response 는 추후 추가될 예정이다.
@@ -2579,7 +2579,7 @@ def update_employee_for_employee(request):
 def update_employee(request):
     """
     근로자 수정
-     - 근로자가 업무를 거부했거나
+     - 근로자가 업무를 거절했거나
      - 응답이 없어 업무에서 배제했거나
      - 업무 예정기간보다 일찍 업무가 끝났을 때
         주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
@@ -2775,7 +2775,7 @@ def list_employee(request):
         is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
     response
         STATUS 200
-            # 업무 시직 전 응답 - 업무 승락 상태 표시
+            # 업무 시직 전 응답 - 업무 수락 상태 표시
             {
               "message": "정상적으로 처리되었습니다.",
               "employees": [
@@ -2794,7 +2794,7 @@ def list_employee(request):
                   "pNo": "010-1111-2222",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "거부",
+                  "state": "거절",
                   "is_not_begin": "1"
                 },
                 {
@@ -2803,7 +2803,7 @@ def list_employee(request):
                   "pNo": "010-4444-5555",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "승락",
+                  "state": "수락",
                   "is_not_begin": "1"
                 },
                 {
@@ -2849,7 +2849,7 @@ def list_employee(request):
                   "pNo": "010-4444-5555",
                   "dt_begin": "2019-03-08 19:09:30",
                   "dt_end": "2019-03-14 00:00:00",
-                  "state": "승락",
+                  "state": "수락",
                   "is_not_begin": "1"
                 },
                 {
@@ -2895,9 +2895,9 @@ def list_employee(request):
                 if employee.is_accept_work is None:
                     state = "답변 X"
                 elif employee.is_accept_work:
-                    state = "승락"
+                    state = "수락"
                 else:
-                    state = "거부"
+                    state = "거절"
             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
                              'name': employee.name,
                              'pNo': phone_format(employee.pNo),
@@ -2941,9 +2941,9 @@ def list_employee(request):
                 if employee.is_accept_work is None:
                     state = "답변 X"
                 elif employee.is_accept_work:
-                    state = "승락"
+                    state = "수락"
                 else:
-                    state = "거부"
+                    state = "거절"
                 view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
                                  'name': employee.name,
                                  'pNo': phone_format(employee.pNo),

@@ -1162,7 +1162,7 @@ def pass_sms(request):
             name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) == 0:
-                name = '====='
+                name = '-----'
         sms_data = {
             'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
             'user_id': 'yuadocjon22',
