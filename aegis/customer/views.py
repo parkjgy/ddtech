@@ -2776,6 +2776,69 @@ def update_employee(request):
     # employee.is_accept_work = None
     employee.save()
 
+    sms_result = response_employee.json()['result']
+    # sms_result = {'01033335555': -101, '01055557777': 5}
+    bad_phone_list = []
+    bad_condition_list = []
+    #
+    # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
+    #
+    find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
+    duplicate_pNo = [employee.pNo for employee in find_employee_list]
+    for phone in new_phone_list:
+        if sms_result[phone] < -100:
+            # 잘못된 전화번호 근로자 등록 안함
+            bad_phone_list.append(phone_format(phone))
+        elif sms_result[phone] < -1:
+            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+            bad_condition_list.append(phone_format(phone))
+        else:
+            # 업무 수락을 기다리는 근로자로 등록
+            #
+            # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
+            #
+            if phone in duplicate_pNo:
+                for find_employee in find_employee_list:
+                    if phone == find_employee.pNo:
+                        find_employee.is_accept_work = None
+                        find_employee.is_active = 0
+                        find_employee.dt_begin = dt_begin
+                        find_employee.dt_end = work.dt_end
+                        find_employee.save()
+            else:
+                new_employee = Employee(
+                    employee_id=sms_result[phone],
+                    is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
+                    is_active=0,  # 근무 중 아님
+                    dt_begin=dt_begin,
+                    dt_end=work.dt_end,
+                    work_id=work.id,
+                    pNo=phone,
+                )
+                new_employee.save()
+    #
+    # SMS 가 에러나는 전화번호 표시 html
+    #
+    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0:
+        notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
+                       '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>'
+        if len(bad_phone_list) > 0:
+            notification += '<p style=\"color: #dd0000;\">문자를 보낼 수 없는 전화번호였습니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for bad_phone in bad_phone_list:
+                notification += bad_phone + '<br>'
+        if len(bad_condition_list) > 0:
+            notification += '<br>' \
+                            '<p style=\"color: #dd0000;\">다른 업무와 겹치는 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for bad_condition in bad_condition_list:
+                notification += bad_condition + '<br>'
+        notification += '</p></body></html>'
+    else:
+        notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
+                       '<h3><span style=\"color: #808080;\">정상적으로 처리되었습니다.</span></h3>' \
+                       '</body></html>'
+
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
