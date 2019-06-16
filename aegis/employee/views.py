@@ -384,8 +384,8 @@ def reg_employee_for_customer(request):
                     employee_id=phones_state[phone_no],
                     employee_pNo=phone_no,
                     dt_answer_deadline=dt_answer_deadline,
-                    dt_begin_employee=dt_begin_employee,
-                    dt_end_employee=dt_end_employee,
+                    dt_begin=dt_begin_employee,
+                    dt_end=dt_end_employee,
                 )
                 new_notification.save()
                 logSend('  - sms send success phone: {}'.format(phone_no))
