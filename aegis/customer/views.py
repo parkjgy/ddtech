@@ -2296,9 +2296,6 @@ def reg_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    #
-    # 상용 서버에 적용하기 전에 임시로 사용 - dt_begin 이 비어 있어도 에러처리를 하지 않는다.
-    #
     parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'dt_begin', 'phone_numbers'])
     # parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt_answer_deadline', 'phone_numbers'])
     if not parameter_check['is_ok']:
@@ -2316,13 +2313,6 @@ def reg_employee(request):
     elif len(work_list) > 1:
         logError(func_name, ' Work(id:{})가 중복되었다.'.format(work_id))
     work = work_list[0]
-    #
-    # 상용 서버를 위한 일시적 방법
-    #
-    # if 'dt_begin' not in rqst:
-    #     dt_begin = work.dt_begin
-    # else:
-    #     dt_begin = str_to_datetime(rqst['dt_begin'])
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phone_numbers')
@@ -2353,7 +2343,11 @@ def reg_employee(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
 
     find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
-    duplicate_pNo = [employee.pNo for employee in find_employee_list]
+    #
+    # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
+    #
+    # duplicate_pNo = [employee.pNo for employee in find_employee_list]
+    duplicate_pNo = []
     logSend('  - duplicate phones: {}'.format(duplicate_pNo))
     new_phone_list = [phone for phone in phones if phone not in duplicate_pNo]
     logSend('  - real phones: {}'.format(new_phone_list))
