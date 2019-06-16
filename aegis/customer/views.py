@@ -2771,18 +2771,19 @@ def update_employee(request):
         if response_employee.status_code != 200:
             func_end_log(func_name)
             return ReqLibJsonResponse(response_employee)
-        employee.employee_id = response_employee.json()['result'][employee.pNo]
+        sms_result = response_employee.json()['result']
+        if sms_result[employee.pNo] < -100:
+            # 잘못된 전화번호 근로자 등록 안함
+            func_end_log(func_name)
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '잘못된 전화번호입니다.'})
+        elif sms_result[employee.pNo] < -1:
+            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+            func_end_log(func_name)
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근로자의 다른 업무와 기간이 겹칩니다.'})
+        employee.employee_id = sms_result[employee.pNo]
+
     # 2019/06/17 고객웹 > 근로자 > 수정: 답변을 초기화 할 때 사용
     # employee.is_accept_work = None
-    if sms_result[employee.pNo] < -100:
-        # 잘못된 전화번호 근로자 등록 안함
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '잘못된 전화번호입니다.'})
-    elif sms_result[employee.pNo] < -1:
-        # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근로자의 다른 업무와 기간이 겹칩니다.'})
-
     employee.save()
 
     func_end_log(func_name)
