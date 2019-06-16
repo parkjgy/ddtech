@@ -622,15 +622,14 @@ def notification_accept(request):
         logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                                      len(employees)))
     employee = employees[0]
-    em_arr = employee.get_works()
-    logSend('  - employee array: {}'.format(em_arr))
     employee_works = Works(employee.get_works())
+    logSend('  - employee works: {}'.format(employee_works))
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
     if is_accept == 1:
         # 수락했을 경우
-        logSend('  - works: {}'.format([work for work in employee_works.data]))
+        logSend('  - 수락: works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
         new_work = {'id': notification.work_id,
                     'begin': notification.dt_begin,
@@ -650,6 +649,7 @@ def notification_accept(request):
         logSend('  - works: {}'.format([work for work in employee_works.data]))
         logSend('  - name: ', employee.name)
     else:
+        logSend('  - 거절: works 에 있으면 삭제')
         # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
         if employee_works.find(notification.work_id):
             del employee_works.data[employee_works.index]
@@ -675,7 +675,7 @@ def notification_accept(request):
         return ReqLibJsonResponse(response_customer)
 
     notification.delete()
-
+    logSend('  - is_accept: {}'.format(is_accept))
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
 
