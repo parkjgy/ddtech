@@ -476,7 +476,7 @@ def update_work_for_customer(request):
                     employee_work['begin'] = work.begin
                 if str_to_dt(work.end) < str_to_dt(employee_work['end']):
                     employee_work['end'] = work.end
-        employee.set_works(works.data)
+        employee.set_works(employee_works.data)
         employee.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
