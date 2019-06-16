@@ -468,14 +468,14 @@ def update_work_for_customer(request):
     employee_id_list = [passer.id for passer in passer_list]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
     for employee in employee_list:
-        works = Works(employee.get_works())
-        for work in works.data:
-            logSend('  - work: {}', work)
-            if work['id'] == work.id:
-                if str_to_dt(work['begin']) < str_to_dt(work.begin):
-                    work['begin'] = work.begin
-                if str_to_dt(work.end) < str_to_dt(work['end']):
-                    work['end'] = work.end
+        employee_works = Works(employee.get_works())
+        for employee_work in employee_works.data:
+            logSend('  - work: {}'.format(employee_work))
+            if employee_work['id'] == work.id:
+                if str_to_dt(employee_work['begin']) < str_to_dt(work.begin):
+                    employee_work['begin'] = work.begin
+                if str_to_dt(work.end) < str_to_dt(employee_work['end']):
+                    employee_work['end'] = work.end
         employee.set_works(works.data)
         employee.save()
     func_end_log(func_name)
