@@ -378,17 +378,31 @@ def reg_employee_for_customer(request):
                 phones_state[phone_no] = -101
                 logSend('  - sms send fail phone: {}'.format(phone_no))
             else:
-                new_notification = Notification_Work(
-                    work_id=work.id,
-                    customer_work_id=customer_work_id,
-                    employee_id=phones_state[phone_no],
-                    employee_pNo=phone_no,
-                    dt_answer_deadline=dt_answer_deadline,
-                    dt_begin=str_to_dt(dt_begin_employee),
-                    dt_end=str_to_dt(dt_end_employee),
-                )
-                new_notification.save()
-                logSend('  - sms send success phone: {}'.format(phone_no))
+                is_new_notification = True
+                for employee in employee_list:
+                    works = Works(employee.get_works())
+                    logSend('  - employee id: {}, works: {}', employee.id, works.data)
+                    if works.find(work.id):
+                        work = works.data[works.index]
+                        work['begin'] = dt_begin_employee
+                        work['end'] = dt_end_employee
+                        employee.set_works(works.data)
+                        employee.save()
+                        is_new_notification = False
+                if is_new_notification:
+                    new_notification = Notification_Work(
+                        work_id=work.id,
+                        customer_work_id=customer_work_id,
+                        employee_id=phones_state[phone_no],
+                        employee_pNo=phone_no,
+                        dt_answer_deadline=dt_answer_deadline,
+                        dt_begin=str_to_dt(dt_begin_employee),
+                        dt_end=str_to_dt(dt_end_employee),
+                    )
+                    new_notification.save()
+                    logSend('  - sms send success phone: {}'.format(phone_no))
+                else:
+                    logSend('  - 이미 승락한 업무라서 알림을 생성하지 않고 날짜만 변경한다.')
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
