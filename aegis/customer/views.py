@@ -2342,10 +2342,10 @@ def reg_employee(request):
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
 
-    find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
+    # find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
     # duplicate_pNo = [employee.pNo for employee in find_employee_list]
     duplicate_pNo = []
     logSend('  - duplicate phones: {}'.format(duplicate_pNo))
@@ -2378,6 +2378,11 @@ def reg_employee(request):
     # sms_result = {'01033335555': -101, '01055557777': 5}
     bad_phone_list = []
     bad_condition_list = []
+    #
+    # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
+    #
+    find_employee_list = Employee.objects.filter(work_id=work.id, pNo__in=phones)
+    duplicate_pNo = [employee.pNo for employee in find_employee_list]
     for phone in new_phone_list:
         if sms_result[phone] < -100:
             # 잘못된 전화번호 근로자 등록 안함
@@ -2387,16 +2392,28 @@ def reg_employee(request):
             bad_condition_list.append(phone_format(phone))
         else:
             # 업무 수락을 기다리는 근로자로 등록
-            new_employee = Employee(
-                employee_id=sms_result[phone],
-                is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
-                is_active=0,  # 근무 중 아님
-                dt_begin=dt_begin,
-                dt_end=work.dt_end,
-                work_id=work.id,
-                pNo=phone,
-            )
-            new_employee.save()
+            #
+            # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
+            #
+            if phone in duplicate_pNo:
+                for find_employee in find_employee_list:
+                    if phone == find_employee.pNo:
+                        find_employee.is_accept_work = None
+                        find_employee.is_active = 0
+                        find_employee.dt_begin = dt_begin
+                        find_employee.dt_end = work.dt_end
+                        find_employee.save()
+            else:
+                new_employee = Employee(
+                    employee_id=sms_result[phone],
+                    is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
+                    is_active=0,  # 근무 중 아님
+                    dt_begin=dt_begin,
+                    dt_end=work.dt_end,
+                    work_id=work.id,
+                    pNo=phone,
+                )
+                new_employee.save()
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
