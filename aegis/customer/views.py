@@ -2776,6 +2776,10 @@ def update_employee(request):
             # 잘못된 전화번호 근로자 등록 안함
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '잘못된 전화번호입니다.'})
+        elif sms_result[employee.pNo] < -20:
+            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+            func_end_log(func_name)
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '피쳐폰이라서 업무를 하나밖에 받지 못합니다.'})
         elif sms_result[employee.pNo] < -1:
             # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
             func_end_log(func_name)
