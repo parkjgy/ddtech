@@ -206,9 +206,11 @@ def reg_employee_for_customer(request):
           "work_name_type": "경비(주간)",
           "dt_begin": "2019/03/04",
           "dt_end": "2019/03/31",
-          "dt_answer_deadline": 2019-03-03 19:00:00,
           "staff_name": "이수용",
           "staff_phone": "01099993333",
+          "dt_answer_deadline": 2019-03-03 19:00:00,
+          "dt_begin_employee": "2019/03/04",
+          "dt_end_employee": "2019/03/31",
           "phones": [
             "01025573555",
             "01022223333",
@@ -252,7 +254,8 @@ def reg_employee_for_customer(request):
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phones')
     parameter_check = is_parameter_ok(rqst, ['customer_work_id', 'work_place_name', 'work_name_type', 'dt_begin',
-                                             'dt_end', 'dt_answer_deadline', 'staff_name', 'staff_phone', 'phones'])
+                                             'dt_end', 'staff_name', 'staff_phone', 'phones',
+                                             'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
@@ -261,10 +264,12 @@ def reg_employee_for_customer(request):
     work_name_type = parameter_check['parameters']['work_name_type']
     dt_begin = parameter_check['parameters']['dt_begin']
     dt_end = parameter_check['parameters']['dt_end']
-    dt_answer_deadline = parameter_check['parameters']['dt_answer_deadline']
     staff_name = parameter_check['parameters']['staff_name']
     staff_phone = parameter_check['parameters']['staff_phone']
     phone_numbers = parameter_check['parameters']['phones']
+    dt_answer_deadline = parameter_check['parameters']['dt_answer_deadline']
+    dt_begin_employee = parameter_check['parameters']['dt_begin_employee']
+    dt_end_employee = parameter_check['parameters']['dt_end_employee']
 
     logSend('  - phone numbers: {}'.format(phone_numbers))
 
@@ -320,8 +325,8 @@ def reg_employee_for_customer(request):
     #               "박종기 010-2557-3555".format()
     msg_feature = '이지체크\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
                                                        work.work_name_type,
-                                                       work.begin,
-                                                       work.end,
+                                                       dt_begin_employee,
+                                                       dt_end_employee,
                                                        work.staff_name,
                                                        phone_format(work.staff_pNo))
     rData = {
@@ -379,6 +384,8 @@ def reg_employee_for_customer(request):
                     employee_id=phones_state[phone_no],
                     employee_pNo=phone_no,
                     dt_answer_deadline=dt_answer_deadline,
+                    dt_begin_employee=dt_begin_employee,
+                    dt_end_employee=dt_end_employee,
                 )
                 new_notification.save()
                 logSend('  - sms send success phone: {}'.format(phone_no))
@@ -397,11 +404,14 @@ def update_work_for_customer(request):
           "customer_work_id":qgf6YHf1z2Fx80DR8o_Lvg,
           "work_place_name": "효성1공장",
           "work_name_type": "경비(주간)",
-          "dt_begin": "2019/03/04",
-          "dt_end": "2019/03/31",
-          "dt_answer_deadline": 2019-03-03 19:00:00,
+          "dt_begin": "2019/03/04",  # 업무 시작날짜
+          "dt_end": "2019/03/31",    # 업무 종료날짜
           "staff_name": "이수용",
           "staff_pNo": "01099993333",
+          "dt_answer_deadline": 2019-03-03 19:00:00,
+          "dt_begin_employee": "2019/03/04",  # 해당 근로자의 업무 시작날짜
+          "dt_end_employee": "2019/03/31",    # 해당 근로자의 업무 종료날짜
+          "update_employee_pNo_list": ["010-1111-2222", ...],  # 업무시간이 변경된 근로자 전화번호
         }
     response
         STATUS 200
@@ -437,7 +447,23 @@ def update_work_for_customer(request):
         work.staff_name = rqst['staff_name']
         work.staff_pNo = rqst['staff_pNo']
         work.save()
-
+    #
+    # 근로자 중에서 업무 날짜가 변경된 근로자의 업무시간을 변경한다.
+    #
+    passer_list = Passer.objects.filter(pNo__in=rqst['update_employee_pNo_list'])
+    employee_id_list = [passer.id for passer in passer_list]
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    for employee in employee_list:
+        works = Works(employee.get_works())
+        for work in works.data:
+            logSend('  - work: {}', work)
+            if work['id'] == work.id:
+                if str_to_dt(work['begin']) < str_to_dt(work.begin):
+                    work['begin'] = work.begin
+                if str_to_dt(work.end) < str_to_dt(work['end']):
+                    work['end'] = work.end
+        employee.set_works(works.data)
+        employee.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
@@ -490,7 +516,7 @@ def notification_list(request):
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) == 0:
         func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message':'알 수 없는 사용자입니다.'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)
@@ -509,11 +535,11 @@ def notification_list(request):
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
             'work_place_name': work.work_place_name,
             'work_name_type': work.work_name_type,
-            'begin': work.begin,
-            'end': work.end,
             'staff_name': work.staff_name,
             'staff_pNo': work.staff_pNo,
-            'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M:%S")
+            'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M:%S"),
+            'begin': notification.dt_begin,
+            'end': notification.dt_end,
         }
         arr_notification.append(view_notification)
     func_end_log(func_name)
@@ -589,8 +615,8 @@ def notification_accept(request):
         logSend('  - works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
         new_work = {'id': notification.work_id,
-                    'begin': work.begin,
-                    'end': work.end
+                    'begin': notification.dt_begin,
+                    'end': notification.dt_end
                     }
         if employee_works.is_overlap(new_work):
             is_accept = False

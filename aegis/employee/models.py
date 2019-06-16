@@ -29,17 +29,6 @@ class Employee(models.Model):
         if len(self.works) == 0:
             self.works = "[]"
         return json.loads(self.works)
-    # work_id = models.IntegerField(default=-1)  # employee server work id
-    # begin_1 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    # end_1 = models.CharField(max_length=127, default='') # 근무 종료 날짜
-
-    # work_id_2 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
-    # begin_2 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    # end_2 = models.CharField(max_length=127, default='') # 근무 종료 날짜
-
-    # work_id_3 = models.IntegerField(default=-1)  # employee server work id (투잡이나 아직 업무기간이 남았을 때)
-    # begin_3 = models.CharField(max_length=127, default='') # 근무 시작 날짜
-    # end_3 = models.CharField(max_length=127, default='') # 근무 종료 날짜
 
 
 class Notification_Work(models.Model):
@@ -48,9 +37,11 @@ class Notification_Work(models.Model):
     """
     work_id = models.IntegerField()  # employee server work id
     customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
-    employee_id = models.IntegerField(default=-1) # 해당 근로자 id
-    employee_pNo = models.CharField(max_length = 19) # 해당 근로자 전화번호
+    employee_id = models.IntegerField(default=-1)   # 해당 근로자 id
+    employee_pNo = models.CharField(max_length = 19)    # 해당 근로자 전화번호
     dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
+    dt_begin = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 시작 날짜
+    dt_end = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 종료 날짜
 
 
 class Work_Record(models.Model):

@@ -1911,6 +1911,7 @@ def update_work(request):
     #
     # 근로자 시간 변경
     #
+    update_employee_pNo_list = []
     if is_update_dt_begin or is_update_dt_end:
         employees = Employee.objects.filter(work_id=work.id)
         logSend('  - employees = {}'.format([employee.pNo for employee in employees]))
@@ -1920,10 +1921,12 @@ def update_work(request):
                 # 근로자의 업무 시작 날짜가 업무 시작 날짜 보다 빠르면 업무 시작 날짜로 바꾼다.
                 employee.dt_begin = work.dt_begin
                 is_update_employee = True
+                update_employee_pNo_list.append(employee.pNo)
             if work.dt_end < employee.dt_end:
                 # 근로자의 업무 종료 날짜가 업무 종료 날짜 보다 느리면 업무 종료 날짜로 바꾼다.
                 employee.dt_end = work.dt_end
                 is_update_employee = True
+                update_employee_pNo_list.append(employee.pNo)
             if is_update_employee:
                 employee.save()
 
@@ -2000,6 +2003,7 @@ def update_work(request):
         'end': work.dt_end.strftime('%Y/%m/%d'),
         'staff_name': work.staff_name,
         'staff_pNo': work.staff_pNo,
+        'update_employee_pNo_list': update_employee_pNo_list,
     }
     r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
     logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
@@ -2359,12 +2363,13 @@ def reg_employee(request):
     new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
                          "work_place_name": work.work_place_name,
                          "work_name_type": work.name + ' (' + work.type + ')',
-                         # "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
-                         "dt_begin": dt_begin.strftime('%Y/%m/%d'),  # 업무 시작일을 웹에서 받는다. 2019/05/25
+                         "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
                          "dt_end": work.dt_end.strftime('%Y/%m/%d'),
-                         "dt_answer_deadline": rqst['dt_answer_deadline'],
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,
+                         "dt_answer_deadline": rqst['dt_answer_deadline'],
+                         "dt_begin_employee": dt_begin.strftime('%Y/%m/%d'),   # 근로자별 업무 시작일
+                         "dt_end_employee": work.dt_end.strftime('%Y/%m/%d'),  # 근로자별 업무 종료일 (여기서는 업무종료일과 동일)
                          "phones": new_phone_list,
                          }
     # logSend(new_employee_data)
@@ -2740,9 +2745,11 @@ def update_employee(request):
                              "work_name_type": work.name + ' (' + work.type + ')',
                              "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
                              "dt_end": work.dt_end.strftime('%Y/%m/%d'),
-                             "dt_answer_deadline": rqst['dt_answer_deadline'],
                              "staff_name": work.staff_name,
                              "staff_phone": work.staff_pNo,
+                             "dt_answer_deadline": rqst['dt_answer_deadline'],
+                             "dt_begin_employee": employee.dt_begin.strftime('%Y/%m/%d'),  # 개별 근로자의 업무 시작날짜
+                             "dt_end_employee": employee.dt_end.strftime('%Y/%m/%d'),      # 개별 근로자의 업무 종료날짜
                              "phones": [employee.pNo]
                              }
         # print(new_employee_data)
