@@ -623,7 +623,7 @@ def notification_accept(request):
                                                                                      len(employees)))
     employee = employees[0]
     employee_works = Works(employee.get_works())
-    logSend('  - employee works: {}'.format(employee_works))
+    logSend('  - employee works: {}'.format([work for work in employee_works.data]))
     #
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
@@ -632,8 +632,8 @@ def notification_accept(request):
         logSend('  - 수락: works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
         new_work = {'id': notification.work_id,
-                    'begin': notification.dt_begin,
-                    'end': notification.dt_end
+                    'begin': notification.dt_begin.strftime("%Y/%m/%d"),
+                    'end': notification.dt_end.strftime("%Y/%m/%d"),
                     }
         if employee_works.is_overlap(new_work):
             is_accept = False
