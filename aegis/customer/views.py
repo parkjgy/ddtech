@@ -2787,7 +2787,7 @@ def update_employee(request):
         employee.employee_id = sms_result[employee.pNo]
 
     # 2019/06/17 고객웹 > 근로자 > 수정: 답변을 초기화 할 때 사용
-    # employee.is_accept_work = None
+    employee.is_accept_work = None
     employee.save()
 
     func_end_log(func_name)
