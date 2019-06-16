@@ -211,6 +211,7 @@ def reg_employee_for_customer(request):
           "dt_answer_deadline": 2019-03-03 19:00:00,
           "dt_begin_employee": "2019/03/04",
           "dt_end_employee": "2019/03/31",
+          "is_update": True,
           "phones": [
             "01025573555",
             "01022223333",
@@ -255,7 +256,7 @@ def reg_employee_for_customer(request):
         phone_numbers = rqst.getlist('phones')
     parameter_check = is_parameter_ok(rqst, ['customer_work_id', 'work_place_name', 'work_name_type', 'dt_begin',
                                              'dt_end', 'staff_name', 'staff_phone', 'phones',
-                                             'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee'])
+                                             'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee', 'is_update'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
@@ -270,6 +271,7 @@ def reg_employee_for_customer(request):
     dt_answer_deadline = parameter_check['parameters']['dt_answer_deadline']
     dt_begin_employee = parameter_check['parameters']['dt_begin_employee']
     dt_end_employee = parameter_check['parameters']['dt_end_employee']
+    is_update = parameter_check['parameters']['is_update']
 
     logSend('  - phone numbers: {}'.format(phone_numbers))
 
@@ -379,16 +381,17 @@ def reg_employee_for_customer(request):
                 logSend('  - sms send fail phone: {}'.format(phone_no))
             else:
                 is_new_notification = True
-                for employee in employee_list:
-                    works = Works(employee.get_works())
-                    logSend('  - employee id: {}, works: {}', employee.id, works.data)
-                    if works.find(work.id):
-                        work = works.data[works.index]
-                        work['begin'] = dt_begin_employee
-                        work['end'] = dt_end_employee
-                        employee.set_works(works.data)
-                        employee.save()
-                        is_new_notification = False
+                if is_update:
+                    for employee in employee_list:
+                        works = Works(employee.get_works())
+                        logSend('  - employee id: {}, works: {}', employee.id, works.data)
+                        if works.find(work.id):
+                            work = works.data[works.index]
+                            work['begin'] = dt_begin_employee
+                            work['end'] = dt_end_employee
+                            employee.set_works(works.data)
+                            employee.save()
+                            is_new_notification = False
                 if is_new_notification:
                     new_notification = Notification_Work(
                         work_id=work.id,
@@ -626,6 +629,7 @@ def notification_accept(request):
     # 근로자 정보에 업무를 등록 - 수락했을 경우만
     #
     if is_accept == 1:
+        # 수락했을 경우
         logSend('  - works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
         new_work = {'id': notification.work_id,
@@ -645,6 +649,12 @@ def notification_accept(request):
         logSend('  - 예약된 업무(시작 날짜가 오늘 이후인 업무): {}'.format(count_work))
         logSend('  - works: {}'.format([work for work in employee_works.data]))
         logSend('  - name: ', employee.name)
+    else:
+        # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
+        if employee_works.find(notification.work_id):
+            del employee_works.data[employee_works.index]
+        employee.set_works(employee_works.data)
+        employee.save()
     #
     # to customer server
     # 근로자가 수락/거부했음
