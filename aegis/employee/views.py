@@ -227,7 +227,7 @@ def reg_employee_for_customer(request):
                 "01025573555": 2,   # 고객이 앱을 설치했음
                 "01046755165": -1,  # 고객이 앱을 아직 설치하지 않았음
                 "01011112222": -1,
-                "01022223333": -1,
+                "01022223333": -21, # 피쳐폰은 한개 이상의 업무를 받을 수 없다.
                 "0103333": -101,    # 잘못된 전화번호임
                 "01044445555": -11  # 근로자의 남은 업무 종료일 보다 새로운 업무 시작일이 더 빠르다.
               }
@@ -306,6 +306,12 @@ def reg_employee_for_customer(request):
         if works.is_overlap({'id': work.id, 'begin': work.begin, 'end': work.end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
+        work_counter = works.work_counter()
+        if work_counter[0] >= 1:
+            if work_counter[1] >= 1:
+                employee.status[employee.id] = -31
+        elif work_counter[1] >= 2:
+            employee.status[employee.id] = -31
     logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
     phones_state = {}
     for passer in passer_list:
@@ -353,11 +359,14 @@ def reg_employee_for_customer(request):
                 if passer.pNo == phone_no:
                     passer_feature = passer
             if passer_feature.pType == 30:
+                # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
                 is_feature_phone = True
                 notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
                 if len(notification_list) > 0:
-                    phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
-                    continue
+                    notification = notification_list[0]
+                    if notification.work_id != work.id:
+                        phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
+                        continue
         else:
             phones_state[phone_no] = -1
         if phone_no not in notification_phones:
@@ -553,7 +562,7 @@ def notification_list(request):
             'work_place_name': work.work_place_name,
             'work_name_type': work.work_name_type,
             'staff_name': work.staff_name,
-            'staff_pNo': work.staff_pNo,
+            'staff_pNo': phone_format(work.staff_pNo),
             'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M"),
             'begin': notification.dt_begin.strftime("%Y/%m/%d"),
             'end': notification.dt_end.strftime("%Y/%m/%d"),
@@ -1934,7 +1943,7 @@ def my_work_list(request):
                                 'work_place_name': work_db.work_place_name,
                                 'work_name_type': work_db.work_name_type,
                                 'staff_name': work_db.staff_name,
-                                'staff_pNo': work_db.staff_pNo
+                                'staff_pNo': phone_format(work_db.staff_pNo)
                                 }
                     if len(work['begin']) == 0:
                         new_work['begin'] = work_db.begin

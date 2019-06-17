@@ -278,6 +278,31 @@ class Works(object):
         """
         x_begin = str_to_dt(x['begin'])
         x_end = str_to_dt(x['end'])
+        # count_started = 0  # 시작된 업무의 갯수
+        # count_reserve = 0  # 시작되지 않은 업무의 갯수
+        dt_today = datetime.datetime.now()
+        for element in self.data:
+            e_begin = str_to_dt(element['begin'])
+            e_end = str_to_dt(element['end'])
+            # if e_begin < dt_today < e_end:
+            #     count_started += 1
+            # else:
+            #     count_reserve += 1
+            if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
+                return True
+        # if count_started > 0:
+        #     if count_reserve > 0:
+        #         # 시작된 업무와 시작되지 않은 업무 가 각 1개씩 있으면 더 받을 수 없다.
+        #         return True
+        # elif count_reserve > 1:
+        #     # 시작된 업무가 없더라도 시작되지 않은 업무가 2개 있으면 더 받을 수 없다.
+        #     return True
+        return False
+
+    def work_counter(self):
+        """
+        기간이 겹치는 업무가 있는지 확인한다.
+        """
         count_started = 0  # 시작된 업무의 갯수
         count_reserve = 0  # 시작되지 않은 업무의 갯수
         dt_today = datetime.datetime.now()
@@ -288,16 +313,15 @@ class Works(object):
                 count_started += 1
             else:
                 count_reserve += 1
-            if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
-                return True
-        if count_started > 0:
-            if count_reserve > 0:
-                # 시작된 업무와 시작되지 않은 업무 가 각 1개씩 있으면 더 받을 수 없다.
-                return True
-        elif count_reserve > 1:
-            # 시작된 업무가 없더라도 시작되지 않은 업무가 2개 있으면 더 받을 수 없다.
-            return True
-        return False
+        return (count_started, count_reserve)
+        # if count_started > 0:
+        #     if count_reserve > 0:
+        #         # 시작된 업무와 시작되지 않은 업무 가 각 1개씩 있으면 더 받을 수 없다.
+        #         return True
+        # elif count_reserve > 1:
+        #     # 시작된 업무가 없더라도 시작되지 않은 업무가 2개 있으면 더 받을 수 없다.
+        #     return True
+        # return False
 
     def find(self, work_id):
         """
