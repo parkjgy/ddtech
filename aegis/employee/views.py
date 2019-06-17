@@ -367,14 +367,15 @@ def reg_employee_for_customer(request):
             if passer_feature.pType == 30:
                 # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
                 is_feature_phone = True
-                notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
-                if len(notification_list) > 0:    # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
+                find_notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+                logSend('  - notification list (pNo:{}) : {}'.format(phone_no, [notification.employee_pNo for notification in find_notification_list]))
+                if len(find_notification_list) > 0:    # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
                     phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
                     continue
             # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
             for employee in employee_list:
                 works = Works(employee.get_works())
-                logSend('  - employee id: {}, works: {}', employee.id, works.data)
+                logSend('  - employee id: {}, works: {}'.format(employee.id, works.data))
                 if works.find(work.id):
                     work = works.data[works.index]
                     work['begin'] = dt_begin_employee
