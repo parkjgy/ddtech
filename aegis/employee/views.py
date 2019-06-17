@@ -306,11 +306,11 @@ def reg_employee_for_customer(request):
         if works.is_overlap({'id': work.id, 'begin': work.begin, 'end': work.end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
-        work_counter = works.work_counter()
+        work_counter = works.work_counter(work.id)
         if work_counter[0] >= 1:
-            if work_counter[1] >= 2:
+            if work_counter[1] >= 1:
                 employee_status[employee.id] = -31
-        elif work_counter[1] >= 3:
+        elif work_counter[1] >= 2:
             employee_status[employee.id] = -31
     logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
     phones_state = {}
@@ -1254,7 +1254,6 @@ def pass_sms(request):
                 logSend('---2 name: {}, phone: {}'.format(name, phone_no))
             else:
                 # 출입자(passer) 는 있다.
-                # 결국 복잡해도 하네...
                 if len(passer_list) > 1:
                     logError(func_name, ' 전화번호({})가 중복되었다.'.format(phone_no))
                 passer = passer_list[0]
@@ -1275,8 +1274,8 @@ def pass_sms(request):
                     if len(employee_list) > 1:
                         logError(func_name, ' employee({})가 중복되었다.'.format(passer.employee_id))
                     employee = employee_list[0]
-                    employee.name = name
-                    employee.save()
+                    # employee.name = name
+                    # employee.save()
 
             accept_infor = {
                 'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),

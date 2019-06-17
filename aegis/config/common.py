@@ -299,14 +299,17 @@ class Works(object):
         #     return True
         return False
 
-    def work_counter(self):
+    def work_counter(self, x):
         """
-        기간이 겹치는 업무가 있는지 확인한다.
+        근무 중인 업무, 요청받은 업무 각각의 갯수
+        단, 현재업무는 갯수에서 제외한다.
         """
         count_started = 0  # 시작된 업무의 갯수
         count_reserve = 0  # 시작되지 않은 업무의 갯수
         dt_today = datetime.datetime.now()
         for element in self.data:
+            if element['id'] == x:
+                continue
             e_begin = str_to_dt(element['begin'])
             e_end = str_to_dt(element['end'])
             if e_begin < dt_today < e_end:
