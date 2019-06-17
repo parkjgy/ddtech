@@ -347,74 +347,71 @@ def reg_employee_for_customer(request):
     }
 
     # 업무 요청이 등록된 전화번호
-    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id)
+    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo__in=last_phone_numbers)
     notification_phones = [notification.employee_pNo for notification in notification_list]
+    # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에
+    notification_list.delete()
+    # for notification in notification_list:
+    #     notification.delete()
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
         if phone_no in passer_id_dict.keys():
+            # 등록된 근로자이면
             phones_state[phone_no] = passer_id_dict[phone_no]
-            # 피쳐폰 확인
+            # 등록된 근로자 중에서 피쳐폰 근로자 검색
             for passer in passer_list:
                 if passer.pNo == phone_no:
                     passer_feature = passer
+                    break
             if passer_feature.pType == 30:
                 # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
                 is_feature_phone = True
                 notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
-                if len(notification_list) > 0:
-                    notification = notification_list[0]
-                    if notification.work_id != work.id:
-                        phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
-                        continue
+                if len(notification_list) > 0:    # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
+                    phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
+                    continue
+            # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
+            for employee in employee_list:
+                works = Works(employee.get_works())
+                logSend('  - employee id: {}, works: {}', employee.id, works.data)
+                if works.find(work.id):
+                    work = works.data[works.index]
+                    work['begin'] = dt_begin_employee
+                    work['end'] = dt_end_employee
+                    employee.set_works(works.data)
+                    employee.save()
         else:
             phones_state[phone_no] = -1
-        if phone_no not in notification_phones:
-            if not settings.IS_TEST:
-                logSend('  - sms 보냄 phone: {}'.format(phone_no))
-                # SMS 를 보낸다.
-                rData['receiver'] = phone_no
-                if is_feature_phone:
-                    # 피쳐폰일 때는 문자형식을 바꾼다.
-                    rData['msg'] = msg_feature
-                else:
-                    rData['msg'] = msg
-                response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
-                logSend('  - SMS result: {}'.format(response_SMS.json()))
-                is_sms_ok = int(response_SMS.json()['result_code']) < 0
+        if not settings.IS_TEST:
+            logSend('  - sms 보냄 phone: {}'.format(phone_no))
+            # SMS 를 보낸다.
+            rData['receiver'] = phone_no
+            if is_feature_phone:
+                # 피쳐폰일 때는 문자형식을 바꾼다.
+                rData['msg'] = msg_feature
             else:
-                is_sms_ok = len(phone_no) < 11
-            if is_sms_ok:
-                # 전화번호 에러로 문자를 보낼 수 없음.
-                phones_state[phone_no] = -101
-                logSend('  - sms send fail phone: {}'.format(phone_no))
-            else:
-                is_new_notification = True
-                if is_update:
-                    for employee in employee_list:
-                        works = Works(employee.get_works())
-                        logSend('  - employee id: {}, works: {}', employee.id, works.data)
-                        if works.find(work.id):
-                            work = works.data[works.index]
-                            work['begin'] = dt_begin_employee
-                            work['end'] = dt_end_employee
-                            employee.set_works(works.data)
-                            employee.save()
-                            is_new_notification = False
-                if is_new_notification:
-                    new_notification = Notification_Work(
-                        work_id=work.id,
-                        customer_work_id=customer_work_id,
-                        employee_id=phones_state[phone_no],
-                        employee_pNo=phone_no,
-                        dt_answer_deadline=dt_answer_deadline,
-                        dt_begin=str_to_dt(dt_begin_employee),
-                        dt_end=str_to_dt(dt_end_employee),
-                    )
-                    new_notification.save()
-                    logSend('  - sms send success phone: {}'.format(phone_no))
-                else:
-                    logSend('  - 이미 승락한 업무라서 알림을 생성하지 않고 날짜만 변경한다.')
+                rData['msg'] = msg
+            response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
+            logSend('  - SMS result: {}'.format(response_SMS.json()))
+            is_sms_ok = int(response_SMS.json()['result_code']) < 0
+        else:
+            is_sms_ok = len(phone_no) < 11
+        if is_sms_ok:
+            # 전화번호 에러로 문자를 보낼 수 없음.
+            phones_state[phone_no] = -101
+            logSend('  - sms send fail phone: {}'.format(phone_no))
+        else:
+            new_notification = Notification_Work(
+                work_id=work.id,
+                customer_work_id=customer_work_id,
+                employee_id=phones_state[phone_no],
+                employee_pNo=phone_no,
+                dt_answer_deadline=dt_answer_deadline,
+                dt_begin=str_to_dt(dt_begin_employee),
+                dt_end=str_to_dt(dt_end_employee),
+            )
+            new_notification.save()
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
