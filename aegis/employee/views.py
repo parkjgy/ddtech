@@ -226,10 +226,10 @@ def reg_employee_for_customer(request):
               "result": {
                 "01025573555": 2,   # 고객이 앱을 설치했음
                 "01046755165": -1,  # 고객이 앱을 아직 설치하지 않았음
-                "01011112222": -31, # 다른 업무와 기간이 겹치거나 받을 수 있는 요청 갯수를 넘었다.
+                "01011112222": -11, # 다른 업무와 기간이 겹쳤다.
+                "01055557777": -31  # 근로자가 받을 수 있는 요청의 갯수가 넘었다.
                 "01022223333": -21, # 피쳐폰은 한개 이상의 업무를 받을 수 없다.
                 "0103333": -101,    # 잘못된 전화번호임
-                "01044445555": -11  # 근로자의 남은 업무 종료일 보다 새로운 업무 시작일이 더 빠르다.
               }
             }
         STATUS 422 # 개발자 수정사항
@@ -308,9 +308,9 @@ def reg_employee_for_customer(request):
             employee_status[employee.id] = -11
         work_counter = works.work_counter()
         if work_counter[0] >= 1:
-            if work_counter[1] >= 1:
+            if work_counter[1] >= 2:
                 employee_status[employee.id] = -31
-        elif work_counter[1] >= 2:
+        elif work_counter[1] >= 3:
             employee_status[employee.id] = -31
     logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
     phones_state = {}
