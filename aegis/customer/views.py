@@ -2422,14 +2422,14 @@ def reg_employee(request):
                     pNo=phone,
                 )
                 new_employee.save()
-    logSend('  - count bad_phone_list: {}, work_count_over_list: {}, feature_phone_list: {}, bad_condition_list'.format(len(bad_phone_list),
+    logSend('  - count bad_phone_list: {}, work_count_over_list: {}, feature_phone_list: {}, bad_condition_list: {}'.format(len(bad_phone_list),
                                                                                                                         len(work_count_over_list),
                                                                                                                         len(feature_phone_list),
                                                                                                                         len(bad_condition_list)))
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
-    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0:
+    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0 or len(work_count_over_list) > 0 or len(feature_phone_list) > 0:
         notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
                        '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>'
         if len(bad_phone_list) > 0:
