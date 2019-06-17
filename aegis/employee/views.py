@@ -554,9 +554,9 @@ def notification_list(request):
             'work_name_type': work.work_name_type,
             'staff_name': work.staff_name,
             'staff_pNo': work.staff_pNo,
-            'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M:%S"),
-            'begin': notification.dt_begin,
-            'end': notification.dt_end,
+            'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M"),
+            'begin': notification.dt_begin.strftime("%Y/%m/%d"),
+            'end': notification.dt_end.strftime("%Y/%m/%d"),
         }
         arr_notification.append(view_notification)
     func_end_log(func_name)
