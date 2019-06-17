@@ -382,7 +382,7 @@ def reg_employee_for_customer(request):
                     # work = works.data[works.index]
                     # work['begin'] = dt_begin_employee
                     # work['end'] = dt_end_employee
-                    employee.set_works(works.data)
+                    employee.set_works(employee_works.data)
                     employee.save()
         else:
             phones_state[phone_no] = -1
