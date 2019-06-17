@@ -374,12 +374,14 @@ def reg_employee_for_customer(request):
                     continue
             # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
             for employee in employee_list:
-                works = Works(employee.get_works())
-                logSend('  - employee id: {}, works: {}'.format(employee.id, works.data))
-                if works.find(work.id):
-                    work = works.data[works.index]
-                    work['begin'] = dt_begin_employee
-                    work['end'] = dt_end_employee
+                employee_works = Works(employee.get_works())
+                logSend('  - employee id: {}, works: {}'.format(employee.id, employee_works.data))
+                if employee_works.find(work.id):
+                    del employee_works.data[employee_works.index]
+                    logSend('  - employee id: {}, works: {}'.format(employee.id, employee_works.data))
+                    # work = works.data[works.index]
+                    # work['begin'] = dt_begin_employee
+                    # work['end'] = dt_end_employee
                     employee.set_works(works.data)
                     employee.save()
         else:
