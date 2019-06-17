@@ -123,6 +123,15 @@ def dt_null(dt) -> str:
     return None if dt is None else dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def dt_str(dt, dt_format: str) -> str:
+    """
+    날짜 시간이 None 값일 때 ""(blank)를 표시하고 시간일 때는 양식대로 표시한다.
+    :param dt:
+    :return:
+    """
+    return "" if dt is None else dt.strftime(dt_format)
+
+
 def rMin(min) -> int:
     """
     min 값을 기준으로 위 아래 5분 값을 랜덤으로 준다.

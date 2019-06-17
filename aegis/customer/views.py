@@ -15,7 +15,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log, status422, is_parameter_ok
 # secret import
-from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, str_to_datetime
+from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -2954,11 +2954,6 @@ def list_employee(request):
         # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
         # employees = r.json()['employees']
         for employee in employees:
-            if employee.dt_begin < today:
-                # 업무가 시작된 근로자 중에
-                if employee.is_accept_work is None or not employee.is_accept_work:
-                    employee.delete()
-        for employee in employees:
             # 주석처리된 부분은 임시 데이터를 만드는 부분
             # today_str = today.strftime("%Y-%m-%d ")
             # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
@@ -2988,17 +2983,17 @@ def list_employee(request):
                                  'is_not_begin': True,
                                  }
             else:
-                if employee.is_accept_work is None and not employee.is_accept_work:
+                if employee.is_accept_work is None or not employee.is_accept_work:
                     # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
                     employee.delete()
                     continue
                 view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
                                  'name': employee.name,
                                  'pNo': phone_format(employee.pNo),
-                                 'dt_begin_beacon': employee.dt_begin_beacon.strftime("%H:%M") if employee.dt_begin_beacon is not None else "",
-                                 'dt_begin_touch': employee.dt_begin_touch.strftime("%H:%M") if employee.dt_begin_touch is not None else "",
-                                 'dt_end_beacon': employee.dt_end_beacon.strftime("%H:%M") if employee.dt_end_beacon is not None else "",
-                                 'dt_end_touch': employee.dt_end_touch.strftime("%H:%M") if employee.dt_end_touch is not None else "",
+                                 'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),
+                                 'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),
+                                 'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),
+                                 'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),
                                  'state': "",
                                  'is_not_begin': False,
                                  }

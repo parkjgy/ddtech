@@ -572,7 +572,7 @@ def notification_accept(request):
         {
             'passer_id' : '서버로 받아 저장해둔 출입자 id',  # 암호화된 값임
             'notification_id': 'cipher id',
-            'is_accept': 0       # 1 : 업무 수락, 0 : 업무 거부
+            'is_accept': 0       # 1 : 업무 수락, 0 : 업무 거절
         }
     response
         STATUS 200
