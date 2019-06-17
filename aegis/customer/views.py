@@ -2378,6 +2378,8 @@ def reg_employee(request):
     # sms_result = {'01033335555': -101, '01055557777': 5}
     bad_phone_list = []
     bad_condition_list = []
+    work_count_over_list = []
+    feature_phone_list = []
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
@@ -2387,8 +2389,14 @@ def reg_employee(request):
         if sms_result[phone] < -100:
             # 잘못된 전화번호 근로자 등록 안함
             bad_phone_list.append(phone_format(phone))
-        elif sms_result[phone] < -1:
-            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+        elif sms_result[phone] < -30:
+            # 근로자가 받을 수 있는 요청의 갯수가 넘었다.
+            work_count_over_list.append(phone_format(phone))
+        elif sms_result[phone] < -20:
+            # 피쳐폰은 한개 이상의 업무를 받을 수 없다.
+            feature_phone_list.append(phone_format(phone))
+        elif sms_result[phone] < -10:
+            # 다른 업무와 기간이 겹쳤다.
             bad_condition_list.append(phone_format(phone))
         else:
             # 업무 수락을 기다리는 근로자로 등록
@@ -2427,10 +2435,22 @@ def reg_employee(request):
                 notification += bad_phone + '<br>'
         if len(bad_condition_list) > 0:
             notification += '<br>' \
-                            '<p style=\"color: #dd0000;\">다른 업무와 겹치는 전화번호입니다.</p>' \
+                            '<p style=\"color: #dd0000;\">다른 업무와 기간이 겹치는 전화번호입니다.</p>' \
                             '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
             for bad_condition in bad_condition_list:
                 notification += bad_condition + '<br>'
+        if len(work_count_over_list) > 0:
+            notification += '<br>' \
+                            '<p style=\"color: #dd0000;\">업무를 받을 수 있는 한계(2개)가 넘은 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for work_count_over in work_count_over_list:
+                notification += work_count_over + '<br>'
+        if len(feature_phone_list) > 0:
+            notification += '<br>' \
+                            '<p style=\"color: #dd0000;\">업무 요청이 이미 있는 피처 폰 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for feature_phone in feature_phone_list:
+                notification += feature_phone + '<br>'
         notification += '</p></body></html>'
     else:
         notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \

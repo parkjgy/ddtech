@@ -351,8 +351,6 @@ def reg_employee_for_customer(request):
     notification_phones = [notification.employee_pNo for notification in notification_list]
     # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에
     notification_list.delete()
-    # for notification in notification_list:
-    #     notification.delete()
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
