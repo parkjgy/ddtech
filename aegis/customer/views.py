@@ -3031,8 +3031,8 @@ def list_employee(request):
                 view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
                                  'name': employee.name,
                                  'pNo': phone_format(employee.pNo),
-                                 'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-                                 'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                                 'dt_begin': employee.dt_begin.strftime("%Y-%m-%d"),  # %H:%M:%S"),
+                                 'dt_end': employee.dt_end.strftime("%Y-%m-%d"),  # %H:%M:%S"),
                                  'state': state,
                                  'is_not_begin': True,
                                  }
