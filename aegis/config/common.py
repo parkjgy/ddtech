@@ -129,7 +129,7 @@ def dt_str(dt, dt_format: str) -> str:
     :param dt:
     :return:
     """
-    return "" if dt is None else dt.strftime(dt_format)
+    return "??:??" if dt is None else dt.strftime(dt_format)
 
 
 def rMin(min) -> int:
