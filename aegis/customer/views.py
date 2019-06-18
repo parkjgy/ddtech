@@ -2261,10 +2261,12 @@ def reg_employee(request):
               "notification": "html message",
             }
         STATUS 416
-            {'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'}
-            {'message': '출근 날짜는 오늘 이후여야 합니다.'}
-            {'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'}
-            {'message': '답변 시한은 현재 시각 이후여야 합니다.'}
+            {'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'}
+            {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
+            {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
+            {'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'}
+            {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
+            {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 422 # 개발자 수정사항
@@ -2329,19 +2331,29 @@ def reg_employee(request):
     #
     # 답변시한 검사
     #
-    if dt_begin < work.dt_begin:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'})
     if dt_begin < datetime.datetime.now():
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 오늘 이후여야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+
     if dt_begin < dt_answer_deadline:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+
     if dt_answer_deadline < datetime.datetime.now():
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
 
+    if dt_begin < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
+
+    if work.dt_end < dt_end:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
+
+    if dt_end < dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
@@ -2644,10 +2656,12 @@ def update_employee(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
-            {'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'}
+            {'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'}
+            {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
+            {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
+            {'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'}
             {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
-            {'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'}
-            {'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'}
+            {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
         STATUS 509
@@ -2748,18 +2762,30 @@ def update_employee(request):
     #
     # 답변 시한 검사
     #
+    logSend('  - dt_begin: {}, work.dt_begin: {}, work.dt_end: {}, dt_end: {}, dt_answer_deadline: {}'.format(dt_begin, work.dt_begin, work.dt_end, dt_end, dt_answer_deadline))
+    if dt_begin < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+
+    if dt_begin < dt_answer_deadline:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+
+    if dt_answer_deadline < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
+
     if dt_begin < work.dt_begin:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
+
     if work.dt_end < dt_end:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
-    if dt_begin < dt_answer_deadline:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'})
+
     if dt_end < dt_begin:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 업무 시간 변경 확인
     #
@@ -3013,6 +3039,7 @@ def list_employee(request):
             else:
                 if employee.is_accept_work is None or not employee.is_accept_work:
                     # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
+                    logSend('  - accept is none or reject: {}'.format(employee.pNo))
                     employee.delete()
                     continue
                 view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
