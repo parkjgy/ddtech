@@ -2265,8 +2265,8 @@ def reg_employee(request):
             {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
             {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
             {'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'}
-            {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
-            {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
+            # {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
+            # {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 422 # 개발자 수정사항
@@ -2347,13 +2347,13 @@ def reg_employee(request):
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
 
-    if work.dt_end < dt_end:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
-
-    if dt_end < dt_begin:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
+    # if work.dt_end < dt_end:
+    #     func_end_log(func_name)
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
+    #
+    # if dt_end < dt_begin:
+    #     func_end_log(func_name)
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
