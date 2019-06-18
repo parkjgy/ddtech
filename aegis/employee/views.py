@@ -10,7 +10,7 @@ import inspect
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
-from config.common import status422, no_only_phone_no, phone_format, dt_null, is_parameter_ok, str_to_datetime
+from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
 from config.common import str_no, str_to_dt
 from config.common import Works
 
@@ -561,9 +561,9 @@ def notification_list(request):
             'work_name_type': work.work_name_type,
             'staff_name': work.staff_name,
             'staff_pNo': phone_format(work.staff_pNo),
-            'dt_answer_deadline': notification.dt_answer_deadline.strftime("%Y-%m-%d %H:%M"),
-            'begin': notification.dt_begin.strftime("%Y/%m/%d"),
-            'end': notification.dt_end.strftime("%Y/%m/%d"),
+            'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y-%m-%d %H:%M"),
+            'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
+            'end': dt_str(notification.dt_end, "%Y/%m/%d"),
         }
         arr_notification.append(view_notification)
     func_end_log(func_name)
@@ -639,8 +639,8 @@ def notification_accept(request):
         logSend('  - 수락: works: {}'.format([work for work in employee_works.data]))
         work = Work.objects.get(id=notification.work_id)
         new_work = {'id': notification.work_id,
-                    'begin': notification.dt_begin.strftime("%Y/%m/%d"),
-                    'end': notification.dt_end.strftime("%Y/%m/%d"),
+                    'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
+                    'end': dt_str(notification.dt_end, "%Y/%m/%d"),
                     }
         if employee_works.is_overlap(new_work):
             is_accept = False
@@ -826,12 +826,11 @@ def pass_reg(request):
     if request.method == 'POST':
         beacons = rqst['beacons']
     else:
-        # today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        today = dt_str(datetime.datetime.now(), "%Y-%m-%d")
         beacons = [
-            {'minor': 11001, 'dt_begin': '%s 08:25:30'%today, 'rssi': -70},
-            {'minor': 11002, 'dt_begin': '%s 08:25:31'%today, 'rssi': -60},
-            {'minor': 11003, 'dt_begin': '%s 08:25:32'%today, 'rssi': -50}
+            {'minor': 11001, 'dt_begin': '{} 08:25:30'.format(today), 'rssi': -70},
+            {'minor': 11002, 'dt_begin': '{} 08:25:31'.format(today), 'rssi': -60},
+            {'minor': 11003, 'dt_begin': '{} 08:25:32'.format(today), 'rssi': -50}
         ]
     logSend(beacons)
     passers = Passer.objects.filter(id=passer_id)
