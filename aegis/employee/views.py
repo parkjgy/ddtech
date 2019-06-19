@@ -1026,7 +1026,7 @@ def pass_verify(request):
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
