@@ -2972,8 +2972,8 @@ def list_employee(request):
     dt_today = datetime.datetime.now()
 
     s = requests.session()
-    work_info = {'staff_id': worker.id,
-                 'work_id': work_id,
+    work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
+                 'work_id': AES_ENCRYPT_BASE64(str(work.id)),
                  }
     employees = []
     if work.dt_begin < dt_today:
