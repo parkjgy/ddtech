@@ -2980,8 +2980,9 @@ def list_employee(request):
         # 업무가 시작되었다.
         work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
         response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
-        employee_list = response.json()
+        employee_list = response.json()['employees']
         for employee in employee_list:
+            logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
             if str_to_datetime(employee['dt_begin']) < dt_today:
                 employee_web = {
                     'id': employee['employee_id'],
@@ -3008,7 +3009,7 @@ def list_employee(request):
     else:
         # 업무가 아직 시작되지 않았다.
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
-        employee_list = response.json()
+        employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
                 'id': employee['employee_id'],
