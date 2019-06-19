@@ -2261,10 +2261,12 @@ def reg_employee(request):
               "notification": "html message",
             }
         STATUS 416
-            {'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'}
-            {'message': '출근 날짜는 오늘 이후여야 합니다.'}
-            {'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'}
-            {'message': '답변 시한은 현재 시각 이후여야 합니다.'}
+            {'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'}
+            {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
+            {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
+            {'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'}
+            # {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
+            # {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 422 # 개발자 수정사항
@@ -2329,19 +2331,29 @@ def reg_employee(request):
     #
     # 답변시한 검사
     #
-    if dt_begin < work.dt_begin:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 업무 시작일보다 먼저이면 안됩니다.'})
     if dt_begin < datetime.datetime.now():
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근 날짜는 오늘 이후여야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+
     if dt_begin < dt_answer_deadline:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한이 출근 날짜보다 먼저이면 안됩니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+
     if dt_answer_deadline < datetime.datetime.now():
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각 이후여야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
 
+    if dt_begin < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
+
+    # if work.dt_end < dt_end:
+    #     func_end_log(func_name)
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
+    #
+    # if dt_end < dt_begin:
+    #     func_end_log(func_name)
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
@@ -2378,6 +2390,8 @@ def reg_employee(request):
     # sms_result = {'01033335555': -101, '01055557777': 5}
     bad_phone_list = []
     bad_condition_list = []
+    work_count_over_list = []
+    feature_phone_list = []
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
@@ -2387,8 +2401,14 @@ def reg_employee(request):
         if sms_result[phone] < -100:
             # 잘못된 전화번호 근로자 등록 안함
             bad_phone_list.append(phone_format(phone))
-        elif sms_result[phone] < -1:
-            # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
+        elif sms_result[phone] < -30:
+            # 근로자가 받을 수 있는 요청의 갯수가 넘었다.
+            work_count_over_list.append(phone_format(phone))
+        elif sms_result[phone] < -20:
+            # 피쳐폰은 한개 이상의 업무를 받을 수 없다.
+            feature_phone_list.append(phone_format(phone))
+        elif sms_result[phone] < -10:
+            # 다른 업무와 기간이 겹쳤다.
             bad_condition_list.append(phone_format(phone))
         else:
             # 업무 수락을 기다리는 근로자로 등록
@@ -2414,10 +2434,14 @@ def reg_employee(request):
                     pNo=phone,
                 )
                 new_employee.save()
+    logSend('  - count bad_phone_list: {}, work_count_over_list: {}, feature_phone_list: {}, bad_condition_list: {}'.format(len(bad_phone_list),
+                                                                                                                        len(work_count_over_list),
+                                                                                                                        len(feature_phone_list),
+                                                                                                                        len(bad_condition_list)))
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
-    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0:
+    if len(bad_phone_list) > 0 or len(bad_condition_list) > 0 or len(work_count_over_list) > 0 or len(feature_phone_list) > 0:
         notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
                        '<h3><span style=\"color: #808080;\">등록되지 않은 전화번호</span></h3>'
         if len(bad_phone_list) > 0:
@@ -2427,10 +2451,22 @@ def reg_employee(request):
                 notification += bad_phone + '<br>'
         if len(bad_condition_list) > 0:
             notification += '<br>' \
-                            '<p style=\"color: #dd0000;\">다른 업무와 겹치는 전화번호입니다.</p>' \
+                            '<p style=\"color: #dd0000;\">다른 업무와 기간이 겹치는 전화번호입니다.</p>' \
                             '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
             for bad_condition in bad_condition_list:
                 notification += bad_condition + '<br>'
+        if len(work_count_over_list) > 0:
+            notification += '<br>' \
+                            '<p style=\"color: #dd0000;\">업무를 받을 수 있는 한계(2개)가 넘은 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for work_count_over in work_count_over_list:
+                notification += work_count_over + '<br>'
+        if len(feature_phone_list) > 0:
+            notification += '<br>' \
+                            '<p style=\"color: #dd0000;\">업무 요청이 이미 있는 피처 폰 전화번호입니다.</p>' \
+                            '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
+            for feature_phone in feature_phone_list:
+                notification += feature_phone + '<br>'
         notification += '</p></body></html>'
     else:
         notification = '<html><head><meta charset=\"UTF-8\"></head><body>' \
@@ -2620,10 +2656,12 @@ def update_employee(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
-            {'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'}
+            {'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'}
+            {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
+            {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
+            {'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'}
             {'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'}
-            {'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'}
-            {'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'}
+            {'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'}
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
         STATUS 509
@@ -2724,18 +2762,30 @@ def update_employee(request):
     #
     # 답변 시한 검사
     #
+    logSend('  - dt_begin: {}, work.dt_begin: {}, work.dt_end: {}, dt_end: {}, dt_answer_deadline: {}'.format(dt_begin, work.dt_begin, work.dt_end, dt_end, dt_answer_deadline))
+    if dt_begin < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+
+    if dt_begin < dt_answer_deadline:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+
+    if dt_answer_deadline < datetime.datetime.now():
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
+
     if dt_begin < work.dt_begin:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 나중이거나 같아야 합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
+
     if work.dt_end < dt_end:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
-    if dt_begin < dt_answer_deadline:
-        func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 업무 시작시간 이전이여야 합니다.'})
+
     if dt_end < dt_begin:
         func_end_log(func_name)
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작일이 업무 종료일 보다 빠르면 안됩니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 업무 시간 변경 확인
     #
@@ -2776,6 +2826,10 @@ def update_employee(request):
             # 잘못된 전화번호 근로자 등록 안함
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '잘못된 전화번호입니다.'})
+        elif sms_result[employee.pNo] < -30:
+            # 업무 요청을 많이 받아서 받을 수 없다.
+            func_end_log(func_name)
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '요청받은 업무가 많아서(2개) 더 요청할 수 없습니다.'})
         elif sms_result[employee.pNo] < -20:
             # 다른 업무 때문에 업무 배정이 안되는 근로자 - 근로자 등록 안함
             func_end_log(func_name)
@@ -2914,154 +2968,100 @@ def list_employee(request):
     worker = Staff.objects.get(id=worker_id)
 
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    work = Work.objects.get(id=work_id)  # 업무 에러 확인용
-    dt_today = datetime.datetime.now()
+    work = Work.objects.get(id=work_id) # 업무 에러 확인용
 
-    s = requests.session()
-    work_info = {'staff_id': worker.id,
-                 'work_id': work_id,
-                 }
-    employees = []
-    if work.dt_begin < dt_today:
-        # 업무가 시작되었다.
-        work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
-        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
-        employee_list = response.json()
-        for employee in employee_list:
-            if str_to_datetime(employee['dt_begin']) < dt_today:
-                employee_web = {
-                    'id': employee['employee_id'],
-                    'name': employee['name'],
-                    'pNo': employee['phone'],
-                    'dt_begin_beacon': dt_str(str_to_datetime(employee['dt_begin_beacon']), "%H:%M"),
-                    'dt_begin_touch': dt_str(str_to_datetime(employee['dt_begin_touch']), "%H:%M"),
-                    'dt_end_beacon': dt_str(str_to_datetime(employee['dt_end_beacon']), "%H:%M"),
-                    'dt_end_touch': dt_str(str_to_datetime(employee['dt_end_touch']), "%H:%M"),
-                    'state': "",
-                    'is_not_begin': False,
-                }
-            else:
-                employee_web = {
-                    'id': employee['employee_id'],
-                    'name': employee['name'],
-                    'pNo': employee['phone'],
-                    'dt_begin': employee['dt_begin'],
-                    'dt_end': employee['dt_end'],
-                    'state': employee['is_accept_work'],
-                    'is_not_begin': True,
-                }
-            employees.append(employee_web)
+    employees = Employee.objects.filter(work_id=work_id)
+    arr_employee = []
+    today = datetime.datetime.now()
+    # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
+    # if False:
+    if today < work.dt_begin:
+        # print('--- 업무 시작 전')
+        # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
+        for employee in employees:
+            state = "잘못된 전화번호"
+            if employee.employee_id != -101:
+                if employee.is_accept_work is None:
+                    state = "답변 X"
+                elif employee.is_accept_work:
+                    state = "수락"
+                else:
+                    state = "거절"
+            view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                             'name': employee.name,
+                             'pNo': phone_format(employee.pNo),
+                             'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                             'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                             'state': state,
+                             'is_not_begin': True,
+                             }
+            arr_employee.append(view_employee)
     else:
-        # 업무가 아직 시작되지 않았다.
-        response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
-        employee_list = response.json()
-        for employee in employee_list:
-            employee_web = {
-                'id': employee['employee_id'],
-                'name': employee['name'],
-                'pNo': employee['phone'],
-                'dt_begin': employee['dt_begin'],
-                'dt_end': employee['dt_end'],
-                'state': employee['is_accept_work'],
-                'is_not_begin': True,
-            }
-            employees.append(employee_web)
-
-    result = {'employees': employees}
+        # print('--- 업무 시작 후')
+        # 업무가 시작되었으면 당일의 근태내역을 표시
+        # 근로자 서버에서 가져오나?
+        # employees_infor = {
+        #     'employees': [],
+        #     'year_month_day': rqst['dt'],
+        #     'work_id': rqst['dt'],
+        # }
+        # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+        # employees = r.json()['employees']
+        for employee in employees:
+            # 주석처리된 부분은 임시 데이터를 만드는 부분
+            # today_str = today.strftime("%Y-%m-%d ")
+            # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
+            # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
+            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            # state = ""
+            # if employee.pNo == '01033334444':
+            #     state = "SMS"
+            #     employee.dt_begin_beacon = None
+            #     employee.dt_end_beacon = None
+            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+            if today < employee.dt_begin:
+                if employee.is_accept_work is None:
+                    state = "답변 X"
+                elif employee.is_accept_work:
+                    state = "수락"
+                else:
+                    state = "거절"
+                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                                 'name': employee.name,
+                                 'pNo': phone_format(employee.pNo),
+                                 'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+                                 'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+                                 'state': state,
+                                 'is_not_begin': True,
+                                 }
+            else:
+                if employee.is_accept_work is None or not employee.is_accept_work:
+                    # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
+                    logSend('  - accept is none or reject: {}'.format(employee.pNo))
+                    employee.delete()
+                    continue
+                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+                                 'name': employee.name,
+                                 'pNo': phone_format(employee.pNo),
+                                 'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+                                 'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+                                 'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+                                 'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+                                 'state': "",
+                                 'is_not_begin': False,
+                                 }
+            arr_employee.append(view_employee)
+    if rqst['is_working_history'].upper() == 'YES':
+        logSend('   *** request: working history')
+        #
+        #
+        # 근로자 서버에 근태 내역 요청
+        #
+    result = {'employees': arr_employee}
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
-
-    # employees = Employee.objects.filter(work_id=work_id)
-    # arr_employee = []
-    # today = datetime.datetime.now()
-    # # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
-    # # if False:
-    # if today < work.dt_begin:
-    #     # print('--- 업무 시작 전')
-    #     # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
-    #     for employee in employees:
-    #         state = "잘못된 전화번호"
-    #         if employee.employee_id != -101:
-    #             if employee.is_accept_work is None:
-    #                 state = "답변 X"
-    #             elif employee.is_accept_work:
-    #                 state = "수락"
-    #             else:
-    #                 state = "거절"
-    #         view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                          'name': employee.name,
-    #                          'pNo': phone_format(employee.pNo),
-    #                          'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-    #                          'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-    #                          'state': state,
-    #                          'is_not_begin': True,
-    #                          }
-    #         arr_employee.append(view_employee)
-    # else:
-    #     # print('--- 업무 시작 후')
-    #     # 업무가 시작되었으면 당일의 근태내역을 표시
-    #     # 근로자 서버에서 가져오나?
-    #     # employees_infor = {
-    #     #     'employees': [],
-    #     #     'year_month_day': rqst['dt'],
-    #     #     'work_id': rqst['dt'],
-    #     # }
-    #     # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
-    #     # employees = r.json()['employees']
-    #     for employee in employees:
-    #         # 주석처리된 부분은 임시 데이터를 만드는 부분
-    #         # today_str = today.strftime("%Y-%m-%d ")
-    #         # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-    #         # state = ""
-    #         # if employee.pNo == '01033334444':
-    #         #     state = "SMS"
-    #         #     employee.dt_begin_beacon = None
-    #         #     employee.dt_end_beacon = None
-    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-    #         if today < employee.dt_begin:
-    #             if employee.is_accept_work is None:
-    #                 state = "답변 X"
-    #             elif employee.is_accept_work:
-    #                 state = "수락"
-    #             else:
-    #                 state = "거절"
-    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                              'name': employee.name,
-    #                              'pNo': phone_format(employee.pNo),
-    #                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-    #                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-    #                              'state': state,
-    #                              'is_not_begin': True,
-    #                              }
-    #         else:
-    #             if employee.is_accept_work is None or not employee.is_accept_work:
-    #                 # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
-    #                 employee.delete()
-    #                 continue
-    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                              'name': employee.name,
-    #                              'pNo': phone_format(employee.pNo),
-    #                              'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),
-    #                              'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),
-    #                              'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),
-    #                              'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),
-    #                              'state': "",
-    #                              'is_not_begin': False,
-    #                              }
-    #         arr_employee.append(view_employee)
-    # if rqst['is_working_history'].upper() == 'YES':
-    #     logSend('   *** request: working history')
-    #     #
-    #     #
-    #     # 근로자 서버에 근태 내역 요청
-    #     #
-    # result = {'employees': arr_employee}
-    # func_end_log(func_name)
-    # return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
