@@ -2969,99 +2969,154 @@ def list_employee(request):
 
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
     work = Work.objects.get(id=work_id) # 업무 에러 확인용
+    dt_today = datetime.datetime.now()
 
-    employees = Employee.objects.filter(work_id=work_id)
-    arr_employee = []
-    today = datetime.datetime.now()
-    # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
-    # if False:
-    if today < work.dt_begin:
-        # print('--- 업무 시작 전')
-        # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
-        for employee in employees:
-            state = "잘못된 전화번호"
-            if employee.employee_id != -101:
-                if employee.is_accept_work is None:
-                    state = "답변 X"
-                elif employee.is_accept_work:
-                    state = "수락"
-                else:
-                    state = "거절"
-            view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-                             'name': employee.name,
-                             'pNo': phone_format(employee.pNo),
-                             'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-                             'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-                             'state': state,
-                             'is_not_begin': True,
-                             }
-            arr_employee.append(view_employee)
-    else:
-        # print('--- 업무 시작 후')
-        # 업무가 시작되었으면 당일의 근태내역을 표시
-        # 근로자 서버에서 가져오나?
-        # employees_infor = {
-        #     'employees': [],
-        #     'year_month_day': rqst['dt'],
-        #     'work_id': rqst['dt'],
-        # }
-        # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
-        # employees = r.json()['employees']
-        for employee in employees:
-            # 주석처리된 부분은 임시 데이터를 만드는 부분
-            # today_str = today.strftime("%Y-%m-%d ")
-            # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
-            # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
-            # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
-            # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
-            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-            # state = ""
-            # if employee.pNo == '01033334444':
-            #     state = "SMS"
-            #     employee.dt_begin_beacon = None
-            #     employee.dt_end_beacon = None
-            # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-            if today < employee.dt_begin:
-                if employee.is_accept_work is None:
-                    state = "답변 X"
-                elif employee.is_accept_work:
-                    state = "수락"
-                else:
-                    state = "거절"
-                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-                                 'name': employee.name,
-                                 'pNo': phone_format(employee.pNo),
-                                 'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-                                 'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-                                 'state': state,
-                                 'is_not_begin': True,
-                                 }
+    s = requests.session()
+    work_info = {'staff_id': worker.id,
+                 'work_id': work_id,
+                 }
+    employees = []
+    if work.dt_begin < dt_today:
+        # 업무가 시작되었다.
+        work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
+        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
+        employee_list = response.json()
+        for employee in employee_list:
+            if str_to_datetime(employee['dt_begin']) < dt_today:
+                employee_web = {
+                    'id': employee['employee_id'],
+                    'name': employee['name'],
+                    'pNo': employee['phone'],
+                    'dt_begin_beacon': dt_str(str_to_datetime(employee['dt_begin_beacon']), "%H:%M"),
+                    'dt_begin_touch': dt_str(str_to_datetime(employee['dt_begin_touch']), "%H:%M"),
+                    'dt_end_beacon': dt_str(str_to_datetime(employee['dt_end_beacon']), "%H:%M"),
+                    'dt_end_touch': dt_str(str_to_datetime(employee['dt_end_touch']), "%H:%M"),
+                    'state': "",
+                    'is_not_begin': False,
+                }
             else:
-                if employee.is_accept_work is None or not employee.is_accept_work:
-                    # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
-                    logSend('  - accept is none or reject: {}'.format(employee.pNo))
-                    employee.delete()
-                    continue
-                view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-                                 'name': employee.name,
-                                 'pNo': phone_format(employee.pNo),
-                                 'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-                                 'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-                                 'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-                                 'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-                                 'state': "",
-                                 'is_not_begin': False,
-                                 }
-            arr_employee.append(view_employee)
-    if rqst['is_working_history'].upper() == 'YES':
-        logSend('   *** request: working history')
-        #
-        #
-        # 근로자 서버에 근태 내역 요청
-        #
-    result = {'employees': arr_employee}
+                employee_web = {
+                    'id': employee['employee_id'],
+                    'name': employee['name'],
+                    'pNo': employee['phone'],
+                    'dt_begin': employee['dt_begin'],
+                    'dt_end': employee['dt_end'],
+                    'state': employee['is_accept_work'],
+                    'is_not_begin': True,
+                }
+            employees.append(employee_web)
+    else:
+        # 업무가 아직 시작되지 않았다.
+        response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
+        employee_list = response.json()
+        for employee in employee_list:
+            employee_web = {
+                'id': employee['employee_id'],
+                'name': employee['name'],
+                'pNo': employee['phone'],
+                'dt_begin': employee['dt_begin'],
+                'dt_end': employee['dt_end'],
+                'state': employee['is_accept_work'],
+                'is_not_begin': True,
+            }
+            employees.append(employee_web)
+
+    result = {'employees': employees}
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
+
+    # employees = Employee.objects.filter(work_id=work_id)
+    # arr_employee = []
+    # today = datetime.datetime.now()
+    # # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
+    # # if False:
+    # if today < work.dt_begin:
+    #     # print('--- 업무 시작 전')
+    #     # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
+    #     for employee in employees:
+    #         state = "잘못된 전화번호"
+    #         if employee.employee_id != -101:
+    #             if employee.is_accept_work is None:
+    #                 state = "답변 X"
+    #             elif employee.is_accept_work:
+    #                 state = "수락"
+    #             else:
+    #                 state = "거절"
+    #         view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+    #                          'name': employee.name,
+    #                          'pNo': phone_format(employee.pNo),
+    #                          'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+    #                          'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+    #                          'state': state,
+    #                          'is_not_begin': True,
+    #                          }
+    #         arr_employee.append(view_employee)
+    # else:
+    #     # print('--- 업무 시작 후')
+    #     # 업무가 시작되었으면 당일의 근태내역을 표시
+    #     # 근로자 서버에서 가져오나?
+    #     # employees_infor = {
+    #     #     'employees': [],
+    #     #     'year_month_day': rqst['dt'],
+    #     #     'work_id': rqst['dt'],
+    #     # }
+    #     # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    #     # employees = r.json()['employees']
+    #     for employee in employees:
+    #         # 주석처리된 부분은 임시 데이터를 만드는 부분
+    #         # today_str = today.strftime("%Y-%m-%d ")
+    #         # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
+    #         # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
+    #         # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
+    #         # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
+    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+    #         # state = ""
+    #         # if employee.pNo == '01033334444':
+    #         #     state = "SMS"
+    #         #     employee.dt_begin_beacon = None
+    #         #     employee.dt_end_beacon = None
+    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
+    #         if today < employee.dt_begin:
+    #             if employee.is_accept_work is None:
+    #                 state = "답변 X"
+    #             elif employee.is_accept_work:
+    #                 state = "수락"
+    #             else:
+    #                 state = "거절"
+    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+    #                              'name': employee.name,
+    #                              'pNo': phone_format(employee.pNo),
+    #                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
+    #                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
+    #                              'state': state,
+    #                              'is_not_begin': True,
+    #                              }
+    #         else:
+    #             if employee.is_accept_work is None or not employee.is_accept_work:
+    #                 # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
+    #                 logSend('  - accept is none or reject: {}'.format(employee.pNo))
+    #                 employee.delete()
+    #                 continue
+    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
+    #                              'name': employee.name,
+    #                              'pNo': phone_format(employee.pNo),
+    #                              'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+    #                              'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+    #                              'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+    #                              'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
+    #                              'state': "",
+    #                              'is_not_begin': False,
+    #                              }
+    #         arr_employee.append(view_employee)
+    # if rqst['is_working_history'].upper() == 'YES':
+    #     logSend('   *** request: working history')
+    #     #
+    #     #
+    #     # 근로자 서버에 근태 내역 요청
+    #     #
+    # result = {'employees': arr_employee}
+    # func_end_log(func_name)
+    # return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
