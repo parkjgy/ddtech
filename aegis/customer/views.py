@@ -2968,7 +2968,7 @@ def list_employee(request):
     worker = Staff.objects.get(id=worker_id)
 
     work_id = AES_DECRYPT_BASE64(rqst['work_id'])
-    work = Work.objects.get(id=work_id) # 업무 에러 확인용
+    work = Work.objects.get(id=work_id)  # 업무 에러 확인용
     dt_today = datetime.datetime.now()
 
     s = requests.session()
@@ -2988,6 +2988,8 @@ def list_employee(request):
                     'id': employee['employee_id'],
                     'name': employee['name'],
                     'pNo': employee['phone'],
+                    'dt_begin': employee['dt_begin'],
+                    'dt_end': employee['dt_end'],
                     'dt_begin_beacon': "" if employee['dt_begin_beacon'] is None else employee['dt_begin_beacon'][11:16],
                     'dt_begin_touch': "" if employee['dt_begin_touch'] is None else employee['dt_begin_touch'][11:16],
                     'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
