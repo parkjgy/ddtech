@@ -1593,12 +1593,16 @@ def update_work_place(request):
         work_place.name = name
         work_place.place_name = name
         is_update_name = True
+    is_update_address = False
     if 'address' in rqst:
         work_place.address = address
+        is_update_address = True
     if 'latitude' in rqst:
         work_place.x = x
+        is_update_address = True
     if 'longitude' in rqst:
         work_place.y = y
+        is_update_address = True
     #
     # 영항 받는 곳 update : Work
     #
@@ -1611,9 +1615,11 @@ def update_work_place(request):
 
     work_place.save()
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'is_update_manager':is_update_manager,
-                                             'is_update_order':is_update_order,
-                                             'is_update_name':is_update_name})
+    return REG_200_SUCCESS.to_json_response({'is_update_manager': is_update_manager,
+                                             'is_update_order': is_update_order,
+                                             'is_update_name': is_update_name,
+                                             'is_update_address': is_update_address,
+                                             })
 
 
 @cross_origin_read_allow
