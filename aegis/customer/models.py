@@ -91,6 +91,7 @@ class Work_Place(models.Model):
     manager_email = models.CharField(max_length = 320) # 관리자 이메일
     order_id = models.IntegerField() # 발주사 id
     order_name = models.CharField(max_length=127) # 발주사 상호
+    address = models.CharField(max_length=256, default='') # 사업장 주소 - beacon 을 설치할 주소
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude

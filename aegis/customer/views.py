@@ -1425,6 +1425,9 @@ def reg_work_place(request):
             'name':'(주)효성 용연 1공장',	# 이름
             'manager_id':'관리자 id',	# 관리자 id (암호화되어 있음)
             'order_id':'발주사 id',	# 발주사 id (암호화되어 있음)
+            'address': 사업장 주소,    # 사업장 주소 - beacon 을 설치할 주소
+            'latitude': 위도,         # 사업장의 위도 - beacon 을 설치할 위도 (option)
+            'longitude': 경도,        # 사업장의 경도 - beacon 을 설치할 경도 (option)
         }
     response
         STATUS 200
@@ -1457,6 +1460,12 @@ def reg_work_place(request):
     name = rqst['name']
     manager_id = rqst['manager_id']
     order_id = rqst['order_id']
+    if 'address' in rqst:
+        address = rqst['address']
+    if 'latitude' in rqst:
+        x = rqst['latitude']
+    if 'longitude' in rqst:
+        y = rqst['longitude']
     if len(name) == 0 or len(manager_id) == 0 or len(order_id) == 0:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
@@ -1469,17 +1478,24 @@ def reg_work_place(request):
     manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
     order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
     new_work_place = Work_Place(
-        name = name,
-        place_name = name,
-        contractor_id = worker.co_id,
-        contractor_name = worker.co_name,
-        manager_id = manager.id,
-        manager_name = manager.name,
-        manager_pNo = manager.pNo,
-        manager_email = manager.email,
-        order_id = order.id,
-        order_name = order.corp_name
+        name=name,
+        place_name=name,
+        contractor_id=worker.co_id,
+        contractor_name=worker.co_name,
+        manager_id=manager.id,
+        manager_name=manager.name,
+        manager_pNo=manager.pNo,
+        manager_email=manager.email,
+        order_id=order.id,
+        order_name=order.corp_name
     )
+    if 'address' in rqst:
+        new_work_place.address = address
+    if 'latitude' in rqst:
+        new_work_place.x = x
+    if 'longitude' in rqst:
+        new_work_place.y = y
+
     new_work_place.save()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
@@ -1502,6 +1518,9 @@ def update_work_place(request):
             'name':'(주)효성 용연 1공장',	# 이름
             'manager_id':'관리자 id',	# 관리자 id (암호화되어 있음)
             'order_id':'발주사 id',	# 발주사 id (암호화되어 있음)
+            'address': 사업장 주소,    # 사업장 주소 - beacon 을 설치할 주소
+            'latitude': 위도,         # 사업장의 위도 - beacon 을 설치할 위도 (option)
+            'longitude': 경도,        # 사업장의 경도 - beacon 을 설치할 경도 (option)
         }
     response
         STATUS 200
@@ -1535,6 +1554,12 @@ def update_work_place(request):
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
+    if 'address' in rqst:
+        address = rqst['address']
+    if 'latitude' in rqst:
+        x = rqst['latitude']
+    if 'longitude' in rqst:
+        y = rqst['longitude']
 
     work_place = Work_Place.objects.get(id=AES_DECRYPT_BASE64(rqst['work_place_id']))
     if work_place.contractor_id != worker.co_id:
@@ -1568,6 +1593,12 @@ def update_work_place(request):
         work_place.name = name
         work_place.place_name = name
         is_update_name = True
+    if 'address' in rqst:
+        work_place.address = address
+    if 'latitude' in rqst:
+        work_place.x = x
+    if 'longitude' in rqst:
+        work_place.y = y
     #
     # 영항 받는 곳 update : Work
     #
@@ -1576,6 +1607,7 @@ def update_work_place(request):
         for work in works:
             work.work_place_name = rqst['name']
             work.save()
+    # beacon 처리가 들어가야 한다.
 
     work_place.save()
     func_end_log(func_name)
