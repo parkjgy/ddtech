@@ -1023,7 +1023,7 @@ def pass_verify(request):
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
@@ -2222,12 +2222,11 @@ def update_pass_history(pass_history: dict):
             dt_in = pass_history.dt_in_verify
             work_in_hour = int(employee.work_start[:2])
             work_in_minute = int(employee.work_start[3:])
-            if (dt_in.hour >= work_in_hour) and (dt_in.minute > work_in_minute):
+            if work_in_hour < dt_in.hour:
                 action_in = 200
-        # if (employee.work_start is not None) and \
-        #    (pass_history.dt_in_verify.hour >= int(employee.work_start[:2])) and \
-        #    (pass_history.dt_in_verify.minute > int(employee.work_start[3:])):
-        #     action_in = 200
+            elif work_in_hour == dt_in.hour:
+                if work_in_minute < dt_in.minute:
+                    action_in = 200
     # 퇴근 처리
     if pass_history.overtime == -1:
         # 연장근무가 퇴근 시간 상관없이 빨리 끝내면 퇴근 가능일 경우 << 8시간 근무에 3시간 일해도 적용 가능한가?
@@ -2246,8 +2245,11 @@ def update_pass_history(pass_history: dict):
             else:
                 work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
                 work_out_minute = int(employee.work_start[3:])
-                if (dt_out.hour <= work_out_hour) and (dt_out.minute < work_out_minute):
+                if dt_out.hour < work_out_hour:
                     action_out = 20
+                elif dt_out.hour == work_out_hour:
+                    if dt_out.minute < work_out_minute:
+                        action_out = 20
     pass_history.action = action_in + action_out
     pass_history.save()
     func_end_log(func_name, ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id, employee.name))
