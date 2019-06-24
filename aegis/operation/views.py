@@ -3834,6 +3834,32 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
+    # TEST: reg_work_place, update_work_place 고객웹에서 사업장을 시험
+    # ---------------------------------------------------------------------------------------
+    # work_place_data = {
+    #     'name': 'test_2',
+    #     'manager_id': AES_ENCRYPT_BASE64('1'),
+    #     'order_id': AES_ENCRYPT_BASE64('2'),
+    #     'address': '울산광역시 남구 봉월로 22, 309호 (신정동, 임창베네시안)',
+    #     'latitude': 35.5346,
+    #     'longitude': 129.3070,
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place_data)
+    # result.append({'url': r.url, 'POST': work_place_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # work_place_data = {
+    #     'work_place_id': AES_ENCRYPT_BASE64('4'),
+    #     'name': '대덕테크 숙소',
+    #     # 'manager_id': AES_ENCRYPT_BASE64('1'),
+    #     # 'order_id': AES_ENCRYPT_BASE64('2'),
+    #     'address': '울산광역시 동구 서진길 59, 201동 409호 (방어동)',
+    #     'latitude': 35.4812,
+    #     'longitude': 129.4229,
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'update_work_place', json=work_place_data)
+    # result.append({'url': r.url, 'POST': work_place_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
     # TEST: report_of_employee
     # ---------------------------------------------------------------------------------------
     # report_infor = {
@@ -3893,19 +3919,19 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
-    beacon_data = {
-        'passer_id': AES_ENCRYPT_BASE64('2'),
-        'dt': '2019-06-14 08:30:00',
-        'is_in': 1,  # 0: out, 1 : in
-        'major': 11001,  # 11 (지역) 001(사업장)
-        'beacons': [
-            {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
-            {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
-            {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
-        ]
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-    result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+    # beacon_data = {
+    #     'passer_id': AES_ENCRYPT_BASE64('2'),
+    #     'dt': '2019-06-14 08:30:00',
+    #     'is_in': 1,  # 0: out, 1 : in
+    #     'major': 11001,  # 11 (지역) 001(사업장)
+    #     'beacons': [
+    #         {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
+    #         {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
+    #         {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
+    #     ]
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+    # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
