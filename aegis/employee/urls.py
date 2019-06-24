@@ -49,6 +49,7 @@ urlpatterns = [
     url(r'employee/analysys$', views.analysys, name='analysys'),
     url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),
     url(r'employee/beacon_status$', views.beacon_status, name='beacon_status'),
+    url(r'employee/aa82zzww', views.aa82zzww, name='aa82zzww'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

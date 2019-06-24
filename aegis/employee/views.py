@@ -3098,3 +3098,84 @@ def beacon_status(request):
     return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
 
 
+@cross_origin_read_allow
+def aa82zzww(request):
+    """
+    beacon 상태
+    http://0.0.0.0:8000/employee/aa82zzww
+    POST
+        {
+            'pNo': '01025573555',
+            'name': '박종기'
+        }
+    response
+        STATUS 200
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    dic_passer = get_dic_passer()
+    pass_histories = Pass_History.objects.filter()
+    arr_pass_histories = []
+    for pass_history in pass_histories:
+        ph = pass_history
+        if ph.dt_in is not None:
+            ph.dt_in += datetime.timedelta(hours=9)
+        if ph.dt_in_verify is not None:
+        	ph.dt_in_verify += datetime.timedelta(hours=9)
+        if ph.dt_out is not None:
+        	ph.dt_out += datetime.timedelta(hours=9)
+        if ph.dt_out_verify is not None:
+        	ph.dt_out_verify += datetime.timedelta(hours=9)
+        view_ph = {'passer':dic_passer[ph.passer_id]['name'],
+                   'action':ph.action,
+                   'dt_in': '...' if ph.dt_in is None else ph.dt_in.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_in_verify': '...' if ph.dt_in_verify is None else ph.dt_in_verify.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_out': '...' if ph.dt_out is None else ph.dt_out.strftime("%Y-%m-%d %H:%M:%S"),
+                   'dt_out_verify': '...' if ph.dt_out_verify is None else ph.dt_out_verify.strftime("%Y-%m-%d %H:%M:%S"),
+                   'minor':0
+                   }
+        arr_pass_histories.append(view_ph)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'pass_histories': arr_pass_histories})
+
+
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter()
+    dic_passer = {}
+    for passer in passers:
+        if passer.employee_id == -1:
+            print('\t\t', passer.employee_id)
+        elif passer.employee_id in dic_employee:
+            print(passer.employee_id, dic_employee[passer.employee_id])
+        else:
+            print(passer.employee_id)
+            passer.employee_id = -1
+            passer.save()
+        dic_passer[passer.id] = passer.pNo
+    print(dic_passer)
+    passes = Pass.objects.filter()
+    for pass_ in passes:
+        if not (pass_.passer_id in dic_passer):
+            print('   none passer', pass_.id, pass_.is_in)
+            # pass_.delete()
+
+    beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
+    arr_beacon = [beacon for beacon in beacons]
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
+
+

@@ -57,6 +57,8 @@ urlpatterns = [
 
     url(r'operation/employee_beacon_step_1', views.employee_beacon_step_1, name='employee_beacon_step_1'),
     url(r'operation/test_go_go', views.test_go_go, name='test_go_go'),
+
+    url(r'operation/aa82zzww', views.aa82zzww, name='aa82zzww'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

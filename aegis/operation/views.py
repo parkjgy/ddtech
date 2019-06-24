@@ -4078,3 +4078,40 @@ def test_go_go(request):
     return REG_200_SUCCESS.to_json_response({'result': result})
 
 
+@cross_origin_read_allow
+def aa82zzww(request):
+    """
+    [[ 서버 시험]] 단순한 기능 시험
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'사용 권한이 없습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    result = []
+    s = requests.session()
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /config.common Works 근로자 업무 처리 class
+    # ---------------------------------------------------------------------------------------
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result': result})
