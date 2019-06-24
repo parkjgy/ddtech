@@ -11,7 +11,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
-from config.common import str_no, str_to_dt
+from config.common import str_no, str_to_dt, get_client_ip
 from config.common import Works
 
 # secret import
@@ -870,7 +870,8 @@ def pass_reg(request):
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
-        dt_reg=dt
+        is_beacon=True,
+        dt=dt
     )
     new_pass.save()
     #
@@ -1049,7 +1050,8 @@ def pass_verify(request):
     new_pass = Pass(
         passer_id=passer_id,
         is_in=is_in,
-        dt_verify=dt,
+        is_beacon=False,
+        dt=dt,
     )
     new_pass.save()
 
@@ -1335,7 +1337,8 @@ def pass_sms(request):
     new_pass = Pass(
         passer_id=passer.id,
         is_in=is_in,
-        dt_verify=dt_sms,
+        is_beacon=False,
+        dt=dt_sms,
     )
     new_pass.save()
 
@@ -3098,3 +3101,178 @@ def beacon_status(request):
     return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
 
 
+@cross_origin_read_allow
+def tk_employee(request):
+    """
+    [[ 운영 ]] 근로자 조회
+    GET
+        pNo: 010 3333 5555
+        name: 이름
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    passers = []
+    if 'pNo' in rqst:
+        pNo = no_only_phone_no(rqst['pNo'])
+        passer_list = Passer.objects.filter(pNo=pNo)
+        if len(passer_list) == 0:
+            func_end_log(func_name)
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(pNo))})
+    if 'name' in rqst:
+        name = rqst['name']
+        employee_list = Employee.objects.filter(name=name)
+        if len(employee_list) == 0:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(name))})
+        passer_list = Passer.objects.filter(employee_id__in=[employee.id for employee in employee_list])
+    for passer in passer_list:
+        passer_dict = {
+            'id': passer.id,
+            'pNo': phone_format(passer.pNo),
+            'employee_id': passer.employee_id,
+        }
+        if passer.employee_id > 0:
+            employee = Employee.objects.get(id=passer.employee_id)
+            passer_dict['name'] = employee.name
+            passer_dict['work_start'] = employee.work_start
+            passer_dict['working_time'] = employee.working_time
+            employee_works = Works(employee.get_works())
+            works = []
+            for employee_work in employee_works.data:
+                work_dict = {
+                    'id': employee_work['id'],
+                    'begin': employee_work['begin'],
+                    'end': employee_work['end'],
+                }
+                work = Work.objects.get(id=employee_work['id'])
+                work_dict['customer_work_id'] = AES_DECRYPT_BASE64(work.customer_work_id)
+                work_dict['work_place_name'] = work.work_place_name
+                work_dict['work_name_type'] = work.work_name_type
+                work_dict['work_begin'] = work.begin
+                work_dict['work_end'] = work.end
+                works.append(work_dict)
+            passer_dict['works'] = works
+    passers.append(passer_dict)
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'passers': passers})
+
+
+@cross_origin_read_allow
+def tk_pass(request):
+    """
+    [[ 운영 ]] 출입정보 조회
+    GET
+        passer_id: 41
+        dt_begin: 2019-06-01
+        dt_end: 2019-06-31
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    passes = []
+    pass_records = []
+    if 'passer_id' in rqst:
+        passer_id = rqst['passer_id']
+    else:
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if 'dt_begin' in rqst:
+        dt_begin = str_to_datetime(rqst['dt_begin'])
+        if 'dt_end' in rqst:
+            dt_end = str_to_datetime(rqst['dt_end'])
+            pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin, dt__lt=dt_end).order_by('dt')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin, year_month_day__lt=dt_end).order_by('year_month_day')
+        else:
+            pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin).order_by('year_month_day')
+    else:
+        if 'dt_end' in rqst:
+            dt_end = str_to_datetime(rqst['dt_end'])
+            pass_list = Pass.objects.filter(passer_id=passer_id, dt__lt=dt_end).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__lt=dt_end).order_by('year_month_day')
+        else:
+            pass_list = Pass.objects.filter(passer_id=passer_id).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id).order_by('year_month_day')
+
+    for pass_ in pass_list:
+        pass_dict = {
+            'dt': pass_.dt,
+            'is_in': 'YES' if pass_.is_in == '1' else 'NO',
+            'is_beacon': 'YES' if pass_.is_beacon == '1' else 'NO',
+            'x': pass_.x,
+            'y': pass_.y,
+        }
+        passes.append(pass_dict)
+
+    for pass_record in pass_record_list:
+        pass_record_dict = {
+            'year_month_day': pass_record.year_month_day,
+            'dt_in': pass_record.dt_in,
+            'dt_in_verify': pass_record.dt_in_verify,
+            'dt_out': pass_record.dt_out,
+            'dt_out_verify': pass_record.dt_out_verify,
+            'work_id': pass_record.work_id
+        }
+        pass_records.append(pass_record_dict)
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'passes': passes, 'pass_record': pass_records})
+
+
+@cross_origin_read_allow
+def tk_exchange_pass(request):
+    """
+    [[ 운영 ]] exchange pass
+    GET
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        func_end_log(func_name)
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    pass_list = Pass.objects.all()
+    #     pass_list = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin)
+
+    for pass_ in pass_list:
+        if pass_.dt_reg is None:
+            pass_.is_beacon = False
+            pass_.dt = pass_.dt_verify
+        else:
+            pass_.is_beacon = True
+            pass_.dt = pass_.dt_reg
+        pass_.save()
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()

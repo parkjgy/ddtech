@@ -13,7 +13,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log, status422, is_parameter_ok
+from config.common import func_begin_log, func_end_log, status422, is_parameter_ok, get_client_ip
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -5133,3 +5133,42 @@ def ddtech_update_syatem(request):
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def fjfjieie(request):
+    """
+    [[ 서버 시험]] 단순한 기능 시험
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    result = []
+    s = requests.session()
+
+    login_data = {"login_id": "thinking",
+                  "login_pw": "parkjong"
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result': result})
