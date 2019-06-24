@@ -3919,19 +3919,19 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
-    # beacon_data = {
-    #     'passer_id': AES_ENCRYPT_BASE64('2'),
-    #     'dt': '2019-06-14 08:30:00',
-    #     'is_in': 1,  # 0: out, 1 : in
-    #     'major': 11001,  # 11 (지역) 001(사업장)
-    #     'beacons': [
-    #         {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
-    #         {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
-    #         {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
-    #     ]
-    # }
-    # r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-    # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+    beacon_data = {
+        'passer_id': AES_ENCRYPT_BASE64('2'),
+        'dt': '2019-06-14 08:30:00',
+        'is_in': 1,  # 0: out, 1 : in
+        'major': 11001,  # 11 (지역) 001(사업장)
+        'beacons': [
+            {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
+            {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
+            {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
+        ]
+    }
+    r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+    result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
@@ -4114,7 +4114,7 @@ def fjfjieie(request):
     parameter = {"pNo": pNo,
                  "name": name,
                 }
-    r = s.post(settings.EMPLOYEE_URL + 'fjfjieie', json=parameter)
+    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
     # login_data = {"login_id": "thinking",
     #               "login_pw": "parkjong"

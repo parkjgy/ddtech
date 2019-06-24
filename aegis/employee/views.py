@@ -3262,17 +3262,24 @@ def tk_exchange_pass(request):
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
-    pass_list = Pass.objects.all()
-    #     pass_list = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin)
-
-    for pass_ in pass_list:
-        if pass_.dt_reg is None:
-            pass_.is_beacon = False
-            pass_.dt = pass_.dt_verify
-        else:
-            pass_.is_beacon = True
-            pass_.dt = pass_.dt_reg
-        pass_.save()
+    new_pass = Pass(
+        passer_id=1,
+        is_in=True,
+        is_beacon=True,
+        dt='2019-03-01 00:00:00',
+    )
+    new_pass.save()
+    # pass_list = Pass.objects.all()
+    # #     pass_list = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin)
+    #
+    # for pass_ in pass_list:
+    #     if pass_.dt_reg is None:
+    #         pass_.is_beacon = False
+    #         pass_.dt = pass_.dt_verify
+    #     else:
+    #         pass_.is_beacon = True
+    #         pass_.dt = pass_.dt_reg
+    #     pass_.save()
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
