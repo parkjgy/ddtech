@@ -3969,41 +3969,32 @@ def staff_employees_at_day(request):
     arr_employee = []
     for employee in employee_list:
         logSend('  - employee employee_id: {}'.format(employee.employee_id))
-        if employee.employee_id == -1:
-            employee_dic = {
-                'is_accept_work': '응답 X',
-                'employee_id': -1,
-                'name': '-----',
-                'phone': '010-',
-                'dt_begin': None,
-                'dt_end': None,
-
-                'dt_begin_beacon': None,
-                'dt_end_beacon': None,
-                'dt_begin_touch': None,
-                'dt_end_touch': None,
-                'overtime': 0,
-                'x': None,
-                'y': None,
-            }
-        else:
+        employee_dic = {
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'name': employee.name,
+            'phone': phone_format(employee.pNo),
+            'dt_begin': dt_null(employee.dt_begin),
+            'dt_end': dt_null(employee.dt_end),
+            # 'dt_begin_beacon': pass_record['dt_in'],
+            # 'dt_end_beacon': pass_record['dt_out'],
+            # 'dt_begin_touch': pass_record['dt_in_verify'],
+            # 'dt_end_touch': pass_record['dt_out_verify'],
+            # 'overtime': pass_record['overtime'],
+            # 'x': pass_record['x'],
+            # 'y': pass_record['y'],
+        }
+        try:
             pass_record = pass_record_dic[employee.employee_id]
-            employee_dic = {
-                'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
-                'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
-                'name': employee.name,
-                'phone': phone_format(employee.pNo),
-                'dt_begin': dt_null(employee.dt_begin),
-                'dt_end': dt_null(employee.dt_end),
-
-                'dt_begin_beacon': pass_record['dt_in'],
-                'dt_end_beacon': pass_record['dt_out'],
-                'dt_begin_touch': pass_record['dt_in_verify'],
-                'dt_end_touch': pass_record['dt_out_verify'],
-                'overtime': pass_record['overtime'],
-                'x': pass_record['x'],
-                'y': pass_record['y'],
-            }
+            employee_dic['dt_begin_beacon'] = pass_record['dt_in']
+            employee_dic['dt_end_beacon'] = pass_record['dt_out']
+            employee_dic['dt_begin_touch'] = pass_record['dt_in_verify']
+            employee_dic['dt_end_touch'] = pass_record['dt_out_verify']
+            employee_dic['overtime'] = pass_record['overtime']
+            employee_dic['x'] = pass_record['x']
+            employee_dic['y'] = pass_record['y']
+        except Exception as e:
+            logError(func_name, ' pass_record_dic[employee.employee_id]: {} ({})'.format(employee.employee_id, e))
 
         arr_employee.append(employee_dic)
     result = {'year_month_day': year_month_day,
