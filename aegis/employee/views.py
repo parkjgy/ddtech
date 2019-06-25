@@ -3211,15 +3211,15 @@ def tk_pass(request):
             pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin, dt__lt=dt_end).order_by('dt')
             pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin, year_month_day__lt=dt_end).order_by('year_month_day')
         else:
-            pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin).order_by('year_month_day')
+            pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin).order_by('dt')
             pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin).order_by('year_month_day')
     else:
         if 'dt_end' in rqst:
             dt_end = str_to_datetime(rqst['dt_end'])
-            pass_list = Pass.objects.filter(passer_id=passer_id, dt__lt=dt_end).order_by('year_month_day')
+            pass_list = Pass.objects.filter(passer_id=passer_id, dt__lt=dt_end).order_by('dt')
             pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__lt=dt_end).order_by('year_month_day')
         else:
-            pass_list = Pass.objects.filter(passer_id=passer_id).order_by('year_month_day')
+            pass_list = Pass.objects.filter(passer_id=passer_id).order_by('dt')
             pass_record_list = Pass_History.objects.filter(passer_id=passer_id).order_by('year_month_day')
 
     for pass_ in pass_list:
