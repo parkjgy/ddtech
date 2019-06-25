@@ -107,9 +107,11 @@ class Pass(models.Model):
     출입자 확인 시간 : dt_verify
     """
     passer_id = models.IntegerField(default=-1)
-    is_in = models.IntegerField(default=1) 
-    dt_reg = models.DateTimeField(null=True, blank=True)
-    dt_verify = models.DateTimeField(null=True, blank=True)
+    is_in = models.BooleanField(null=True, blank=True)
+    is_beacon = models.BooleanField(null=True, blank=True)
+    # dt_reg = models.DateTimeField(null=True, blank=True)
+    # dt_verify = models.DateTimeField(null=True, blank=True)
+    dt = models.DateTimeField(null=True, blank=True)
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude

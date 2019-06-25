@@ -235,6 +235,16 @@ def str_no(str_no) -> str:
     return result
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    logSend('  - IP: {}'.format(ip))
+    return ip
+
+
 class Works(object):
     """
     element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}

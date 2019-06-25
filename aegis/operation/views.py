@@ -18,7 +18,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
-from config.common import rMin, str_to_datetime, str_to_dt
+from config.common import rMin, str_to_datetime, str_to_dt, get_client_ip
 from config.common import Works, status422
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -4079,7 +4079,7 @@ def test_go_go(request):
 
 
 @cross_origin_read_allow
-def aa82zzww(request):
+def fjfjieie(request):
     """
     [[ 서버 시험]] 단순한 기능 시험
     GET
@@ -4087,9 +4087,12 @@ def aa82zzww(request):
     response
         STATUS 200
         STATUS 403
-            {'message':'사용 권한이 없습니다.'}
+            {'message':'저리가!!!'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -4100,17 +4103,27 @@ def aa82zzww(request):
     result = []
     s = requests.session()
 
-    # ---------------------------------------------------------------------------------------
-    # TEST: /config.common Works 근로자 업무 처리 class
-    # ---------------------------------------------------------------------------------------
-    login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    if 'pNo' in rqst:
+        pNo = no_only_phone_no(rqst['pNo'])
+    else:
+        pNo = ""
+    if 'name' in rqst:
+        name = rqst['name']
+    else:
+        name = ""
+    parameter = {"pNo": pNo,
+                 "name": name,
+                }
+    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
-
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # login_data = {"login_id": "thinking",
+    #               "login_pw": "parkjong"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
     func_end_log(func_name)
