@@ -4031,6 +4031,28 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
+    # TEST: /employee/pass_record_of_employees_in_day_for_customer 관리자 앱에서 근로자 출퇴근 시간 강제 조정
+    # ---------------------------------------------------------------------------------------
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64('7'),
+                                     AES_ENCRYPT_BASE64('6'),
+                                     AES_ENCRYPT_BASE64('8'),
+                                     AES_ENCRYPT_BASE64('5'),
+                                     AES_ENCRYPT_BASE64('9'),
+                                     AES_ENCRYPT_BASE64('4'),
+                                     AES_ENCRYPT_BASE64('10'),
+                                     AES_ENCRYPT_BASE64('3'),
+                                     AES_ENCRYPT_BASE64('11'),
+                                     AES_ENCRYPT_BASE64('2'),
+                                     AES_ENCRYPT_BASE64('12'),
+                                     AES_ENCRYPT_BASE64('1')],
+                       'year_month_day': '2019-05-08',
+                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+                       }
+    logSend(employees_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
     # TEST: /employee/certification_no_to_sms 인증번호 요청
     # ---------------------------------------------------------------------------------------
     # passer_data = {

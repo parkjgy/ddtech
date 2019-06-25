@@ -2057,8 +2057,21 @@ def pass_record_of_employees_in_day_for_customer(request):
             # 2019-05-22 여러명을 처리할 때 한명 때문에 에러처리하면 안되기 때문에...
             # return status422(func_name, {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
         else:
-            employee_ids.append(plain)
-
+            if int(plain) > 0:
+                # 거절 수락하지 않은 근로자 제외 (employee_id == -1)
+                employee_ids.append(plain)
+    logSend('  employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
+    passer_list = Passer.objects.filter(id__in=employee_ids)
+    employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
+    if len(passer_list) != len(employee_info_id_list):
+        logError(func_name, ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
+    employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
+    employee_ids = []
+    for employee_info in employee_info_list:
+        for passer in passer_list:
+            if passer.employee_id == employee_info.id:
+                employee_ids.append(passer.id)
+    logSend('  new employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     logSend('--- pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
@@ -2072,15 +2085,20 @@ def pass_record_of_employees_in_day_for_customer(request):
     logSend('--- pass_histories passer_ids {}'.format(exist_ids))
     for employee_id in employee_ids:
         if int(employee_id) not in exist_ids:
-            # 출퇴근 기록이 없으면 새로 만든다.
-            logSend('   --- new pass_history passer_id {}'.format(employee_id))
-            pass_history = Pass_History(
-                passer_id=int(employee_id),
-                year_month_day=year_month_day,
-                action=0,
-                work_id=work_id,
-            )
-            pass_history.save()
+            if int(employee_id) < 0:
+                # 필요없음 위 id 해독부분에서 -1 을 걸러냄
+                logError(func_name, ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
+            else:
+                # 출퇴근 기록이 없으면 새로 만든다.
+                logSend('   --- new pass_history passer_id {}'.format(employee_id))
+                new_pass_history = Pass_History(
+                    passer_id=int(employee_id),
+                    year_month_day=year_month_day,
+                    action=0,
+                    work_id=work_id,
+                )
+                logError(func_name, ' 강제로 만든 pass_history: {}'.format([{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if not key.startswith('_')]))
+                new_pass_history.save()
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
@@ -2121,7 +2139,7 @@ def pass_record_of_employees_in_day_for_customer(request):
             if is_ok:
                 pass_history.dt_in_verify = dt_in_verify
                 pass_history.in_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+                logSend('--- pass_history: {}'.format([{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         # 퇴근시간 수정 처리
@@ -2140,7 +2158,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                 pass_history.action = 0
                 pass_history.dt_out_verify = dt_out_verify
                 pass_history.out_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+                logSend('--- pass_history: {}'.format([{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         if len(fail_list) > 0:
