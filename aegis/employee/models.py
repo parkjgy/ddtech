@@ -128,11 +128,13 @@ class Pass_History(models.Model):
     work_id = models.CharField(max_length = 127, default=-1)    # 암호화된 Customer 의 Work id 
 
     dt_in = models.DateTimeField(null=True, blank=True)         # 최초로 들어온 시간
-    dt_in_verify = models.DateTimeField(null=True, blank=True)  # 근로자가 출근 버튼을 누른 시간
+    dt_in_em = models.DateTimeField(null=True, blank=True)      # 근로자가 출근 버튼을 누른 시간
+    dt_in_verify = models.DateTimeField(null=True, blank=True)  # 관리자가 수정한 시간 포함 최종 출근 시간
     in_staff_id = models.IntegerField(default=-1)               # 출근 시간이 수정한 현장 관리자 id
 
     dt_out = models.DateTimeField(null=True, blank=True)        # 최종 나간 시간
-    dt_out_verify = models.DateTimeField(null=True, blank=True) # 근로자가 퇴근 버튼을 누른 시간
+    dt_out_em = models.DateTimeField(null=True, blank=True)     # 근로자가 퇴근 버튼을 누른 시간
+    dt_out_verify = models.DateTimeField(null=True, blank=True) # 관리자가 수정한 시간 포함 최종 퇴근 시간
     out_staff_id = models.IntegerField(default=-1)              # 퇴근 시간을 수정한 현장 관리자 id
 
     overtime = models.IntegerField(default=0)                   # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
