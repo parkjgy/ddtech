@@ -3919,19 +3919,19 @@ def test_go_go(request):
     # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
     # settings.IS_TEST = False
 
-    beacon_data = {
-        'passer_id': AES_ENCRYPT_BASE64('2'),
-        'dt': '2019-06-14 08:30:00',
-        'is_in': 1,  # 0: out, 1 : in
-        'major': 11001,  # 11 (지역) 001(사업장)
-        'beacons': [
-            {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
-            {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
-            {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
-        ]
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-    result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+    # beacon_data = {
+    #     'passer_id': AES_ENCRYPT_BASE64('2'),
+    #     'dt': '2019-06-14 08:30:00',
+    #     'is_in': 1,  # 0: out, 1 : in
+    #     'major': 11001,  # 11 (지역) 001(사업장)
+    #     'beacons': [
+    #         {'minor': 11001, 'dt_begin': '2019-06-14 08:21:00', 'rssi': -60},
+    #         {'minor': 11002, 'dt_begin': '2019-06-14 08:23:00', 'rssi': -65},
+    #         {'minor': 11003, 'dt_begin': '2019-06-14 08:25:00', 'rssi': -70}
+    #     ]
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
+    # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/reg_staff, update_staff 고객웹에서 관리자 등록, 정보 수정 시험
@@ -4029,6 +4029,28 @@ def test_go_go(request):
     # }
     # r = s.post(settings.CUSTOMER_URL + 'staff_recognize_employee', json=recognize_data)
     # result.append({'url': r.url, 'POST': recognize_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /employee/pass_record_of_employees_in_day_for_customer 관리자 앱에서 근로자 출퇴근 시간 강제 조정
+    # ---------------------------------------------------------------------------------------
+    employees_infor = {'employees': [AES_ENCRYPT_BASE64('7'),
+                                     AES_ENCRYPT_BASE64('6'),
+                                     AES_ENCRYPT_BASE64('8'),
+                                     AES_ENCRYPT_BASE64('5'),
+                                     AES_ENCRYPT_BASE64('9'),
+                                     AES_ENCRYPT_BASE64('4'),
+                                     AES_ENCRYPT_BASE64('10'),
+                                     AES_ENCRYPT_BASE64('3'),
+                                     AES_ENCRYPT_BASE64('11'),
+                                     AES_ENCRYPT_BASE64('2'),
+                                     AES_ENCRYPT_BASE64('12'),
+                                     AES_ENCRYPT_BASE64('1')],
+                       'year_month_day': '2019-05-08',
+                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+                       }
+    logSend(employees_infor)
+    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /employee/certification_no_to_sms 인증번호 요청
