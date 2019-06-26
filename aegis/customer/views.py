@@ -3999,7 +3999,7 @@ def staff_employees_at_day(request):
             employee_dic['dt_end_beacon'] = None
             employee_dic['dt_begin_touch'] = None
             employee_dic['dt_end_touch'] = None
-            employee_dic['overtime'] = None
+            employee_dic['overtime'] = 0
             employee_dic['x'] = None
             employee_dic['y'] = None
 
