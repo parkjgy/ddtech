@@ -1112,6 +1112,7 @@ def pass_verify(request):
             pass_history = pass_histories[0]
 
         pass_history.dt_out_verify = dt_touch
+        pass_history.dt_out_em = dt_touch
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
@@ -1134,6 +1135,7 @@ def pass_verify(request):
 
         if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
+            pass_history.dt_in_em = dt_touch
 
     #
     # 정상, 지각, 조퇴 처리
@@ -1383,6 +1385,7 @@ def pass_sms(request):
             pass_history = pass_histories[0]
 
         pass_history.dt_out_verify = dt_touch
+        pass_history.dt_out_em = dt_touch
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
@@ -1405,6 +1408,7 @@ def pass_sms(request):
 
         if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
+            pass_history.dt_in_em = dt_touch
 
     #
     # 정상, 지각, 조퇴 처리
