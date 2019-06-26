@@ -38,6 +38,7 @@ urlpatterns = [
     path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
     path('apm', confViews.beta_manager_app_download),  # 관리자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
     path('tncp', confViews.tnc_privacy),  # 개인정보 보호 약관
+    path('privacy_policy', confViews.privacy_policy),  # 개인정보 처리방침
     path('android_upload', confViews.app_upload_view),  # 근로자 앱 업로드
     # path('employee/', include('employee.urls')),
 
