@@ -3994,7 +3994,14 @@ def staff_employees_at_day(request):
             employee_dic['x'] = pass_record['x']
             employee_dic['y'] = pass_record['y']
         except Exception as e:
-            logError(func_name, ' pass_record_dic[employee.employee_id]: {} ({})'.format(employee.employee_id, e))
+            logError(func_name, ' pass_record_dic[employee.employee_id] - employee_id: {} ({})'.format(employee.employee_id, e))
+            employee_dic['dt_begin_beacon'] = None
+            employee_dic['dt_end_beacon'] = None
+            employee_dic['dt_begin_touch'] = None
+            employee_dic['dt_end_touch'] = None
+            employee_dic['overtime'] = None
+            employee_dic['x'] = None
+            employee_dic['y'] = None
 
         arr_employee.append(employee_dic)
     result = {'year_month_day': year_month_day,
