@@ -2742,6 +2742,7 @@ def update_employee(request):
 
     work = Work.objects.get(id=work_id)
     employee = Employee.objects.get(id=employee_id)
+    logSend('  employee: {}'.format([{key: employee.__dict__[key]} for key in employee.__dict__.keys() if not x.startswith('_')]))
 
     # 업무에 투입되었는가?
     # if 'is_active' in rqst.keys():
