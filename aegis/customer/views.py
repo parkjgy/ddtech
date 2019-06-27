@@ -2732,24 +2732,31 @@ def update_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'employee_id_!', 'dt_end'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    dt_end = parameter_check['parameters']['dt_end']
+
+    work = Work.objects.get(id=work_id)
+    employee = Employee.objects.get(id=employee_id)
+
     # 업무에 투입되었는가?
-    if 'is_active' in rqst.keys():
+    # if 'is_active' in rqst.keys():
+    dt_today = datetime.datetime.now()
+    if employee.dt_begin < dt_today:
         #
         # 근로자가 업무에 투입되고 난 다음에 예정된 종료일을 변경할 때 사용
         #
-        parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt_end', 'is_active', 'message'])
+        parameter_check = is_parameter_ok(rqst, ['is_active', 'message'])
         if not parameter_check['is_ok']:
             func_end_log(func_name)
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
-        employee_id = parameter_check['parameters']['employee_id']
-        dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
         is_active = parameter_check['parameters']['is_active']
         message = parameter_check['parameters']['message']
 
-        employee_list = Employee.objects.filter(id=employee_id)
-        if len(employee_list) == 0:
-            return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
-        employee = employee_list[0]
         if employee.dt_end < dt_end:
             # 근무 날짜가 늘어났다.
             logSend('--- employee id: {} 근무날짜: {} > {} '.format(employee.id, employee.dt_end, dt_end))
@@ -2759,7 +2766,8 @@ def update_employee(request):
         #
         # 근로자 서버로 근로날짜 변경 전달
         #
-        employee.is_active = False if employee.dt_end < datetime.datetime.now() else True  # 업무 종료일이 오늘 이전이면 업무 종료
+        employee.dt_end = dt_end
+        employee.is_active = False if employee.dt_end < dt_today else True  # 업무 종료일이 오늘 이전이면 업무 종료
         employee.is_active = True if is_active.upper() == 'YES' else False
         if len(message) > 0:
             #
@@ -2767,36 +2775,21 @@ def update_employee(request):
             #
             logSend('message: {} (아직 처리하지 않는다.)'.format(rqst['message']))
         employee.save()
-        logSend(employee)
+        logSend('  employee: {}'.format([{key: employee.__dict__[key]} for key in employee.__dict__.keys() if not x.startswith('_')]))
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
     #
     # 근로자에게 업무 시작일 전에 업무 투입을 요청할 때 사용
     #
-    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'dt_answer_deadline', 'dt_begin', 'dt_end'])
+    parameter_check = is_parameter_ok(rqst, ['dt_answer_deadline', 'dt_begin'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
-    employee_id = parameter_check['parameters']['employee_id']
     # phone_no = parameter_check['parameters']['phone_no']
     dt_answer_deadline = str_to_datetime(parameter_check['parameters']['dt_answer_deadline'])
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
-    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
 
-    employee_list = Employee.objects.filter(id=employee_id)
-    if len(employee_list) == 0:
-        return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(employee_id)})
-    elif len(employee_list) > 1:
-        logError(func_name, ' Employee(id:{})가 중복되었다.'.format(employee_id))
-    employee = employee_list[0]
-
-    work_list = Work.objects.filter(id=employee.work_id)
-    if len(work_list) == 0:
-        return status422(func_name, {'message': 'ServerError: Work 에 id={} 이(가) 없다'.format(employee.work_id)})
-    elif len(work_list) > 1:
-        logError(func_name, ' Work(id:{})가 중복되었다.'.format(employee.work_id))
-    work = work_list[0]
     #
     # 답변 시한 검사
     #
@@ -2829,8 +2822,9 @@ def update_employee(request):
     #
     if dt_begin != employee.dt_begin:
         employee.dt_begin = dt_begin
-    if dt_end != employee.dt_end:
-        employee.dt_end = dt_end
+    # 2019.06.27 최진 대표 요청: 업무 시작하지 않은 근로자는 업무 종료시간을 설정할 수 없다.
+    # if dt_end != employee.dt_end:
+    #     employee.dt_end = dt_end
 
     if 'phone_no' in rqst and len(rqst['phone_no']) > 0:
         if 'dt_answer_deadline' not in rqst or len(rqst['dt_answer_deadline']) == 0:
