@@ -2777,7 +2777,8 @@ def update_employee(request):
             #
             logSend('message: {} (아직 처리하지 않는다.)'.format(rqst['message']))
         employee.save()
-        logSend('  employee: {}'.format([{key: employee.__dict__[key]} for key in employee.__dict__.keys() if not x.startswith('_')]))
+        logSend('  employee: {}'.format(
+            {key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')}))
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
