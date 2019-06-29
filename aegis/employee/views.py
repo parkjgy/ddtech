@@ -3281,6 +3281,13 @@ def tk_passer_list(request):
             {'message':'저리가!!!'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
