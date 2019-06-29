@@ -2772,7 +2772,6 @@ def my_work_records(request):
             'dt': rqst['dt'],
         }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
-    logSend(response_employee)
 
     result = response_employee.json()
     func_end_log(func_name)
