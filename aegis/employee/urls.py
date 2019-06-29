@@ -51,7 +51,7 @@ urlpatterns = [
     url(r'employee/beacon_status$', views.beacon_status, name='beacon_status'),
     url(r'employee/tk_employee$', views.tk_employee, name='tk_employee'),
     url(r'employee/tk_pass$', views.tk_pass, name='tk_pass'),
-    url(r'employee/tk_exchange_pass$', views.tk_exchange_pass, name='tk_exchange_pass'),
+    url(r'employee/tk_passer_list', views.tk_passer_list, name='tk_passer_list'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

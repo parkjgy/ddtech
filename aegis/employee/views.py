@@ -3270,9 +3270,9 @@ def tk_pass(request):
 
 
 @cross_origin_read_allow
-def tk_exchange_pass(request):
+def tk_passer_list(request):
     """
-    [[ 운영 ]] exchange pass
+    [[ 운영 ]] 출입자 목록: 고객 서버에서 근로자가 정상적인지 파악하기 위해 사용한다.
     GET
     response
         STATUS 200
@@ -3283,30 +3283,7 @@ def tk_exchange_pass(request):
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
-
-    # new_pass = Pass(
-    #     passer_id=1,
-    #     is_in=True,
-    #     is_beacon=True,
-    #     dt='2019-03-01 00:00:00',
-    # )
-    # new_pass.save()
-    # pass_list = Pass.objects.all()
-    # #     pass_list = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin)
-    #
-    # for pass_ in pass_list:
-    #     if pass_.dt_reg is None:
-    #         pass_.is_beacon = False
-    #         pass_.dt = pass_.dt_verify
-    #     else:
-    #         pass_.is_beacon = True
-    #         pass_.dt = pass_.dt_reg
-    #     pass_.save()
-
-    pass_record_all = Pass_History.objects.all()
-    for pass_record in pass_record_all:
-        pass_record.dt_in_em = pass_record.dt_in_verify
-        pass_record.dt_out_em = pass_record.dt_out_verify
-        pass_record.save()
+    passer_list = Passer.objects.all()
+    passers = {passer.pNo: passer.id for passer in passer_list}
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'message': '출퇴근 기록 업데이트 완료'})
+    return REG_200_SUCCESS.to_json_response({'passers': passers})

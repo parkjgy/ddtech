@@ -5221,16 +5221,21 @@ def tk_check_employees(request):
     # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
+    r = s.post(settings.EMPLOYEE_URL + 'tk_passer_list', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    passer_list = r.json()['passers']
+
     employee_all = Employee.objects.all()
     for employee in employee_all:
         for employee_comp in employee_all:
             if employee.pNo == employee_comp.pNo:
                 if employee.id == employee_comp.id:
                     continue
-                if employee.work_id != employee_comp.work_id:
-                    continue
-                logSend('  employee: {}, employee: {}'.format({employee.id: employee.pNo}, {employee_comp.id: employee_comp.pNo}))
-                result.append({employee.pNo: [employee.id, employee_comp.id]})
+                # if employee.work_id != employee_comp.work_id:
+                #     continue
+                passer_id = passer_list[employee.pNo] if employee.pNo in passer_list.keys() else ""
+                logSend('  employee: {}'.format({employee.pNo: [employee.id, employee_comp.id, passer_id]}))
+                result.append({employee.pNo: [employee.id, employee_comp.id, passer_id]})
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
