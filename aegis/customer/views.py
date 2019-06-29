@@ -2738,11 +2738,11 @@ def update_employee(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
     employee_id = parameter_check['parameters']['employee_id']
-    dt_end = parameter_check['parameters']['dt_end']
+    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
 
     work = Work.objects.get(id=work_id)
     employee = Employee.objects.get(id=employee_id)
-    logSend('  employee: {}'.format([{key: employee.__dict__[key]} for key in employee.__dict__.keys() if not key.startswith('_')]))
+    logSend('  employee: {}'.format({key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')}))
 
     # 업무에 투입되었는가?
     # if 'is_active' in rqst.keys():
@@ -2758,6 +2758,7 @@ def update_employee(request):
         is_active = parameter_check['parameters']['is_active']
         message = parameter_check['parameters']['message']
 
+        logSend('  employee.dt_end: {}, dt_end: {}'.format(employee.dt_end, dt_end))
         if employee.dt_end < dt_end:
             # 근무 날짜가 늘어났다.
             logSend('--- employee id: {} 근무날짜: {} > {} '.format(employee.id, employee.dt_end, dt_end))
