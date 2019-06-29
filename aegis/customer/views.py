@@ -5221,7 +5221,7 @@ def tk_check_employees(request):
     # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.EMPLOYEE_URL + 'tk_passer_list', json={})
+    r = s.post(settings.EMPLOYEE_URL + 'tk_passer_list', json={AES_ENCRYPT_BASE64('thinking')})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
     passer_list = r.json()['passers']
 

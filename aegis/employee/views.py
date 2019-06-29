@@ -3274,12 +3274,18 @@ def tk_passer_list(request):
     """
     [[ 운영 ]] 출입자 목록: 고객 서버에서 근로자가 정상적인지 파악하기 위해 사용한다.
     GET
+        key=vChLo3rsRAl0B4NNuaZOsg (thinking)
     response
         STATUS 200
         STATUS 403
             {'message':'저리가!!!'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    parameter_check = is_parameter_ok(rqst, ['key_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
     # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
     #     func_end_log(func_name)
     #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
