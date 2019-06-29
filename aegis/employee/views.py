@@ -3280,9 +3280,9 @@ def tk_passer_list(request):
             {'message':'저리가!!!'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        func_end_log(func_name)
-        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+    #     func_end_log(func_name)
+    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
     passer_list = Passer.objects.all()
     passers = {passer.pNo: passer.id for passer in passer_list}
     func_end_log(func_name)
