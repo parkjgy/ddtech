@@ -5187,9 +5187,10 @@ def ddtech_update_syatem(request):
 
 
 @cross_origin_read_allow
-def fjfjieie(request):
+def tk_check_employees(request):
     """
-    [[ 서버 시험]] 단순한 기능 시험
+    [[ 서버 시험]] 근로자를 모두 읽어들여서 전화번호가 중복되는 근로자를 찾고 employee_id 가 다른 경우를 찾는다.
+    http://0.0.0.0:8000/customer/tk_check_employees
     GET
         { "key" : "사용 승인 key"
     response
@@ -5211,15 +5212,23 @@ def fjfjieie(request):
     result = []
     s = requests.session()
 
-    login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # login_data = {"login_id": "thinking",
+    #               "login_pw": "parkjong"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
-
+    employee_all = Employee.objects.all()
+    for employee in employee_all:
+        for employee_comp in employee_all:
+            if employee.pNo == employee_comp.pNo:
+                if employee.id == employee_comp.id:
+                    continue
+                logSend('  employee: {}, employee: {}'.format({employee.id: employee.pNo}, {employee_comp.id: employee_comp.pNo}))
+                result.append({employee.pNo: [employee.id, employee_comp.id]})
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
