@@ -3126,6 +3126,7 @@ def beacon_status(request):
 def tk_employee(request):
     """
     [[ 운영 ]] 근로자 조회
+    https://api.ezchek.co.kr/employee/tk_employee
     GET
         pNo: 010 3333 5555
         name: 이름

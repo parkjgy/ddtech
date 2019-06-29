@@ -5227,6 +5227,8 @@ def tk_check_employees(request):
             if employee.pNo == employee_comp.pNo:
                 if employee.id == employee_comp.id:
                     continue
+                if employee.work_id != employee_comp.work_id:
+                    continue
                 logSend('  employee: {}, employee: {}'.format({employee.id: employee.pNo}, {employee_comp.id: employee_comp.pNo}))
                 result.append({employee.pNo: [employee.id, employee_comp.id]})
     logSend(result)
