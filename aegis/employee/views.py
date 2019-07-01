@@ -2064,12 +2064,15 @@ def pass_record_of_employees_in_day_for_customer(request):
             if int(plain) > 0:
                 # 거절 수락하지 않은 근로자 제외 (employee_id == -1)
                 employee_ids.append(plain)
-    logSend('  employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
+    logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
+    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list if not passer.startswith('_')]))
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
+    logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
         logError(func_name, ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
     employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
+    logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
     employee_ids = []
     for employee_info in employee_info_list:
         for passer in passer_list:
