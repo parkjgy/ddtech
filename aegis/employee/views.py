@@ -2066,7 +2066,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                 employee_ids.append(plain)
     logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
-    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list if not passer.startswith('_')]))
+    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
