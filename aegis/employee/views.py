@@ -2066,20 +2066,20 @@ def pass_record_of_employees_in_day_for_customer(request):
                 employee_ids.append(plain)
     logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
-    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
+    # logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
-    logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
+    # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
         logError(func_name, ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
     employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
-    logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
+    # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
     employee_ids = []
     for employee_info in employee_info_list:
         for passer in passer_list:
             if passer.employee_id == employee_info.id:
                 employee_ids.append(passer.id)
     logSend('  new employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
-    logSend('--- pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
+    logSend('  pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
@@ -2089,7 +2089,7 @@ def pass_record_of_employees_in_day_for_customer(request):
         # func_end_log(func_name)
         # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
-    logSend('--- pass_histories passer_ids {}'.format(exist_ids))
+    logSend('  pass_histories passer_ids {}'.format(exist_ids))
     for employee_id in employee_ids:
         if int(employee_id) not in exist_ids:
             if int(employee_id) < 0:
