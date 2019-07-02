@@ -5239,3 +5239,44 @@ def tk_check_employees(request):
     logSend(result)
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+def tk_list_employees(request):
+    """
+    [[ 서버 시험]] 근로자를 모두 읽어들여서 전화번호가 중복되는 근로자를 찾고 employee_id 가 다른 경우를 찾는다.
+    http://0.0.0.0:8000/customer/tk_list_employees
+    GET
+        work_id: 5
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    result = []
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    parameter_check = is_parameter_ok(rqst, ['work_id'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+
+    employee_list = Employee.objects.filter(work_id=work_id).values('id', 'is_accept_work', 'is_active', 'dt_begin', 'dt_end', 'work_id', 'employee_id', 'name', 'pNo', 'dt_begin_beacon', 'dt_end_beacon', 'dt_begin_touch', 'dt_end_touch', 'overtime', 'x', 'y')
+    json_employee_list = [employee for employee in employee_list]
+    logSend('  employee_list: {}'.format(json_employee_list))
+    result.append({'employee_list': json_employee_list})
+    logSend(result)
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response({'result': result})
