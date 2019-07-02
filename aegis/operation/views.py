@@ -465,6 +465,54 @@ def logControl(request):
 
 
 @cross_origin_read_allow
+def check_version(request):
+    """
+    [AegisSM 앱]:  앱 버전 확인
+    - 마지막의 날짜(190111 - 2019.01.11)가 190401 보다 이후이면 업그레이드 메시지 리턴
+    http://0.0.0.0:8000/operation/staff_version?v=A.1.0.0.190111
+    GET
+        v=A.1.0.0.190111
+
+    response
+        STATUS 200
+        STATUS 551
+        {
+            'message': '업그레이드가 필요합니다.',
+            'url': 'http://...' # itune, google play update
+        }
+        STATUS 520
+        {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    version = rqst['v']
+    items = version.split('.')
+    ver_dt = items[len(items) - 1]
+    logSend('  ver_dt: {}'.format(ver_dt))
+    if len(ver_dt) < 6:
+        func_end_log(func_name)
+        return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
+
+    dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
+                                            '%Y-%m-%d %H:%M:%S')
+    dt_check = datetime.datetime.strptime('2019-04-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    logSend('  dt_version: {}'.format(dt_version))
+    if dt_version < dt_check:
+        logSend('  dt_version < dt_check')
+        func_end_log(func_name)
+        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
+
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
 def login(request):
     """
 
