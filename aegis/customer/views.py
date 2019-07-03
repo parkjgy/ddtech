@@ -2788,7 +2788,7 @@ def update_employee(request):
             'dt_end': dt_end.strftime("%Y/%m/%d"),
         }
         r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
-        result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
+        # {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
