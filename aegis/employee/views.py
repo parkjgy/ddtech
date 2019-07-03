@@ -3264,7 +3264,7 @@ def tk_pass(request):
             'dt_in_verify': dt_null(pass_record.dt_in_verify),
             'dt_out': dt_null(pass_record.dt_out),
             'dt_out_verify': dt_null(pass_record.dt_out_verify),
-            'work_id': dt_null(pass_record.work_id),
+            'work_id': pass_record.work_id,
         }
         pass_records.append(pass_record_dict)
 
