@@ -2779,6 +2779,16 @@ def update_employee(request):
         employee.save()
         logSend('  employee: {}'.format(
             {key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')}))
+        #
+        # 근로기간이 변경되었으면 근로자서버를 업데이트한다.
+        #
+        employees_infor = {
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+            'dt_end': dt_end.strftime("%Y/%m/%d"),
+        }
+        r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
+        result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
         func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
