@@ -3249,7 +3249,7 @@ def tk_pass(request):
 
     for pass_ in pass_list:
         pass_dict = {
-            'dt': pass_.dt,
+            'dt': dt_null(pass_.dt),
             'is_in': 'YES' if pass_.is_in else 'NO',
             'is_beacon': 'YES' if pass_.is_beacon else 'NO',
             'x': pass_.x,
@@ -3260,11 +3260,11 @@ def tk_pass(request):
     for pass_record in pass_record_list:
         pass_record_dict = {
             'year_month_day': pass_record.year_month_day,
-            'dt_in': pass_record.dt_in,
-            'dt_in_verify': pass_record.dt_in_verify,
-            'dt_out': pass_record.dt_out,
-            'dt_out_verify': pass_record.dt_out_verify,
-            'work_id': pass_record.work_id
+            'dt_in': dt_null(pass_record.dt_in),
+            'dt_in_verify': dt_null(pass_record.dt_in_verify),
+            'dt_out': dt_null(pass_record.dt_out),
+            'dt_out_verify': dt_null(pass_record.dt_out_verify),
+            'work_id': dt_null(pass_record.work_id),
         }
         pass_records.append(pass_record_dict)
 
