@@ -3250,8 +3250,8 @@ def tk_pass(request):
     for pass_ in pass_list:
         pass_dict = {
             'dt': pass_.dt,
-            'is_in': 'YES' if pass_.is_in == '1' else 'NO',
-            'is_beacon': 'YES' if pass_.is_beacon == '1' else 'NO',
+            'is_in': 'YES' if pass_.is_in else 'NO',
+            'is_beacon': 'YES' if pass_.is_beacon else 'NO',
             'x': pass_.x,
             'y': pass_.y,
         }
