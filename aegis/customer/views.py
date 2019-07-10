@@ -1433,8 +1433,12 @@ def reg_work_place(request):
         STATUS 200
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+        STATUS 416
+            {'message': '빈 값은 안 됩니다.'}
+            {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
+            {'message': '3자 이상이어야 합니다.'}
         STATUS 422
-            {'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'}
+            {'message': '관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -1458,6 +1462,10 @@ def reg_work_place(request):
     worker = Staff.objects.get(id=worker_id)
 
     name = rqst['name']
+    result = id_ok(name, 3)
+    if result is not None:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
     manager_id = rqst['manager_id']
     order_id = rqst['order_id']
     if 'address' in rqst:
@@ -1466,14 +1474,14 @@ def reg_work_place(request):
         x = rqst['latitude']
     if 'longitude' in rqst:
         y = rqst['longitude']
-    if len(name) == 0 or len(manager_id) == 0 or len(order_id) == 0:
+    if len(manager_id) == 0 or len(order_id) == 0:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'사업장 이름, 관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
 
     list_work_place = Work_Place.objects.filter(name=name)
     if len(list_work_place) > 0:
         func_end_log(func_name)
-        return REG_540_REGISTRATION_FAILED.to_json_response({'message':'같은 이름의 사업장이 있습니다.\n꼭 같은 이름의 사업장이 필요하면\n다른 이름으로 등록 후 이름을 바꾸십시요.'})
+        return REG_540_REGISTRATION_FAILED.to_json_response({'message': '같은 이름의 사업장이 있습니다.\n꼭 같은 이름의 사업장이 필요하면\n다른 이름으로 등록 후 이름을 바꾸십시요.'})
 
     manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
     order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
@@ -2490,10 +2498,12 @@ def reg_employee(request):
                     pNo=phone,
                 )
                 new_employee.save()
-    logSend('  - count bad_phone_list: {}, work_count_over_list: {}, feature_phone_list: {}, bad_condition_list: {}'.format(len(bad_phone_list),
-                                                                                                                        len(work_count_over_list),
-                                                                                                                        len(feature_phone_list),
-                                                                                                                        len(bad_condition_list)))
+    logSend('  - count bad_phone_list: {}, ',
+            'work_count_over_list: {}, ',
+            'feature_phone_list: {}, bad_condition_list: {}'.format(len(bad_phone_list),
+                                                                    len(work_count_over_list),
+                                                                    len(feature_phone_list),
+                                                                    len(bad_condition_list)))
     #
     # SMS 가 에러나는 전화번호 표시 html
     #
@@ -3969,13 +3979,19 @@ def staff_employees_at_day(request):
         func_end_log(func_name)
         return status422(func_name, {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
+    dt_target_day = str_to_datetime(year_month_day)
     employee_list = Employee.objects.filter(work_id=work.id)
+    employee_ids = []
     for employee in employee_list:
         if employee.dt_begin < datetime.datetime.now():
-            # 업무가 시작된 근로자 중에
+            # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭
             if employee.is_accept_work is None or not employee.is_accept_work:
                 employee.delete()
-    employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
+                continue
+            if employee.dt_end < dt_target_day:
+                continue
+        employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
+    # employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
     employees_infor = {'employees': employee_ids,
                        'year_month_day': year_month_day,
                        'work_id': AES_ENCRYPT_BASE64(work_id),
