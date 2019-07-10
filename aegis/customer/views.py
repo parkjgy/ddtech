@@ -3989,6 +3989,7 @@ def staff_employees_at_day(request):
                 employee.delete()
                 continue
             if employee.dt_end < dt_target_day:
+                logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
                 continue
         employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
     # employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
