@@ -1802,8 +1802,8 @@ def reg_work(request):
     logSend('-- name: \"' + name + '\"')
     logSend('   work_place_id: \"' + work_place_id + '\"')
     logSend('   type: \"' + type + '\"')
-    logSend('   dt_begin: \"' + dt_str(dt_begin) + '\"')
-    logSend('   dt_end: \"' + dt_str(dt_end) + '\"')
+    logSend('   dt_begin: \"' + dt_str(dt_begin, "%Y-%m-%d %H:%M:%S") + '\"')
+    logSend('   dt_end: \"' + dt_str(dt_end, "%Y-%m-%d %H:%M:%S") + '\"')
     logSend('   staff_id: \"' + staff_id + '\"')
     logSend('   partner_id: \"' + partner_id + '\"')
     if dt_begin < datetime.datetime.now():
