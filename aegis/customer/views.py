@@ -1788,6 +1788,10 @@ def reg_work(request):
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
     partner_id = parameter_check['parameters']['partner_id']
+    logSend('  {}'.format({'name': name, 'work_place_id': AES_DECRYPT_BASE64(work_place_id), 'type': type,
+                           'dt_begin': dt_begin,
+                           'dt_end': dt_end,
+                           'staff_id': AES_DECRYPT_BASE64(staff_id), 'partner_id': AES_DECRYPT_BASE64(partner_id)}))
     if dt_begin < datetime.datetime.now():
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
