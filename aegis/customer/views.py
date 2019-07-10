@@ -13,7 +13,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log, status422, is_parameter_ok, id_ok, get_client_ip
+from config.common import func_begin_log, func_end_log, status422, is_parameter_ok, id_ok, type_ok, get_client_ip
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1791,7 +1791,7 @@ def reg_work(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
     work_place_id = parameter_check['parameters']['work_place_id']
     type = parameter_check['parameters']['type']
-    result = id_ok(type, 2)
+    result = type_ok(type, 2)
     if result is not None:
         func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)

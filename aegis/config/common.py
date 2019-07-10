@@ -193,6 +193,22 @@ def id_ok(identifier, min_length):
         return {'message': '{}자 이상이어야 합니다.'.format(min_length)}
 
 
+def type_ok(type, min_length):
+    """
+    근무 형태로 사용할 수 있는지 적합성을 검사한다.
+    :param type: 공백, 문자, 숫자
+    :param min_length:
+    :return: 정상이면 None
+    """
+    if type is None:
+        return {'message': '빈 값은 않됩니다.'}
+    space_type = type.replace(' ', '')
+    if not space_type.isalnum():
+        return {'message': '특수 문자를 사용하면 안됩니다.'}
+    if len(type) < min_length:
+        return {'message': '너무 짧습니다.'}
+
+
 def str_to_datetime(date_time):
     """
     string to datetime
