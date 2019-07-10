@@ -13,7 +13,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log, status422, is_parameter_ok, get_client_ip
+from config.common import func_begin_log, func_end_log, status422, is_parameter_ok, id_ok, get_client_ip
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1734,6 +1734,9 @@ def reg_work(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
+            {'message': '빈 값은 안 됩니다.'}
+            {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
+            {'message': '3자 이상이어야 합니다.'}
             {'message': '업무 시작 날짜는 오늘 이후여야 합니다.'}
             {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
         STATUS 544
@@ -1782,8 +1785,16 @@ def reg_work(request):
         # func_end_log(func_name)
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     name = parameter_check['parameters']['name']
+    result = id_ok(name, 3)
+    if result is not None:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
     work_place_id = parameter_check['parameters']['work_place_id']
     type = parameter_check['parameters']['type']
+    result = id_ok(type, 2)
+    if result is not None:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']

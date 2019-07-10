@@ -178,6 +178,21 @@ def is_parameter_ok(rqst, key_list) -> dict:
     return results
 
 
+def id_ok(identifier, min_length):
+    """
+    아이디로 사용할 수 있는지 적합성을 검사한다.
+    :param identifier:
+    :param min_length:
+    :return: 정상이면 None
+    """
+    if identifier is None:
+        return {'message': '빈 값은 안 됩니다.'}
+    if not identifier.isidentifier():
+        return {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
+    if len(identifier) < min_length:
+        return {'message': '{}자 이상이어야 합니다.'.format(min_length)}
+
+
 def str_to_datetime(date_time):
     """
     string to datetime
