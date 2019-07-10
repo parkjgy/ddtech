@@ -4011,6 +4011,9 @@ def staff_employees_at_day(request):
     arr_employee = []
     for employee in employee_list:
         logSend('  - employee employee_id: {}'.format(employee.employee_id))
+        if employee.dt_end < dt_target_day:
+            logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
+            continue
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
