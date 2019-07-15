@@ -3030,6 +3030,9 @@ def list_employee(request):
               ]
             }
         STATUS 503
+        STATUS 416
+            {'message': '오늘 이후를 근로내역은 볼 수 없습니다.'}
+            {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -3042,16 +3045,26 @@ def list_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
-    dt = str_to_datetime(parameter_check['parameters']['dt'])
+    if 'dt' in rqst:
+        dt = str_to_datetime(rqst['dt'])
+    else:
+        dt = datetime.datetime.now()
     work = Work.objects.get(id=work_id)  # 업무 에러 확인용
 
     # dt_today = datetime.datetime.now()
     dt_today = dt
+
+    if datetime.datetime.now() < dt_today:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '오늘 이후를 근로 내용은 볼 수 없습니다.'})
+    if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
@@ -4420,9 +4433,9 @@ def staff_change_time(request):
     overtime_type = int(parameter_check['parameters']['overtime_type'])
     employee_ids = parameter_check['parameters']['employee_ids']
 
-    if overtime_type < -1 or 6 < overtime_type:
+    if overtime_type < -2 or 18 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
-        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'})
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-2 ~ 18)를 넘었습니다.'})
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
@@ -4693,7 +4706,7 @@ def staff_update_employee(request):
         result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
     if not '' == overtime_type:
-        if overtime_type < -1 or 6 < overtime_type:
+        if overtime_type < -2 or 18 < overtime_type:
             func_end_log(func_name)
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '설정범위를 벗어났습니다.'})
         employee.overtime = overtime_type

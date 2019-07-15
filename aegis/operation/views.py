@@ -3459,7 +3459,7 @@ def employee_test_step_B(request):
             #
             # 아래항은 옵션임 - 값이 없으면 처리하지 않음
             #
-            overtime: 0,                    # 연장 근무 -1 : 업무 끝나면 퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+            overtime: 0,                    # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
             overtime_staff_id: staff_id,    # 처리 직원 id (암호화된 값)
 
             dt_in_verify: 08:00,            # 수정된 출근시간 (24 시간제)
@@ -3764,7 +3764,7 @@ def test_go_go(request):
     s = requests.session()
 
     login_data = {"login_id": "thinking",
-                  "login_pw": "parkjong"
+                  "login_pw": "happy_day!!!"
                   }
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
@@ -4080,24 +4080,24 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /employee/pass_record_of_employees_in_day_for_customer 관리자 앱에서 근로자 출퇴근 시간 강제 조정
     # ---------------------------------------------------------------------------------------
-    employees_infor = {'employees': [AES_ENCRYPT_BASE64('7'),
-                                     AES_ENCRYPT_BASE64('6'),
-                                     AES_ENCRYPT_BASE64('8'),
-                                     AES_ENCRYPT_BASE64('5'),
-                                     AES_ENCRYPT_BASE64('9'),
-                                     AES_ENCRYPT_BASE64('4'),
-                                     AES_ENCRYPT_BASE64('10'),
-                                     AES_ENCRYPT_BASE64('3'),
-                                     AES_ENCRYPT_BASE64('11'),
-                                     AES_ENCRYPT_BASE64('2'),
-                                     AES_ENCRYPT_BASE64('12'),
-                                     AES_ENCRYPT_BASE64('1')],
-                       'year_month_day': '2019-05-08',
-                       'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
-                       }
-    logSend(employees_infor)
-    r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
-    result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
+    # employees_infor = {'employees': [AES_ENCRYPT_BASE64('7'),
+    #                                  AES_ENCRYPT_BASE64('6'),
+    #                                  AES_ENCRYPT_BASE64('8'),
+    #                                  AES_ENCRYPT_BASE64('5'),
+    #                                  AES_ENCRYPT_BASE64('9'),
+    #                                  AES_ENCRYPT_BASE64('4'),
+    #                                  AES_ENCRYPT_BASE64('10'),
+    #                                  AES_ENCRYPT_BASE64('3'),
+    #                                  AES_ENCRYPT_BASE64('11'),
+    #                                  AES_ENCRYPT_BASE64('2'),
+    #                                  AES_ENCRYPT_BASE64('12'),
+    #                                  AES_ENCRYPT_BASE64('1')],
+    #                    'year_month_day': '2019-05-08',
+    #                    'work_id': 'qgf6YHf1z2Fx80DR8o_Lvg',
+    #                    }
+    # logSend(employees_infor)
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
+    # result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /employee/certification_no_to_sms 인증번호 요청
@@ -4108,6 +4108,17 @@ def test_go_go(request):
     # }
     # r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=passer_data)
     # result.append({'url': r.url, 'POST': passer_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/list_employee
+    # ---------------------------------------------------------------------------------------
+    work_data = {
+        'work_id': '_LdMng5jDTwK-LMNlj22Vw',
+        'is_working_history': 'NO',
+        # 'dt': '2019-07',
+    }
+    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work_data)
+    result.append({'url': r.url, 'POST': work_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})

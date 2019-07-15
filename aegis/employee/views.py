@@ -2123,7 +2123,7 @@ def pass_record_of_employees_in_day_for_customer(request):
             if plain == '__error':
                 is_ok = False
                 fail_list.append(' overtime_staff_id: 비정상')
-            if overtime < -1 or 6 < overtime:
+            if overtime < -2 or 18 < overtime:
                 is_ok = False
                 fail_list.append(' overtime: 범위 초과')
             if is_ok:
@@ -2575,7 +2575,7 @@ def my_work_histories_for_customer(request):
     logSend(year_month_day_list)
     pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list).order_by('year_month_day')
     workings = []
-    overtime_values = [0., 0., .5, 1., 1.5, 2., 2.5, 3.]
+    overtime_values = [0., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
     for pass_record in pass_record_list:
         working_time = int(employee.working_time)
         working_hour = (working_time // 4) * 4
@@ -2584,7 +2584,7 @@ def my_work_histories_for_customer(request):
                    'action': pass_record.action,
                    'dt_begin': dt_null(pass_record.dt_in_verify),
                    'dt_end': dt_null(pass_record.dt_out_verify),
-                   'overtime': overtime_values[pass_record.overtime + 1],
+                   'overtime': overtime_values[pass_record.overtime + 2],
                    'working_hour': working_hour,
                    'break_hour': break_hour,
                    }
