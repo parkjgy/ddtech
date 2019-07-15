@@ -3,16 +3,15 @@ Operation view
 
 Copyright 2019. DaeDuckTech Corp. All rights reserved.
 """
-
 import json
 import datetime
 from datetime import timedelta
 
 import coreapi
 from django.conf import settings
-from rest_framework.decorators import api_view, schema
-from rest_framework.schemas import AutoSchema
-from rest_framework.views import APIView
+# from rest_framework.decorators import api_view, schema
+# from rest_framework.schemas import AutoSchema
+# from rest_framework.views import APIView
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse

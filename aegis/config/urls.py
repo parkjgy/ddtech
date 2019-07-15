@@ -24,13 +24,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include
 from django.urls import path
-from rest_framework_swagger.views import get_swagger_view
+# from rest_framework_swagger.views import get_swagger_view
 
 from . import common
 from . import views as confViews
 
 urlpatterns = [
-    url(r'^swagger-ui', get_swagger_view(title='Rest API Document')),
+    # url(r'^swagger-ui', get_swagger_view(title='Rest API Document')),
     path('rq/apiView', confViews.api_view),
     path('rq/admin/', admin.site.urls),
     path('rq/api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
