@@ -3050,8 +3050,11 @@ def list_employee(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
-    if 'dt' in rqst and rqst['dt'] is not None and len(rqst['dt']) > 0:
-        dt = str_to_datetime(rqst['dt'])
+    if 'dt' in rqst:
+        try:
+            dt = str_to_datetime(rqst['dt'])
+        except Exception as e:
+            dt =  datetime.datetime.now()
     else:
         dt = datetime.datetime.now()
     work = Work.objects.get(id=work_id)  # 업무 에러 확인용
