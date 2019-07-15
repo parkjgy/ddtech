@@ -2041,7 +2041,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
     if not parameter_check['is_ok']:
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     employees = parameter_check['parameters']['employees']
     year_month_day = parameter_check['parameters']['year_month_day']
     customer_work_id = parameter_check['parameters']['work_id']

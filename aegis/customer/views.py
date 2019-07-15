@@ -2926,15 +2926,17 @@ def update_employee(request):
 def list_employee(request):
     """
     근로자 목록
-      - 업무별 리스트
-      -
+      - 업무에 투입된별 근로자 리스트
+      - 업무 시작날짜 전이면 업무 수락 여부만 보낸다. (날짜가 무시된다.)
+      - 날짜가 없으면 오늘 날짜로 처리한다. (날짜가 없어도 에러처리하지 않는다.)
       - option 에 따라 근로자 근태 내역 추가 (2019
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_employee?work_id=1&is_working_history=YES
     GET
         work_id         = 업무 id
-        is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
+        dt              = 2019-07-13 (원하는 날짜)
+        is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default) 2019-07-13: 무시
     response
         STATUS 200
             # 업무 시직 전 응답 - 업무 수락 상태 표시
@@ -3040,9 +3042,16 @@ def list_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'dt'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    dt = str_to_datetime(parameter_check['parameters']['dt'])
     work = Work.objects.get(id=work_id)  # 업무 에러 확인용
-    dt_today = datetime.datetime.now()
+
+    # dt_today = datetime.datetime.now()
+    dt_today = dt
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),

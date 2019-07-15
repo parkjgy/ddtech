@@ -5,8 +5,73 @@ from Crypto.Hash import SHA256
 
 from .log import logSend, logError
 from .status_collection import *
-from .secret import AES_DECRYPT_BASE64
+from .secret import AES_DECRYPT_BASE64, AES_ENCRYPT_BASE64, AES_ENCRYPT
 import datetime
+from urllib.parse import quote
+
+
+# @csrf_exempt
+def encryption(request):
+    """
+    Management: testEncryptionStr: get Encryption (Development only)
+       문자열을 암호화한다.
+    http://dev.ddtechi.com:8055/rq/encrypte?pText=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ 가나다라마바사아자차카타파하
+    < pText: plainText(암호되지 않은 문서)
+    > cipherText: 암호화된 문서
+    """
+    # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+    parameter_check = is_parameter_ok(rqst, ['pText'])
+    if not parameter_check['is_ok']:
+        # func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    _plainText = parameter_check['parameters']['pText']
+
+    logSend(_plainText)
+    r = '*** plainText = ' + _plainText
+    _cipherText = AES_ENCRYPT(_plainText)
+    r += '</br>*** cipherText(bytes) = ' + _cipherText.hex()
+    b64cipherText = AES_ENCRYPT_BASE64(_plainText)
+    r += '</br>*** base64 cipherText = ' + b64cipherText
+    r += '</br>*** base64 cipherText URL Encoded = ' + quote(b64cipherText)
+    plainText = AES_DECRYPT_BASE64(b64cipherText)
+    r += '</br>*** replainText = ' + plainText
+    logSend(plainText)
+    return HttpResponse(r)
+
+
+# @csrf_exempt
+def decryption(request):
+    """
+    Management: testDecryptionStr: get Decryption (Development only)
+       암호화된 문자열을 복호화한다.
+    http://dev.ddtechi.com:8055/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
+    http://dev1.ddtechi.com:8033/dr/testDecryptionStr?cipherText=VAyRZxuerUAjgiDqh9WAx1MvNqb+jCfIN3scgwqUibTfo2eW3AF9DBwebHrCfQ2Eee5u4GhtPL4X1hTnHgKv2Z4T3t67ujIvu7wctmRp1Nidit2XwJjH4q6tLUmTjN+v7ww+T8I1AJH5bI03WgG7NJz4laube8S/rRN7bKzONr2u4QTTRtY0IRZYvxjJxPNRjUJM5nuH7johCspgEToWz/iM+CYmSBVeywfCCQJQAFo=
+    < cText: cipherText (암호화된 문서)
+    > plainText: 복호화된 문서
+    """
+    # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+    parameter_check = is_parameter_ok(rqst, ['cText'])
+    if not parameter_check['is_ok']:
+        # func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    _b64CipherText = parameter_check['parameters']['cText']
+
+    r = '*** base64 cipherText = ' + _b64CipherText
+    plainText = AES_DECRYPT_BASE64(_b64CipherText)
+    r += '</br>*** plainText = ' + plainText
+    return HttpResponse(r)
 
 
 # # Cross-Origin Read Allow Rule

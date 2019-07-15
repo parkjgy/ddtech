@@ -26,20 +26,19 @@ from django.urls import include
 from django.urls import path
 from rest_framework_swagger.views import get_swagger_view
 
-from . import secret
+from . import common
 from . import views as confViews
 
 urlpatterns = [
     url(r'^swagger-ui', get_swagger_view(title='Rest API Document')),
-    path('apiView', confViews.api_view),
-    # path('apiView_beta', confViews.api_view_beta),
-    path('admin/', admin.site.urls),
-    path('api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
-    path('app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
-    path('apm', confViews.beta_manager_app_download),  # 관리자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
-    path('tncp', confViews.tnc_privacy),  # 개인정보 보호 약관
-    path('privacy_policy', confViews.privacy_policy),  # 개인정보 처리방침
-    path('android_upload', confViews.app_upload_view),  # 근로자 앱 업로드
+    path('rq/apiView', confViews.api_view),
+    path('rq/admin/', admin.site.urls),
+    path('rq/api_apk_upload', confViews.api_apk_upload),  # 업로드 URL
+    path('rq/app', confViews.beta_employee_app_download),  # 근로자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
+    path('rq/apm', confViews.beta_manager_app_download),  # 관리자 앱 다운로드 ( 베타 링크, 의사 결정 필요 )
+    path('rq/tncp', confViews.tnc_privacy),  # 개인정보 보호 약관
+    path('rq/privacy_policy', confViews.privacy_policy),  # 개인정보 처리방침
+    path('rq/android_upload', confViews.app_upload_view),  # 근로자 앱 업로드
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
@@ -47,8 +46,8 @@ urlpatterns = [
     url(r'', include('operation.urls')),
     url(r'', include('customer.urls')),
 
-    url(r'testEncryptionStr', secret.testEncryptionStr, name='testEncryptionStr'),
-    url(r'testDecryptionStr', secret.testDecryptionStr, name='testDecryptionStr'),
+    url(r'rq/encrypt', common.encryption, name='encryption'),
+    url(r'rq/decrypt', common.decryption, name='decryption'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -22,11 +22,6 @@ def csrf_failure(request, reason=""):
     return JsonResponse({"message": "CSRF TOKEN ACCESS FAILURE"}, status=403)
 
 
-# def api_view(request):
-#     text_data = open(settings.BASE_DIR + "/../API.txt", "r", encoding='UTF8').read()
-#     return HttpResponse(text_data, content_type="text/plain; charset=utf-8")
-
-
 class StringAppender:
     def __init__(self):
         self.str_list = []
