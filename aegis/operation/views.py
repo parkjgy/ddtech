@@ -4115,7 +4115,7 @@ def test_go_go(request):
     work_data = {
         'work_id': '_LdMng5jDTwK-LMNlj22Vw',
         'is_working_history': 'NO',
-        # 'dt': '2019-07',
+        'dt': None,
     }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work_data)
     result.append({'url': r.url, 'POST': work_data, 'STATUS': r.status_code, 'R': r.json()})

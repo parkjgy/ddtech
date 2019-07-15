@@ -3050,7 +3050,7 @@ def list_employee(request):
         func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
-    if 'dt' in rqst:
+    if 'dt' in rqst and rqst['dt'] is not None and len(rqst['dt']) > 0:
         dt = str_to_datetime(rqst['dt'])
     else:
         dt = datetime.datetime.now()
