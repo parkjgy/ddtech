@@ -1,3 +1,8 @@
+"""
+Employee urls
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
 from django.conf.urls import url, include
 from django.contrib.auth.models import User
 from . import views
@@ -5,7 +10,7 @@ from . import views
 urlpatterns = [
     # url(r'^api', include(router.urls)),
     # url(r'^swagger', schema_view),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     # url(r'^api-auth', include('router.urls')),
     # url(r'^beacon_test_d3$', views.beaconTestD3, name = 'beaconTestD3'),

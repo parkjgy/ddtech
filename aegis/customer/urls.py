@@ -1,3 +1,8 @@
+"""
+Customer urls
+
+Copyright 2019. DaeDuckTech Corp. All rights reserved.
+"""
 from django.conf.urls import url, include
 from django.contrib.auth.models import User
 from . import views

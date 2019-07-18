@@ -2926,15 +2926,17 @@ def update_employee(request):
 def list_employee(request):
     """
     근로자 목록
-      - 업무별 리스트
-      -
+      - 업무에 투입된별 근로자 리스트
+      - 업무 시작날짜 전이면 업무 수락 여부만 보낸다. (날짜가 무시된다.)
+      - 날짜가 없으면 오늘 날짜로 처리한다. (날짜가 없어도 에러처리하지 않는다.)
       - option 에 따라 근로자 근태 내역 추가 (2019
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_employee?work_id=1&is_working_history=YES
     GET
         work_id         = 업무 id
-        is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default)
+        dt              = 2019-07-13 (원하는 날짜)
+        is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default) 2019-07-13: 무시
     response
         STATUS 200
             # 업무 시직 전 응답 - 업무 수락 상태 표시
@@ -3028,6 +3030,9 @@ def list_employee(request):
               ]
             }
         STATUS 503
+        STATUS 416
+            {'message': '오늘 이후를 근로내역은 볼 수 없습니다.'}
+            {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])        
     if request.method == 'POST':
@@ -3040,9 +3045,29 @@ def list_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_id = AES_DECRYPT_BASE64(rqst['work_id'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    if not parameter_check['is_ok']:
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    if 'dt' in rqst:
+        try:
+            dt = str_to_datetime(rqst['dt'])
+        except Exception as e:
+            dt =  datetime.datetime.now()
+    else:
+        dt = datetime.datetime.now()
     work = Work.objects.get(id=work_id)  # 업무 에러 확인용
-    dt_today = datetime.datetime.now()
+
+    # dt_today = datetime.datetime.now()
+    dt_today = dt
+
+    if datetime.datetime.now() < dt_today:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '오늘 이후를 근로 내용은 볼 수 없습니다.'})
+    if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
+        func_end_log(func_name)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
@@ -4411,9 +4436,9 @@ def staff_change_time(request):
     overtime_type = int(parameter_check['parameters']['overtime_type'])
     employee_ids = parameter_check['parameters']['employee_ids']
 
-    if overtime_type < -1 or 6 < overtime_type:
+    if overtime_type < -2 or 18 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
-        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'})
+        return status422(func_name, {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-2 ~ 18)를 넘었습니다.'})
 
     app_users = Staff.objects.filter(id=staff_id)
     if len(app_users) != 1:
@@ -4684,7 +4709,7 @@ def staff_update_employee(request):
         result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
     if not '' == overtime_type:
-        if overtime_type < -1 or 6 < overtime_type:
+        if overtime_type < -2 or 18 < overtime_type:
             func_end_log(func_name)
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '설정범위를 벗어났습니다.'})
         employee.overtime = overtime_type
