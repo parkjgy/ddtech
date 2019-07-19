@@ -209,10 +209,17 @@ def updateEnv(request):
     POST
         {
             'dt_android_upgrade': '2019-02-11 05:00:00',
-            'timeCheckServer': '05:00:00'
+            'dt_android_mng_upgrade': '2019-02-11 05:00:00',
+            'dt_iOS_upgrade': '2019-02-11 05:00:00',
+            'dt_iOS_mng_upgrade': '2019-02-11 05:00:00',
+            'timeCheckServer': '05:00:00'                   # 적용 시간: 없으면 현재 적용 시간을 쓴다.
         }
     response
         STATUS 200
+        STATUS 422
+            {'message': 'timeCheckServer 양식이 틀렸습니다.'}
+        STATUS 524
+            {'message': '권한이 없습니다.'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -225,7 +232,7 @@ def updateEnv(request):
     global env
 
     worker_id = request.session['op_id'][5:]
-    logSend(worker_id, worker_id[5:])
+    logSend('  op_id: {}'.format(worker_id, worker_id[5:]))
 
     worker = Staff.objects.get(id=worker_id)
     if not (worker.id in [1, 2]):
@@ -235,36 +242,46 @@ def updateEnv(request):
 
     is_update = False
 
-    if 'dt_android_upgrade' in rqst:
-        dt_android_upgrade = rqst['dt_android_upgrade']
-    logSend(' 1 ', dt_android_upgrade)
-    logSend(' 2 ', env.current().dt_android_upgrade)
-    if len(dt_android_upgrade) == 0:
-        dt_android_upgrade = env.current().dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S")
+    if 'timeCheckServer' in rqst:
+        try:
+            dt = datetime.datetime.strptime('2019-01-01 ' + rqst['timeCheckServer'], "%Y-%m-%d %H:%M:%S")
+            timeCheckServer = dt.strftime("%H:%M:%S")
+        except Exception as err:
+            return status422(func_name, {'message': 'timeCheckServer 양식이 틀렸습니다.'})
     else:
-        is_update = True
-    logSend(' 3 ', dt_android_upgrade)
+        timeCheckServer = env.curEnv.timeCheckServer
 
-    timeCheckServer = rqst['timeCheckServer']
-    if len(timeCheckServer) == 0:
-        timeCheckServer = env.current().timeCheckServer
-    else:
-        is_update = True
+    logSend('  timeCheckServer: {}'.format(timeCheckServer))
 
-    logSend(dt_android_upgrade)
+    dt_list = ['dt_android_upgrade', 'dt_android_mng_upgrade', 'dt_iOS_upgrade', 'dt_iOS_mng_upgrade']
+    new_env = {'timeCheckServer': timeCheckServer, 'manager_id': worker.id}
+    for dt_type in dt_list:
+        if dt_type in rqst:
+            logSend('  {}: (new)'.format(dt_type))
+            try:
+                dt = datetime.datetime.strptime(rqst[dt_type], "%Y-%m-%d %H:%M:%S")
+            except Exception as err:
+                return status422(func_name, {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
+            new_env[dt_type] = dt
+            is_update = True
+        else:
+            logSend('  {}: {}'.format(dt_type, env.curEnv.__dict__[dt_type]))
+            new_env[dt_type] = env.curEnv.__dict__[dt_type]
+    logSend('  new_env: {}'.format(new_env))
+
     if is_update:
         env.stop()
-        newEnv = Environment(
-            dt=datetime.datetime.now(),
-            manager_id=worker.id,
-            dt_android_upgrade=datetime.datetime.strptime(dt_android_upgrade, "%Y-%m-%d %H:%M:%S"),
-            timeCheckServer=timeCheckServer,
+        new_env_model = Environment(
+            dt=datetime.datetime.now()
         )
-        newEnv.save()
+        for key in new_env.keys():
+            new_env_model.__dict__[key] = new_env[key]
+        # new_env_model.save()
         env.start()
-    logSend('200')
+        logSend('  new_env_model: {}'.format({key: new_env_model.__dict__[key] for key in new_env_model.__dict__.keys()}))
+
     func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'result': new_env})
 
 
 @cross_origin_read_allow
