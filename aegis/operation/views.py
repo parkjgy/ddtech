@@ -73,38 +73,35 @@ class Env(object):
                 dt=datetime.datetime.strptime("2019-01-01 00:00:00", "%Y-%m-%d %H:%M:%S"),
                 manager_id=0,
                 dt_android_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
+                dt_android_mng_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
+                dt_iOS_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
+                dt_iOS_mng_upgrade=datetime.datetime.strptime('2019-01-01 00:00:00', "%Y-%m-%d %H:%M:%S"),
                 timeCheckServer="05:00:00",
             )
             newEnv.save()
         note = '   Env: ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S") + ' 이전 환경변수를 기준으로 한다.'
         logSend(note)
-        print(self.dt_reload)
-        envs = Environment.objects.filter()
-        for env in envs:
-            print(env.id, env.dt)
+        # envs = Environment.objects.filter()
+        # for env in envs:
+        #     logSend(env.id, env.dt)
         envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
         note = '    >>> no of environment = ' + str(len(envs))
-        logSend(note)
-        """
-        i = 0
-        for envCell in envs :
-            logSend('   >>> ' + `i` + ' = ' + `envCell.id` + '' + `envCell.dt.strftime("%Y-%m-%d %H:%M:%S")`)
-            i = i + 1
-        """
+        # logSend(note)
         self.curEnv = envs[0]
         logSend('   Env: ')
-        logSend('   >>> dt env = ' + self.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"))
-        logSend('   >>> dt android = ' + self.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"))
-        logSend('   >>> timeCheckServer = ' + self.curEnv.timeCheckServer)
-        logSend('   >>> request timee gap = ' + str(settings.REQUEST_TIME_GAP))
+        for key in self.curEnv.__dict__.keys():
+            if key in ['_state', 'id']:
+                continue
+            logSend('   >>> {}: {}{}'.format(key, ' ' * (22 - len(key)), self.curEnv.__dict__[key]))
+        logSend('   >>> REQUEST_TIME_GAP:       {}sec (이 시간보다 짧게 API를 호출하면 에러처리한다. settings/base.py)'.format(str(settings.REQUEST_TIME_GAP)))
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + self.curEnv.timeCheckServer
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         if self.dt_reload < datetime.datetime.now():  # 다시 로딩해야할 시간이 현재 시간 이전이면 내일 시간으로 바꾼다.
             self.dt_reload = self.dt_reload + timedelta(days=1)
             logSend('       next load time + 24 hours')
-        logSend('   >>> next load time = ' + self.dt_reload.strftime("%Y-%m-%d %H:%M:%S"))
-        logSend('   >>> current time = ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        logSend('   >>> next Env load time:     {}'.format(self.dt_reload.strftime("%Y-%m-%d %H:%M:%S")))
+        logSend('   >>> current time:           {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         settings.IS_TEST = False
         func_end_log(func_name)
         return
@@ -156,12 +153,21 @@ def testEnv(request):
         logSend('  ', key, ': ', rqst[key])
 
     global env
-    result = {}
-    result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
-    result['timeCheckServer'] = env.current().timeCheckServer
+    result = {key: dt_form(env.curEnv.__dict__[key]) for key in env.curEnv.__dict__.keys() if not key.startswith('_')}
+
+    # result = {}
+    #
+    # result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
+    # result['timeCheckServer'] = env.current().timeCheckServer
 
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
+
+
+def dt_form(self):
+    if type(self) == datetime.datetime:
+        return self.strftime("%Y-%m-%d %H:%M:%S")
+    return self
 
 
 @cross_origin_read_allow
@@ -185,17 +191,9 @@ def currentEnv(request):
     envirenments = Environment.objects.filter().order_by('-dt')
     array_env = []
     for envirenment in envirenments:
-        new_env = {
-            'dt': envirenment.dt.strftime("%Y-%m-%d %H:%M:%S"),
-            'dt_android_upgrade': envirenment.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
-            'timeCheckServer': envirenment.timeCheckServer
-        }
+        new_env = { key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if not key.startswith('_') }
         array_env.append(new_env)
-    current_env = {
-        'dt': env.curEnv.dt.strftime("%Y-%m-%d %H:%M:%S"),
-        'dt_android_upgrade': env.curEnv.dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S"),
-        'timeCheckServer': env.curEnv.timeCheckServer
-    }
+    current_env = { key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if not key.startswith('_') }
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
 
