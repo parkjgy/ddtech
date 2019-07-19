@@ -662,6 +662,7 @@ def notification_accept(request):
             del employee_works.data[employee_works.index]
         employee.set_works(employee_works.data)
         employee.save()
+    notification.delete()
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -681,7 +682,6 @@ def notification_accept(request):
         func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
 
-    notification.delete()
     logSend('  - is_accept: {}'.format(is_accept))
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})

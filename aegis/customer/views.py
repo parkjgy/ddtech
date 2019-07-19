@@ -2590,7 +2590,7 @@ def employee_work_accept_for_employee(request):
     if not parameter_check['is_ok']:
         return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     worker_id = parameter_check['parameters']['worker_id']
     work_id = parameter_check['parameters']['work_id']
     employee_id = parameter_check['parameters']['employee_id']
