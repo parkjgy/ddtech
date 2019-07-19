@@ -5,9 +5,12 @@ import json
 # 환경 저장
 class Environment(models.Model):
     dt = models.DateTimeField(null=True, blank=True) 
-    dt_android_upgrade = models.DateTimeField(auto_now_add = False) 
-    manager_id = models.IntegerField(default = 0) # 환경 변경 직원 id
-    timeCheckServer =  models.CharField(max_length = 15) # 09:00:00 형식의 문자열
+    dt_android_upgrade = models.DateTimeField(auto_now_add = False)     # 이 날짜 이전 '이지체크 안드로이드 근로자 앱' 은 업그레이드 필요
+    dt_android_mng_upgrade = models.DateTimeField(auto_now_add = False) # 이 날짜 이전 '이지체크 안드로이드 관리자 앱' 은 업그레이드 필요
+    dt_iOS_upgrade = models.DateTimeField(auto_now_add = False)         # 이 날짜 이전 '이지체크 아이폰 근로자 앱' 은 업그레이드 필요
+    dt_iOS_mng_upgrade = models.DateTimeField(auto_now_add = False)     # 이 날짜 이전 '이지체크 아이폰 관리자 앱' 은 업그레이드 필요
+    manager_id = models.IntegerField(default = 0)                   # 환경 변경 직원 id
+    timeCheckServer =  models.CharField(max_length = 15)            # 서버 점검 시간 (09:00:00 형식의 문자열)
 
 
 class Staff(models.Model):

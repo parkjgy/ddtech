@@ -116,7 +116,7 @@ def check_version(request):
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: 잘못된 id 예요'}  # i 에 들어가는 [암호화된 id] 가 잘못되었다.
             {'message': "ClientError: parameter 'v' 가 없어요'}
-            {'message':'ClientError: parameter \'v\' 에 phone type 이 없어요'}
+            {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'}
 
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
@@ -159,7 +159,7 @@ def check_version(request):
     items = version.split('.')
     phone_type = items[0]
     ver_dt = items[len(items) - 1]
-    print(ver_dt)
+    logSend(ver_dt)
     if len(ver_dt) < 6:
         func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
@@ -167,12 +167,12 @@ def check_version(request):
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
                                             '%Y-%m-%d %H:%M:%S')
     response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
-    print('status', response_operation.status_code, response_operation.json())
+    logSend('status', response_operation.status_code, response_operation.json())
     dt_android_upgrade = response_operation.json()['dt_update']
-    print(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
+    logSend(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
 
     dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
-    print(dt_version)
+    logSend(dt_version)
     if dt_version < dt_check:
         url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.employee"
         url_iOS = "https://..."

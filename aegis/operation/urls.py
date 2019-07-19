@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'operation/list_beacon$', views.list_beacon, name='list_beacon'),
     url(r'operation/detail_beacon$', views.detail_beacon, name='detail_beacon'),
     url(r'operation/dt_android_upgrade', views.dt_android_upgrade, name='dt_android_upgrade'),
+    url(r'operation/dt_upgrade', views.dt_upgrade, name='dt_upgrade'),
 
     url(r'operation/customer_test_step_1', views.customer_test_step_1, name='customer_test_step_1'),
     url(r'operation/customer_test_step_2', views.customer_test_step_2, name='customer_test_step_2'),

@@ -3758,7 +3758,7 @@ def staff_version(request):
     version = rqst['v']
     items = version.split('.')
     ver_dt = items[len(items) - 1]
-    print(ver_dt)
+    logSend(ver_dt)
     if len(ver_dt) < 6:
         func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
@@ -3766,9 +3766,9 @@ def staff_version(request):
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
                                             '%Y-%m-%d %H:%M:%S')
     dt_check = datetime.datetime.strptime('2019-04-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-    print(dt_version)
+    logSend(dt_version)
     if dt_version < dt_check:
-        print('dt_version < dt_check')
+        logSend('dt_version < dt_check')
         func_end_log(func_name)
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
 
@@ -4373,8 +4373,8 @@ def staff_change_time(request):
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
     - 오늘이 아니면 고칠 수 없음 - 오늘이 아니면 호출하지 말것.
-    https://api-dev.aegisfac.com/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
-    http://0.0.0.0:8000/apiView/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
+    https://api-dev.aegisfac.com/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
+    http://0.0.0.0:8000/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id

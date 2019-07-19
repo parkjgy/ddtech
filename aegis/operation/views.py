@@ -227,24 +227,25 @@ def updateEnv(request):
     global env
 
     worker_id = request.session['op_id'][5:]
-    print(worker_id, worker_id[5:])
+    logSend(worker_id, worker_id[5:])
 
     worker = Staff.objects.get(id=worker_id)
     if not (worker.id in [1, 2]):
-        print('524')
+        logSend('524')
         func_end_log(func_name)
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     is_update = False
 
-    dt_android_upgrade = rqst['dt_android_upgrade']
-    print(' 1 ', dt_android_upgrade)
-    print(' 2 ', env.current().dt_android_upgrade)
+    if 'dt_android_upgrade' in rqst:
+        dt_android_upgrade = rqst['dt_android_upgrade']
+    logSend(' 1 ', dt_android_upgrade)
+    logSend(' 2 ', env.current().dt_android_upgrade)
     if len(dt_android_upgrade) == 0:
         dt_android_upgrade = env.current().dt_android_upgrade.strftime("%Y-%m-%d %H:%M:%S")
     else:
         is_update = True
-    print(' 3 ', dt_android_upgrade)
+    logSend(' 3 ', dt_android_upgrade)
 
     timeCheckServer = rqst['timeCheckServer']
     if len(timeCheckServer) == 0:
@@ -252,7 +253,7 @@ def updateEnv(request):
     else:
         is_update = True
 
-    print(dt_android_upgrade)
+    logSend(dt_android_upgrade)
     if is_update:
         env.stop()
         newEnv = Environment(
@@ -263,7 +264,7 @@ def updateEnv(request):
         )
         newEnv.save()
         env.start()
-    print('200')
+    logSend('200')
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
@@ -525,7 +526,9 @@ def login(request):
     response
         STATUS 200
         STATUS 401
-            {'message':'id 나 비밀번호가 틀립니다.'}
+            {'message': 'id 나 비밀번호가 틀립니다.'}
+        STATUS 422
+            {'message': 'invalid parameter'}
     """
     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
@@ -534,6 +537,9 @@ def login(request):
         rqst = request.GET
     for key in rqst.keys():
         logSend('  ', key, ': ', rqst[key])
+
+    if 'id' not in rqst or 'pw' not in rqst:
+        return status422(func_name, {'message': 'invalid parameter'})
 
     id_ = rqst['id']
     pw_ = rqst['pw']
@@ -1179,6 +1185,44 @@ def dt_android_upgrade(request):
 
     global env
     result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
+    func_end_log(func_name)
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def dt_upgrade(request):
+    """
+    앱의 upgrade 기준 날짜 시간
+    - 앱에 check version 에서 dt_update 에서 보낸 날짜 이전이면 업그레이드 해야 한다.
+    http://0.0.0.0:8000/operation/dt_upgrade?typ=iOS_mng
+    GET
+        type: android, android_mng, iOS, iOS_mng
+    POST
+    response
+        STATUS 200
+            { 'dt_update':'2019-02-11' }
+    """
+    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    for key in rqst.keys():
+        logSend('  ', key, ': ', rqst[key])
+
+    # worker_id = request.session['op_id'][5:]
+    # worker = Staff.objects.get(id=worker_id)
+    if 'type' not in rqst:
+        return status422(func_name, {'message': 'required \'type\''})
+    type = 'dt_' + rqst['type'] + '_upgrade'
+
+    global env
+
+    # logSend('  type: {}, env: {}'.format(type, [key for key in env.current().__dict__.keys()]))
+    if type not in env.current().__dict__.keys():
+        return status422(func_name, {'message': 'type is only: android, android_mng, iOS, iOS_mng'})
+
+    result = {'dt_update': env.curEnv.__dict__[type].strftime('%Y-%m-%d %H:%M:%S')}
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
