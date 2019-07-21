@@ -3698,7 +3698,7 @@ def report_of_employee(request):
 
     parameters = {"employee_id": AES_ENCRYPT_BASE64(str(employee.employee_id)),
                   "dt": year_month,
-                  'work_id': work_id
+                  'work_id': AES_ENCRYPT_BASE64(str(work_id))
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
