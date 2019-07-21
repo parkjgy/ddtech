@@ -2485,6 +2485,8 @@ def my_work_histories_for_customer(request):
         총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
         첫번째 자리 1 - 정상 출근, 2 - 지각 출근
         두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     http://0.0.0.0:8000/employee/my_work_histories_for_customer?employee_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
         employee_id = 서버로 받아 저장해둔 출입자 id'
@@ -2575,7 +2577,7 @@ def my_work_histories_for_customer(request):
     logSend(year_month_day_list)
     pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list).order_by('year_month_day')
     workings = []
-    overtime_values = [0., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
+    # overtime_values = [-1., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
     for pass_record in pass_record_list:
         working_time = int(employee.working_time)
         working_hour = (working_time // 4) * 4
@@ -2584,7 +2586,7 @@ def my_work_histories_for_customer(request):
                    'action': pass_record.action,
                    'dt_begin': dt_null(pass_record.dt_in_verify),
                    'dt_end': dt_null(pass_record.dt_out_verify),
-                   'overtime': overtime_values[pass_record.overtime + 2],
+                   'overtime': pass_record.overtime,  # 2019-07-21 overtime_values[pass_record.overtime + 2],
                    'working_hour': working_hour,
                    'break_hour': break_hour,
                    }
@@ -2689,6 +2691,8 @@ def my_work_histories(request):
         총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
         첫번째 자리 1 - 정상 출근, 2 - 지각 출근
         두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
         passer_id='서버로 받아 저장해둔 출입자 id'
@@ -2720,8 +2724,8 @@ def my_work_histories(request):
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-            'employee_id' : rqst["passer_id"],
-            'dt' : rqst['dt'],
+            'employee_id': rqst["passer_id"],
+            'dt': rqst['dt'],
         }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
     logSend(response_employee)
@@ -2739,6 +2743,8 @@ def my_work_records(request):
         총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
         첫번째 자리 1 - 정상 출근, 2 - 지각 출근
         두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
     GET
         passer_id='서버로 받아 저장해둔 출입자 id'
@@ -2779,48 +2785,6 @@ def my_work_records(request):
     result = response_employee.json()
     func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
-
-
-@cross_origin_read_allow
-def generation_pass_history(request):
-    """
-    출입 기록에서 일자별 출퇴근 기록을 만든다.
-    퇴근버튼이 눌렸을 때나 최종 out 기록 후 1시간 후에 처리한다.
-    1. 주어진 날짜의 in, dt_verify 를 찾는다. (출근버튼을 누른 시간)
-    2. 주어진 날짜의
-    """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
-
-    cipher_passer_id = rqst['passer_id']
-    name = rqst['name']
-    bank = rqst['bank']
-    bank_account = rqst['bank_account']
-    pNo = rqst['pNo']
-
-    if len(pNo):
-        pNo = pNo.replace('-', '')
-        pNo = pNo.replace(' ', '')
-        print(pNo)
-
-    print(cipher_passer_id, name, bank, bank_account)
-    passer_id = AES_DECRYPT_BASE64(cipher_passer_id)
-    logSend('\t\t\t\t\t' + passer_id)
-    passer = Passer.objects.get(id=passer_id)
-    employee = Employee.objects.get(id=passer.employee_id)
-    if len(name) > 0:
-        employee.name = name
-    if len(bank) > 0 and len(bank_account) > 0:
-        employee.bank = bank
-        employee.bank_account = bank_account
-    employee.save()
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response()
 
 
 def get_dic_passer():

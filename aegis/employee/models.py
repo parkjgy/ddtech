@@ -16,6 +16,8 @@ class Employee(models.Model):
     working_time = models.CharField(max_length = 20, default='')       # 근무 시간 04 ~ 12
     work_start_alarm = models.CharField(max_length = 20, default='')   # 출근 알람 1:00, 30, X
     work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
+    
+    # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
 
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
@@ -139,6 +141,8 @@ class Pass_History(models.Model):
 
     overtime = models.IntegerField(default=0)                   # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     overtime_staff_id = models.IntegerField(default=-1)         # 연장 근무 현장 관리자 id (기본: -1 (현장 소장이 dt_in_verify, dt_out_verify 를 수정하지 않았을 때))
+
+    # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude

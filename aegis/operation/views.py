@@ -4171,13 +4171,25 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/list_employee
     # ---------------------------------------------------------------------------------------
-    work_data = {
+    # work_data = {
+    #     'work_id': '_LdMng5jDTwK-LMNlj22Vw',
+    #     'is_working_history': 'NO',
+    #     'dt': None,
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work_data)
+    # result.append({'url': r.url, 'POST': work_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # ---------------------------------------------------------------------------------------
+    # TEST: /customer/list_employee
+    # ---------------------------------------------------------------------------------------
+    employee_data = {
+        'year_month': '2019-07',
+        'staff_id': '3EP9Yb9apLUn2Ymof8Mw9A',
         'work_id': '_LdMng5jDTwK-LMNlj22Vw',
-        'is_working_history': 'NO',
-        'dt': None,
+        'employee_id': 'iv3M54G5NUyq7zC39F0v5A',
     }
-    r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work_data)
-    result.append({'url': r.url, 'POST': work_data, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'staff_employee_working', json=employee_data)
+    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
     r = s.post(settings.CUSTOMER_URL + 'logout', json={})

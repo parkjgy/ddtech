@@ -4377,11 +4377,13 @@ def staff_change_time(request):
     - 오늘이 아니면 고칠 수 없음 - 오늘이 아니면 호출하지 말것.
     https://api-dev.aegisfac.com/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     http://0.0.0.0:8000/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
+    overtime 설명 (2019-07-21)
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
         year_month_day: 2019-05-09 # 처리할 날짜
-        overtime_type : 0        # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+        overtime_type : 0        # -2: 년차, -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
         employee_ids : [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
     response
         STATUS 200
@@ -4618,6 +4620,8 @@ def staff_update_employee(request):
     - 근로자의 근무 기간은 업무의 기간을 벗아나지 못한다.
     - 값을 넣은 것만 변경한다.
     http://0.0.0.0:8000/customer/staff_update_employee?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_begin=2019-03-01&dt_end=2019-04-30&overtime_type=0
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
@@ -4627,6 +4631,18 @@ def staff_update_employee(request):
         overtime_type : 0       # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
     response
         STATUS 200
+            "working": [
+                {
+                "year_month_day": "2019-07-01",
+                "action": 20,
+                "dt_begin": null,
+                "dt_end": "2019-07-01 07:01:56",
+                "overtime": -1,        # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+                "working_hour": 8,
+                "break_hour": 0
+                },
+                ...
+            ]
         STATUS 416
             {'message': '업무 시작날짜 이전으로 설정할 수 없습니다.'}
             {'message': '업무 종료날짜 이후로 설정할 수 없습니다.'}
