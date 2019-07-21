@@ -3054,7 +3054,8 @@ def list_employee(request):
         try:
             dt = str_to_datetime(rqst['dt'])
         except Exception as e:
-            dt =  datetime.datetime.now()
+            dt = datetime.datetime.now()
+            logError(func_name, ' parameter \'dt\' none or error')
     else:
         dt = datetime.datetime.now()
     work = Work.objects.get(id=work_id)  # 업무 에러 확인용
@@ -3696,7 +3697,8 @@ def report_of_employee(request):
     # employees = Employee.objects.filter(id=employee_id, work_id=work_id)
 
     parameters = {"employee_id": AES_ENCRYPT_BASE64(str(employee.employee_id)),
-                  "dt": year_month
+                  "dt": year_month,
+                  'work_id': work_id
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
