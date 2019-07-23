@@ -111,28 +111,6 @@ def ValuesQuerySetToDict(vqs):
     return [item for item in vqs]
 
 
-def func_begin_log(*args) -> str:
-    """
-    호출하는 쪽에서 필수 : import inspect
-    """
-    func_name = ''
-    for arg in args:
-        func_name = func_name + '/' + arg
-    logSend('>>> ' + func_name)
-    return func_name
-
-
-def func_end_log(func_name, message=None):
-    """
-    호출하는 쪽에서 필수 : import inspect
-    """
-    log = '<<< ' + func_name
-    if message is not None:
-        log += ': ' + message
-    logSend(log)
-    return
-
-
 def status422(func_name, _message):
     logError(func_name, ' ', _message['message'])
     func_end_log(func_name, _message['message'])

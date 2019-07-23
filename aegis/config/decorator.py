@@ -9,6 +9,7 @@ from django.conf import settings
 
 from .error_handler import exception_handler
 from .status_collection import REG_403_FORBIDDEN
+from .log import logSend, logError
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -24,10 +25,22 @@ def cross_origin_read_allow(function):
             response = HttpResponse()
         else:
             try:
+                logSend('>>> {}'.format(request.get_full_path()))  # 함수 시작 표시
+                if request.method == 'POST':
+                    rqst = json.loads(request.body.decode("utf-8"))
+                else:
+                    rqst = request.GET
+                # 함수 파라미터 표시
+                for key in rqst.keys():
+                    logSend('^  ', key, ': ', rqst[key])
+
                 response = function(request, *args, **kwargs)
+                logSend('<<< {}'.format(request.get_full_path()))  # 함수 끝 표시
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
+                logSend('  ERROR > {}'.format(request.get_full_path()))
                 response = exception_handler(request, e)
+        # logSend('   response: status_code: {}, {}'.format(response.status_code, response.content))
 
         if 'HTTP_ORIGIN' in request.META:
             response["Access-Control-Allow-Origin"] = request.META['HTTP_ORIGIN']
@@ -40,6 +53,7 @@ def cross_origin_read_allow(function):
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type, Token"
         if request.session.session_key:
             response['Token'] = request.session.session_key
+        # logSend('  cross_origin_read_allow: response: {}'.format(response))
         return response
 
     wrap.__doc__ = function.__doc__
@@ -51,7 +65,6 @@ def token_to_session(function):
     """
     Web Client 에서 Header 에서 받은 Token 값으로 Session 으로 치환하는 Decorator
     """
-
     def wrap(request, *args, **kwargs):
         if 'HTTP_TOKEN' in request.META:
             # print(request.META['HTTP_TOKEN'])
@@ -126,3 +139,4 @@ def session_is_none_403_with_operation(function):
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
+

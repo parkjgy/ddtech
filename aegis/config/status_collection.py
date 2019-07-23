@@ -33,7 +33,7 @@ REG_200_SUCCESS = StatusCollection(200, '정상적으로 처리되었습니다.'
 
 REG_400_CUSTOMER_STAFF_ALREADY_REGISTERED = StatusCollection(400, '이미 등록되어 있는 고객업체의 담당자입니다.')
 REG_403_FORBIDDEN = StatusCollection(403, '로그아웃되었습니다.\n다시 로그인해주세요.')
-REG_409_CONFLICT = StatusCollection(409, '처리 중에 다시 요청할 수 없습니다.(15초)')
+REG_409_CONFLICT = StatusCollection(409, '처리 중에 다시 요청할 수 없습니다.(5초)')
 REG_416_RANGE_NOT_SATISFIABLE = StatusCollection(416, '요청받은 범위에 대해서 서비스 할 수 없습니다.')
 REG_422_UNPROCESSABLE_ENTITY = StatusCollection(422, '파라미터가 틀립니다.') # message 가 상세하게 바뀔 수 있다.
 

@@ -9,7 +9,6 @@ import inspect
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
 from config.common import str_no, str_to_dt, get_client_ip
 from config.common import Works
@@ -49,19 +48,15 @@ def table_reset_and_clear_for_operation(request):
             {'message':'ClientError: parameter \'key\' 가 없어요'}
             {'message':'ClientError: parameter \'key\' 가 정상적인 값이 아니예요.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     print(parameter_check['parameters'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     Beacon.objects.all().delete()
     Employee.objects.all().delete()
@@ -83,7 +78,6 @@ def table_reset_and_clear_for_operation(request):
 
     result = {'message': 'employee tables deleted == $ python manage.py sqlsequencereset employee'}
     logSend(result['message'])
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -119,13 +113,10 @@ def check_version(request):
             {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'}
 
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['i'])
     if parameter_check['is_ok']:
@@ -137,22 +128,22 @@ def check_version(request):
         cypher_passer_id = info[int(phone_count) + 2:]
         passer_id = AES_DECRYPT_BASE64(cypher_passer_id)
         if passer_id == '__error':
-            return status422(func_name, {'message': 'ClientError: 잘못된 id 예요'})
+            return status422(request.get_full_path(), {'message': 'ClientError: 잘못된 id 예요'})
         try:
             passer = Passer.objects.get(pNo=phone_no)
         except Exception as e:
-            logError(func_name, ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
-            func_end_log(func_name)
+            logError(request.get_full_path(), ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
         if passer.id != int(passer_id):
-            logError(func_name, ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
-            func_end_log(func_name)
+            logError(request.get_full_path(),
+                     ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
 
     parameter_check = is_parameter_ok(rqst, ['v'])
     if not parameter_check['is_ok']:
-        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # func_end_log(func_name)
+        return status422(request.get_full_path(),
+                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # func_end_log(request.get_full_path())
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     version = parameter_check['parameters']['v']
 
@@ -161,7 +152,6 @@ def check_version(request):
     ver_dt = items[len(items) - 1]
     logSend(ver_dt)
     if len(ver_dt) < 6:
-        func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
 
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
@@ -182,12 +172,9 @@ def check_version(request):
         elif phone_type == 'i':
             url_install = url_iOS
         else:
-            return status422(func_name, {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
-
-        func_end_log(func_name)
+            return status422(request.get_full_path(), {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
-                  })
-    func_end_log(func_name)
+                                                                })
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -244,13 +231,10 @@ def reg_employee_for_customer(request):
             {'message':'ClientError: parameter \'phones\' 가 없어요'}
             {'message':'ServerError: Work 에 id={} 가 없다'.format(work_id)}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phones')
@@ -258,7 +242,6 @@ def reg_employee_for_customer(request):
                                              'dt_end', 'staff_name', 'staff_phone', 'phones',
                                              'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee', 'is_update'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     customer_work_id = parameter_check['parameters']['customer_work_id']
     work_place_name = parameter_check['parameters']['work_place_name']
@@ -323,9 +306,9 @@ def reg_employee_for_customer(request):
     last_phone_numbers = [phone_no for phone_no in phone_numbers if phone_no not in phones_state.keys()]
     logSend('  - last_phone_numbers: {}'.format(last_phone_numbers))
     # 등록된 근로자 중에서 전화번호로 업무 요청
-    msg = '이지체크\n'\
-          '새로운 업무를 앱에서 확인해주세요.\n'\
-          '앱 설치\n'\
+    msg = '이지체크\n' \
+          '새로운 업무를 앱에서 확인해주세요.\n' \
+          '앱 설치\n' \
           'https://api.ezchek.co.kr/app'
     # msg_feature = "이지체크\n"\
     #               "효성 3공장-포장(3교대)\n"\
@@ -347,7 +330,8 @@ def reg_employee_for_customer(request):
     }
 
     # 업무 요청이 등록된 전화번호
-    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id, employee_pNo__in=last_phone_numbers)
+    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id,
+                                                         employee_pNo__in=last_phone_numbers)
     notification_phones = [notification.employee_pNo for notification in notification_list]
     # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에
     notification_list.delete()
@@ -366,8 +350,10 @@ def reg_employee_for_customer(request):
                 # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
                 is_feature_phone = True
                 find_notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
-                logSend('  - notification list (pNo:{}) : {}'.format(phone_no, [notification.employee_pNo for notification in find_notification_list]))
-                if len(find_notification_list) > 0:    # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
+                logSend('  - notification list (pNo:{}) : {}'.format(phone_no,
+                                                                     [notification.employee_pNo for notification in
+                                                                      find_notification_list]))
+                if len(find_notification_list) > 0:  # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
                     phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
                     continue
             # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
@@ -413,8 +399,6 @@ def reg_employee_for_customer(request):
                 dt_end=str_to_dt(dt_end_employee),
             )
             new_notification.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
 
 
@@ -441,13 +425,10 @@ def update_work_for_customer(request):
         STATUS 200
             {"message": "정상적으로 처리되었습니다."}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     find_works = Work.objects.filter(customer_work_id=rqst['customer_work_id'])
     if len(find_works) == 0:
@@ -488,7 +469,6 @@ def update_work_for_customer(request):
                     employee_work['end'] = work.end
         employee.set_works(employee_works.data)
         employee.save()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -529,17 +509,13 @@ def notification_list(request):
             응답 시한: dt_answer_deadline
             - 담당: staff_name [staff_phone_no] [staff_phone_no]
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
     if len(passers) == 0:
-        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
     dt_today = datetime.datetime.now()
@@ -566,7 +542,6 @@ def notification_list(request):
             'end': dt_str(notification.dt_end, "%Y/%m/%d"),
         }
         arr_notification.append(view_notification)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
 
 
@@ -596,17 +571,14 @@ def notification_accept(request):
             {'message':'ServerError: Passer 출입자({}) 가 없어요'.format(passer_id)}
             {'message':'ServerError: Notification_Work 알림({}) 가 없어요'.format(notification_id)}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
-        return status422(func_name, {'message': parameter['message']})
+        return status422(request.get_full_path(), {'message': parameter['message']})
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
     is_accept = bool(int(parameter['parameters']['is_accept']))
@@ -614,20 +586,21 @@ def notification_accept(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
-        return status422(func_name, {'message': '출입자({}) 가 없어요'.format(passer_id)})
+        return status422(request.get_full_path(), {'message': '출입자({}) 가 없어요'.format(passer_id)})
     passer = passers[0]
 
     notifications = Notification_Work.objects.filter(id=notification_id)
     if len(notifications) == 0:
-        return status422(func_name, {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
+        return status422(request.get_full_path(), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
     notification = notifications[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
+        return status422(request.get_full_path(), {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(func_name, ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
-                                                                                     len(employees)))
+        logError(request.get_full_path(),
+                 ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
+                                                                      len(employees)))
     employee = employees[0]
     employee_works = Works(employee.get_works())
     logSend('  - employee works: {}'.format([work for work in employee_works.data]))
@@ -679,11 +652,9 @@ def notification_accept(request):
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
     logSend(response_customer.json())
     if response_customer.status_code != 200:
-        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
 
     logSend('  - is_accept: {}'.format(is_accept))
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
 
 
@@ -699,13 +670,10 @@ def passer_list(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     phone_no = no_only_phone_no(rqst['phone_no'])
 
@@ -723,7 +691,6 @@ def passer_list(request):
         passer_info['id'] = AES_ENCRYPT_BASE64(str(passer.id))
         passer_info['pNo'] = passer.pNo
         employee_list.append(passer_info)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'passers': employee_list})
 
 
@@ -742,13 +709,10 @@ def passer_reg(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     pass_type = rqst['pass_type']
     if request.method == 'POST':
@@ -764,7 +728,6 @@ def passer_reg(request):
         )
         print([(x, passer.__dict__[x]) for x in Passer().__dict__.keys() if not x.startswith('_')])
         passer.save()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -800,25 +763,21 @@ def pass_reg(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
-        logError(func_name, ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
-        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+        logError(request.get_full_path(), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(request.get_full_path(), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
@@ -835,7 +794,8 @@ def pass_reg(request):
     logSend(beacons)
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id })
+        return status422(request.get_full_path(),
+                         {'message': 'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id})
     passer = passers[0]
 
     for i in range(len(beacons)):
@@ -847,7 +807,7 @@ def pass_reg(request):
             beacon.last_passer_id = passer_id
             beacon.save()
         else:
-            logError(func_name, ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+            logError(request.get_full_path(), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
                 uuid='12345678-0000-0000-0000-123456789012',
                 # 1234567890123456789012345678901234567890
@@ -880,23 +840,19 @@ def pass_reg(request):
     passer_list = Passer.objects.filter(id=passer_id)
     if len(passer_list) == 0:
         # 출입자를 db에서 찾지 못하면
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
     passer = passer_list[0]
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
     if len(employee_list) == 0:
         # db 에 근로자 정보가 없으면 - 출입자 중에 근로자 정보가 없는 경우, 등록하지 않은 경우, 피쳐폰인 경우
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '근로자 정보가 없다.'})
     employee = employee_list[0]
     employee_works = Works(employee.get_works())
     if len(employee_works.data) == 0:
         # 근로자 정보에 업무가 없다.
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '근로자에게 배정된 업무가 없다.'})
     if not employee_works.is_active():
         # 현재 하고 있는 없무가 없다.
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '근로자가 현재 출퇴근하는 업무가 없다.'})
     employee_work = employee_works.data[employee_works.index]
     work_id = employee_work['id']
@@ -909,11 +865,12 @@ def pass_reg(request):
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_beacon - datetime.timedelta(days=1)
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id, year_month_day=yesterday_year_month_day)
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
+                                                         year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
                 # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
-                logError(func_name, ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
-                func_end_log(func_name)
+                logError(request.get_full_path(),
+                         ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
                 return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
             else:
                 pass_history = pass_histories[0]
@@ -923,11 +880,12 @@ def pass_reg(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
+            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
         elif (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
             # 출근시간 이후 12 시간이 지났으면 무시한다.
-            logError(func_name, ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
-            func_end_log(func_name)
+            logError(request.get_full_path(),
+                     ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in,
+                                                                                                   dt_beacon))
             return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 beacon out 을 무시한다.'})
 
         pass_history.dt_out = dt_beacon
@@ -950,18 +908,16 @@ def pass_reg(request):
     # if (pass_history.work_id == -1) and (passer.employee_id > 0):
     #     employees = Employee.objects.filter(id=passer.employee_id)
     #     if len(employees) == 0:
-    #         logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+    #         logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
     #     else:
     #         if len(employees) > 1:
-    #             logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    #             logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     #         employee = employees[0]
-    #         logError(func_name, ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
+    #         logError(request.get_full_path(), ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
     #         employee_works = Works(employee.get_works())
     #         if len(employee_works.data) > 0:
     #             pass_history.work_id = employee.get_works()[0]['id']
     pass_history.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1005,25 +961,21 @@ def pass_verify(request):
             {'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)}
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(func_name, ' passer id: {} 중복되었다.'.format(passer_id))
-        logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
-        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(request.get_full_path(), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
@@ -1031,19 +983,20 @@ def pass_verify(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
-        return status422(func_name, {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
+        return status422(request.get_full_path(),
+                         {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
     elif len(passers) > 1:
-        logError(func_name, ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(request.get_full_path(), ' passer id: {} 중복되었다.'.format(passer_id))
     passer = passers[0]
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
+        return status422(request.get_full_path(),
+                         {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(func_name, ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
-        func_end_log(func_name)
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     work_id = employee_works.data[employee_works.index]['id']
     # 통과 기록 저장
@@ -1067,9 +1020,11 @@ def pass_verify(request):
             # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
             yesterday = dt_touch - datetime.timedelta(days=1)
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
-            yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
+            yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id,
+                                                                   year_month_day=yesterday_year_month_day)
             if len(yesterday_pass_histories) == 0:
-                logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                logError(request.get_full_path(),
+                         ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
                 # out 인데 어제, 오늘 in 기록이 없다?
                 #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
                 #   (9시에 퇴근시간이 찍히면 반나절 4시간 근무(휴식 포함 4:30)라고 하면 4:30 출근인데 그럼 오늘 출근이잖아!)
@@ -1116,10 +1071,12 @@ def pass_verify(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
             # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+            logError(request.get_full_path(),
+                     ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
+                                                                                                      dt_touch))
     else:
         # in touch 일 경우
         if len(pass_histories) == 0:
@@ -1143,8 +1100,6 @@ def pass_verify(request):
     update_pass_history(pass_history)
 
     pass_history.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1170,16 +1125,13 @@ def pass_sms(request):
             {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
             {'message': '근무할 업무가 없다.'.format()}
     error log
-        logError(func_name, ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
-        logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
+        logError(request.get_full_path(), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        logError(request.get_full_path(), ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호가 없을 가능성이 없다.
     dt = rqst['dt']
@@ -1196,12 +1148,12 @@ def pass_sms(request):
         if is_accept:
             extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '수락'))]
             if len(extract_sms) > 1:
-                logError(func_name, ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+                logError(request.get_full_path(), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
             name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) < 2:
                 # 이름이 2자가 안되면 SMS 로 이름이 안들어왔다고 보내야 하나? (휴~~~)
-                logError(func_name, ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+                logError(request.get_full_path(), ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
                 sms_data = {
                     'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
                     'user_id': 'yuadocjon22',
@@ -1214,11 +1166,12 @@ def pass_sms(request):
                 }
                 rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
                 logSend('SMS result', rSMS.json())
-                return status422(func_name, {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+                return status422(request.get_full_path(),
+                                 {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
         else:
             extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '거절'))]
             if len(extract_sms) > 1:
-                logError(func_name, ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+                logError(request.get_full_path(), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
             name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) == 0:
@@ -1256,13 +1209,14 @@ def pass_sms(request):
             else:
                 # 출입자(passer) 는 있다.
                 if len(passer_list) > 1:
-                    logError(func_name, ' 전화번호({})가 중복되었다.'.format(phone_no))
+                    logError(request.get_full_path(), ' 전화번호({})가 중복되었다.'.format(phone_no))
                 passer = passer_list[0]
                 employee_list = Employee.objects.filter(id=passer.employee_id)
                 if len(employee_list) == 0:
                     # 그런데 출입자와 연결된 근로자가 없다. > 근로자만 새로 만들어 연결한다.
                     logSend('---3 name: {}, phone: {}'.format(name, phone_no))
-                    logError(func_name, ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
+                    logError(request.get_full_path(),
+                             ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
                     employee = Employee(
                         name=name,
                     )
@@ -1273,7 +1227,7 @@ def pass_sms(request):
                     # 출입자, 근로자 다 있고 연결도 되어있다.
                     logSend('---4 name: {}, phone: {}'.format(name, phone_no))
                     if len(employee_list) > 1:
-                        logError(func_name, ' employee({})가 중복되었다.'.format(passer.employee_id))
+                        logError(request.get_full_path(), ' employee({})가 중복되었다.'.format(passer.employee_id))
                     employee = employee_list[0]
                     # employee.name = name
                     # employee.save()
@@ -1288,21 +1242,18 @@ def pass_sms(request):
             is_accept = r.json()['is_accept']
 
             if r.status_code == 416:
-                func_end_log(func_name)
                 return ReqLibJsonResponse(r)
 
             if r.status_code == 200 and is_accept:
                 work = Work.objects.get(id=notification_work.work_id)
                 sms_data['msg'] = '수락됐어요\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
-                                                                          work.work_name_type,
-                                                                          work.begin,
-                                                                          work.end,
-                                                                          work.staff_name,
-                                                                          phone_format(work.staff_pNo))
+                                                                        work.work_name_type,
+                                                                        work.begin,
+                                                                        work.end,
+                                                                        work.staff_name,
+                                                                        phone_format(work.staff_pNo))
                 rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
                 logSend('SMS result', rSMS.json())
-
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response()
 
     elif '출근' in sms:
@@ -1310,13 +1261,13 @@ def pass_sms(request):
     elif '퇴근' in sms:
         is_in = False
     else:
-        logError(func_name, ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
-        return status422(func_name, {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+        logError(request.get_full_path(), ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+        return status422(request.get_full_path(),
+                         {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) == 0:
-        logError(func_name, ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
-        func_end_log(func_name)
+        logError(request.get_full_path(), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
     passer_id = passer.id
@@ -1324,16 +1275,18 @@ def pass_sms(request):
     logSend(' {}  {}  {}  {}'.format(phone_no, passer.id, dt, is_in))
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.id, passer.employee_id))
-        func_end_log(func_name)
-        return status422(func_name, {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)})
+        logError(request.get_full_path(),
+                 ' Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.id, passer.employee_id))
+        return status422(request.get_full_path(),
+                         {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(func_name, ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
+        logError(request.get_full_path(),
+                 ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
-        logError(func_name, '근무할 업무가 없다.'.format())
-        return status422(func_name, {'message': '근무할 업무가 없다.'.format()})
+        logError(request.get_full_path(), '근무할 업무가 없다.'.format())
+        return status422(request.get_full_path(), {'message': '근무할 업무가 없다.'.format()})
     employee_work = employee_works.data[employee_works.index]
     work_id = employee_work['id']
     new_pass = Pass(
@@ -1358,7 +1311,8 @@ def pass_sms(request):
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
             pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
-                logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                logError(request.get_full_path(),
+                         ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
                 # out 인데 어제, 오늘 in 기록이 없다?
                 #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
                 #   (9시에 퇴근시간이 찍히면 반나절 4시간 근무(휴식 포함 4:30)라고 하면 4:30 출근인데 그럼 오늘 출근이잖아!)
@@ -1389,10 +1343,12 @@ def pass_sms(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         if (dt_in + datetime.timedelta(hours=12)) < dt_touch:
             # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
-            logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+            logError(request.get_full_path(),
+                     ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
+                                                                                                      dt_touch))
     else:
         # in touch 일 경우
         if len(pass_histories) == 0:
@@ -1416,8 +1372,6 @@ def pass_sms(request):
     update_pass_history(pass_history)
 
     pass_history.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1449,18 +1403,14 @@ def beacons_is(request):
 
             {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
@@ -1470,8 +1420,8 @@ def beacons_is(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        logError(func_name, ' ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id)
-        return status422(func_name, {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'})
+        logError(request.get_full_path(), ' ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id)
+        return status422(request.get_full_path(), {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'})
 
     if request.method == 'GET':
         beacons = [
@@ -1505,7 +1455,6 @@ def beacons_is(request):
                     dt_last=dt
                 )
                 new_beacon.save()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1533,18 +1482,14 @@ def certification_no_to_sms(request):
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
 
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['phone_no'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     phone_no = no_only_phone_no(parameter_check['parameters']['phone_no'])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
@@ -1553,23 +1498,21 @@ def certification_no_to_sms(request):
         passer_id = parameter_check['parameters']['passer_id']
         passer = Passer.objects.get(id=passer_id)
         if passer.pNo == phone_no:
-            func_end_log(func_name)
             return REG_200_SUCCESS.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
         passers = Passer.objects.filter(pNo=phone_no)
         logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
         if len(passers) > 0:
-            logError(func_name, ' phone: ({}, {}), duplication phone: {}'
+            logError(request.get_full_path(), ' phone: ({}, {}), duplication phone: {}'
                      .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
-            func_end_log(func_name)
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
+                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
         passer.pNo = phone_no
     else:
         if parameter_check['is_decryption_error']:
             # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
-            logError(func_name, parameter_check['results'])
-            func_end_log(func_name)
+            logError(request.get_full_path(), parameter_check['results'])
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
         # 새로 근로자 등록을 하는 경우 - 전화번호 중복을 확인해야한다.
         # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
@@ -1584,7 +1527,6 @@ def certification_no_to_sms(request):
     if (passer.dt_cn is not None) and (datetime.datetime.now() < passer.dt_cn):
         # 3분 이내에 인증번호 재요청하면
         logSend('  - dt_cn: {}, today: {}'.format(passer.dt_cn, datetime.datetime.now()))
-        func_end_log(func_name)
         return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
 
     certificateNo = random.randint(100000, 999999)
@@ -1606,7 +1548,6 @@ def certification_no_to_sms(request):
     }
     if settings.IS_TEST:
         rData['testmode_yn'] = 'Y'
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response(rData)
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
@@ -1619,7 +1560,6 @@ def certification_no_to_sms(request):
     # rJson['vefiry_no'] = str(certificateNo)
 
     # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1661,18 +1601,14 @@ def reg_from_certification_no(request):
             {'message':'ClientError: parameter \'phone_type\' 가 없어요'}
             {'message':'ClientError: parameter \'push_token\' 가 없어요'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
-    parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type'])  #, 'push_token'])
+    parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type'])  # , 'push_token'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     phone_no = parameter_check['parameters']['phone_no']
     cn = parameter_check['parameters']['cn']
     phone_type = parameter_check['parameters']['phone_type']
@@ -1685,19 +1621,16 @@ def reg_from_certification_no(request):
         logSend('ERROR: ', phone_no, duplicate_id)
     passer = passers[0]
     if passer.dt_cn == None:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'인증번호 요청없이 인증요청(해킹?)'})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '인증번호 요청없이 인증요청(해킹?)'})
 
     if passer.dt_cn < datetime.datetime.now():
         logSend(passer.dt_cn, datetime.datetime.now())
-        func_end_log(func_name)
-        return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message':'인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
+        return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
         logSend(passer.cn, ' vs ', cn, ' is test = {}'.format(settings.IS_TEST))
         if not settings.IS_TEST and passer.cn != int(cn):
-        # if passer.cn != int(cn):
-            func_end_log(func_name)
+            # if passer.cn != int(cn):
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
@@ -1742,8 +1675,6 @@ def reg_from_certification_no(request):
     passer.cn = 0
     passer.dt_cn = None
     passer.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1778,18 +1709,14 @@ def update_my_info(request):
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ServerError: 근로자 id 확인이 필요해요.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     passer_id = parameter_check['parameters']['passer_id']
     logSend('   ' + passer_id)
@@ -1797,20 +1724,19 @@ def update_my_info(request):
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
         # 출입자에 없는 사람을 수정하려는 경우
-        logError(func_name, ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
-        return status422(func_name, {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+        logError(request.get_full_path(), ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
+        return status422(request.get_full_path(), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
         # 출입자에 근로자 정보가 없는 경우
-        logError(func_name, ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
-        return status422(func_name, {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+        logError(request.get_full_path(), ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
+        return status422(request.get_full_path(), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
 
     update_employee_of_customer = {'is_upate': False}
     if 'name' in rqst:
         if len(rqst['name']) < 2:
-            func_end_log(func_name)
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'이름은 2자 이상이어야 합니다.'})
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '이름은 2자 이상이어야 합니다.'})
         #
         # 고객사 업무의 근로자 이름도 변경되어야 함.
         #
@@ -1823,8 +1749,7 @@ def update_my_info(request):
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
         if len(pNo) < 9:
-            func_end_log(func_name)
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'전화번호를 확인해 주세요.'})
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '전화번호를 확인해 주세요.'})
         #
         # 고객사 업무의 근로자 전화번호도 변경되어야 함.
         #
@@ -1837,8 +1762,7 @@ def update_my_info(request):
         logSend('   ' + pNo)
     if 'bank' in rqst and 'bank_account' in rqst:
         if len(rqst['bank_account']) < 5:
-            func_end_log(func_name)
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
         employee.bank = rqst['bank']
         employee.bank_account = rqst['bank_account']
         logSend('   ' + rqst['bank'], rqst['bank_account'])
@@ -1857,18 +1781,18 @@ def update_my_info(request):
     if update_employee_of_customer['is_upate']:
         request_data = {
             'worker_id': AES_ENCRYPT_BASE64('thinking'),
-            'employee_pNo': update_employee_of_customer['old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
-            'new_name': update_employee_of_customer['old_name'] if 'new_name' in update_employee_of_customer else employee.name,
-            'new_pNo': update_employee_of_customer['new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
+            'employee_pNo': update_employee_of_customer[
+                'old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
+            'new_name': update_employee_of_customer[
+                'old_name'] if 'new_name' in update_employee_of_customer else employee.name,
+            'new_pNo': update_employee_of_customer[
+                'new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
         }
         logSend(request_data)
         response_customer = requests.post(settings.CUSTOMER_URL + 'update_employee_for_employee', json=request_data)
         logSend(response_customer.json())
         if response_customer.status_code != 200:
-            func_end_log(func_name)
             return ReqLibJsonResponse(response_customer)
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1903,35 +1827,30 @@ def my_work_list(request):
             {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'}
             {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     passer_id = parameter_check['parameters']['passer_id']
     logSend('  - passer_id: ' + passer_id)
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
         # 출입자에 없는 사람을 수정하려는 경우
-        logError(func_name, ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
-        return status422(func_name, {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
+        logError(request.get_full_path(), ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
+        return status422(request.get_full_path(), {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
     passer = passers[0]
     if passer.employee_id == -1:
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'works': []})
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) != 1:
         # 출입자의 근로자 정보가 없다.
-        logError(func_name, ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
-        return status422(func_name, {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
+        logError(request.get_full_path(), ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
+        return status422(request.get_full_path(), {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
     employee = employees[0]
     employee_works = Works(employee.get_works())
     work_list = []
@@ -1960,8 +1879,6 @@ def my_work_list(request):
                     # del new_work['work_id']  # 시험할 때만
                     work_list.append(new_work)
                     continue
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'works': work_list})
 
 
@@ -2019,28 +1936,24 @@ def pass_record_of_employees_in_day_for_customer(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        logError(request.get_full_path(), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
 
-        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
     #
     parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     employees = parameter_check['parameters']['employees']
     year_month_day = parameter_check['parameters']['year_month_day']
@@ -2050,16 +1963,16 @@ def pass_record_of_employees_in_day_for_customer(request):
         work = Work.objects.get(customer_work_id=customer_work_id)
         work_id = work.id
     except Exception as e:
-        logError(func_name, ' 업무 id ({}) 에 해당되는 업무가 없다. ({})'.format(customer_work_id, str(e)))
+        logError(request.get_full_path(), ' 업무 id ({}) 에 해당되는 업무가 없다. ({})'.format(customer_work_id, str(e)))
         work_id = -1
     employee_ids = []
     for employee in employees:
         # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
         plain = AES_DECRYPT_BASE64(employee)
         if plain == '__error':
-            logError(func_name, ' 근로자 id ({}) Error 복호화 실패: 처리대상에서 제외'.format(employee))
+            logError(request.get_full_path(), ' 근로자 id ({}) Error 복호화 실패: 처리대상에서 제외'.format(employee))
             # 2019-05-22 여러명을 처리할 때 한명 때문에 에러처리하면 안되기 때문에...
-            # return status422(func_name, {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
+            # return status422(request.get_full_path(), {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
         else:
             if int(plain) > 0:
                 # 거절 수락하지 않은 근로자 제외 (employee_id == -1)
@@ -2070,7 +1983,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
-        logError(func_name, ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
+        logError(request.get_full_path(), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
     employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
     # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
     employee_ids = []
@@ -2083,10 +1996,12 @@ def pass_record_of_employees_in_day_for_customer(request):
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+                                                     work_id=work_id)
     if len(pass_histories) == 0:
-        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
-        # func_end_log(func_name)
+        logError(request.get_full_path(),
+                 ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        # func_end_log(request.get_full_path())
         # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
     logSend('  pass_histories passer_ids {}'.format(exist_ids))
@@ -2094,7 +2009,7 @@ def pass_record_of_employees_in_day_for_customer(request):
         if int(employee_id) not in exist_ids:
             if int(employee_id) < 0:
                 # 필요없음 위 id 해독부분에서 -1 을 걸러냄
-                logError(func_name, ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
+                logError(request.get_full_path(), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
             else:
                 # 출퇴근 기록이 없으면 새로 만든다.
                 logSend('   --- new pass_history passer_id {}'.format(employee_id))
@@ -2104,12 +2019,15 @@ def pass_record_of_employees_in_day_for_customer(request):
                     action=0,
                     work_id=work_id,
                 )
-                logError(func_name, ' 강제로 만든 pass_history: {}'.format([{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if not key.startswith('_')]))
+                logError(request.get_full_path(), ' 강제로 만든 pass_history: {}'.format(
+                    [{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if
+                     not key.startswith('_')]))
                 new_pass_history.save()
     if work_id == -1:
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
     else:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids, work_id=work_id)
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+                                                     work_id=work_id)
 
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
     logSend('--- pass_histories passer_ids {}'.format(exist_ids))
@@ -2146,7 +2064,9 @@ def pass_record_of_employees_in_day_for_customer(request):
             if is_ok:
                 pass_history.dt_in_verify = dt_in_verify
                 pass_history.in_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format([{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+                logSend('--- pass_history: {}'.format(
+                    [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
+                     not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         # 퇴근시간 수정 처리
@@ -2157,7 +2077,8 @@ def pass_record_of_employees_in_day_for_customer(request):
                 is_ok = False
                 fail_list.append(' out_staff_id: 비정상')
             try:
-                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']), '%Y-%m-%d %H:%M:%S')
+                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
+                                                           '%Y-%m-%d %H:%M:%S')
             except Exception as e:
                 is_ok = False
                 fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
@@ -2165,11 +2086,13 @@ def pass_record_of_employees_in_day_for_customer(request):
                 pass_history.action = 0
                 pass_history.dt_out_verify = dt_out_verify
                 pass_history.out_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format([{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+                logSend('--- pass_history: {}'.format(
+                    [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
+                     not key.startswith('_')]))
                 update_pass_history(pass_history)
 
         if len(fail_list) > 0:
-            return status422(func_name, {'message': 'fail', 'fails': fail_list})
+            return status422(request.get_full_path(), {'message': 'fail', 'fails': fail_list})
 
         pass_history.save()
 
@@ -2204,7 +2127,6 @@ def pass_record_of_employees_in_day_for_customer(request):
     result = {'employees': list_pass_history,
               'fail_list': fail_list,
               }
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2216,23 +2138,22 @@ def update_pass_history(pass_history: dict):
         pass_verify
         pass_sms
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    logSend('--- pass_history: {}'.format([(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+    logSend('--- pass_history: {}'.format(
+        [(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:
-        func_end_log(func_name, ' Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
+        func_end_log(request.get_full_path(),
+                     ' Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
         return
     if passer.employee_id <= 0:
-        func_end_log(func_name)
         return
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        func_end_log(func_name)
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
         return
     if len(employees) > 1:
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     employee = employees[0]
 
     # 출근 처리
@@ -2242,10 +2163,11 @@ def update_pass_history(pass_history: dict):
         # 출근 터치가 있으면 지각여부 처리한다.
         action_in = 100
         # 하~~~ 근로자 앱을 설치할 때 출근시간, 일하는 시간 미등록도 걸러야 하나...
-        logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, pass_history.dt_in_verify))
+        logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start,
+                                                                                    pass_history.dt_in_verify))
         # if employee.work_start is None or employee.working_time is None:
         if len(employee.work_start) == 0 or len(employee.working_time) == 0:
-            logError(func_name, ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
+            logError(request.get_full_path(), ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
         else:
             dt_in = pass_history.dt_in_verify
             work_in_hour = int(employee.work_start[:2])
@@ -2269,7 +2191,8 @@ def update_pass_history(pass_history: dict):
             logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, dt_out))
             # if employee.work_start is None or employee.working_time is None:
             if len(employee.work_start) == 0 or len(employee.working_time) == 0:
-                logError(func_name, ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
+                logError(request.get_full_path(),
+                         ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
             else:
                 work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
                 work_out_minute = int(employee.work_start[3:])
@@ -2280,7 +2203,9 @@ def update_pass_history(pass_history: dict):
                         action_out = 20
     pass_history.action = action_in + action_out
     pass_history.save()
-    func_end_log(func_name, ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id, employee.name))
+    func_end_log(request.get_full_path(),
+                 ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
+                                                                                        employee.name))
     return
 
 
@@ -2312,49 +2237,47 @@ def change_work_period_for_customer(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(func_name, ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        logError(request.get_full_path(), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
 
-        logError(func_name, ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(func_name, ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(func_name, ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(func_name, ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
     #
     parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['employee_id']
     work_id = parameter_check['parameters']['work_id']
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
-        return status422(func_name, {'message': '해당 근로자({})가 없다. ({})'.format(passer_id, str(e))})
+        return status422(request.get_full_path(), {'message': '해당 근로자({})가 없다. ({})'.format(passer_id, str(e))})
     if passer.employee_id == -1:
-        return status422(func_name, {'message': '해당 근로자({})의 업무가 등록되지 않았다.'.format(passer_id)})
+        return status422(request.get_full_path(), {'message': '해당 근로자({})의 업무가 등록되지 않았다.'.format(passer_id)})
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
-        return status422(func_name, {'message': '해당 근로자({})의 업무를 찾을 수 없다. ({})'.format(passer_id, str(e))})
+        return status422(request.get_full_path(),
+                         {'message': '해당 근로자({})의 업무를 찾을 수 없다. ({})'.format(passer_id, str(e))})
     logSend('   {}'.format(employee.name))
     employee_works = Works(employee.get_works())
     try:
         work = Work.objects.get(customer_work_id=work_id)
     except Exception as e:
-        return status422(func_name, {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
+        return status422(request.get_full_path(), {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
     if not employee_works.find(work.id):
-        return status422(func_name, {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
+        return status422(request.get_full_path(),
+                         {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
     employee_work = employee_works.data[employee_works.index]
     if 'dt_begin' in rqst:
         employee_work['begin'] = rqst['dt_begin']
@@ -2363,118 +2286,7 @@ def change_work_period_for_customer(request):
     employee_works.add(employee_work)
     employee.set_works(employee_works.data)
     employee.save()
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
-
-
-# @cross_origin_read_allow
-# def employee_day_working_from_customer(request):
-#     """
-#     <<<고객 서버용>>> 근로자 한명의 하루 근로 내용
-#     http://0.0.0.0:8000/employee/employee_day_working_from_customer?employee_id=qgf6YHf1z2Fx80DR8o_Lvg&dt=2019-04-18
-#     GET
-#         employee_id='근로자 id'
-#         dt = '2019-04-18'
-#     response
-#         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
-#         STATUS 200
-#         {
-#             'working':
-#             [
-#                 { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
-#                     'outing':
-#                     [
-#                         {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
-#                     ]
-#                 },
-#                 ......
-#             ]
-#         }
-#         STATUS 422 # 개발자 수정사항
-#             {'message':'ClientError: parameter \'id\' 가 없어요'}
-#             {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
-#             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
-#             {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
-#             {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-#             {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
-#             {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
-#     """
-#     func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-#     if request.method == 'POST':
-#         rqst = json.loads(request.body.decode("utf-8"))
-#     else:
-#         rqst = request.GET
-#     for key in rqst.keys():
-#         logSend('  ', key, ': ', rqst[key])
-#
-#     passer_id = AES_DECRYPT_BASE64(rqst['employee_id'])
-#     dt = rqst['dt']
-#     dt_begin = datetime.datetime.strptime(dt+' 00:00:00', '%Y-%m-%d %H:%M:%S')
-#     dt_end = dt_begin + datetime.timedelta(days=1)
-#     logSend(dt_begin, '  ', dt_end)
-#
-#     pass_history_list = Pass_History.objects.filter(passer_id=passer_id, dt_in__gt=dt_begin, dt_in__lt=dt_end)
-#     if len(pass_history_list) > 0:
-#         pass_history = pass_history_list[0]
-#         day_work = {'dt_begin_beacon': dt_null(pass_history.dt_in),
-#                     'dt_end_beacon': dt_null(pass_history.dt_out),
-#                     'dt_begin_touch': dt_null(pass_history.dt_in_verify),
-#                     'dt_end_touch': dt_null(pass_history.dt_out_verify),
-#                     'action': pass_history.action,
-#                     }
-#         func_end_log(func_name)
-#         return REG_200_SUCCESS.to_json_response({'dt': day_work})
-#
-#     pass_history = Pass_History(passer_id=passer_id,
-#                                 action=110,
-#                                 minor=0,
-#                                 )
-#
-#     # passer = Passer.objects.get(id=passer_id)
-#     passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=dt_begin, dt_reg__lt=dt_end, is_in=1)
-#     if len(passes) > 0:
-#         begin_beacon = passes[0]
-#         # logSend(begin_beacon.dt_reg, ' ', begin_beacon.is_in)
-#         pass_history.dt_in = begin_beacon.dt_reg
-#     else:
-#         pass_history.dt_in = dt_begin + datetime.timedelta(hours=8, minutes=20)
-#
-#     passes = Pass.objects.filter(passer_id=passer_id, dt_reg__gt=pass_history.dt_in + datetime.timedelta(hours=5),
-#                                  dt_reg__lt=pass_history.dt_in + datetime.timedelta(hours=14), is_in=0)
-#     if len(passes) > 0:
-#         end_beacon = passes[len(passes) - 1]
-#         # logSend(end_beacon.dt_reg, ' ', end_beacon.is_in)
-#         pass_history.dt_out = end_beacon.dt_reg
-#     else:
-#         pass_history.dt_out = pass_history.dt_in + datetime.timedelta(hours=9, minutes=30)
-#
-#     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=dt_begin, dt_verify__lt=dt_end, is_in=1)
-#     if len(passes) > 0:
-#         begin_button = passes[0]
-#         # logSend(begin_button.dt_verify, ' ', begin_button.is_in)
-#         pass_history.dt_in_verify = begin_button.dt_verify
-#     else:
-#         pass_history.dt_in_verify = dt_begin + datetime.timedelta(hours=8, minutes=25)
-#
-#     passes = Pass.objects.filter(passer_id=passer_id, dt_verify__gt=pass_history.dt_in_verify, dt_verify__lt=pass_history.dt_in_verify + datetime.timedelta(days=1), is_in=0)
-#     if len(passes) > 0:
-#         end_button = passes[0]
-#         # logSend(end_button.dt_verify, ' ', end_button.is_in)
-#         pass_history.dt_out_verify = end_button.dt_verify
-#     else:
-#         pass_history.dt_out_verify = pass_history.dt_in + datetime.timedelta(hours=10)
-#
-#     pass_history.save()
-#
-#     day_work = {'dt_begin_beacon':dt_null(pass_history.dt_in),
-#                 'dt_end_beacon':dt_null(pass_history.dt_out),
-#                 'dt_begin_touch':dt_null(pass_history.dt_in_verify),
-#                 'dt_end_touch':dt_null(pass_history.dt_out_verify),
-#                 'action':pass_history.action,
-#                 }
-#     func_end_log(func_name)
-#     return REG_200_SUCCESS.to_json_response({'dt':day_work})
 
 
 @cross_origin_read_allow
@@ -2516,18 +2328,14 @@ def my_work_histories_for_customer(request):
             {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
             {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_!', 'dt'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     employee_id = parameter_check['parameters']['employee_id']
     work_id = parameter_check['parameters']['work_id']
@@ -2535,22 +2343,25 @@ def my_work_histories_for_customer(request):
 
     passers = Passer.objects.filter(id=employee_id)
     if len(passers) == 0:
-        return status422(func_name, {'message': 'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
+        return status422(request.get_full_path(),
+                         {'message': 'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
     elif len(passers) > 1:
-        logError(func_name, ' Passer(id:{})가 중복되었다.'.format(employee_id))
+        logError(request.get_full_path(), ' Passer(id:{})가 중복되었다.'.format(employee_id))
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(func_name, {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
+        return status422(request.get_full_path(),
+                         {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(func_name, ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
+        logError(request.get_full_path(), ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     #
     # 이 근로자의 과거 근로 기록을 보여준다.
     # ? 이 근로자의 현재 업무 과거 기록만 보여줘야하지 않나? - work_id 이용 필요
     #
-    dt_begin = str_to_datetime(year_month)  # datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+    dt_begin = str_to_datetime(
+        year_month)  # datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
     dt_today = datetime.datetime.now()
     if dt_today.strftime('%Y-%m') == year_month:
         # 근무 내역 요청이 이번달이면 근무 마지막 날을 오늘로 한다.
@@ -2575,7 +2386,8 @@ def my_work_histories_for_customer(request):
         year_month_day_list.append(day.strftime('%Y-%m-%d'))
         day = day + datetime.timedelta(days=1)
     logSend(year_month_day_list)
-    pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__in=year_month_day_list).order_by('year_month_day')
+    pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                   year_month_day__in=year_month_day_list).order_by('year_month_day')
     workings = []
     # overtime_values = [-1., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
     for pass_record in pass_record_list:
@@ -2614,44 +2426,42 @@ def my_work_histories_for_customer(request):
     #
     # result = virtual_working_data(dt_begin, dt_end)
     #
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
-def virtual_working_data(dt_begin : datetime, dt_end : datetime)->dict:
+def virtual_working_data(dt_begin: datetime, dt_end: datetime) -> dict:
     # print(dt_begin.strftime('%Y-%m-%d %H:%M:%S'), ' ', dt_end.strftime('%Y-%m-%d %H:%M:%S'))
     year_month = dt_begin.strftime('%Y-%m')
     last_day = dt_end - datetime.timedelta(hours=1)
     # print(last_day)
     workings = []
     for day in range(1, int(last_day.strftime('%d')) + 1):
-        if random.randint(1,7) > 5: # 7일에 5일 꼴로 쉬는 날
+        if random.randint(1, 7) > 5:  # 7일에 5일 꼴로 쉬는 날
             continue
         working = {}
         action = 0
-        if random.randint(1,30) > 27: # 한달에 3번꼴로 지각
+        if random.randint(1, 30) > 27:  # 한달에 3번꼴로 지각
             action = 200
-            working['dt_begin'] = year_month + '-%02d'%day + ' 08:45:00'
-        else :
+            working['dt_begin'] = year_month + '-%02d' % day + ' 08:45:00'
+        else:
             action = 100
-            working['dt_begin'] = year_month + '-%02d'%day + ' 08:25:00'
-        if random.randint(1,30) > 29: # 한달에 1번꼴로 조퇴
+            working['dt_begin'] = year_month + '-%02d' % day + ' 08:25:00'
+        if random.randint(1, 30) > 29:  # 한달에 1번꼴로 조퇴
             action += 20
-            working['dt_end'] = year_month + '-%02d'%day + ' 15:33:00'
-        elif random.randint(0,30) > 20 : # 일에 한번꼴로 연장 근무
+            working['dt_end'] = year_month + '-%02d' % day + ' 15:33:00'
+        elif random.randint(0, 30) > 20:  # 일에 한번꼴로 연장 근무
             action += 40
-            working['dt_end'] = year_month + '-%02d'%day + ' 18:35:00'
+            working['dt_end'] = year_month + '-%02d' % day + ' 18:35:00'
         else:
             action += 10
             working['dt_end'] = year_month + '-%02d' % day + ' 17:35:00'
-        outing = (random.randint(0,30) - 28) % 3 # 한달에 2번꼴로 외출
+        outing = (random.randint(0, 30) - 28) % 3  # 한달에 2번꼴로 외출
         outings = []
         if outing > 0:
             for i in range(outing):
                 # print(i)
-                outings.append({'dt_begin':year_month + '-%02d' % day + ' ' + str(i+13) + ':00:00',
-                               'dt_end':year_month + '-%02d' % day + ' ' + str(i+13) + ':30:00'})
+                outings.append({'dt_begin': year_month + '-%02d' % day + ' ' + str(i + 13) + ':00:00',
+                                'dt_end': year_month + '-%02d' % day + ' ' + str(i + 13) + ':30:00'})
         working['outing'] = outings
         working['action'] = action + outing
         # print(working)
@@ -2713,25 +2523,21 @@ def my_work_histories(request):
             ]
         }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-            'employee_id': rqst["passer_id"],
-            'dt': rqst['dt'],
-        }
+        'employee_id': rqst["passer_id"],
+        'dt': rqst['dt'],
+    }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
     logSend(response_employee)
 
     result = response_employee.json()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2765,25 +2571,21 @@ def my_work_records(request):
             ]
         }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-            'employee_id': rqst["passer_id"],
-            'work_id': AES_ENCRYPT_BASE64('-1'),
-            'dt': rqst['dt'],
-        }
+        'employee_id': rqst["passer_id"],
+        'work_id': AES_ENCRYPT_BASE64('-1'),
+        'dt': rqst['dt'],
+    }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
 
     result = response_employee.json()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -2858,13 +2660,10 @@ def analysys(request):
               "message": "정상적으로 처리되었습니다."
             }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
@@ -2895,7 +2694,6 @@ def analysys(request):
                             'dt_reg': pass_['dt_reg'],
                             'dt_verify': pass_['dt_verify']}
                 dic_passer[key]['pass'].append(new_pass)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(dic_passer)
 
 
@@ -2912,13 +2710,10 @@ def rebuild_pass_history(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     passes = Pass.objects.filter()
 
@@ -2931,16 +2726,17 @@ def rebuild_pass_history(request):
             passer_id = pass_.passer_id
             dt = pass_.dt_verify
             # 출퇴근버튼 눌린 시간 이전 출입시간 검색
-            before_pass = Pass.objects\
+            before_pass = Pass.objects \
                 .filter(passer_id=passer_id,
-                        dt_reg__lt = dt,
-                        dt_reg__gt = dt - datetime.timedelta(minutes=30)) \
-                    .values('id',
+                        dt_reg__lt=dt,
+                        dt_reg__gt=dt - datetime.timedelta(minutes=30)) \
+                .values('id',
                         'passer_id',
                         'is_in',
                         'dt_reg',
-                        'dt_verify')\
-                .order_by('-dt_reg').first()
+                        'dt_verify') \
+                .order_by('-dt_reg')\
+                .first()
             if before_pass is None:
                 # 출퇴근버튼 눌린 시간 이후 출입시간 검색
                 before_pass = Pass.objects \
@@ -2956,11 +2752,11 @@ def rebuild_pass_history(request):
                 if before_pass is None:
                     # error_passes.append({'id':pass_.id, 'passer_id':pass_.passer_id, 'dt_verify':pass_.dt_verify})
                     # continue
-                    before_pass = {'id':-1,
-                                   'passer_id':passer_id,
-                                   'is_in':pass_.is_in,
-                                   'dt_reg':None,
-                                   'dt_verify':None}
+                    before_pass = {'id': -1,
+                                   'passer_id': passer_id,
+                                   'is_in': pass_.is_in,
+                                   'dt_reg': None,
+                                   'dt_verify': None}
             # print('  ', before_pass['id'], before_pass['is_in'], before_pass['dt_reg'].strftime("%Y-%m-%d %H:%M:%S"))
 
             # before_pass['dt_verify'] = pass_.dt_verify
@@ -2975,12 +2771,12 @@ def rebuild_pass_history(request):
             # if time_interval.seconds > (60 * 60 * 12):
             #     long_interval_list.append(before_pass)
 
-    #
-    #         print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
-    #               before_pass['dt_verify'])
-    #         # for pass__ in before_pass:
-    #         #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
-            if pass_.is_in: # in 이면
+            #
+            #         print('   ', before_pass['id'], before_pass['passer_id'], before_pass['is_in'], before_pass['dt_reg'],
+            #               before_pass['dt_verify'])
+            #         # for pass__ in before_pass:
+            #         #     print('   ', pass__['id'], pass__['passer_id'], pass__['is_in'], pass__['dt_reg'], pass__['dt_verify'])
+            if pass_.is_in:  # in 이면
                 pass_history = Pass_History(
                     passer_id=passer_id,
                     action=100,
@@ -3004,8 +2800,8 @@ def rebuild_pass_history(request):
                 pass_history.minor = 0
                 pass_history.save()
     print(len(arr_pass_history), len(error_passes))
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'pass_histories':arr_pass_history, 'long_interval_list':long_interval_list, 'error_passes': error_passes})
+    return REG_200_SUCCESS.to_json_response(
+        {'pass_histories': arr_pass_history, 'long_interval_list': long_interval_list, 'error_passes': error_passes})
 
 
 @cross_origin_read_allow
@@ -3021,13 +2817,10 @@ def beacon_status(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     dic_passer = get_dic_passer()
     pass_histories = Pass_History.objects.filter()
@@ -3037,23 +2830,22 @@ def beacon_status(request):
         if ph.dt_in is not None:
             ph.dt_in += datetime.timedelta(hours=9)
         if ph.dt_in_verify is not None:
-        	ph.dt_in_verify += datetime.timedelta(hours=9)
+            ph.dt_in_verify += datetime.timedelta(hours=9)
         if ph.dt_out is not None:
-        	ph.dt_out += datetime.timedelta(hours=9)
+            ph.dt_out += datetime.timedelta(hours=9)
         if ph.dt_out_verify is not None:
-        	ph.dt_out_verify += datetime.timedelta(hours=9)
-        view_ph = {'passer':dic_passer[ph.passer_id]['name'],
-                   'action':ph.action,
+            ph.dt_out_verify += datetime.timedelta(hours=9)
+        view_ph = {'passer': dic_passer[ph.passer_id]['name'],
+                   'action': ph.action,
                    'dt_in': '...' if ph.dt_in is None else ph.dt_in.strftime("%Y-%m-%d %H:%M:%S"),
                    'dt_in_verify': '...' if ph.dt_in_verify is None else ph.dt_in_verify.strftime("%Y-%m-%d %H:%M:%S"),
                    'dt_out': '...' if ph.dt_out is None else ph.dt_out.strftime("%Y-%m-%d %H:%M:%S"),
-                   'dt_out_verify': '...' if ph.dt_out_verify is None else ph.dt_out_verify.strftime("%Y-%m-%d %H:%M:%S"),
-                   'minor':0
+                   'dt_out_verify': '...' if ph.dt_out_verify is None else ph.dt_out_verify.strftime(
+                       "%Y-%m-%d %H:%M:%S"),
+                   'minor': 0
                    }
         arr_pass_histories.append(view_ph)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'pass_histories': arr_pass_histories})
-
 
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
@@ -3084,8 +2876,6 @@ def beacon_status(request):
 
     beacons = Beacon.objects.filter().values('id', 'uuid', 'major', 'minor', 'dt_last').order_by('major')
     arr_beacon = [beacon for beacon in beacons]
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'beacons': arr_beacon})
 
 
@@ -3102,30 +2892,26 @@ def tk_employee(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     passers = []
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
         passer_list = Passer.objects.filter(pNo=pNo)
         if len(passer_list) == 0:
-            func_end_log(func_name)
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(pNo))})
     if 'name' in rqst:
         name = rqst['name']
         employee_list = Employee.objects.filter(name=name)
         if len(employee_list) == 0:
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(name))})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
+                {'message': '{} not found'.format(phone_format(name))})
         passer_list = Passer.objects.filter(employee_id__in=[employee.id for employee in employee_list])
     for passer in passer_list:
         passer_dict = {
@@ -3155,8 +2941,6 @@ def tk_employee(request):
                 works.append(work_dict)
             passer_dict['works'] = works
     passers.append(passer_dict)
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'passers': passers})
 
 
@@ -3173,24 +2957,19 @@ def tk_pass(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     passes = []
     pass_records = []
     if 'passer_id' in rqst:
         passer_id = rqst['passer_id']
     else:
-        func_end_log(func_name)
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if 'dt_begin' in rqst:
@@ -3198,15 +2977,18 @@ def tk_pass(request):
         if 'dt_end' in rqst:
             dt_end = str_to_datetime(rqst['dt_end'])
             pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin, dt__lt=dt_end).order_by('dt')
-            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin, year_month_day__lt=dt_end).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin,
+                                                           year_month_day__lt=dt_end).order_by('year_month_day')
         else:
             pass_list = Pass.objects.filter(passer_id=passer_id, dt__gt=dt_begin).order_by('dt')
-            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__gt=dt_begin).order_by(
+                'year_month_day')
     else:
         if 'dt_end' in rqst:
             dt_end = str_to_datetime(rqst['dt_end'])
             pass_list = Pass.objects.filter(passer_id=passer_id, dt__lt=dt_end).order_by('dt')
-            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__lt=dt_end).order_by('year_month_day')
+            pass_record_list = Pass_History.objects.filter(passer_id=passer_id, year_month_day__lt=dt_end).order_by(
+                'year_month_day')
         else:
             pass_list = Pass.objects.filter(passer_id=passer_id).order_by('dt')
             pass_record_list = Pass_History.objects.filter(passer_id=passer_id).order_by('year_month_day')
@@ -3231,8 +3013,6 @@ def tk_pass(request):
             'work_id': pass_record.work_id,
         }
         pass_records.append(pass_record_dict)
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'passes': passes, 'pass_record': pass_records})
 
 
@@ -3247,23 +3027,18 @@ def tk_passer_list(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-    #     func_end_log(func_name)
+    #     func_end_log(request.get_full_path())
     #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
     passer_list = Passer.objects.all()
     passers = {passer.pNo: passer.id for passer in passer_list}
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'passers': passers})

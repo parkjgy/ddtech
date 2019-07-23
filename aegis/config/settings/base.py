@@ -210,6 +210,6 @@ SWAGGER_SETTINGS = {
 # except ImportError:
 #     pass
 SESSION_COOKIE_AGE = 1800           # SESSION TIMEOUT 정의 ( 60s * 30m )
-SESSION_SAVE_EVERY_REQUEST = True   # 새로운 요청이 있을 때마다 카운트 새로 시작?
+SESSION_SAVE_EVERY_REQUEST = False  # 새로운 요청이 있을 때마다 카운트 새로 시작?
 
 REQUEST_TIME_GAP = 5.

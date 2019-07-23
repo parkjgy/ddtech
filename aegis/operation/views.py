@@ -15,7 +15,6 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import func_begin_log, func_end_log
 from config.common import hash_SHA256, no_only_phone_no, phone_format, is_parameter_ok
 from config.common import rMin, str_to_datetime, str_to_dt, get_client_ip
 from config.common import Works, status422
@@ -52,21 +51,16 @@ import inspect
 
 class Env(object):
     def __init__(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
         self.start()
-        # func_end_log(func_name)
 
     def __del__(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         logSend(' <<< Environment class delete')
-        # func_end_log(func_name)
 
     def loadEnvironment(self):
-        func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if len(Environment.objects.filter()) == 0:
             newEnv = Environment(
                 # dt=datetime.datetime.now() - timedelta(days=3),
@@ -85,7 +79,7 @@ class Env(object):
         # for env in envs:
         #     logSend(env.id, env.dt)
         envs = Environment.objects.filter(dt__lt=self.dt_reload).order_by('-id')
-        note = '    >>> no of environment = ' + str(len(envs))
+        # note = '    >>> no of environment = ' + str(len(envs))
         # logSend(note)
         self.curEnv = envs[0]
         logSend('   Env: ')
@@ -93,7 +87,8 @@ class Env(object):
             if key in ['_state', 'id']:
                 continue
             logSend('   >>> {}: {}{}'.format(key, ' ' * (22 - len(key)), self.curEnv.__dict__[key]))
-        logSend('   >>> REQUEST_TIME_GAP:       {}sec (이 시간보다 짧게 API를 호출하면 에러처리한다. settings/base.py)'.format(str(settings.REQUEST_TIME_GAP)))
+        logSend('   >>> REQUEST_TIME_GAP:       {}sec (이 시간보다 짧게 API를 호출하면 에러처리한다. settings/base.py)'.format(
+            str(settings.REQUEST_TIME_GAP)))
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + self.curEnv.timeCheckServer
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
@@ -103,33 +98,24 @@ class Env(object):
         logSend('   >>> next Env load time:     {}'.format(self.dt_reload.strftime("%Y-%m-%d %H:%M:%S")))
         logSend('   >>> current time:           {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         settings.IS_TEST = False
-        func_end_log(func_name)
         return
 
     def start(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if not self.is_running:
             self.loadEnvironment()
             self.is_running = True
-        # func_end_log(func_name)
 
     def stop(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         self.is_running = False
-        # func_end_log(func_name)
 
     def current(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
         if self.dt_reload < datetime.datetime.now():
             self.is_running = False
             self.loadEnvironment()
             self.is_running = True
-        # func_end_log(func_name)
         return self.curEnv
 
     def self(self):
-        # func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-        # func_end_log(func_name)
         return self
 
 
@@ -144,13 +130,10 @@ def testEnv(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     global env
     result = {key: dt_form(env.curEnv.__dict__[key]) for key in env.curEnv.__dict__.keys() if not key.startswith('_')}
@@ -160,7 +143,6 @@ def testEnv(request):
     # result['dt'] = env.current().dt.strftime("%Y-%m-%d %H:%M:%S")
     # result['timeCheckServer'] = env.current().timeCheckServer
 
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -180,21 +162,19 @@ def currentEnv(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     envirenments = Environment.objects.filter().order_by('-dt')
     array_env = []
     for envirenment in envirenments:
-        new_env = { key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if not key.startswith('_') }
+        new_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+                   not key.startswith('_')}
         array_env.append(new_env)
-    current_env = { key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if not key.startswith('_') }
-    func_end_log(func_name)
+    current_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+                   not key.startswith('_')}
     return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
 
 
@@ -221,13 +201,10 @@ def updateEnv(request):
         STATUS 524
             {'message': '권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     global env
 
@@ -237,7 +214,6 @@ def updateEnv(request):
     worker = Staff.objects.get(id=worker_id)
     if not (worker.id in [1, 2]):
         logSend('524')
-        func_end_log(func_name)
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     is_update = False
@@ -247,7 +223,7 @@ def updateEnv(request):
             dt = datetime.datetime.strptime('2019-01-01 ' + rqst['timeCheckServer'], "%Y-%m-%d %H:%M:%S")
             timeCheckServer = dt.strftime("%H:%M:%S")
         except Exception as err:
-            return status422(func_name, {'message': 'timeCheckServer 양식이 틀렸습니다.'})
+            return status422(request.get_full_path(), {'message': 'timeCheckServer 양식이 틀렸습니다.'})
     else:
         timeCheckServer = env.curEnv.timeCheckServer
 
@@ -261,7 +237,7 @@ def updateEnv(request):
             try:
                 dt = datetime.datetime.strptime(rqst[dt_type], "%Y-%m-%d %H:%M:%S")
             except Exception as err:
-                return status422(func_name, {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
+                return status422(request.get_full_path(), {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
             new_env[dt_type] = dt
             is_update = True
         else:
@@ -278,9 +254,8 @@ def updateEnv(request):
             new_env_model.__dict__[key] = new_env[key]
         # new_env_model.save()
         env.start()
-        logSend('  new_env_model: {}'.format({key: new_env_model.__dict__[key] for key in new_env_model.__dict__.keys()}))
-
-    func_end_log(func_name)
+        logSend(
+            '  new_env_model: {}'.format({key: new_env_model.__dict__[key] for key in new_env_model.__dict__.keys()}))
     return REG_200_SUCCESS.to_json_response({'result': new_env})
 
 
@@ -302,32 +277,19 @@ def reg_staff(request):
             STATUS 409
                 {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
-    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-    if (request.session['func_name'] == func_name) and \
-            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-        func_end_log(func_name)
-        return REG_409_CONFLICT.to_json_response()
-    request.session['func_name'] = func_name
-    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    request.session.save()
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
     # try:
     #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-    #         func_end_log(func_name)
+    #         func_end_log(request.get_full_path())
     #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
     # except Exception as e:
-    #     func_end_log(func_name)
+    #     func_end_log(request.get_full_path())
     #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
     phone_no = no_only_phone_no(rqst['pNo'])
@@ -337,7 +299,6 @@ def reg_staff(request):
 
     staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
     if len(staffs) > 0:
-        func_end_log(func_name)
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
     new_staff = Staff(
         login_id=id_,
@@ -348,84 +309,7 @@ def reg_staff(request):
     )
     new_staff.save()
     logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
-
-# class OperationView(APIView):
-#     staff_login_form = AutoSchema(manual_fields=[
-#         coreapi.Field("pNo", required=True, location="form", type="string", description="partner number field",
-#                       example="010-2557-3555"),
-#         coreapi.Field("id", required=True, location="form", type="string", description="id field", example="thinking"),
-#         coreapi.Field("pw", required=True, location="form", type="string", description="password field",
-#                       example="a~~~8282")]
-#     )
-#
-#     @api_view(['POST'])
-#     @schema(staff_login_form)
-#     @cross_origin_read_allow
-#     @session_is_none_403_with_operation
-#     def reg_staff(request):
-#         """
-#         운영 직원 등록
-#         - 파라미터가 빈상태를 검사하지 않는다. (호출하는 쪽에서 검사)
-#             http://0.0.0.0:8000/operation/reg_staff?pNo=010-2557-3555&id=thinking&pw=a~~~8282&master=0eT00W2FDHML2aLERQX2UA
-#             POST
-#                 {
-#                     'pNo': '010-1111-2222',
-#                     'id': 'thinking',
-#                     'pw': 'a~~~8282'
-#                 }
-#             response
-#                 STATUS 200
-#                 STATUS 409
-#                     {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
-#         """
-#         func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-#         if request.method == 'POST':
-#             rqst = json.loads(request.body.decode("utf-8"))
-#         else:
-#             rqst = request.GET
-#         for key in rqst.keys():
-#             logSend('  ', key, ': ', rqst[key])
-#         # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-#         if (request.session['func_name'] == func_name) and \
-#                 (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-#                  datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-#             logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-#             func_end_log(func_name)
-#             return REG_409_CONFLICT.to_json_response()
-#         request.session['func_name'] = func_name
-#         request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-#         request.session.save()
-#
-#         worker_id = request.session['op_id'][5:]
-#         worker = Staff.objects.get(id=worker_id)
-#         # try:
-#         #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-#         #         func_end_log(func_name)
-#         #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
-#         # except Exception as e:
-#         #     func_end_log(func_name)
-#         #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
-#
-#         phone_no = no_only_phone_no(rqst['pNo'])
-#         id_ = rqst['id']
-#         pw = rqst['pw']
-#         logSend('--- 등록 요청 id:{}, pw:{}'.format(id_, pw))
-#
-#         staffs = Staff.objects.filter(pNo=phone_no, login_id=id_)
-#         if len(staffs) > 0:
-#             func_end_log(func_name)
-#             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response()
-#         new_staff = Staff(
-#             login_id=id_,
-#             login_pw=hash_SHA256(pw),
-#             pNo=phone_no
-#         )
-#         new_staff.save()
-#         logSend('--- 등록 완료 id:{}, pw:{}'.format(new_staff.login_id, new_staff.pNo))
-#         func_end_log(func_name)
-#         return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -446,26 +330,21 @@ def logControl(request):
             {'message':'ClientError: parameter \'action\' 가 없어요'}
             {'message': '처리할 수 없는 action(%s) 입니다.' % action}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     if not worker.login_id == 'thinking':
-        func_end_log(func_name)
         return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
 
     parameter_check = is_parameter_ok(rqst, ['action'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
-    action =  parameter_check['parameters']['action']
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    action = parameter_check['parameters']['action']
     if action == 'Start':
         settings.IS_LOG = True
     elif action == 'Stop':
@@ -473,9 +352,7 @@ def logControl(request):
     # elif action == 'Remove':
     #     # aegis.log 파일 삭제
     else:
-        func_end_log(func_name)
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '처리할 수 없는 action(%s) 입니다.' % action})
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -498,20 +375,16 @@ def check_version(request):
         STATUS 520
         {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     version = rqst['v']
     items = version.split('.')
     ver_dt = items[len(items) - 1]
     logSend('  ver_dt: {}'.format(ver_dt))
     if len(ver_dt) < 6:
-        func_end_log(func_name)
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
 
     dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
@@ -520,10 +393,7 @@ def check_version(request):
     logSend('  dt_version: {}'.format(dt_version))
     if dt_version < dt_check:
         logSend('  dt_version < dt_check')
-        func_end_log(func_name)
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -545,23 +415,19 @@ def login(request):
         STATUS 422
             {'message': 'invalid parameter'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     if 'id' not in rqst or 'pw' not in rqst:
-        return status422(func_name, {'message': 'invalid parameter'})
+        return status422(request.get_full_path(), {'message': 'invalid parameter'})
 
     id_ = rqst['id']
     pw_ = rqst['pw']
 
     staffs = Staff.objects.filter(login_id=id_, login_pw=hash_SHA256(pw_))
     if len(staffs) == 0:
-        func_end_log(func_name)
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response()
     staff = staffs[0]
     staff.is_login = True
@@ -570,10 +436,9 @@ def login(request):
 
     # 추후 0000은 permission 에 할당
     request.session['op_id'] = 'O0000' + str(staff.id)
-    request.session['func_name'] = func_name
+    request.session['request.get_full_path()'] = request.get_full_path()
     request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     request.session.save()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -587,9 +452,7 @@ def logout(request):
         STATUS 200
             {'message':'이미 로그아웃되었습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.session is None or 'op_id' not in request.session:
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
     staff = Staff.objects.get(id=request.session['op_id'][5:])
     staff.is_login = False
@@ -597,11 +460,10 @@ def logout(request):
     staff.save()
     del request.session['op_id']
     del request.session['dt_last']
-    del request.session['func_name']
+    del request.session['request.get_full_path()']
     request.session.save()
 
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -638,23 +500,10 @@ def update_staff(request):
         STATUS 542
             {'message': '아이디가 중복됩니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
-    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-    if (request.session['func_name'] == func_name) and \
-            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-        func_end_log(func_name)
-        return REG_409_CONFLICT.to_json_response()
-    request.session['func_name'] = func_name
-    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    request.session.save()
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -674,16 +523,14 @@ def update_staff(request):
     staff = worker
     # if worker.id != staff.id:
     #     staff.login_pw = hash_SHA256('happy_day82')
-    #     func_end_log(func_name)
+    #     func_end_log(request.get_full_path())
     #     return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
 
     if hash_SHA256(before_pw) != staff.login_pw:
-        func_end_log(func_name)
         return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
 
     if len(login_id) > 0:
         if (Staff.objects.filter(login_id=login_id)) > 0:
-            func_end_log(func_name)
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디가 중복됩니다.'})
         staff.login_id = login_id
     if len(login_pw) > 0:
@@ -703,7 +550,6 @@ def update_staff(request):
     if len(email) > 0:
         staff.email = email
     staff.save()
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -721,22 +567,15 @@ def list_staff(request):
         STATUS 503
             {'message': '직원이 아닙니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
-    # if rqst.get('master') is None:
-
-    print(request.session.keys())
-    for key in request.session.keys():
-        print(key, ':', request.session[key])
+    logSend('  session: {}'.format({key: request.session[key] for key in request.session.keys()}))
 
     staffs = Staff.objects.filter()
     arr_staff = []
@@ -752,8 +591,8 @@ def list_staff(request):
             'is_worker': True if staff.id == worker.id else False
         }
         arr_staff.append(r_staff)
-    print(arr_staff)
-    func_end_log(func_name)
+    logSend(arr_staff)
+    # func_end_log(request.get_full_path())
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
 
@@ -779,23 +618,10 @@ def reg_customer(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
-    # logSend('  before func: {} now: {} vs last: {}'.format(request.session['func_name'], datetime.datetime.now(), request.session['dt_last']))
-    if (request.session['func_name'] == func_name) and \
-            (datetime.datetime.strptime(request.session['dt_last'], "%Y-%m-%d %H:%M:%S") + \
-             datetime.timedelta(seconds=settings.REQUEST_TIME_GAP) > datetime.datetime.now()):
-        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다.'.format(func_name))
-        func_end_log(func_name)
-        return REG_409_CONFLICT.to_json_response()
-    request.session['func_name'] = func_name
-    request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    request.session.save()
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -815,13 +641,12 @@ def reg_customer(request):
     }
     response_customer = requests.post(settings.CUSTOMER_URL + 'reg_customer_for_operation', json=new_customer_data)
     if response_customer.status_code != 200:
-        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
 
     if settings.IS_TEST:
-        func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response({'message': ['id/pw to SMS(실제로 보내지는 않음)', response_customer_json['login_id'], 'happy_day!!!']})
+        return REG_200_SUCCESS.to_json_response(
+            {'message': ['id/pw to SMS(실제로 보내지는 않음)', response_customer_json['login_id'], 'happy_day!!!']})
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -832,12 +657,10 @@ def reg_customer(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     logSend('SMS Result: ', r.json())
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.'})
 
 
@@ -855,13 +678,10 @@ def sms_customer_staff(request):
     response
         STATUS 200
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -873,13 +693,13 @@ def sms_customer_staff(request):
     response_customer = requests.post(settings.CUSTOMER_URL + 'sms_customer_staff_for_operation',
                                       json=new_customer_data)
     if response_customer.status_code != 200:
-        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     response_customer_json = response_customer.json()
 
     if settings.IS_TEST:
-        func_end_log(func_name)
-        return REG_200_SUCCESS.to_json_response({'message': 'id/pw to SMS(실제로 보내지는 않음)', 'login_id':response_customer_json['login_id'], 'first_pw': 'happy_day!!!' })
+        return REG_200_SUCCESS.to_json_response(
+            {'message': 'id/pw to SMS(실제로 보내지는 않음)', 'login_id': response_customer_json['login_id'],
+             'first_pw': 'happy_day!!!'})
 
     rData = {
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
@@ -890,13 +710,12 @@ def sms_customer_staff(request):
         'msg': '반갑습니다.\n'
                '\'이지체크\'예요~~\n'
                '아이디 ' + response_customer_json['login_id'] + '\n'
-               '비밀번호 happy_day!!!'
+                                                             '비밀번호 happy_day!!!'
     }
     r = requests.post('https://apis.aligo.in/send/', data=rData)
     logSend(r.json())
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.', 'login_id':response_customer_json['login_id']})
+    return REG_200_SUCCESS.to_json_response(
+        {'message': 'SMS 로 아이디와 초기회된 비밀번호를 보냈습니다.', 'login_id': response_customer_json['login_id']})
 
 
 @cross_origin_read_allow
@@ -936,13 +755,10 @@ def list_customer(request):
               ]
             }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
@@ -961,7 +777,6 @@ def list_customer(request):
     }
     response_customer = requests.get(settings.CUSTOMER_URL + 'list_customer_for_operation', params=json_data)
     if response_customer.status_code != 200:
-        func_end_log(func_name)
         return ReqLibJsonResponse(response_customer)
     customer_types = ['발주업체', '파견업체', '협력업체']
     arr_customer = response_customer.json()['customers']
@@ -970,7 +785,6 @@ def list_customer(request):
         del customer['corp_name']
         del customer['id']
         customer['type'] = customer_types[customer['type'] - 10]
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'customers': arr_customer})
 
 
@@ -1187,20 +1001,16 @@ def dt_android_upgrade(request):
         STATUS 200
             { 'dt_update':'2019-02-11' }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     # worker_id = request.session['op_id'][5:]
     # worker = Staff.objects.get(id=worker_id)
 
     global env
     result = {'dt_update': env.curEnv.dt_android_upgrade.strftime('%Y-%m-%d %H:%M:%S')}
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1217,28 +1027,24 @@ def dt_upgrade(request):
         STATUS 200
             { 'dt_update':'2019-02-11' }
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     # worker_id = request.session['op_id'][5:]
     # worker = Staff.objects.get(id=worker_id)
     if 'type' not in rqst:
-        return status422(func_name, {'message': 'required \'type\''})
+        return status422(request.get_full_path(), {'message': 'required \'type\''})
     type = 'dt_' + rqst['type'] + '_upgrade'
 
     global env
 
     # logSend('  type: {}, env: {}'.format(type, [key for key in env.current().__dict__.keys()]))
     if type not in env.current().__dict__.keys():
-        return status422(func_name, {'message': 'type is only: android, android_mng, iOS, iOS_mng'})
+        return status422(request.get_full_path(), {'message': 'type is only: android, android_mng, iOS, iOS_mng'})
 
     result = {'dt_update': env.curEnv.__dict__[type].strftime('%Y-%m-%d %H:%M:%S')}
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1255,21 +1061,17 @@ def customer_test_step_1(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     # 고객서버 테이블 삭제 및 초기화
-    key = {'key':rqst['key']}
+    key = {'key': rqst['key']}
     response = requests.post(settings.CUSTOMER_URL + 'table_reset_and_clear_for_operation', json=key)
     logSend(response.json())
 
@@ -1292,8 +1094,6 @@ def customer_test_step_1(request):
     # s = requests.session()
     # r = s.post(settings.OPERATION_URL + 'reg_staff', json=login_data)
     # result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -1310,18 +1110,14 @@ def customer_test_step_2(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -1331,7 +1127,7 @@ def customer_test_step_2(request):
                   }
     s = requests.session()
     r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
     if r.status_code == 530:
         staff = Staff.objects.get(id=1)
         staff.login_pw = hash_SHA256(login_data["pw"])
@@ -1348,11 +1144,10 @@ def customer_test_step_2(request):
     settings.IS_TEST = True
     r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
     settings.IS_TEST = False
-    result.append({'url': r.url, 'POST':customer_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1368,18 +1163,14 @@ def customer_test_step_3(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -1389,7 +1180,7 @@ def customer_test_step_3(request):
                   }
     s = requests.session()
     r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 운영 : 고객사 리스트
     customer_data = {'customer_name': '대덕테크',
@@ -1426,11 +1217,11 @@ def customer_test_step_3(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     if r.status_code == 200:
         # 고객 : 자기 정보 수정 - login_id
-        staff_data = {'staff_id':customer_staff_id,
+        staff_data = {'staff_id': customer_staff_id,
                       'new_login_id': 'thinking',
                       'before_pw': 'happy_day!!!',
                       'login_pw': 'parkjong'
@@ -1439,8 +1230,7 @@ def customer_test_step_3(request):
         result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1460,18 +1250,14 @@ def customer_test_step_4(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -1481,36 +1267,36 @@ def customer_test_step_4(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 자기 정보 수정 - 직책
     staff_data = {'before_pw': 'parkjong',
                   'position': '이사',
                   }
     r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
-    result.append({'url': r.url, 'POST':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 직원 등록
     staff_data = {'name': '이요셉',
                   'login_id': 'hello',
-                  'position': '책임연구원',     # option 비워서 보내도 됨
+                  'position': '책임연구원',  # option 비워서 보내도 됨
                   'department': '개발팀',  # option 비워서 보내도 됨
-                  'pNo': '010-2450-5942', # '-'를 넣어도 삭제되어 저장 됨
+                  'pNo': '010-2450-5942',  # '-'를 넣어도 삭제되어 저장 됨
                   'email': 'hello@ddtechi.com',
                   }
     r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
-    result.append({'url': r.url, 'POST':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 직원 리스트
     staff_data = {}
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
-    result.append({'url': r.url, 'GET':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': staff_data, 'STATUS': r.status_code, 'R': r.json()})
     logSend(r.json())
     logSend(r.json()['staffs'][1])
     # 고객 : 고객사 정보 수정
     customer_infor = {'staff_id': r.json()['staffs'][1]['id']}
     r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
-    result.append({'url': r.url, 'POST':customer_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': customer_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 고객사 정보 수정
     customer_infor = {'name': '주식회사 대덕테크',
@@ -1523,12 +1309,11 @@ def customer_test_step_4(request):
                       'dt_payment': '25'
                       }
     r = s.post(settings.CUSTOMER_URL + 'update_customer', json=customer_infor)
-    result.append({'url': r.url, 'POST':customer_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': customer_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     print(result)
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1546,18 +1331,14 @@ def customer_test_step_5(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -1567,65 +1348,64 @@ def customer_test_step_5(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 발주사 등록
-    relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
+    relationship_infor = {'type': 10,  # 10 : 발주사, 12 : 협력사
                           'corp_name': '대덕기공',
                           'staff_name': '엄원섭',
                           'staff_pNo': '010-3877-4105',
                           'staff_email': 'wonsup.eom@daeducki.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 협력사 등록
-    relationship_infor = {'type': 12,    # 10 : 발주사, 12 : 협력사
+    relationship_infor = {'type': 12,  # 10 : 발주사, 12 : 협력사
                           'corp_name': '주식회사 살구',
                           'staff_name': '정소원',
                           'staff_pNo': '010-7620-5918',
                           'staff_email': 'salgoo.ceo@gmail.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 발주, 협력사 리스트
     get_parameter = {'is_partner': 'YES',
                      'is_orderer': 'YES'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     partner_id = r.json()['partners'][0]['id']
 
     # 고객 : 협력사 수정
-    relationship_infor = {'corp_id': 'ox9fRbgDQ-PxgCiqoDLYhQ==',    # 발주사 or 협력사 id 의 암호화된 값
+    relationship_infor = {'corp_id': 'ox9fRbgDQ-PxgCiqoDLYhQ==',  # 발주사 or 협력사 id 의 암호화된 값
                           'corp_name': '주식회사 살구',
                           'staff_name': '김미진 대리',
                           'staff_pNo': '010-8876-7614',
                           'staff_email': 'midal@salgooc.com',
-                          'manager_name': '정소원',      # 선택
+                          'manager_name': '정소원',  # 선택
                           'manager_pNo': '010-7620-5918',  # 선택
-                          'manager_email': 'salgoo.ceo@gmail.com', # 선택
-                          'name':'(주)살구',      # 상호 - 선택
-                          'regNo':'123-000000-12',    # 사업자등록번호 - 선택
-                          'ceoName':'정소원',         # 이름(대표자) - 선택
-                          'address':'울산시 중구 돋질로 20',   # 사업장소재지 - 선택
-                          'business_type':'서비스',      # 업태 - 선택
-                          'business_item':'정보통신',    # 종목 - 선택
-                          'dt_reg':'2018-12-05',       # 사업자등록일 - 선택
+                          'manager_email': 'salgoo.ceo@gmail.com',  # 선택
+                          'name': '(주)살구',  # 상호 - 선택
+                          'regNo': '123-000000-12',  # 사업자등록번호 - 선택
+                          'ceoName': '정소원',  # 이름(대표자) - 선택
+                          'address': '울산시 중구 돋질로 20',  # 사업장소재지 - 선택
+                          'business_type': '서비스',  # 업태 - 선택
+                          'business_item': '정보통신',  # 종목 - 선택
+                          'dt_reg': '2018-12-05',  # 사업자등록일 - 선택
                           }
     r = s.post(settings.CUSTOMER_URL + 'update_relationship', json=relationship_infor)
-    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 협력사 상세 정보
-    get_parameter = {'relationship_id':partner_id}
+    get_parameter = {'relationship_id': partner_id}
     r = s.post(settings.CUSTOMER_URL + 'detail_relationship', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     print(result)
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1642,18 +1422,14 @@ def customer_test_step_6(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
     settings.REQUEST_TIME_GAP = 0.
@@ -1663,12 +1439,12 @@ def customer_test_step_6(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 직원 리스트
     staff_data = {}
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
-    result.append({'url': r.url, 'GET':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': staff_data, 'STATUS': r.status_code, 'R': r.json()})
     manager_id = r.json()['staffs'][0]['id']  # 박종기
     new_manager_id = r.json()['staffs'][1]['id']  # 이요셉
 
@@ -1677,7 +1453,7 @@ def customer_test_step_6(request):
                      'is_orderer': 'YES'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     order_id = r.json()['orderers'][0]['id']  # 첫번째 발주사
 
     # 고객 : 사업장 등록
@@ -1694,13 +1470,13 @@ def customer_test_step_6(request):
     result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'ITNJ',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':''
+    get_parameter = {'name': 'ITNJ',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': ''
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 사업장 수정
@@ -1713,13 +1489,13 @@ def customer_test_step_6(request):
     result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':'대덕'
+    get_parameter = {'name': '',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': '대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 수정
     work_place = {
@@ -1731,19 +1507,18 @@ def customer_test_step_6(request):
     result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':'대덕'
+    get_parameter = {'name': '',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': '대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.REQUEST_TIME_GAP = 5.
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1761,18 +1536,14 @@ def customer_test_step_7(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     settings.REQUEST_TIME_GAP = 0.
 
@@ -1784,23 +1555,23 @@ def customer_test_step_7(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':'대덕'
+    get_parameter = {'name': '',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': '대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     logSend(r.json())
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 직원 리스트
     staff_data = {}
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json=staff_data)
-    result.append({'url': r.url, 'GET':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': staff_data, 'STATUS': r.status_code, 'R': r.json()})
     staff_id = r.json()['staffs'][1]['id']  # 첫번째 등록 직원
 
     # 고객 : 발주, 협력사 리스트
@@ -1808,7 +1579,7 @@ def customer_test_step_7(request):
                      'is_orderer': 'NO'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_relationship', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     partner_id = r.json()['partners'][0]['id']  # 협력사 - 주식회사 살구
 
     today = datetime.datetime.now() + datetime.timedelta(days=2)
@@ -1843,17 +1614,17 @@ def customer_test_step_7(request):
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 업무 리스트
-    get_parameter = {'name'            : '',
-                     'work_place_name' : '',
-                     'type'            : '',
-                     'contractor_name' : '',
-                     'staff_name'      : '',
-                     'staff_pNo'       : '',
-                     'dt_begin'        : '',
-                     'dt_end'          : '',
+    get_parameter = {'name': '',
+                     'work_place_name': '',
+                     'type': '',
+                     'contractor_name': '',
+                     'staff_name': '',
+                     'staff_pNo': '',
+                     'dt_begin': '',
+                     'dt_end': '',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     work_id_1 = r.json()['works'][0]['id']
     work_id_2 = r.json()['works'][1]['id']
@@ -1877,17 +1648,16 @@ def customer_test_step_7(request):
 
     # 고객 : 업무 리스트
     get_parameter = {'work_place_id': work_place_id,
-                     'dt_begin':'2019-02-25',
-                     'dt_end':today,
+                     'dt_begin': '2019-02-25',
+                     'dt_end': today,
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'url': r.url, 'GET':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'GET': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.REQUEST_TIME_GAP = 5.
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -1905,18 +1675,14 @@ def customer_test_step_8(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     settings.REQUEST_TIME_GAP = 0.
     result = []
@@ -1927,27 +1693,27 @@ def customer_test_step_8(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':'대덕'
+    get_parameter = {'name': '',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': '대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'POST':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     logSend(result)
     logSend(result)
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 업무 리스트
-    get_parameter = {'work_place_id':work_place_id,
-                     'dt_begin':'2019-02-25',
-                     'dt_end':'2019-02-27',
+    get_parameter = {'work_place_id': work_place_id,
+                     'dt_begin': '2019-02-25',
+                     'dt_end': '2019-02-27',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'url': r.url, 'POST':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     work_id = r.json()['works'][0]['id']
 
     # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
@@ -1959,40 +1725,41 @@ def customer_test_step_8(request):
         'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
-    result.append({'url': r.url, 'POST':update_work, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': update_work, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
     next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555', '010-1111-3333', '010-4444-7777']
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': ['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555', '010-1111-3333',
+                          '010-4444-7777']
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
 
     names = ["양만춘", "강감찬", "이순신", "안중근"]
     arr_phone_no = ['010-1111-2222', '010-4444-5555', '010-1111-3333', '010-4444-7777']
     for pNo in arr_phone_no:
         # 근로자 : 인증번호 요청
-        phone_no = {'phone_no' : pNo}
+        phone_no = {'phone_no': pNo}
         settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
         settings.IS_TEST = False
-        result.append({'url': r.url, 'POST':phone_no, 'STATUS': r.status_code, 'R': r.json()})
+        result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
 
         # 근로자 : 근로자 확인
         certification_data = {
-                'phone_no' : pNo,
-                'cn' : '201903',
-                'phone_type' : 'A', # 안드로이드 폰
-                'push_token' : 'push token'
-            }
+            'phone_no': pNo,
+            'cn': '201903',
+            'phone_type': 'A',  # 안드로이드 폰
+            'push_token': 'push token'
+        }
         settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
         settings.IS_TEST = False
-        result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
+        result.append({'url': r.url, 'POST': certification_data, 'STATUS': r.status_code, 'R': r.json()})
         logSend(r.json())
 
         employee_info = {
@@ -2003,14 +1770,14 @@ def customer_test_step_8(request):
             'pNo': pNo,  # 추후 SMS 확인 절차 추가
         }
         r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
-        result.append({'url': r.url, 'POST':employee_info, 'STATUS': r.status_code, 'R': r.json()})
+        result.append({'url': r.url, 'POST': employee_info, 'STATUS': r.status_code, 'R': r.json()})
 
     # 근로자 리스트 - 전화번호에 1111 가 포함된 근로자
     phone_no = {
-        'phone_no':'1111'
+        'phone_no': '1111'
     }
     r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
-    result.append({'url': r.url, 'POST':phone_no, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
     passers = r.json()['passers']
 
     if len(passers) > 0:
@@ -2032,7 +1799,7 @@ def customer_test_step_8(request):
                 'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
             }
             r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
-            result.append({'url': r.url, 'POST':accept, 'STATUS': r.status_code, 'R': r.json()})
+            result.append({'url': r.url, 'POST': accept, 'STATUS': r.status_code, 'R': r.json()})
 
     # # 근로자 리스트
     # phone_no = {
@@ -2065,25 +1832,25 @@ def customer_test_step_8(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
     # 근로자 리스트 - 전화번호에 4444 가 포함된 근로자
     phone_no = {
-        'phone_no':'4444'
+        'phone_no': '4444'
     }
     r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
-    result.append({'url': r.url, 'POST':phone_no, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
     passers = r.json()['passers']
 
     if len(passers) > 0:
         for ex_passer in passers:
             # 근로자 : 알림 확인
-            passer = {'passer_id':ex_passer['id']}
+            passer = {'passer_id': ex_passer['id']}
             r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
-            result.append({'url': r.url, 'GET':passer, 'STATUS': r.status_code, 'R': r.json()})
+            result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
             print(r.json())
             if len(r.json()['notifications']) == 0:
                 # 알림이 없는 출입자 - 대상이 아님
@@ -2101,7 +1868,7 @@ def customer_test_step_8(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
@@ -2119,7 +1886,8 @@ def customer_test_step_8(request):
     update_employee = {
         'employee_id': employee_id,  # 필수
         'phone_no': '010-3333-4444',  # 전화번호가 잘못되었을 때 변경
-        'dt_answer_deadline': (datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S"), # 전화번호 바꿀 때 필수
+        'dt_answer_deadline': (datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S"),
+        # 전화번호 바꿀 때 필수
         # 'dt_begin': '2019-03-09',  # 근무 시작일
         # 'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
@@ -2128,7 +1896,7 @@ def customer_test_step_8(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
@@ -2144,15 +1912,14 @@ def customer_test_step_8(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.REQUEST_TIME_GAP = 5.
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2166,18 +1933,14 @@ def customer_test_step_9(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     settings.REQUEST_TIME_GAP = 0.
     result = []
@@ -2220,29 +1983,29 @@ def customer_test_step_9(request):
         'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
-    result.append({'url': r.url, 'POST':update_work, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': update_work, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
     next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':['010-3333-44', '01-1111-4444']
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': ['010-3333-44', '01-1111-4444']
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
     employees = r.json()['employees']
 
-    employee_dic = {'010333344':'', '0111114444':''}
-    employee_pNo = {'010333344':'010-3333-4444', '0111114444':'010-1111-4444'}
+    employee_dic = {'010333344': '', '0111114444': ''}
+    employee_pNo = {'010333344': '010-3333-4444', '0111114444': '010-1111-4444'}
     for employee in employees:
         print('--- ', employee)
         if no_only_phone_no(employee['pNo']) in employee_dic.keys():
@@ -2250,12 +2013,13 @@ def customer_test_step_9(request):
     print(employee_dic)
 
     # 근로자 정보 수정 - 잘못된 전화번호 수정
-    dt_answer_deadline = (datetime.datetime.now() + datetime.timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S")  # 전화번호 바꿀 때 필수
+    dt_answer_deadline = (datetime.datetime.now() + datetime.timedelta(hours=12)).strftime(
+        "%Y-%m-%d %H:%M:%S")  # 전화번호 바꿀 때 필수
     for employee_key in employee_dic.keys():
         update_employee = {
             'employee_id': employee_dic[employee_key],  # 필수
             'phone_no': employee_pNo[employee_key],  # 전화번호가 잘못되었을 때 변경
-            'dt_answer_deadline':dt_answer_deadline
+            'dt_answer_deadline': dt_answer_deadline
             # 'dt_begin': '2019-03-09',  # 근무 시작일
             # 'dt_end': '2019-05-31',  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
         }
@@ -2264,15 +2028,14 @@ def customer_test_step_9(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.REQUEST_TIME_GAP = 5.
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2286,18 +2049,14 @@ def customer_test_step_A(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     settings.REQUEST_TIME_GAP = 0.
     result = []
@@ -2311,26 +2070,26 @@ def customer_test_step_A(request):
     # result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # 고객 : 사업장 리스트
-    get_parameter = {'name':'',
-                     'manager_name':'',
-                     'manager_phone':'',
-                     'order_name':'대덕'
+    get_parameter = {'name': '',
+                     'manager_name': '',
+                     'manager_phone': '',
+                     'order_name': '대덕'
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
     # result.append({'url': r.url, 'POST':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
 
     # 고객 : 업무 리스트
-    get_parameter = {'work_place_id':work_place_id,
-                     'dt_begin':'2019-02-25',
-                     'dt_end':'2019-02-27',
+    get_parameter = {'work_place_id': work_place_id,
+                     'dt_begin': '2019-02-25',
+                     'dt_end': '2019-02-27',
                      }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'url': r.url, 'POST':get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
     work_id = r.json()['works'][1]['id']
 
     # 업무 시작 날짜 수정 - 업무가 시작된 것으로 처리하기 위하여 시간을 수정
-    begin_day = (datetime.datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d") # 10일 전부터 일을 하고 있음
+    begin_day = (datetime.datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")  # 10일 전부터 일을 하고 있음
     end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
     update_work = {
         'work_id': work_id,  # 필수
@@ -2338,29 +2097,30 @@ def customer_test_step_A(request):
         'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
     }
     r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
-    result.append({'url': r.url, 'POST':update_work, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': update_work, 'STATUS': r.status_code, 'R': r.json()})
 
     # 근로자 모두 등록 상태에 업무 수락 상태로 변경
     names = ["김좌진", "윤봉", "안창호", "이시영", "계백", "을지문덕", "권율", "최영"]
-    arr_phone_no = ['010-3355-1001', '010-3355-1002', '010-3355-1003', '010-3355-1004', '010-3355-2001', '010-3355-2002', '010-3355-2003', '010-3355-2004']
+    arr_phone_no = ['010-3355-1001', '010-3355-1002', '010-3355-1003', '010-3355-1004', '010-3355-2001',
+                    '010-3355-2002', '010-3355-2003', '010-3355-2004']
 
     # 고객 : 고객웹에서 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
     next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':arr_phone_no
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': arr_phone_no
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
     duplicate_pNo = r.json()['duplicate_pNo']
     print(duplicate_pNo)
 
     for pNo in arr_phone_no:
 
         # 근로자 : 앱 설치 후 인증번호 요청
-        phone_no = {'phone_no' : pNo}
+        phone_no = {'phone_no': pNo}
         settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
         settings.IS_TEST = False
@@ -2368,15 +2128,15 @@ def customer_test_step_A(request):
 
         # 근로자 : 인증
         certification_data = {
-                'phone_no' : pNo,
-                'cn' : '201903',
-                'phone_type' : 'A', # 안드로이드 폰
-                'push_token' : 'push token'
-            }
+            'phone_no': pNo,
+            'cn': '201903',
+            'phone_type': 'A',  # 안드로이드 폰
+            'push_token': 'push token'
+        }
         r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
         # result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
         employee = r.json()
-        employee_id = employee['id'] # 등록 근로자 id (passer_id)
+        employee_id = employee['id']  # 등록 근로자 id (passer_id)
         print(employee)
 
         if (not 'name' in employee) and ('bank_list' in employee):
@@ -2412,18 +2172,17 @@ def customer_test_step_A(request):
 
     # 고객 : 근로자 리스트
     work = {'work_id': work_id,
-            'is_working_history':'YES'
+            'is_working_history': 'YES'
             }
     r = s.post(settings.CUSTOMER_URL + 'list_employee', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.REQUEST_TIME_GAP = 5.
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
-def check_test_key(rqst) ->bool:
+def check_test_key(rqst) -> bool:
     return True
 
 
@@ -2442,30 +2201,25 @@ def employee_test_step_1(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
     # 근로자 서버 테이블 삭제 및 초기화
-    key = {'key':rqst['key']}
+    key = {'key': rqst['key']}
     r = requests.post(settings.EMPLOYEE_URL + 'table_reset_and_clear_for_operation', json=key)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     print(result)
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2483,18 +2237,14 @@ def employee_test_step_2(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -2504,7 +2254,7 @@ def employee_test_step_2(request):
                   }
     s = requests.session()
     r = s.post(settings.OPERATION_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
     if r.status_code == 530:
         staff = Staff.objects.get(id=1)
         staff.login_pw = hash_SHA256(login_data["pw"])
@@ -2521,7 +2271,7 @@ def employee_test_step_2(request):
     settings.IS_TEST = True  # sms pass
     r = s.post(settings.OPERATION_URL + 'reg_customer', json=customer_data)
     settings.IS_TEST = False  # sms pass
-    result.append({'url': r.url, 'POST':customer_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': customer_data, 'STATUS': r.status_code, 'R': r.json()})
     init_login_id = r.json()['message'][1]
     logSend(init_login_id)
     # 고객 : 로그인
@@ -2530,7 +2280,7 @@ def employee_test_step_2(request):
                   }
     s = requests.session()
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
-    result.append({'url': r.url, 'POST':login_data, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
@@ -2542,11 +2292,11 @@ def employee_test_step_2(request):
 
     if r.status_code == 200:
         # 고객 : 자기 정보 수정 - login_id,
-        staff_data = {'staff_id':owner_staff_id,
+        staff_data = {'staff_id': owner_staff_id,
                       'new_login_id': 'think',
                       'before_pw': 'happy_day!!!',
-                      'login_pw':'parkjong',
-                      'position':'이사'
+                      'login_pw': 'parkjong',
+                      'position': '이사'
                       }
         r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
         result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
@@ -2558,9 +2308,7 @@ def employee_test_step_2(request):
         s = requests.session()
         r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
         result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2580,18 +2328,14 @@ def employee_test_step_3(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
     # 고객 : 로그인
@@ -2603,17 +2347,18 @@ def employee_test_step_3(request):
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
     co_id = r.json()['company_general']['co_id']
     # 고객 : 발주사 등록
-    relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
+    relationship_infor = {'type': 10,  # 10 : 발주사, 12 : 협력사
                           'corp_name': '울산광역시',
                           'staff_name': '송철호',
                           'staff_pNo': '052-120',
                           'staff_email': 'ulsan@email.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES', 'is_partner':'NO'})
-    result.append({'url': r.url, 'POST':{'is_orderer':'YES', 'is_partner':'NO'}, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer': 'YES', 'is_partner': 'NO'})
+    result.append(
+        {'url': r.url, 'POST': {'is_orderer': 'YES', 'is_partner': 'NO'}, 'STATUS': r.status_code, 'R': r.json()})
     order_id = r.json()['orderers'][0]['id']
 
     # 고객 : 직원 등록
@@ -2656,7 +2401,7 @@ def employee_test_step_3(request):
                       }
         r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
         index += 1
-        result.append({'url': r.url, 'POST':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+        result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
@@ -2675,11 +2420,11 @@ def employee_test_step_3(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
     result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_place_infor = { 'name':'',
-                         'manager_name':'',
-                         'manager_phone':'',
-                         'order_name':''
-                         }
+    work_place_infor = {'name': '',
+                        'manager_name': '',
+                        'manager_phone': '',
+                        'order_name': ''
+                        }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
     result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
@@ -2719,8 +2464,7 @@ def employee_test_step_3(request):
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2740,18 +2484,14 @@ def employee_test_step_4(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
     # 고객 : 로그인
@@ -2762,18 +2502,18 @@ def employee_test_step_4(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_place_infor = { 'name':'',
-                         'manager_name':'',
-                         'manager_phone':'',
-                         'order_name':''
-                         }
+    work_place_infor = {'name': '',
+                        'manager_name': '',
+                        'manager_phone': '',
+                        'order_name': ''
+                        }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
     result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
 
-    work_infor = {'work_place_id':work_place_id,
-                  'dt_begin':'',
-                  'dt_end':''
+    work_infor = {'work_place_id': work_place_id,
+                  'dt_begin': '',
+                  'dt_end': ''
                   }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
     result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
@@ -2783,31 +2523,31 @@ def employee_test_step_4(request):
     # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
 
     employees = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
-              ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
-              ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
-              ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
-              ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
-              ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
-              ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
-              ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
-              ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
-              ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
-              ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
-              ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
-              ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
-              ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
-              ['엄상경', '010-8538-4106', '관리부장', 'TS'],
-              ['김종민', '010-7290-8113', '관리차장', 'TS'],
-              ['임유빈', '010-7255-4888', '총무사원', 'TS'],
-              ['박용수', '010-2100-9864', '상무이사', 'F&S'],
-              ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
-              ['김유신', '010-7725-9293', '대      리', 'F&S'],
-              ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
-              ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
-              ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
-              ['김유경', '010-9342-0997', '후     성', 'F&S'],
-              ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
-              ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
+                 ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
+                 ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
+                 ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
+                 ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
+                 ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
+                 ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
+                 ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
+                 ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
+                 ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
+                 ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
+                 ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
+                 ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
+                 ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
+                 ['엄상경', '010-8538-4106', '관리부장', 'TS'],
+                 ['김종민', '010-7290-8113', '관리차장', 'TS'],
+                 ['임유빈', '010-7255-4888', '총무사원', 'TS'],
+                 ['박용수', '010-2100-9864', '상무이사', 'F&S'],
+                 ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
+                 ['김유신', '010-7725-9293', '대      리', 'F&S'],
+                 ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
+                 ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
+                 ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
+                 ['김유경', '010-9342-0997', '후     성', 'F&S'],
+                 ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
+                 ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
 
     # 고객 : 고객웹에서 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
@@ -2815,19 +2555,19 @@ def employee_test_step_4(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':arr_phone_no
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': arr_phone_no
     }
     settings.IS_TEST = True
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
     settings.IS_TEST = False
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
 
     settings.IS_LOG = False
     for employee_ex in employees:
         # 근로자 : 앱 설치 후 인증번호 요청
-        phone_no = {'phone_no' : employee_ex[1]}
+        phone_no = {'phone_no': employee_ex[1]}
         settings.IS_TEST = True
         r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
         settings.IS_TEST = False
@@ -2835,15 +2575,15 @@ def employee_test_step_4(request):
 
         # 근로자 : 인증
         certification_data = {
-                'phone_no' : employee_ex[1],
-                'cn' : '201903',
-                'phone_type' : 'A', # 안드로이드 폰
-                'push_token' : 'push token'
-            }
+            'phone_no': employee_ex[1],
+            'cn': '201903',
+            'phone_type': 'A',  # 안드로이드 폰
+            'push_token': 'push token'
+        }
         r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
         # result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
         employee = r.json()
-        employee_id = employee['id'] # 등록 근로자 id (passer_id)
+        employee_id = employee['id']  # 등록 근로자 id (passer_id)
 
         if (not 'name' in employee) and ('bank_list' in employee):
             # 처음 설치한 경우 : 자기 정보 수정
@@ -2883,7 +2623,7 @@ def employee_test_step_4(request):
         # 근로자 출근 기록 만들기
         # 3월
         # months = {3:[32, [3, 10, 17, 24, 31]], 4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
-        months = {4:[31, [7, 14, 21, 28]], 5:[32, [5, 12, 19, 26]]}
+        months = {4: [31, [7, 14, 21, 28]], 5: [32, [5, 12, 19, 26]]}
         for m_key in months.keys():
             month = m_key
             month_range = months[m_key][0]
@@ -2893,7 +2633,7 @@ def employee_test_step_4(request):
                     continue
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
+                    'dt': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(20)),
                     'is_in': 1,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
@@ -2901,9 +2641,9 @@ def employee_test_step_4(request):
                         {'minor': 11002, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70},
                         {'minor': 11003, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(25)), 'rssi': -70}
                     ]
-                    }
+                }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 button_data = {
                     'passer_id': employee_id,
@@ -2911,7 +2651,7 @@ def employee_test_step_4(request):
                     'is_in': 1,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
-                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 button_data = {
                     'passer_id': employee_id,
@@ -2919,11 +2659,11 @@ def employee_test_step_4(request):
                     'is_in': 0,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
-                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
+                    'dt': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(40)),
                     'is_in': 0,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
@@ -2931,14 +2671,13 @@ def employee_test_step_4(request):
                         {'minor': 11002, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(35)), 'rssi': -70},
                         {'minor': 11003, 'dt_begin': '2019-{}-{} 08:{}:00'.format(month, day, rMin(35)), 'rssi': -70}
                     ]
-                    }
+                }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_LOG = True
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -2952,18 +2691,14 @@ def employee_test_step_5(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -3002,18 +2737,18 @@ def employee_test_step_5(request):
     # r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
     # result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_place_infor = { 'name':'',
-                         'manager_name':'',
-                         'manager_phone':'',
-                         'order_name':''
-                         }
+    work_place_infor = {'name': '',
+                        'manager_name': '',
+                        'manager_phone': '',
+                        'order_name': ''
+                        }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
     result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
 
-    work_infor = {'work_place_id':work_place_id,
-                  'dt_begin':'',
-                  'dt_end':''
+    work_infor = {'work_place_id': work_place_id,
+                  'dt_begin': '',
+                  'dt_end': ''
                   }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
     result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
@@ -3024,31 +2759,31 @@ def employee_test_step_5(request):
     # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
 
     employees = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
-              ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
-              ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
-              ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
-              ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
-              ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
-              ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
-              ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
-              ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
-              ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
-              ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
-              ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
-              ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
-              ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
-              ['엄상경', '010-8538-4106', '관리부장', 'TS'],
-              ['김종민', '010-7290-8113', '관리차장', 'TS'],
-              ['임유빈', '010-7255-4888', '총무사원', 'TS'],
-              ['박용수', '010-2100-9864', '상무이사', 'F&S'],
-              ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
-              ['김유신', '010-7725-9293', '대      리', 'F&S'],
-              ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
-              ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
-              ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
-              ['김유경', '010-9342-0997', '후     성', 'F&S'],
-              ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
-              ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
+                 ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
+                 ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
+                 ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
+                 ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
+                 ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
+                 ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
+                 ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
+                 ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
+                 ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
+                 ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
+                 ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
+                 ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
+                 ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
+                 ['엄상경', '010-8538-4106', '관리부장', 'TS'],
+                 ['김종민', '010-7290-8113', '관리차장', 'TS'],
+                 ['임유빈', '010-7255-4888', '총무사원', 'TS'],
+                 ['박용수', '010-2100-9864', '상무이사', 'F&S'],
+                 ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
+                 ['김유신', '010-7725-9293', '대      리', 'F&S'],
+                 ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
+                 ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
+                 ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
+                 ['김유경', '010-9342-0997', '후     성', 'F&S'],
+                 ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
+                 ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
 
     # 고객 : 고객웹에서 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
@@ -3056,17 +2791,16 @@ def employee_test_step_5(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':arr_phone_no
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': arr_phone_no
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -3085,18 +2819,14 @@ def employee_test_step_A(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
     # 고객 : 로그인
@@ -3108,17 +2838,18 @@ def employee_test_step_A(request):
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
     co_id = r.json()['company_general']['co_id']
     # 고객 : 발주사 등록
-    relationship_infor = {'type': 10,    # 10 : 발주사, 12 : 협력사
+    relationship_infor = {'type': 10,  # 10 : 발주사, 12 : 협력사
                           'corp_name': '울산광역시',
                           'staff_name': '송철호',
                           'staff_pNo': '052-120',
                           'staff_email': 'ulsan@email.com',
                           }
     r = s.post(settings.CUSTOMER_URL + 'reg_relationship', json=relationship_infor)
-    result.append({'url': r.url, 'POST':relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': relationship_infor, 'STATUS': r.status_code, 'R': r.json()})
 
-    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer':'YES', 'is_partner':'NO'})
-    result.append({'url': r.url, 'POST':{'is_orderer':'YES', 'is_partner':'NO'}, 'STATUS': r.status_code, 'R': r.json()})
+    r = s.post(settings.CUSTOMER_URL + 'list_relationship', json={'is_orderer': 'YES', 'is_partner': 'NO'})
+    result.append(
+        {'url': r.url, 'POST': {'is_orderer': 'YES', 'is_partner': 'NO'}, 'STATUS': r.status_code, 'R': r.json()})
     order_id = r.json()['orderers'][0]['id']
 
     # 고객 : 직원 등록
@@ -3135,7 +2866,7 @@ def employee_test_step_A(request):
                       }
         r = s.post(settings.CUSTOMER_URL + 'reg_staff', json=staff_data)
         index += 1
-        result.append({'url': r.url, 'POST':staff_data, 'STATUS': r.status_code, 'R': r.json()})
+        result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
     r = s.post(settings.CUSTOMER_URL + 'list_staff', json={})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
@@ -3154,11 +2885,11 @@ def employee_test_step_A(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_work_place', json=work_place)
     result.append({'url': r.url, 'POST': work_place, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_place_infor = { 'name':'대왕암',
-                         'manager_name':'',
-                         'manager_phone':'',
-                         'order_name':''
-                         }
+    work_place_infor = {'name': '대왕암',
+                        'manager_name': '',
+                        'manager_phone': '',
+                        'order_name': ''
+                        }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
     result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
@@ -3199,9 +2930,9 @@ def employee_test_step_A(request):
     r = s.post(settings.CUSTOMER_URL + 'reg_work', json=work)
     result.append({'url': r.url, 'POST': work, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_infor = {'work_place_id':work_place_id,
-                  'dt_begin':'',
-                  'dt_end':''
+    work_infor = {'work_place_id': work_place_id,
+                  'dt_begin': '',
+                  'dt_end': ''
                   }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
     result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
@@ -3220,12 +2951,12 @@ def employee_test_step_A(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id_after,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':arr_phone_no
+        'work_id': work_id_after,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': arr_phone_no
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
 
     # 근로자 등록 - 업무 시작 후인 업무(공원 청소)
@@ -3237,12 +2968,12 @@ def employee_test_step_A(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':'2019-04-29 19:00:00',
-        'phone_numbers':arr_phone_no
+        'work_id': work_id,
+        'dt_answer_deadline': '2019-04-29 19:00:00',
+        'phone_numbers': arr_phone_no
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
 
     for employee_ex in employees:
@@ -3255,15 +2986,15 @@ def employee_test_step_A(request):
 
         # 근로자 : 인증
         certification_data = {
-                'phone_no' : employee_ex[1],
-                'cn' : '201903',
-                'phone_type' : 'A', # 안드로이드 폰
-                'push_token' : 'push token'
-            }
+            'phone_no': employee_ex[1],
+            'cn': '201903',
+            'phone_type': 'A',  # 안드로이드 폰
+            'push_token': 'push token'
+        }
         r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
         # result.append({'url': r.url, 'POST':certification_data, 'STATUS': r.status_code, 'R': r.json()})
         employee = r.json()
-        employee_id = employee['id'] # 등록 근로자 id (passer_id)
+        employee_id = employee['id']  # 등록 근로자 id (passer_id)
 
         if (not 'name' in employee) and ('bank_list' in employee):
             # 처음 설치한 경우 : 자기 정보 수정
@@ -3302,7 +3033,7 @@ def employee_test_step_A(request):
         # 근로자 출근 기록 만들기
         # 3월
         # months = {5:[32, [5, 12, 19, 26]]}
-        months = {5:[9, [4, 5, 6, 11, 12, 18, 19, 25, 26]]}
+        months = {5: [9, [4, 5, 6, 11, 12, 18, 19, 25, 26]]}
         for m_key in months.keys():
             month = m_key
             month_range = months[m_key][0]
@@ -3312,51 +3043,50 @@ def employee_test_step_A(request):
                     continue
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(20)),
+                    'dt': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(20)),
                     'is_in': 1,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
-                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
-                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70},
-                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)), 'rssi': -70}
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(25)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(25)), 'rssi': -70}
                     ]
-                    }
+                }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 button_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 08:%02d:00'%(month, day, rMin(25)),
+                    'dt': '2019-%02d-%02d 08:%02d:00' % (month, day, rMin(25)),
                     'is_in': 1,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
-                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 button_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(35)),
+                    'dt': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(35)),
                     'is_in': 0,  # 0: out, 1 : in
                 }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=button_data)
-                #result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': button_data, 'STATUS': r.status_code, 'R': r.json()})
 
                 beacon_data = {
                     'passer_id': employee_id,
-                    'dt': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)),
+                    'dt': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(40)),
                     'is_in': 0,  # 0: out, 1 : in
                     'major': 11001,  # 11 (지역) 001(사업장)
                     'beacons': [
-                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
-                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70},
-                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 17:%02d:00'%(month, day, rMin(40)), 'rssi': -70}
+                        {'minor': 11001, 'dt_begin': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11002, 'dt_begin': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(40)), 'rssi': -70},
+                        {'minor': 11003, 'dt_begin': '2019-%02d-%02d 17:%02d:00' % (month, day, rMin(40)), 'rssi': -70}
                     ]
-                    }
+                }
                 r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=beacon_data)
-                #result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
+                # result.append({'url': r.url, 'POST': beacon_data, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -3376,18 +3106,14 @@ def employee_test_step_B(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
@@ -3506,8 +3232,7 @@ def employee_test_step_B(request):
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
     """
     pass_record_of_employees_in_day_for_customer
@@ -3564,20 +3289,15 @@ def employee_test_step_B(request):
     result.append({'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
 def sms_install_mng(request):
-
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     # msg = '이지체크\n'\
     #       '새로운 업무를 앱에서 확인해주세요.\n'\
@@ -3593,11 +3313,10 @@ def sms_install_mng(request):
     #     'msg': msg,
     # }
     # r = requests.post('https://apis.aligo.in/send/', data=rData)
-    # func_end_log(func_name)
+    # func_end_log(request.get_full_path())
     # return REG_200_SUCCESS.to_json_response({'result':result})
 
     if not 'id' in rqst:
-        func_end_log(func_name)
         return REG_200_SUCCESS.to_json_response({'result': 'parameter: id?'})
 
     result = []
@@ -3646,9 +3365,7 @@ def sms_install_mng(request):
         r = requests.post('https://apis.aligo.in/send/', data=rData)
         result.append({'url': r.url, 'POST': rData, 'STATUS': r.status_code, 'R': r.json()})
         # logSend('SMS result', rSMS.json())
-
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -3662,51 +3379,45 @@ def employee_beacon_step_1(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     parameter_check = is_parameter_ok(rqst, ['key_!'])
     if not parameter_check['is_ok']:
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     result = []
 
     pass_info = {"passer_id": "OhV-mZKPmDYAQvMoBY6zGQ",
-                  "dt":"2019-05-06 08:30",
-                  "is_in":True,
-                  "major":11001,
-                  "beacons":[
-                      {
-                          "minor":11001,
-                          "dt_begin": "2019-05-06 08:25:00",
-                          "rssi": -70
-                      },
-                      {
-                          "minor": 11002,
-                          "dt_begin": "2019-05-06 08:24:00",
-                          "rssi": -30
-                      },
-                      {
-                          "minor": 11003,
-                          "dt_begin": "2019-05-06 08:26:00",
-                          "rssi": -15
-                      },
-                  ],
-                  }
+                 "dt": "2019-05-06 08:30",
+                 "is_in": True,
+                 "major": 11001,
+                 "beacons": [
+                     {
+                         "minor": 11001,
+                         "dt_begin": "2019-05-06 08:25:00",
+                         "rssi": -70
+                     },
+                     {
+                         "minor": 11002,
+                         "dt_begin": "2019-05-06 08:24:00",
+                         "rssi": -30
+                     },
+                     {
+                         "minor": 11003,
+                         "dt_begin": "2019-05-06 08:26:00",
+                         "rssi": -15
+                     },
+                 ],
+                 }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=pass_info)
     result.append({'url': r.url, 'POST': pass_info, 'STATUS': r.status_code, 'R': r.json()})
 
-
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
     # 로그인한 본인의 정보 수정 기능 시험
     #
@@ -3733,18 +3444,18 @@ def employee_beacon_step_1(request):
     # r = s.post(settings.CUSTOMER_URL + 'update_staff', json=staff_data)
     # result.append({'url': r.url, 'POST': staff_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    work_place_infor = { 'name':'',
-                         'manager_name':'',
-                         'manager_phone':'',
-                         'order_name':''
-                         }
+    work_place_infor = {'name': '',
+                        'manager_name': '',
+                        'manager_phone': '',
+                        'order_name': ''
+                        }
     r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=work_place_infor)
     result.append({'url': r.url, 'POST': work_place_infor, 'STATUS': r.status_code, 'R': r.json()})
     work_place_id = r.json()['work_places'][0]['id']
 
-    work_infor = {'work_place_id':work_place_id,
-                  'dt_begin':'',
-                  'dt_end':''
+    work_infor = {'work_place_id': work_place_id,
+                  'dt_begin': '',
+                  'dt_end': ''
                   }
     r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=work_infor)
     result.append({'url': r.url, 'POST': work_infor, 'STATUS': r.status_code, 'R': r.json()})
@@ -3755,31 +3466,31 @@ def employee_beacon_step_1(request):
     # employees = [['최   진', '010-2073-6959', '경영지원실장', '대덕기공']]
 
     employees = [['최재환', '010-4871-8362', '전무이사', '대덕기공'],
-              ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
-              ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
-              ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
-              ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
-              ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
-              ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
-              ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
-              ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
-              ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
-              ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
-              ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
-              ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
-              ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
-              ['엄상경', '010-8538-4106', '관리부장', 'TS'],
-              ['김종민', '010-7290-8113', '관리차장', 'TS'],
-              ['임유빈', '010-7255-4888', '총무사원', 'TS'],
-              ['박용수', '010-2100-9864', '상무이사', 'F&S'],
-              ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
-              ['김유신', '010-7725-9293', '대      리', 'F&S'],
-              ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
-              ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
-              ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
-              ['김유경', '010-9342-0997', '후     성', 'F&S'],
-              ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
-              ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
+                 ['이석호', '010-3544-6840', '상무이사', '대덕기공'],
+                 ['엄원섭', '010-3877-4105', '총무이사', '대덕기공'],
+                 ['최   진', '010-2073-6959', '경영지원실장', '대덕기공'],
+                 ['우종복', '010-2436-6966', '경영지원실 차장', '대덕기공'],
+                 ['서경화', '010-8594-3858', '경리차장', '대덕기공'],
+                 ['김진오', '010-8513-3300', '관리과장', '대덕기공'],
+                 ['김정석', '010-9323-5627', '총무과장', '대덕기공'],
+                 ['황지민', '010-5197-6214', '총무사원', '대덕기공'],
+                 ['권호택', '010-5359-6869', '관리이사', '대덕산업'],
+                 ['신철관', '010-7542-4017', '관리차장', '대덕산업'],
+                 ['김기홍', '010-7151-1119', '관리차장', '대덕산업'],
+                 ['김동욱', '010-5280-3275', '솔베이 관리차장', '대덕산업'],
+                 ['김현정', '010-5583-8021', '총무사원', '대덕산업'],
+                 ['엄상경', '010-8538-4106', '관리부장', 'TS'],
+                 ['김종민', '010-7290-8113', '관리차장', 'TS'],
+                 ['임유빈', '010-7255-4888', '총무사원', 'TS'],
+                 ['박용수', '010-2100-9864', '상무이사', 'F&S'],
+                 ['전미숙', '010-5556-0163', '관리차장', 'F&S'],
+                 ['김유신', '010-7725-9293', '대      리', 'F&S'],
+                 ['김윤정', '010-9305-8981', '경리사원', 'F&S'],
+                 ['신선경', '010-3127-4024', '롯데케미칼1공장', 'F&S'],
+                 ['전애리', '010-4224-8640', '롯데케미칼2공장', 'F&S'],
+                 ['김유경', '010-9342-0997', '후     성', 'F&S'],
+                 ['김미경', '010-2397-6143', 'BASF-화성', 'F&S'],
+                 ['김은영', '010-2061-9677', 'BASF-안료', 'F&S']]
 
     # 고객 : 고객웹에서 근로자 등록
     next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
@@ -3787,17 +3498,16 @@ def employee_beacon_step_1(request):
     arr_phone_no = [employee[1] for employee in employees]
     settings.IS_TEST = True
     employee = {
-        'work_id':work_id,
-        'dt_answer_deadline':next_4_day,
-        'phone_numbers':arr_phone_no
+        'work_id': work_id,
+        'dt_answer_deadline': next_4_day,
+        'phone_numbers': arr_phone_no
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST':employee, 'STATUS': r.status_code, 'R': r.json()})
+    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
     settings.IS_TEST = False
 
     logSend(result)
-    func_end_log(func_name)
-    return REG_200_SUCCESS.to_json_response({'result':result})
+    return REG_200_SUCCESS.to_json_response({'result': result})
 
 
 @cross_origin_read_allow
@@ -3811,21 +3521,19 @@ def test_go_go(request):
         STATUS 403
             {'message':'사용 권한이 없습니다.'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     result = []
     s = requests.session()
 
-    login_data = {"login_id": "thinking",
-                  "login_pw": "happy_day!!!"
-                  }
-    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    # login_data = {"login_id": "thinking",
+    #               "login_pw": "happy_day!!!"
+    #               }
+    # r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # recognize_data = {"dt_leave": "",
@@ -3844,13 +3552,20 @@ def test_go_go(request):
     #               }
     # r = s.post(settings.OPERATION_URL + 'login', json=login_data)
     # result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
-    #
+
     # new_staff = {"pNo": "01084333579",
     #              "id": "parkjke",
     #              "pw": "parkjong"
     #              }
     # r = s.post(settings.OPERATION_URL + 'reg_staff', json=new_staff)
     # result.append({'url': r.url, 'POST': new_staff, 'STATUS': r.status_code, 'R': r.json()})
+    staff_data = {'first': '2019-07-23 04:50:00',
+                  'second': '박종기',
+                  'third': 'address'
+                  }
+    r = s.post(settings.OPERATION_URL + 'list_staff', json=staff_data)
+    result.append({'url': r.url, 'GET': staff_data, 'STATUS': r.status_code, 'R': r.json()})
+
     # ---------------------------------------------------------------------------------------
     # TEST: my_work_records 근로자의 월별 근로 내용 요청 시험
     # ---------------------------------------------------------------------------------------
@@ -4182,18 +3897,18 @@ def test_go_go(request):
     # ---------------------------------------------------------------------------------------
     # TEST: /customer/list_employee
     # ---------------------------------------------------------------------------------------
-    employee_data = {
-        'year_month': '2019-07',
-        'staff_id': '3EP9Yb9apLUn2Ymof8Mw9A',
-        'work_id': '_LdMng5jDTwK-LMNlj22Vw',
-        'employee_id': 'iv3M54G5NUyq7zC39F0v5A',
-    }
-    r = s.post(settings.CUSTOMER_URL + 'staff_employee_working', json=employee_data)
-    result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
+    # employee_data = {
+    #     'year_month': '2019-07',
+    #     'staff_id': '3EP9Yb9apLUn2Ymof8Mw9A',
+    #     'work_id': '_LdMng5jDTwK-LMNlj22Vw',
+    #     'employee_id': 'iv3M54G5NUyq7zC39F0v5A',
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'staff_employee_working', json=employee_data)
+    # result.append({'url': r.url, 'POST': employee_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # r = s.post(settings.OPERATION_URL + 'logout', json={})
-    r = s.post(settings.CUSTOMER_URL + 'logout', json={})
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # r = s.post(settings.CUSTOMER_URL + 'logout', json={})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     # ---------------------------------------------------------------------------------------
     # TEST: /config.common Works 근로자 업무 처리 class
@@ -4225,7 +3940,6 @@ def test_go_go(request):
     # logSend(ww.data, '**', ww.data[0], "==", ww.data[1])
 
     logSend(result)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
 
 
@@ -4240,7 +3954,6 @@ def fjfjieie(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    func_name = func_begin_log(__package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
 
@@ -4248,8 +3961,6 @@ def fjfjieie(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    for key in rqst.keys():
-        logSend('  ', key, ': ', rqst[key])
 
     result = []
     s = requests.session()
@@ -4264,7 +3975,7 @@ def fjfjieie(request):
         name = ""
     parameter = {"pNo": pNo,
                  "name": name,
-                }
+                 }
     r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
     # login_data = {"login_id": "thinking",
@@ -4277,5 +3988,4 @@ def fjfjieie(request):
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend(result)
-    func_end_log(func_name)
     return REG_200_SUCCESS.to_json_response({'result': result})
