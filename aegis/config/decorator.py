@@ -26,13 +26,13 @@ def cross_origin_read_allow(function):
         else:
             try:
                 logSend('>>> {}'.format(request.get_full_path()))  # 함수 시작 표시
-                # if request.method == 'POST':
-                #     rqst = json.loads(request.body.decode("utf-8"))
-                # else:
-                #     rqst = request.GET
-                # # 함수 파라미터 표시
-                # for key in rqst.keys():
-                #     logSend('^  ', key, ': ', rqst[key])
+                if request.method == 'POST':
+                    rqst = json.loads(request.body.decode("utf-8"))
+                else:
+                    rqst = request.GET
+                # 함수 파라미터 표시
+                for key in rqst.keys():
+                    logSend('^  ', key, ': ', rqst[key])
 
                 response = function(request, *args, **kwargs)
                 logSend('<<< {}'.format(request.get_full_path()))  # 함수 끝 표시
