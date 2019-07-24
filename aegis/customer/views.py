@@ -2855,6 +2855,7 @@ def list_employee(request):
 
     if datetime.datetime.now() < dt_today:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '오늘 이후를 근로 내용은 볼 수 없습니다.'})
+    logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, work.dt_begin))
     if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
 
