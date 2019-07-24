@@ -27,15 +27,15 @@ def cross_origin_read_allow(function):
             try:
                 logSend('>>> {}'.format(request.get_full_path()))  # 함수 시작 표시
                 if request.method == 'POST':
-                    logSend('  1{}2{}3'.format(request.body, len(request.body)))
-                    b = request.body
-                    logSend('  byte: {}'.format([ord(x) for x in b]))
+                    # logSend('  1{}2{}3'.format(request.body, len(request.body)))
+                    # b = request.body
+                    # logSend('  byte: {}'.format([ord(x) for x in b]))
                     if len(request.body) == 0:
                         rqst = {}
                     else:
                         rqst = json.loads(request.body.decode("utf-8"))
                 else:
-                    logSend('  3{}4'.format(request.GET))
+                    # logSend('  3{}4'.format(request.GET))
                     rqst = request.GET
                 # 함수 파라미터 표시
                 logSend('   5')
@@ -44,7 +44,7 @@ def cross_origin_read_allow(function):
                         logSend('^  ', key, ': ', rqst[key])
                 logSend('   6')
                 response = function(request, *args, **kwargs)
-                logSend('   7')
+                # logSend('   7')
                 logSend('<<< {}'.format(request.get_full_path()))  # 함수 끝 표시
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
