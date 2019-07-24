@@ -8,6 +8,7 @@ import requests
 import datetime
 from datetime import timedelta
 import inspect
+import re
 
 from django.conf import settings
 
@@ -490,25 +491,62 @@ def reg_relationship(request):
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 544
             {'message', '이미 등록되어 있습니다.'}
-    """
+        STATUS 422
+            {'message': '*** 웹 개발자: type 주세요'}
 
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
+            {'message': '이름은 최소 2자 이상이어야 합니다.'}
+            {'message': '전화번호는 국번까지 9자 이상이어야 합니다.'}
+            {'message': '이메일 양식이 틀렸습니다.'}
+    """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
+    # 등록자 권한 확인 처리
+    # if not (worker.is_site_owner or worker.is_manager):
+    #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response({'message': '등록권한이 없습니다.'})
 
+    parameter = is_parameter_ok(rqst, ['corp_name', 'staff_name', 'staff_pNo', 'staff_email'])
+    if not parameter['is_ok']:
+        return status422(request.get_full_path(), {'message': '필수 항목(빨간 별)이 비었습니다.'})
+    corp_name = parameter['parameters']['corp_name']
+    staff_name = parameter['parameters']['staff_name']
+    staff_pNo = no_only_phone_no(parameter['parameters']['staff_pNo'])
+    staff_email = parameter['parameters']['staff_email']
+
+    # if ' ' in corp_name:
+    #     return status422(request.get_full_path(), {'message': '회사명에 공백문자가 들어가면 안됩니다.'})
+    if len(staff_name) < 2:
+        return status422(request.get_full_path(), {'message': '이름은 최소 2자 이상이어야 합니다.'})
+    if len(staff_pNo) < 9:
+        return status422(request.get_full_path(), {'message': '전화번호는 국번까지 9자 이상이어야 합니다.'})
+    check_email = re.compile('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+    if check_email.match(staff_email) == None:
+        return status422(request.get_full_path(), {'message': '이메일 양식이 틀렸습니다.'})
+    """
+    import re
+
+    r_p = re.compile('^(?=\S{6,20}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])')
+    this code will validate your password with :
+
+    min length is 6 and max length is 20
+    at least include a digit number,
+    at least a upcase and a lowcase letter
+    at least a special characters
+
+    logint_id = "abCD0123!@#$%^"
+    print(r_p.search(logint_id)
+    """
+    if 'type' not in rqst:
+        return status422(request.get_full_path(), {'message': '*** 웹 개발자: type 주세요'})
     type = rqst['type']
-    corp_name = rqst['corp_name']
 
     relationships = Relationship.objects.filter(contractor_id=worker.co_id, type=type, corp_name=corp_name)
     if len(relationships) > 0:
         return REG_544_EXISTED.to_json_response()
-    staff_name = rqst['staff_name']
-    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
-    staff_email = rqst['staff_email']
     corp = Customer(
         corp_name=corp_name,
         staff_name=staff_name,
@@ -523,6 +561,7 @@ def reg_relationship(request):
     if 'manager_email' in rqst:
         corp.manager_email = rqst['manager_email']
     corp.save()
+    # logSend(' new corp: {}'.format({key: corp.__dict__[key] for key in corp.__dict__.keys()}))
     relationship = Relationship(
         contractor_id=worker.co_id,
         type=type,
@@ -530,6 +569,7 @@ def reg_relationship(request):
         corp_name=corp_name
     )
     relationship.save()
+    # logSend(' new relationship: {}'.format({key: relationship.__dict__[key] for key in relationship.__dict__.keys()}))
 
     # 사업자 등록증 처리
     update_business_registration(rqst, corp)
@@ -869,12 +909,17 @@ def reg_staff(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 542
-            {'message':'전화번호나 아이디가 중복되었습니다.'}
-        STATUS 532
-            {'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'}
-            {'message':'아이디에는 줄바꿈을 사용할 수 없습니다.'}
+            {'message': '다른 사람이 이미 사용하는 아이디입니다.'})
+            {'message': '이미 등록되어 있는 전화번호입니다.'}
+        STATUS 524
+            {'message': '등록권한이 없습니다.'}
+        STATUS 422
+            {'message': '빨간 별이 있는 항목이 비었습니다.'}
+            {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 8자 이상이어야 합니다.'}
+            {'message': '이름은 최소 2자 이상이어야 합니다.'}
+            {'message': '전화번호는 국번까지 9자 이상이어야 합니다.'}
+            {'message': '이메일 양식이 틀렸습니다.'}
     """
-
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -882,8 +927,27 @@ def reg_staff(request):
 
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
+    # 등록자 권한 확인 처리
+    # if not (worker.is_site_owner or worker.is_manager):
+    #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response({'message': '등록권한이 없습니다.'})
 
-    login_id = rqst['login_id']
+    parameter = is_parameter_ok(rqst, ['login_id', 'name', 'pNo', 'email'])
+    if not parameter['is_ok']:
+        return status422(request.get_full_path(), {'message': '필수 항목(빨간 별)이 비었습니다.'})
+    login_id = parameter['parameters']['login_id']
+    name = parameter['parameters']['name']
+    pNo = no_only_phone_no(parameter['parameters']['pNo'])
+    email = parameter['parameters']['email']
+
+    if len(login_id) < 8 or not login_id.isidentifier():
+        return status422(request.get_full_path(), {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 8자 이상이어야 합니다.'})
+    if len(name) < 2:
+        return status422(request.get_full_path(), {'message': '이름은 최소 2자 이상이어야 합니다.'})
+    if len(pNo) < 9:
+        return status422(request.get_full_path(), {'message': '전화번호는 국번까지 9자 이상이어야 합니다.'})
+    check_email = re.compile('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+    if check_email.match(email) == None:
+        return status422(request.get_full_path(), {'message': '이메일 양식이 틀렸습니다.'})
     """
     import re
 
@@ -898,52 +962,29 @@ def reg_staff(request):
     logint_id = "abCD0123!@#$%^"
     print(r_p.search(logint_id)
     """
-    # login_id = login_id.replace(' ', '')
-    # login_id = login_id.replace('\n', '')
-
-    if login_id.find(' ') > -1:
-        logError(request.get_full_path(), ' 로그인 id에 space 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace(' ', '')
-        # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
-    if login_id.find('\n') > -1:
-        logError(request.get_full_path(), ' 로그인 id에 line feed 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace('\n', '')
-    if login_id.find('\x0D') > -1:
-        logError(request.get_full_path(), ' 로그인 id에 carriage return 들어왔다. \"{}\"'.format(login_id))
-        login_id = login_id.replace('\x0D', '')
-    logSend('   login_id = \"{}\"'.format(login_id))
-
-    phone_no = no_only_phone_no(rqst['pNo'])
-    # staffs = Staff.objects.filter(pNo=phone_no, login_id=login_id)
-    # logSend([staff.name for staff in staffs])
     staffs = Staff.objects.filter(login_id=login_id)
     # logSend([staff.name for staff in staffs])
     if len(staffs) > 0:
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '다른 사람이 이미 사용하는 아이디입니다.'})
-    staffs = Staff.objects.filter(pNo=phone_no)
-    # logSend([staff.name for staff in staffs])
+    staffs = Staff.objects.filter(pNo=pNo)
     if len(staffs) > 0:
         return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '이미 등록되어 있는 전화번호입니다.'})
 
-    name = rqst['name']
-    position = rqst['position']
-    department = rqst['department']
-    email = rqst['email']
     new_staff = Staff(
         name=name,
         login_id=login_id,
         login_pw=hash_SHA256('happy_day!!!'),
         co_id=worker.co_id,
         co_name=worker.co_name,
-        position=position,
-        department=department,
+        position=rqst['position'] if 'position' in rqst else "",
+        department=rqst['department'] if 'department' in rqst else "",
         dt_app_login=datetime.datetime.now(),
         dt_login=datetime.datetime.now(),
-        pNo=phone_no,
+        pNo=pNo,
         email=email
     )
     new_staff.save()
-
+    logSend(' new staff: {}'.format({key: new_staff.__dict__[key] for key in new_staff.__dict__.keys()}))
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1350,7 +1391,8 @@ def reg_work_place(request):
             {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
             {'message': '3자 이상이어야 합니다.'}
         STATUS 422
-            {'message': '관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'}
+            {'message': '사업장 명칭은 최소 4자 이상이어야 합니다.'}
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
     """
 
     if request.method == 'POST':
@@ -1361,28 +1403,30 @@ def reg_work_place(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    name = rqst['name']
+    parameter = is_parameter_ok(rqst, ['name', 'manager_id_!', 'order_id_!'])
+    if not parameter['is_ok']:
+        return status422(request.get_full_path(), {'message': '필수 항목(빨간 별)이 비었습니다.'})
+    name = parameter['parameters']['name']
+    manager_id = parameter['parameters']['manager_id']
+    order_id = no_only_phone_no(parameter['parameters']['order_id'])
+
     result = id_ok(name, 3)
     if result is not None:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
-    manager_id = rqst['manager_id']
-    order_id = rqst['order_id']
     if 'address' in rqst:
         address = rqst['address']
     if 'latitude' in rqst:
         x = rqst['latitude']
     if 'longitude' in rqst:
         y = rqst['longitude']
-    if len(manager_id) == 0 or len(order_id) == 0:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '관리자, 발주사 중 어느 하나도 빠지면 안 됩니다.'})
 
     list_work_place = Work_Place.objects.filter(name=name)
     if len(list_work_place) > 0:
         return REG_540_REGISTRATION_FAILED.to_json_response(
             {'message': '같은 이름의 사업장이 있습니다.\n꼭 같은 이름의 사업장이 필요하면\n다른 이름으로 등록 후 이름을 바꾸십시요.'})
 
-    manager = Staff.objects.get(id=AES_DECRYPT_BASE64(manager_id))
-    order = Customer.objects.get(id=AES_DECRYPT_BASE64(order_id))
+    manager = Staff.objects.get(id=manager_id)
+    order = Customer.objects.get(id=order_id)
     new_work_place = Work_Place(
         name=name,
         place_name=name,
@@ -1403,6 +1447,7 @@ def reg_work_place(request):
         new_work_place.y = y
 
     new_work_place.save()
+    logSend(' new_work_place: {}'.format({key: new_work_place.__dict__[key] for key in new_work_place.__dict__.keys()}))
 
     return REG_200_SUCCESS.to_json_response()
 
@@ -2825,7 +2870,7 @@ def list_employee(request):
         STATUS 503
         STATUS 416
             {'message': '근로 내용은 오늘까지만 볼 수 없습니다.'}
-            {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'}
+            {'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'}
     """
 
     if request.method == 'POST':
@@ -2859,10 +2904,10 @@ def list_employee(request):
     # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
     if work.dt_begin < datetime.datetime.now():
         # 업무가 아직 시작되지 않았으면 보여준다.
-        logSend('  work not started')
+        logSend('  work not started request dt: {}'.format(dt_today))
     elif dt_today < work.dt_begin:
         # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
@@ -2912,8 +2957,7 @@ def list_employee(request):
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
         logSend('  response.json(): {}'.format(response.json()))
         if 'employees' not in response.json():
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
-                {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
@@ -2930,98 +2974,6 @@ def list_employee(request):
     result = {'employees': employees}
 
     return REG_200_SUCCESS.to_json_response(result)
-
-    # employees = Employee.objects.filter(work_id=work_id)
-    # arr_employee = []
-    # today = datetime.datetime.now()
-    # # print('--- ', work.dt_begin.strftime("%Y-%m-%d %H:%M:%S"), today.strftime("%Y-%m-%d %H:%M:%S"))
-    # # if False:
-    # if today < work.dt_begin:
-    #     # print('--- 업무 시작 전')
-    #     # 업무가 시작되기 전 근로자에게 SMS 를 보내고 답변 상태를 표시
-    #     for employee in employees:
-    #         state = "잘못된 전화번호"
-    #         if employee.employee_id != -101:
-    #             if employee.is_accept_work is None:
-    #                 state = "답변 X"
-    #             elif employee.is_accept_work:
-    #                 state = "수락"
-    #             else:
-    #                 state = "거절"
-    #         view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                          'name': employee.name,
-    #                          'pNo': phone_format(employee.pNo),
-    #                          'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-    #                          'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-    #                          'state': state,
-    #                          'is_not_begin': True,
-    #                          }
-    #         arr_employee.append(view_employee)
-    # else:
-    #     # print('--- 업무 시작 후')
-    #     # 업무가 시작되었으면 당일의 근태내역을 표시
-    #     # 근로자 서버에서 가져오나?
-    #     # employees_infor = {
-    #     #     'employees': [],
-    #     #     'year_month_day': rqst['dt'],
-    #     #     'work_id': rqst['dt'],
-    #     # }
-    #     # r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer', json=employees_infor)
-    #     # employees = r.json()['employees']
-    #     for employee in employees:
-    #         # 주석처리된 부분은 임시 데이터를 만드는 부분
-    #         # today_str = today.strftime("%Y-%m-%d ")
-    #         # employee.dt_begin_beacon = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 15) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_begin_touch = datetime.datetime.strptime(today_str + "08:" + str(random.randint(0,10) + 25) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_end_touch = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 30) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # employee.dt_end_beacon = datetime.datetime.strptime(today_str + "17:" + str(random.randint(0,10) + 40) + ":00", "%Y-%m-%d %H:%M:%S")
-    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-    #         # state = ""
-    #         # if employee.pNo == '01033334444':
-    #         #     state = "SMS"
-    #         #     employee.dt_begin_beacon = None
-    #         #     employee.dt_end_beacon = None
-    #         # print(employee.dt_begin_beacon, employee.dt_begin_touch, employee.dt_end_touch, employee.dt_end_beacon)
-    #         if today < employee.dt_begin:
-    #             if employee.is_accept_work is None:
-    #                 state = "답변 X"
-    #             elif employee.is_accept_work:
-    #                 state = "수락"
-    #             else:
-    #                 state = "거절"
-    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                              'name': employee.name,
-    #                              'pNo': phone_format(employee.pNo),
-    #                              'dt_begin': employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S"),
-    #                              'dt_end': employee.dt_end.strftime("%Y-%m-%d %H:%M:%S"),
-    #                              'state': state,
-    #                              'is_not_begin': True,
-    #                              }
-    #         else:
-    #             if employee.is_accept_work is None or not employee.is_accept_work:
-    #                 # 업무가 시작되었어도 답변이 없거나 거절한 근로자 삭제
-    #                 logSend('  - accept is none or reject: {}'.format(employee.pNo))
-    #                 employee.delete()
-    #                 continue
-    #             view_employee = {'id': AES_ENCRYPT_BASE64(str(employee.id)),
-    #                              'name': employee.name,
-    #                              'pNo': phone_format(employee.pNo),
-    #                              'dt_begin_beacon': dt_str(employee.dt_begin_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-    #                              'dt_begin_touch': dt_str(employee.dt_begin_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-    #                              'dt_end_beacon': dt_str(employee.dt_end_beacon, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-    #                              'dt_end_touch': dt_str(employee.dt_end_touch, "%H:%M"),  # "%Y-%m-%d %H:%M:%S"),
-    #                              'state': "",
-    #                              'is_not_begin': False,
-    #                              }
-    #         arr_employee.append(view_employee)
-    # if rqst['is_working_history'].upper() == 'YES':
-    #     logSend('   *** request: working history')
-    #     #
-    #     #
-    #     # 근로자 서버에 근태 내역 요청
-    #     #
-    # result = {'employees': arr_employee}
-    # return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
