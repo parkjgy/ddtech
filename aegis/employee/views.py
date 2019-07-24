@@ -2141,16 +2141,16 @@ def update_pass_history(pass_history: dict):
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:
-        logError(request.get_full_path(), ' Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
+        logError('ERROR: Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
         return
     if passer.employee_id <= 0:
         return
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError('ERROR: passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
         return
     if len(employees) > 1:
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError('ERROR: passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     employee = employees[0]
 
     # 출근 처리
@@ -2164,7 +2164,7 @@ def update_pass_history(pass_history: dict):
                                                                                     pass_history.dt_in_verify))
         # if employee.work_start is None or employee.working_time is None:
         if len(employee.work_start) == 0 or len(employee.working_time) == 0:
-            logError(request.get_full_path(), ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
+            logError('ERROR: 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
         else:
             dt_in = pass_history.dt_in_verify
             work_in_hour = int(employee.work_start[:2])
@@ -2188,8 +2188,7 @@ def update_pass_history(pass_history: dict):
             logSend('  - employee.work_start: {}, pass_history.dt_in_verify: {}'.format(employee.work_start, dt_out))
             # if employee.work_start is None or employee.working_time is None:
             if len(employee.work_start) == 0 or len(employee.working_time) == 0:
-                logError(request.get_full_path(),
-                         ' 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
+                logError('ERROR: 근로자 앱에서 근로자 등록할 때 출근시간, 근로시간이 안들어 왔다.(이 문제는 SMS 출퇴근 때문에 정상 출근으로 처리한다.')
             else:
                 work_out_hour = int(employee.work_start[:2]) + int(employee.working_time[:2])
                 work_out_minute = int(employee.work_start[3:])
@@ -2200,7 +2199,7 @@ def update_pass_history(pass_history: dict):
                         action_out = 20
     pass_history.action = action_in + action_out
     pass_history.save()
-    logError(request.get_full_path(), ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
+    logError('ERROR: pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
                                                                                         employee.name))
     return
 
