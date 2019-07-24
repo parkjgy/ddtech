@@ -113,7 +113,6 @@ def ValuesQuerySetToDict(vqs):
 
 def status422(func_name, _message):
     logError(func_name, ' ', _message['message'])
-    func_end_log(func_name, _message['message'])
     return REG_422_UNPROCESSABLE_ENTITY.to_json_response(_message)
 
 
