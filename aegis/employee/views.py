@@ -308,7 +308,7 @@ def reg_employee_for_customer(request):
     msg = '이지체크\n' \
           '새로운 업무를 앱에서 확인해주세요.\n' \
           '앱 설치\n' \
-          'https://api.ezchek.co.kr/app'
+          'https://api.ezchek.co.kr/rq/app'
     # msg_feature = "이지체크\n"\
     #               "효성 3공장-포장(3교대)\n"\
     #               "2019/06/07~2019/06/30\n"\
