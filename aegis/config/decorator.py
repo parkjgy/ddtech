@@ -39,8 +39,9 @@ def cross_origin_read_allow(function):
                     rqst = request.GET
                 # 함수 파라미터 표시
                 logSend('   5')
-                for key in rqst.keys():
-                    logSend('^  ', key, ': ', rqst[key])
+                if not len(rqst) > 0:
+                    for key in rqst.keys():
+                        logSend('^  ', key, ': ', rqst[key])
                 logSend('   6')
                 response = function(request, *args, **kwargs)
                 logSend('   7')
