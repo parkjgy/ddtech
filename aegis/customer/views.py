@@ -2905,6 +2905,9 @@ def list_employee(request):
         # 업무가 아직 시작되지 않았다.
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
         logSend('  response.json(): {}'.format(response.json()))
+        if 'employees' not in response.json():
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
+                {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
