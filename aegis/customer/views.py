@@ -1094,17 +1094,20 @@ def logout(request):
     response
         STATUS 200
     """
-
+    logSend('   0')
     if request.session is None or 'id' not in request.session:
         return REG_200_SUCCESS.to_json_response({'message': '이미 로그아웃되었습니다.'})
+    logSend('   1')
     staff = Staff.objects.get(id=request.session['id'])
     staff.is_login = False
     staff.dt_login = datetime.datetime.now()
     staff.save()
+    logSend('   2')
     del request.session['id']
     del request.session['dt_last']
     del request.session['request.get_full_path()']
-    request.session.save()
+    logSend('   3')
+    # request.session.save()
 
     return REG_200_SUCCESS.to_json_response()
 
