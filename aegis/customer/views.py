@@ -2883,7 +2883,7 @@ def list_employee(request):
                     'dt_begin_touch': "" if employee['dt_begin_touch'] is None else employee['dt_begin_touch'][11:16],
                     'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
                     'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
-                    'state': "연차",
+                    'state': employee['overtime'],
                     'is_not_begin': False,
                 }
             else:
