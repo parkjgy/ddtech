@@ -27,10 +27,10 @@ def cross_origin_read_allow(function):
             try:
                 logSend('>>> {}'.format(request.get_full_path()))  # 함수 시작 표시
                 if request.method == 'POST':
-                    logSend('  {}'.format(request.body))
+                    logSend('  1{}2'.format(request.body))
                     rqst = json.loads(request.body.decode("utf-8"))
                 else:
-                    logSend('  {}'.format(request.GET))
+                    logSend('  3{}4'.format(request.GET))
                     rqst = request.GET
                 # 함수 파라미터 표시
                 for key in rqst.keys():
