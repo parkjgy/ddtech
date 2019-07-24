@@ -2824,7 +2824,7 @@ def list_employee(request):
             }
         STATUS 503
         STATUS 416
-            {'message': '오늘 이후를 근로내역은 볼 수 없습니다.'}
+            {'message': '근로 내용은 오늘까지만 볼 수 없습니다.'}
             {'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'}
     """
 
@@ -2854,9 +2854,14 @@ def list_employee(request):
     dt_today = dt
 
     if datetime.datetime.now() < dt_today:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '오늘 이후를 근로 내용은 볼 수 없습니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로 내용은 오늘까지만 볼 수 없습니다.'})
     logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, work.dt_begin))
-    if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
+    # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
+    if work.dt_begin < datetime.datetime.now():
+        # 업무가 아직 시작되지 않았으면 보여준다.
+        logSend('  work not started')
+    elif dt_today < work.dt_begin:
+        # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 이후에는 업무 시작 날짜 이전 근로 내용은 볼 수 없습니다.'})
 
     s = requests.session()
