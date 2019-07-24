@@ -904,7 +904,6 @@ def reg_staff(request):
     if login_id.find(' ') > -1:
         logError(request.get_full_path(), ' 로그인 id에 space 들어왔다. \"{}\"'.format(login_id))
         login_id = login_id.replace(' ', '')
-        # func_end_log(request.get_full_path())
         # return REG_532_ID_IS_WRONG.to_json_response({'message':'아이디에는 공백문자(SPACE)를 사용할 수 없습니다.'})
     if login_id.find('\n') > -1:
         logError(request.get_full_path(), ' 로그인 id에 line feed 들어왔다. \"{}\"'.format(login_id))
@@ -1666,7 +1665,6 @@ def reg_work(request):
     if not parameter_check['is_ok']:
         return status422(request.get_full_path(),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # func_end_log(request.get_full_path())
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     name = parameter_check['parameters']['name']
     result = id_ok(name, 3)
@@ -1793,7 +1791,6 @@ def update_work(request):
     if not parameter_check['is_ok']:
         return status422(request.get_full_path(),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # func_end_log(request.get_full_path())
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
 
@@ -3010,7 +3007,6 @@ def list_employee(request):
     #     # 근로자 서버에 근태 내역 요청
     #     #
     # result = {'employees': arr_employee}
-    # func_end_log(request.get_full_path())
     # return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -3476,7 +3472,6 @@ def report_of_employee(request):
     year_month = parameter_check['parameters']['year_month']
     logSend(work_id, ' ', employee_id)
     # result = {'parameters': [work_id, employee_id, year_month]}
-    # func_end_log(request.get_full_path())
     # return REG_200_SUCCESS.to_json_response(result)
 
     # employees = Employee.objects.filter(id=employee_id, work_id=work_id)
@@ -3613,7 +3608,7 @@ def staff_fg(request):
     staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
         result = {'message': '아이디가 없습니다.'}
-        func_end_log(request.get_full_path(), result['message'])
+        logError(request.get_full_path(), result['message'])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response(result)
     elif len(staffs) > 1:
         logError(request.get_full_path(), ' ServerError: \'{}\' 중복된 id'.format(login_id))
@@ -3621,7 +3616,7 @@ def staff_fg(request):
     staffs = Staff.objects.filter(login_id=login_id, login_pw=hash_SHA256(login_pw))
     if len(staffs) != 1:
         result = {'message': '비밀번호가 틀렸습니다.'}
-        func_end_log(request.get_full_path(), result['message'])
+        logError(request.get_full_path(), result['message'])
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response(result)
 
     app_user = staffs[0]
@@ -4106,7 +4101,7 @@ def staff_employees_from_work(request):
     logSend(target_day, ' ', work.dt_begin)
     if target_day < work.dt_begin:
         # 근로 내역을 원하는 날짜가 업무 시작일 보다 적은 경우 - 아직 업무가 시작되지도 않은 근로 내역을 요청한 경우
-        func_end_log(request.get_full_path(), '416 업무 날짜 밖의 근로 내역 요청')
+        logError(request.get_full_path(), '416 업무 날짜 밖의 근로 내역 요청')
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 날짜 밖의 근로 내역 요청'})
 
     employees = Employee.objects.filter(work_id=work.id)
