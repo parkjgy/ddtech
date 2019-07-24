@@ -2872,6 +2872,11 @@ def list_employee(request):
         for employee in employee_list:
             logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
             if str_to_datetime(employee['dt_begin']) < dt_today:
+                state_dict = {-2: '연(월)차', -1: '조기 퇴근', 0: '',
+                              1: '연장 30분', 2: '연장 1시간', 3: '연장 1시간 30분', 4: '연장 2시간', 5: '연장 2시간 30분',
+                              6: '연장 3시간', 7: '연장 3시간 30분', 8: '연장 4시간', 9: '연장 4시간 30분', 10: '연장 5시간',
+                              11: '연장 5시간 30분', 12: '연장 6시간', 13: '연장 6시간 30분', 14: '연장 7시간',
+                              15: '연장 7시간 30분', 16: '연장 8시간', 17: '연장 8시간 30분', 18: '연장 9시간'}
                 employee_web = {
                     'id': employee['employee_id'],
                     'name': employee['name'],
@@ -2883,7 +2888,7 @@ def list_employee(request):
                     'dt_begin_touch': "" if employee['dt_begin_touch'] is None else employee['dt_begin_touch'][11:16],
                     'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
                     'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
-                    'state': employee['overtime'],
+                    'state': state_dict[employee['overtime']],
                     'is_not_begin': False,
                 }
             else:
