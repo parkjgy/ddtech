@@ -216,6 +216,9 @@ def is_parameter_ok(rqst, key_list) -> dict:
                 else:
                     results['parameters'][key] = plain
             else:
+                if rqst[key] is None:
+                    results['is_ok'] = False
+                    results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
                 value = rqst[key].replace(' ', '')
                 if len(value) == 0:
                     results['is_ok'] = False
