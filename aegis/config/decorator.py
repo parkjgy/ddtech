@@ -31,7 +31,7 @@ def cross_origin_read_allow(function):
                     b = request.body
                     logSend('  byte: {}'.format([ord(x) for x in b]))
                     if len(request.body) == 0:
-                        rqst = None
+                        rqst = {}
                     else:
                         rqst = json.loads(request.body.decode("utf-8"))
                 else:
