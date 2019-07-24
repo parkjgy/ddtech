@@ -246,6 +246,7 @@ def type_ok(type, min_length):
     :param min_length:
     :return: 정상이면 None
     """
+    logSend('  type: \'{}\''.format(type))
     if type is None:
         return {'message': '빈 값은 않됩니다.'}
     space_type = type.replace(' ', '')
