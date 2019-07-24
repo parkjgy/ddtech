@@ -2904,6 +2904,7 @@ def list_employee(request):
     else:
         # 업무가 아직 시작되지 않았다.
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
+        logSend('  response.json(): {}'.format(response.json()))
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
