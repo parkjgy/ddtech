@@ -143,7 +143,6 @@ def check_version(request):
     if not parameter_check['is_ok']:
         return status422(request.get_full_path(),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # func_end_log(request.get_full_path())
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     version = parameter_check['parameters']['v']
 
@@ -2001,7 +2000,6 @@ def pass_record_of_employees_in_day_for_customer(request):
     if len(pass_histories) == 0:
         logError(request.get_full_path(),
                  ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
-        # func_end_log(request.get_full_path())
         # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
     logSend('  pass_histories passer_ids {}'.format(exist_ids))
@@ -2143,8 +2141,7 @@ def update_pass_history(pass_history: dict):
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:
-        func_end_log(request.get_full_path(),
-                     ' Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
+        logError(request.get_full_path(), ' Passer 에 passer_id: {} 가 없다. ({})'.format(pass_history.passer_id, str(e)))
         return
     if passer.employee_id <= 0:
         return
@@ -2203,8 +2200,7 @@ def update_pass_history(pass_history: dict):
                         action_out = 20
     pass_history.action = action_in + action_out
     pass_history.save()
-    func_end_log(request.get_full_path(),
-                 ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
+    logError(request.get_full_path(), ' pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
                                                                                         employee.name))
     return
 
@@ -3037,7 +3033,6 @@ def tk_passer_list(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-    #     func_end_log(request.get_full_path())
     #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
     passer_list = Passer.objects.all()
     passers = {passer.pNo: passer.id for passer in passer_list}
