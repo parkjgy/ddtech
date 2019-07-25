@@ -2899,15 +2899,14 @@ def list_employee(request):
     dt_today = dt
 
     if datetime.datetime.now() < dt_today:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로 내용은 오늘까지만 볼 수 없습니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로 내용은 오늘까지만 볼 수 있습니다.'})
     logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, work.dt_begin))
     # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
     if work.dt_begin < datetime.datetime.now():
-        # 업무가 아직 시작되지 않았으면 보여준다.
-        logSend('  work not started request dt: {}'.format(dt_today))
-    elif dt_today < work.dt_begin:
-        # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
+        # 업무가 아직 시작되었으면
+        if dt_today < work.dt_begin:
+            # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
@@ -2957,7 +2956,7 @@ def list_employee(request):
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
         logSend('  response.json(): {}'.format(response.json()))
         if 'employees' not in response.json():
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 없습니다.'})
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
