@@ -1713,14 +1713,14 @@ def reg_work(request):
         logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
     name = parameter_check['parameters']['name']
-    result = id_ok(name, 3)
+    result = id_ok(name, 2)
     if result is not None:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
     work_place_id = parameter_check['parameters']['work_place_id']
     type = parameter_check['parameters']['type']
     result = type_ok(type, 2)
     if result is not None:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(result)
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
