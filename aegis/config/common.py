@@ -219,11 +219,13 @@ def is_parameter_ok(rqst, key_list) -> dict:
                 if rqst[key] is None:
                     results['is_ok'] = False
                     results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-                value = rqst[key].replace(' ', '')
-                if len(value) == 0:
-                    results['is_ok'] = False
-                    results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-                results['parameters'][key] = rqst[key]
+                else:
+                    value = rqst[key].replace(' ', '')
+                    if len(value) == 0:
+                        results['is_ok'] = False
+                        results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
+                    else:
+                        results['parameters'][key] = rqst[key]
     return results
 
 
