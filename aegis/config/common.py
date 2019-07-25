@@ -217,6 +217,7 @@ def is_parameter_ok(rqst, key_list) -> dict:
             key = key.replace('_!', '')
         if is_blank:
             key = key.replace('_@', '')
+            logSend('key: {}'.format(key))
         if not is_blank and key not in rqst:
             # key 가 parameter 에 포함되어 있지 않으면
             results['is_ok'] = False
@@ -232,7 +233,9 @@ def is_parameter_ok(rqst, key_list) -> dict:
                 else:
                     results['parameters'][key] = plain
             else:
-                if rqst[key] is None:
+                if is_blank:
+                    results['parameters'][key] = rqst[key]
+                elif rqst[key] is None:
                     results['is_ok'] = False
                     results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
                 elif type(rqst[key]) is str:
