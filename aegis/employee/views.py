@@ -1950,14 +1950,14 @@ def pass_record_of_employees_in_day_for_customer(request):
     #
     # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
     #
-    if 'employees' not in rqst:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: parameter \'employees\' 가 없어요'})
-    employees = rqst['employees']
-    # parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
-    parameter_check = is_parameter_ok(rqst, ['year_month_day', 'work_id'])
+    # if 'employees' not in rqst:
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: parameter \'employees\' 가 없어요'})
+    # employees = rqst['employees']
+    # parameter_check = is_parameter_ok(rqst, ['year_month_day', 'work_id'])
+    parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
-    # employees = parameter_check['parameters']['employees']
+    employees = parameter_check['parameters']['employees']
     year_month_day = parameter_check['parameters']['year_month_day']
     customer_work_id = parameter_check['parameters']['work_id']
     try:
