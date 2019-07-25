@@ -1952,6 +1952,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     #
     if 'employees' not in rqst:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: parameter \'employees\' 가 없어요'})
+    employees = rqst['employees']
     # parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id'])
     parameter_check = is_parameter_ok(rqst, ['year_month_day', 'work_id'])
     if not parameter_check['is_ok']:
