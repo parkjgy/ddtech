@@ -4508,7 +4508,7 @@ def staff_recognize_employee(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'employee_id_!', 'dt_arrive', 'dt_leave'])
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'employee_id_!', 'dt_arrive_@', 'dt_leave_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     staff_id = parameter_check['parameters']['staff_id']
