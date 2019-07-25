@@ -1725,14 +1725,14 @@ def reg_work(request):
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
 
-    partner_id = parameter_check['parameters']['partner_id']
-    logSend('-- name: \"' + name + '\"')
-    logSend('   work_place_id: \"' + work_place_id + '\"')
-    logSend('   type: \"' + type + '\"')
-    logSend('   dt_begin: \"' + dt_str(dt_begin, "%Y-%m-%d %H:%M:%S") + '\"')
-    logSend('   dt_end: \"' + dt_str(dt_end, "%Y-%m-%d %H:%M:%S") + '\"')
-    logSend('   staff_id: \"' + staff_id + '\"')
-    logSend('   partner_id: \"' + partner_id + '\"')
+    # partner_id = parameter_check['parameters']['partner_id']
+    # logSend('-- name: \"' + name + '\"')
+    # logSend('   work_place_id: \"' + work_place_id + '\"')
+    # logSend('   type: \"' + type + '\"')
+    # logSend('   dt_begin: \"' + dt_str(dt_begin, "%Y-%m-%d %H:%M:%S") + '\"')
+    # logSend('   dt_end: \"' + dt_str(dt_end, "%Y-%m-%d %H:%M:%S") + '\"')
+    # logSend('   staff_id: \"' + staff_id + '\"')
+    # logSend('   partner_id: \"' + partner_id + '\"')
     if dt_begin < datetime.datetime.now():
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
     if dt_end < dt_begin:
@@ -2628,7 +2628,7 @@ def update_employee(request):
         #
         # 근로자가 업무에 투입되고 난 다음에 예정된 종료일을 변경할 때 사용
         #
-        parameter_check = is_parameter_ok(rqst, ['is_active', 'message'])
+        parameter_check = is_parameter_ok(rqst, ['is_active', 'message_@'])
         if not parameter_check['is_ok']:
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
         is_active = parameter_check['parameters']['is_active']
