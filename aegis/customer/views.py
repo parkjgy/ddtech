@@ -14,7 +14,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip
+from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -1678,6 +1678,9 @@ def reg_work(request):
             {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
         STATUS 544
             {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'}
+        STATUS 422
+            {'message': '사업장 명칭은 최소 4자 이상이어야 합니다.'}
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: parameter \'name\' 가 없어요'}
             {'message': 'ClientError: parameter \'work_place_id_\' 가 없어요'}
@@ -1705,11 +1708,10 @@ def reg_work(request):
     worker = Staff.objects.get(id=worker_id)
 
     parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!',
-                                             'partner_id_!'])
+                                             'partner_id_!_@'])
     if not parameter_check['is_ok']:
-        return status422(request.get_full_path(),
-                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
     name = parameter_check['parameters']['name']
     result = id_ok(name, 3)
     if result is not None:
@@ -1722,6 +1724,7 @@ def reg_work(request):
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
+
     partner_id = parameter_check['parameters']['partner_id']
     logSend('-- name: \"' + name + '\"')
     logSend('   work_place_id: \"' + work_place_id + '\"')

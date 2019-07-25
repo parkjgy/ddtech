@@ -184,10 +184,23 @@ def rMin(min) -> int:
     return min - 5 + random_value
 
 
+def get_api(request):
+    """
+    request.get_full_path() 에서 이름만 가져온다.
+    - ex: /customer/reg_work?modalShow=True >> /customer/reg_work
+    :param request:
+    :return:
+    """
+    path_list = request.get_full_path().split('?')
+    return path_list[0]
+
+
 def is_parameter_ok(rqst, key_list) -> dict:
     """
     API 의 파라미터를 검사
     - key_list 의 key에 '_!' 가 붙어 있으면 암호환된 값을 복호화 한다. ex) key_! << 키는 key 이고 복호화 해서 정상인지 확인한다는 뜻
+    - key_list 의 key에 '_@' 가 붙어 있으면 key 가 없더라도 에러처리하지 않는다.
+    - key_list 의 value 가 문자열이고 문자열의 space 문자를 지웠을 때 빈 값이면 에러처리한다.
     :param rqst:
     :param key_list:
     :return:
@@ -198,10 +211,13 @@ def is_parameter_ok(rqst, key_list) -> dict:
     """
     results = {'is_ok': True, 'is_decryption_error': False, 'results': [], 'parameters': {}}
     for key in key_list:
-        is_decrypt = '_!' in key
+        is_decrypt = '_!' in key    # 암호화되었나
+        is_blank = '_@' in key      # 비어있어도 에러처리하지 않는다.
         if is_decrypt:
             key = key.replace('_!', '')
-        if key not in rqst:
+        if is_blank:
+            key = key.replace('_@', '')
+        if not is_blank and key not in rqst:
             # key 가 parameter 에 포함되어 있지 않으면
             results['is_ok'] = False
             results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
@@ -220,6 +236,7 @@ def is_parameter_ok(rqst, key_list) -> dict:
                     results['is_ok'] = False
                     results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
                 elif type(rqst[key]) is str:
+                    # 문자열이면 공백을 제거했을 때 값이 없으면(즉, key 만 있고 value 가 없는 것으로 처리
                     value = rqst[key].replace(' ', '')
                     if len(value) == 0:
                         results['is_ok'] = False
