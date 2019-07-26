@@ -217,7 +217,7 @@ def is_parameter_ok(rqst, key_list) -> dict:
             key = key.replace('_!', '')
         if is_blank:
             key = key.replace('_@', '')
-            logSend('key: {}'.format(key))
+            logSend('  possible blank key: {}: {}'.format(key, rqst[key]))
         if not is_blank and key not in rqst:
             # key 가 parameter 에 포함되어 있지 않으면
             results['is_ok'] = False
