@@ -460,7 +460,7 @@ def logout(request):
     staff.save()
     del request.session['op_id']
     del request.session['dt_last']
-    del request.session['api_before'])
+    del request.session['api_before']
     request.session.save()
 
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
