@@ -10,7 +10,7 @@ import inspect
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
-from config.common import str_no, str_to_dt, get_client_ip
+from config.common import str_no, str_to_dt, get_client_ip, get_api
 from config.common import Works
 
 # secret import
@@ -128,20 +128,20 @@ def check_version(request):
         cypher_passer_id = info[int(phone_count) + 2:]
         passer_id = AES_DECRYPT_BASE64(cypher_passer_id)
         if passer_id == '__error':
-            return status422(request.get_full_path(), {'message': 'ClientError: 잘못된 id 예요'})
+            return status422(get_api(request), {'message': 'ClientError: 잘못된 id 예요'})
         try:
             passer = Passer.objects.get(pNo=phone_no)
         except Exception as e:
-            logError(request.get_full_path(), ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
+            logError(get_api(request), ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
         if passer.id != int(passer_id):
-            logError(request.get_full_path(),
+            logError(get_api(request),
                      ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
 
     parameter_check = is_parameter_ok(rqst, ['v'])
     if not parameter_check['is_ok']:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
         # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
     version = parameter_check['parameters']['v']
@@ -171,7 +171,7 @@ def check_version(request):
         elif phone_type == 'i':
             url_install = url_iOS
         else:
-            return status422(request.get_full_path(), {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
+            return status422(get_api(request), {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
                                                                 })
     return REG_200_SUCCESS.to_json_response()
@@ -577,7 +577,7 @@ def notification_accept(request):
 
     parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
     if not parameter['is_ok']:
-        return status422(request.get_full_path(), {'message': parameter['message']})
+        return status422(get_api(request), {'message': parameter['message']})
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
     is_accept = bool(int(parameter['parameters']['is_accept']))
@@ -585,19 +585,19 @@ def notification_accept(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
-        return status422(request.get_full_path(), {'message': '출입자({}) 가 없어요'.format(passer_id)})
+        return status422(get_api(request), {'message': '출입자({}) 가 없어요'.format(passer_id)})
     passer = passers[0]
 
     notifications = Notification_Work.objects.filter(id=notification_id)
     if len(notifications) == 0:
-        return status422(request.get_full_path(), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
+        return status422(get_api(request), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
     notification = notifications[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(request.get_full_path(), {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
+        return status422(get_api(request), {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(request.get_full_path(),
+        logError(get_api(request),
                  ' passer {} 의 employee {} 가 {} 개 이다.(정상은 1개)'.format(passer.id, passer.employee_id,
                                                                       len(employees)))
     employee = employees[0]
@@ -762,12 +762,12 @@ def pass_reg(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(request.get_full_path(), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
-        logError(request.get_full_path(), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
-        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(request.get_full_path(), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+        logError(get_api(request), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -793,7 +793,7 @@ def pass_reg(request):
     logSend(beacons)
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id})
     passer = passers[0]
 
@@ -806,7 +806,7 @@ def pass_reg(request):
             beacon.last_passer_id = passer_id
             beacon.save()
         else:
-            logError(request.get_full_path(), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+            logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
                 uuid='12345678-0000-0000-0000-123456789012',
                 # 1234567890123456789012345678901234567890
@@ -868,7 +868,7 @@ def pass_reg(request):
                                                          year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
                 # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
-                logError(request.get_full_path(),
+                logError(get_api(request),
                          ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
                 return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
             else:
@@ -879,10 +879,10 @@ def pass_reg(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
+            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
         elif (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
             # 출근시간 이후 12 시간이 지났으면 무시한다.
-            logError(request.get_full_path(),
+            logError(get_api(request),
                      ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in,
                                                                                                    dt_beacon))
             return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 beacon out 을 무시한다.'})
@@ -903,19 +903,6 @@ def pass_reg(request):
 
         if pass_history.dt_in is None:
             pass_history.dt_in = dt_beacon
-    # # work_id 처리
-    # if (pass_history.work_id == -1) and (passer.employee_id > 0):
-    #     employees = Employee.objects.filter(id=passer.employee_id)
-    #     if len(employees) == 0:
-    #         logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-    #     else:
-    #         if len(employees) > 1:
-    #             logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
-    #         employee = employees[0]
-    #         logError(request.get_full_path(), ' beacon 으로 업무를 구분해야 한다. ??? 그런데 같은 사업장이면 beacon 도 같을텐데...')
-    #         employee_works = Works(employee.get_works())
-    #         if len(employee_works.data) > 0:
-    #             pass_history.work_id = employee.get_works()[0]['id']
     pass_history.save()
     return REG_200_SUCCESS.to_json_response()
 
@@ -960,13 +947,13 @@ def pass_verify(request):
             {'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)}
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(request.get_full_path(), ' passer id: {} 중복되었다.'.format(passer_id))
-        logError(request.get_full_path(), ' employee id: {} 중복되었다.'.format(passer.employee_id))
-        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(get_api(request), ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(get_api(request), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -982,17 +969,17 @@ def pass_verify(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
     elif len(passers) > 1:
-        logError(request.get_full_path(), ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(get_api(request), ' passer id: {} 중복되었다.'.format(passer_id))
     passer = passers[0]
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(request.get_full_path(), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
@@ -1022,7 +1009,7 @@ def pass_verify(request):
             yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id,
                                                                    year_month_day=yesterday_year_month_day)
             if len(yesterday_pass_histories) == 0:
-                logError(request.get_full_path(),
+                logError(get_api(request),
                          ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
                 # out 인데 어제, 오늘 in 기록이 없다?
                 #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
@@ -1070,10 +1057,10 @@ def pass_verify(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
             # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
-            logError(request.get_full_path(),
+            logError(get_api(request),
                      ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
                                                                                                       dt_touch))
     else:
@@ -1124,8 +1111,8 @@ def pass_sms(request):
             {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
             {'message': '근무할 업무가 없다.'.format()}
     error log
-        logError(request.get_full_path(), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
-        logError(request.get_full_path(), ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
+        logError(get_api(request), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        logError(get_api(request), ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -1147,12 +1134,12 @@ def pass_sms(request):
         if is_accept:
             extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '수락'))]
             if len(extract_sms) > 1:
-                logError(request.get_full_path(), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+                logError(get_api(request), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
             name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) < 2:
                 # 이름이 2자가 안되면 SMS 로 이름이 안들어왔다고 보내야 하나? (휴~~~)
-                logError(request.get_full_path(), ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+                logError(get_api(request), ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
                 sms_data = {
                     'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
                     'user_id': 'yuadocjon22',
@@ -1165,12 +1152,12 @@ def pass_sms(request):
                 }
                 rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
                 logSend('SMS result', rSMS.json())
-                return status422(request.get_full_path(),
+                return status422(get_api(request),
                                  {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
         else:
             extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '거절'))]
             if len(extract_sms) > 1:
-                logError(request.get_full_path(), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+                logError(get_api(request), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
             name = ''.join(extract_sms)
             logSend('  name = {}'.format(name))
             if len(name) == 0:
@@ -1208,13 +1195,13 @@ def pass_sms(request):
             else:
                 # 출입자(passer) 는 있다.
                 if len(passer_list) > 1:
-                    logError(request.get_full_path(), ' 전화번호({})가 중복되었다.'.format(phone_no))
+                    logError(get_api(request), ' 전화번호({})가 중복되었다.'.format(phone_no))
                 passer = passer_list[0]
                 employee_list = Employee.objects.filter(id=passer.employee_id)
                 if len(employee_list) == 0:
                     # 그런데 출입자와 연결된 근로자가 없다. > 근로자만 새로 만들어 연결한다.
                     logSend('---3 name: {}, phone: {}'.format(name, phone_no))
-                    logError(request.get_full_path(),
+                    logError(get_api(request),
                              ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
                     employee = Employee(
                         name=name,
@@ -1226,7 +1213,7 @@ def pass_sms(request):
                     # 출입자, 근로자 다 있고 연결도 되어있다.
                     logSend('---4 name: {}, phone: {}'.format(name, phone_no))
                     if len(employee_list) > 1:
-                        logError(request.get_full_path(), ' employee({})가 중복되었다.'.format(passer.employee_id))
+                        logError(get_api(request), ' employee({})가 중복되었다.'.format(passer.employee_id))
                     employee = employee_list[0]
                     # employee.name = name
                     # employee.save()
@@ -1260,13 +1247,13 @@ def pass_sms(request):
     elif '퇴근' in sms:
         is_in = False
     else:
-        logError(request.get_full_path(), ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
-        return status422(request.get_full_path(),
+        logError(get_api(request), ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+        return status422(get_api(request),
                          {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) == 0:
-        logError(request.get_full_path(), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        logError(get_api(request), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
         return REG_541_NOT_REGISTERED.to_json_response()
     passer = passers[0]
     passer_id = passer.id
@@ -1274,18 +1261,18 @@ def pass_sms(request):
     logSend(' {}  {}  {}  {}'.format(phone_no, passer.id, dt, is_in))
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        logError(request.get_full_path(),
+        logError(get_api(request),
                  ' Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.id, passer.employee_id))
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(request.get_full_path(),
+        logError(get_api(request),
                  ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
-        logError(request.get_full_path(), '근무할 업무가 없다.'.format())
-        return status422(request.get_full_path(), {'message': '근무할 업무가 없다.'.format()})
+        logError(get_api(request), '근무할 업무가 없다.'.format())
+        return status422(get_api(request), {'message': '근무할 업무가 없다.'.format()})
     employee_work = employee_works.data[employee_works.index]
     work_id = employee_work['id']
     new_pass = Pass(
@@ -1310,7 +1297,7 @@ def pass_sms(request):
             yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
             pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
             if len(pass_histories) == 0:
-                logError(request.get_full_path(),
+                logError(get_api(request),
                          ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
                 # out 인데 어제, 오늘 in 기록이 없다?
                 #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
@@ -1342,10 +1329,10 @@ def pass_sms(request):
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
         if (dt_in + datetime.timedelta(hours=12)) < dt_touch:
             # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
-            logError(request.get_full_path(),
+            logError(get_api(request),
                      ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
                                                                                                       dt_touch))
     else:
@@ -1419,8 +1406,8 @@ def beacons_is(request):
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
-        logError(request.get_full_path(), ' ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id)
-        return status422(request.get_full_path(), {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'})
+        logError(get_api(request), ' ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id)
+        return status422(get_api(request), {'message': 'ServerError: 근로자가 등록되어 있지 않거나 중복되었다.'})
 
     if request.method == 'GET':
         beacons = [
@@ -1503,7 +1490,7 @@ def certification_no_to_sms(request):
         passers = Passer.objects.filter(pNo=phone_no)
         logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
         if len(passers) > 0:
-            logError(request.get_full_path(), ' phone: ({}, {}), duplication phone: {}'
+            logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
                      .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
                 {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
@@ -1511,7 +1498,7 @@ def certification_no_to_sms(request):
     else:
         if parameter_check['is_decryption_error']:
             # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
-            logError(request.get_full_path(), parameter_check['results'])
+            logError(get_api(request), parameter_check['results'])
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
         # 새로 근로자 등록을 하는 경우 - 전화번호 중복을 확인해야한다.
         # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
@@ -1723,14 +1710,14 @@ def update_my_info(request):
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
         # 출입자에 없는 사람을 수정하려는 경우
-        logError(request.get_full_path(), ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
-        return status422(request.get_full_path(), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+        logError(get_api(request), ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
+        return status422(get_api(request), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
         # 출입자에 근로자 정보가 없는 경우
-        logError(request.get_full_path(), ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
-        return status422(request.get_full_path(), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+        logError(get_api(request), ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
+        return status422(get_api(request), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
 
     update_employee_of_customer = {'is_upate': False}
     if 'name' in rqst:
@@ -1840,16 +1827,16 @@ def my_work_list(request):
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
         # 출입자에 없는 사람을 수정하려는 경우
-        logError(request.get_full_path(), ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
-        return status422(request.get_full_path(), {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
+        logError(get_api(request), ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
+        return status422(get_api(request), {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
     passer = passers[0]
     if passer.employee_id == -1:
         return REG_200_SUCCESS.to_json_response({'works': []})
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) != 1:
         # 출입자의 근로자 정보가 없다.
-        logError(request.get_full_path(), ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
-        return status422(request.get_full_path(), {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
+        logError(get_api(request), ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
+        return status422(get_api(request), {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
     employee = employees[0]
     employee_works = Works(employee.get_works())
     work_list = []
@@ -1935,13 +1922,13 @@ def pass_record_of_employees_in_day_for_customer(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(request.get_full_path(), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        logError(get_api(request), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
 
-        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(get_api(request), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -1965,16 +1952,16 @@ def pass_record_of_employees_in_day_for_customer(request):
         work = Work.objects.get(customer_work_id=customer_work_id)
         work_id = work.id
     except Exception as e:
-        logError(request.get_full_path(), ' 업무 id ({}) 에 해당되는 업무가 없다. ({})'.format(customer_work_id, str(e)))
+        logError(get_api(request), ' 업무 id ({}) 에 해당되는 업무가 없다. ({})'.format(customer_work_id, str(e)))
         work_id = -1
     employee_ids = []
     for employee in employees:
         # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
         plain = AES_DECRYPT_BASE64(employee)
         if plain == '__error':
-            logError(request.get_full_path(), ' 근로자 id ({}) Error 복호화 실패: 처리대상에서 제외'.format(employee))
+            logError(get_api(request), ' 근로자 id ({}) Error 복호화 실패: 처리대상에서 제외'.format(employee))
             # 2019-05-22 여러명을 처리할 때 한명 때문에 에러처리하면 안되기 때문에...
-            # return status422(request.get_full_path(), {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
+            # return status422(get_api(request), {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
         else:
             if int(plain) > 0:
                 # 거절 수락하지 않은 근로자 제외 (employee_id == -1)
@@ -1985,7 +1972,7 @@ def pass_record_of_employees_in_day_for_customer(request):
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
-        logError(request.get_full_path(), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
+        logError(get_api(request), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
     employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
     # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
     employee_ids = []
@@ -2001,7 +1988,7 @@ def pass_record_of_employees_in_day_for_customer(request):
         pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
                                                      work_id=work_id)
     if len(pass_histories) == 0:
-        logError(request.get_full_path(),
+        logError(get_api(request),
                  ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
         # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
     exist_ids = [pass_history.passer_id for pass_history in pass_histories]
@@ -2010,7 +1997,7 @@ def pass_record_of_employees_in_day_for_customer(request):
         if int(employee_id) not in exist_ids:
             if int(employee_id) < 0:
                 # 필요없음 위 id 해독부분에서 -1 을 걸러냄
-                logError(request.get_full_path(), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
+                logError(get_api(request), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
             else:
                 # 출퇴근 기록이 없으면 새로 만든다.
                 logSend('   --- new pass_history passer_id {}'.format(employee_id))
@@ -2020,7 +2007,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                     action=0,
                     work_id=work_id,
                 )
-                logError(request.get_full_path(), ' 강제로 만든 pass_history: {}'.format(
+                logError(get_api(request), ' 강제로 만든 pass_history: {}'.format(
                     [{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if
                      not key.startswith('_')]))
                 new_pass_history.save()
@@ -2093,7 +2080,7 @@ def pass_record_of_employees_in_day_for_customer(request):
                 update_pass_history(pass_history)
 
         if len(fail_list) > 0:
-            return status422(request.get_full_path(), {'message': 'fail', 'fails': fail_list})
+            return status422(get_api(request), {'message': 'fail', 'fails': fail_list})
 
         pass_history.save()
 
@@ -2235,13 +2222,13 @@ def change_work_period_for_customer(request):
             {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
             {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
     log Error
-        logError(request.get_full_path(), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        logError(get_api(request), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
 
-        logError(request.get_full_path(), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
-        logError(request.get_full_path(), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(request.get_full_path(), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(request.get_full_path(), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+        logError(get_api(request), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2259,22 +2246,22 @@ def change_work_period_for_customer(request):
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
-        return status422(request.get_full_path(), {'message': '해당 근로자({})가 없다. ({})'.format(passer_id, str(e))})
+        return status422(get_api(request), {'message': '해당 근로자({})가 없다. ({})'.format(passer_id, str(e))})
     if passer.employee_id == -1:
-        return status422(request.get_full_path(), {'message': '해당 근로자({})의 업무가 등록되지 않았다.'.format(passer_id)})
+        return status422(get_api(request), {'message': '해당 근로자({})의 업무가 등록되지 않았다.'.format(passer_id)})
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': '해당 근로자({})의 업무를 찾을 수 없다. ({})'.format(passer_id, str(e))})
     logSend('   {}'.format(employee.name))
     employee_works = Works(employee.get_works())
     try:
         work = Work.objects.get(customer_work_id=work_id)
     except Exception as e:
-        return status422(request.get_full_path(), {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
+        return status422(get_api(request), {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
     if not employee_works.find(work.id):
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})
     employee_work = employee_works.data[employee_works.index]
     if 'dt_begin' in rqst:
@@ -2341,18 +2328,18 @@ def my_work_histories_for_customer(request):
 
     passers = Passer.objects.filter(id=employee_id)
     if len(passers) == 0:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
     elif len(passers) > 1:
-        logError(request.get_full_path(), ' Passer(id:{})가 중복되었다.'.format(employee_id))
+        logError(get_api(request), ' Passer(id:{})가 중복되었다.'.format(employee_id))
     passer = passers[0]
 
     employees = Employee.objects.filter(id=passer.employee_id)
     if len(employees) == 0:
-        return status422(request.get_full_path(),
+        return status422(get_api(request),
                          {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
     elif len(employees) > 1:
-        logError(request.get_full_path(), ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
+        logError(get_api(request), ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     #
     # 이 근로자의 과거 근로 기록을 보여준다.
@@ -2602,7 +2589,7 @@ def get_dic_passer():
         employee_id = passer['employee_id']
         passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
         dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
-    print(dic_passer, '\n', dic_passer[1]['name'])
+    logSend(dic_passer, '\n', dic_passer[1]['name'])
     del passers
     del dic_employee
     """

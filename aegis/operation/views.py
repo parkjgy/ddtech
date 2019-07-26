@@ -223,7 +223,7 @@ def updateEnv(request):
             dt = datetime.datetime.strptime('2019-01-01 ' + rqst['timeCheckServer'], "%Y-%m-%d %H:%M:%S")
             timeCheckServer = dt.strftime("%H:%M:%S")
         except Exception as err:
-            return status422(request.get_full_path(), {'message': 'timeCheckServer 양식이 틀렸습니다.'})
+            return status422(get_api(request), {'message': 'timeCheckServer 양식이 틀렸습니다.'})
     else:
         timeCheckServer = env.curEnv.timeCheckServer
 
@@ -237,7 +237,7 @@ def updateEnv(request):
             try:
                 dt = datetime.datetime.strptime(rqst[dt_type], "%Y-%m-%d %H:%M:%S")
             except Exception as err:
-                return status422(request.get_full_path(), {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
+                return status422(get_api(request), {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
             new_env[dt_type] = dt
             is_update = True
         else:
@@ -286,10 +286,10 @@ def reg_staff(request):
     worker = Staff.objects.get(id=worker_id)
     # try:
     #     if AES_DECRYPT_BASE64(rqst['master']) != '3355':
-    #         func_end_log(request.get_full_path())
+    #         func_end_log(get_api(request))
     #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류'})
     # except Exception as e:
-    #     func_end_log(request.get_full_path())
+    #     func_end_log(get_api(request))
     #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '마스터 키 오류 : ' + str(e)})
 
     phone_no = no_only_phone_no(rqst['pNo'])
@@ -421,7 +421,7 @@ def login(request):
         rqst = request.GET
 
     if 'id' not in rqst or 'pw' not in rqst:
-        return status422(request.get_full_path(), {'message': 'invalid parameter'})
+        return status422(get_api(request), {'message': 'invalid parameter'})
 
     id_ = rqst['id']
     pw_ = rqst['pw']
@@ -436,7 +436,7 @@ def login(request):
 
     # 추후 0000은 permission 에 할당
     request.session['op_id'] = 'O0000' + str(staff.id)
-    request.session['request.get_full_path()'] = request.get_full_path()
+    request.session['get_api(request)'] = get_api(request)
     request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     request.session.save()
     return REG_200_SUCCESS.to_json_response()
@@ -460,7 +460,7 @@ def logout(request):
     staff.save()
     del request.session['op_id']
     del request.session['dt_last']
-    del request.session['request.get_full_path()']
+    del request.session['get_api(request)']
     request.session.save()
 
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.
@@ -523,7 +523,7 @@ def update_staff(request):
     staff = worker
     # if worker.id != staff.id:
     #     staff.login_pw = hash_SHA256('happy_day82')
-    #     func_end_log(request.get_full_path())
+    #     func_end_log(get_api(request))
     #     return REG_200_SUCCESS.to_json_response({'message': '비밀번호가 초기화 되었습니다.'})
 
     if hash_SHA256(before_pw) != staff.login_pw:
@@ -592,7 +592,7 @@ def list_staff(request):
         }
         arr_staff.append(r_staff)
     logSend(arr_staff)
-    # func_end_log(request.get_full_path())
+    # func_end_log(get_api(request))
     return REG_200_SUCCESS.to_json_response({'staffs': arr_staff})
 
 
@@ -1035,14 +1035,14 @@ def dt_upgrade(request):
     # worker_id = request.session['op_id'][5:]
     # worker = Staff.objects.get(id=worker_id)
     if 'type' not in rqst:
-        return status422(request.get_full_path(), {'message': 'required \'type\''})
+        return status422(get_api(request), {'message': 'required \'type\''})
     type = 'dt_' + rqst['type'] + '_upgrade'
 
     global env
 
     # logSend('  type: {}, env: {}'.format(type, [key for key in env.current().__dict__.keys()]))
     if type not in env.current().__dict__.keys():
-        return status422(request.get_full_path(), {'message': 'type is only: android, android_mng, iOS, iOS_mng'})
+        return status422(get_api(request), {'message': 'type is only: android, android_mng, iOS, iOS_mng'})
 
     result = {'dt_update': env.curEnv.__dict__[type].strftime('%Y-%m-%d %H:%M:%S')}
     return REG_200_SUCCESS.to_json_response(result)
@@ -2182,10 +2182,6 @@ def customer_test_step_A(request):
     return REG_200_SUCCESS.to_json_response({'result': result})
 
 
-def check_test_key(rqst) -> bool:
-    return True
-
-
 @cross_origin_read_allow
 def employee_test_step_1(request):
     """
@@ -3313,7 +3309,7 @@ def sms_install_mng(request):
     #     'msg': msg,
     # }
     # r = requests.post('https://apis.aligo.in/send/', data=rData)
-    # func_end_log(request.get_full_path())
+    # func_end_log(get_api(request))
     # return REG_200_SUCCESS.to_json_response({'result':result})
 
     if not 'id' in rqst:
