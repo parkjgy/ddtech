@@ -1713,26 +1713,23 @@ def reg_work(request):
         logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
     name = parameter_check['parameters']['name']
-    result = id_ok(name, 2)
-    if result is not None:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
     work_place_id = parameter_check['parameters']['work_place_id']
     type = parameter_check['parameters']['type']
-    result = type_ok(type, 2)
-    if result is not None:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
+    partner_id = parameter_check['parameters']['partner_id']
+    if partner_id is None:
+        # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
+        partner_id = worker.co_id
 
-    # partner_id = parameter_check['parameters']['partner_id']
-    # logSend('-- name: \"' + name + '\"')
-    # logSend('   work_place_id: \"' + work_place_id + '\"')
-    # logSend('   type: \"' + type + '\"')
-    # logSend('   dt_begin: \"' + dt_str(dt_begin, "%Y-%m-%d %H:%M:%S") + '\"')
-    # logSend('   dt_end: \"' + dt_str(dt_end, "%Y-%m-%d %H:%M:%S") + '\"')
-    # logSend('   staff_id: \"' + staff_id + '\"')
-    # logSend('   partner_id: \"' + partner_id + '\"')
+    result = id_ok(name, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
+    result = type_ok(type, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
+
     if dt_begin < datetime.datetime.now():
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
     if dt_end < dt_begin:
@@ -1744,25 +1741,6 @@ def reg_work(request):
                                 staff_id=staff_id,
                                 contractor_id=partner_id,
                                 )
-    # is_empty = False
-    # blanks = []
-    # for key in ['name', 'work_place_id', 'type', 'dt_begin', 'dt_end', 'staff_id', 'partner_id']:
-    #     if key in rqst:
-    #         if len(rqst[key]) == 0:
-    #             blanks.append(key)
-    #             is_empty = True
-    #     else:
-    #         blanks.append(key)
-    #         is_empty = True
-    # if is_empty:
-    # 
-    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '모든 항목은 어느 하나도 빠지면 안 됩니다.'})
-    # works = Work.objects.filter(name=rqst['name'],
-    #                             type=rqst['type'],
-    #                             work_place_id=AES_DECRYPT_BASE64(rqst['work_place_id']),
-    #                             staff_id=AES_DECRYPT_BASE64(rqst['staff_id']),
-    #                             contractor_id=AES_DECRYPT_BASE64(rqst['partner_id']),
-    #                             )
     if len(works) > 0:
         return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
 

@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from .log import logSend, logError
 from .status_collection import *
-from .common import str_to_datetime, dt_str
+from .common import str_to_datetime, dt_str, get_api
 
 
 class BaseMiddleware:
@@ -35,7 +35,7 @@ class BaseMiddleware:
                 # 등록 기능은 5초 이내에 다시 요청이 들어왔을 때 걸러낸다.
                 if request.session['request.get_full_path()'] == request.get_full_path():
                     if (dt_now - dt_last).seconds < settings.REQUEST_TIME_GAP:
-                        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다. (middleware)'.format(request.get_full_path()))
+                        logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다. (middleware)'.format(get_api(request)))
                         return REG_409_CONFLICT.to_json_response()
             request.session['dt_last'] = dt_str(dt_now, "%Y-%m-%d %H:%M:%S")
             request.session['request.get_full_path()'] = request.get_full_path()
@@ -52,7 +52,7 @@ class ProcessExceptionMiddleware(BaseMiddleware):
 def exception_handler(request, exception):
     # logSend('>>> ProcessExceptionMiddleware: exception_handler: function: {}'.format(request.get_full_path()))
     stack_trace = get_traceback_str()
-    logError('{}\n{}'.format(request.get_full_path(), stack_trace))
+    logError('{}\n{}'.format(get_api(request), stack_trace))
     # response = HttpResponse(json.dumps(
     #     {'message': str(exception),
     #      'stack_trace': stack_trace}

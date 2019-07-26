@@ -212,42 +212,51 @@ def is_parameter_ok(rqst, key_list) -> dict:
     results = {'is_ok': True, 'is_decryption_error': False, 'results': [], 'parameters': {}}
     for key in key_list:
         is_decrypt = '_!' in key    # 암호화되었나
-        is_blank = '_@' in key      # 비어있어도 에러처리하지 않는다.
         if is_decrypt:
             key = key.replace('_!', '')
+        is_blank = '_@' in key      # 비어있어도 에러처리하지 않는다.
         if is_blank:
             key = key.replace('_@', '')
-            logSend('  possible blank key: {}: {}'.format(key, rqst[key]))
-        if not is_blank and key not in rqst:
-            # key 가 parameter 에 포함되어 있지 않으면
-            results['is_ok'] = False
-            results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-        else:
-            if is_decrypt:
-                # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
-                plain = AES_DECRYPT_BASE64(rqst[key])
-                if plain == '__error':
-                    results['is_ok'] = False
-                    results['is_decryption_error'] = True
-                    results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
-                else:
-                    results['parameters'][key] = plain
-            else:
-                if is_blank:
-                    results['parameters'][key] = rqst[key]
-                elif rqst[key] is None:
-                    results['is_ok'] = False
-                    results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-                elif type(rqst[key]) is str:
+            if key in rqst:
+                if type(rqst[key]) is str:
                     # 문자열이면 공백을 제거했을 때 값이 없으면(즉, key 만 있고 value 가 없는 것으로 처리
                     value = rqst[key].replace(' ', '')
                     if len(value) == 0:
-                        results['is_ok'] = False
-                        results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
-                    else:
-                        results['parameters'][key] = rqst[key]
-                else:
-                    results['parameters'][key] = rqst[key]
+                        results['parameters'][key] = None
+                        # logSend('  {}: {} space'.format(key, None))
+                        continue
+            else:
+                results['parameters'][key] = None
+                # logSend('  {}: {}'.format(key, None))
+                continue
+        if key in rqst:
+            if type(rqst[key]) is str:
+                # 문자열이면 공백을 제거했을 때 값이 없으면(즉, key 만 있고 value 가 없는 것으로 처리
+                value = rqst[key].replace(' ', '')
+                if len(value) == 0:
+                    results['is_ok'] = False
+                    results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
+                    # logSend('  {}: {} ERROR space'.format(key, None))
+                    continue
+        else:
+            results['is_ok'] = False
+            results['results'].append('ClientError: parameter \'%s\' 가 없어요\n' % key)
+            # logSend('  {}: {} ERROR'.format(key, None))
+            continue
+        if is_decrypt:
+            # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
+            plain = AES_DECRYPT_BASE64(rqst[key])
+            if plain == '__error':
+                results['is_ok'] = False
+                results['is_decryption_error'] = True
+                results['results'].append('ClientError: parameter \'%s\' 가 정상적인 값이 아니예요.\n' % key)
+                # logSend('  {}: {}'.format(key, plain))
+            else:
+                results['parameters'][key] = plain
+            continue
+        # logSend('  {}: {}'.format(key, rqst[key]))
+        results['parameters'][key] = rqst[key]
+
     return results
 
 

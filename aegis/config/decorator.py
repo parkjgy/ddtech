@@ -10,6 +10,7 @@ from django.conf import settings
 from .error_handler import exception_handler
 from .status_collection import REG_403_FORBIDDEN
 from .log import logSend, logError
+from .common import get_api
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -25,7 +26,7 @@ def cross_origin_read_allow(function):
             response = HttpResponse()
         else:
             try:
-                logSend('>>> {}'.format(request.get_full_path()))  # 함수 시작 표시
+                logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 if request.method == 'POST':
                     if len(request.body) == 0:
                         rqst = {}
@@ -37,10 +38,10 @@ def cross_origin_read_allow(function):
                 for key in rqst.keys():
                     logSend('^  {}: {}'.format(key, rqst[key]))
                 response = function(request, *args, **kwargs)
-                logSend('<<< {}'.format(request.get_full_path()))  # 함수 끝 표시
+                logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
-                logSend('  ERROR > {}'.format(request.get_full_path()))
+                # logSend('ERROR > {}'.format(get_api(request)))
                 response = exception_handler(request, e)
         # logSend('   response: status_code: {}, {}'.format(response.status_code, response.content))
 
