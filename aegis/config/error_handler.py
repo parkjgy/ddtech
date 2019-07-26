@@ -18,7 +18,7 @@ class BaseMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # logSend('>>> BaseMiddleware __call__: {}'.format(request.get_full_path()))
+        # logSend('>>> BaseMiddleware __call__: {}'.format(get_api(request)))
         # logSend('   request.session: {}'.format([key for key in request.session.keys()]))
         if 'op_id' in request.session.keys() or 'id' in request.session.keys():
             dt_last = str_to_datetime(request.session['dt_last'])
@@ -28,17 +28,17 @@ class BaseMiddleware:
                 # 쎄션 유지 시간(settings.SESSION_COOKIE_AGE)이 지났으면 로그아웃 처리
                 del request.session['op_id']
                 del request.session['dt_last']
-                del request.session['request.get_full_path()']
+                del request.session['api_before']
                 return REG_403_FORBIDDEN.to_json_response()
-            # logSend('  request.get_full_path(): {}'.format(request.session['request.get_full_path()']))
-            if 'reg' in request.get_full_path() or 'update' in request.get_full_path():
+            # logSend('  get_api(request): {}'.format(request.session['api_before']))
+            if 'reg' in get_api(request) or 'update' in get_api(request):
                 # 등록 기능은 5초 이내에 다시 요청이 들어왔을 때 걸러낸다.
-                if request.session['request.get_full_path()'] == request.get_full_path():
+                if request.session['api_before'] == get_api(request):
                     if (dt_now - dt_last).seconds < settings.REQUEST_TIME_GAP:
                         logError('Error: {} 5초 이내에 [등록]이나 [수정]요청이 들어왔다. (middleware)'.format(get_api(request)))
                         return REG_409_CONFLICT.to_json_response()
             request.session['dt_last'] = dt_str(dt_now, "%Y-%m-%d %H:%M:%S")
-            request.session['request.get_full_path()'] = request.get_full_path()
+            request.session['api_before'] = get_api(request)
 
         return self.get_response(request)
 
@@ -50,7 +50,7 @@ class ProcessExceptionMiddleware(BaseMiddleware):
 
 
 def exception_handler(request, exception):
-    # logSend('>>> ProcessExceptionMiddleware: exception_handler: function: {}'.format(request.get_full_path()))
+    # logSend('>>> ProcessExceptionMiddleware: exception_handler: function: {}'.format(get_api(request)))
     stack_trace = get_traceback_str()
     logError('{}\n{}'.format(get_api(request), stack_trace))
     # response = HttpResponse(json.dumps(

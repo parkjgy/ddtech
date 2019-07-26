@@ -1076,7 +1076,7 @@ def login(request):
     staff.is_login = True
     staff.save()
     request.session['id'] = staff.id
-    request.session['get_api(request)'] = get_api(request)
+    request.session['api_before'] = get_api(request)
     request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     request.session.save()
 
