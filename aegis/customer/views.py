@@ -2625,7 +2625,7 @@ def update_employee(request):
         employee.dt_end = dt_end
         employee.is_active = False if employee.dt_end < dt_today else True  # 업무 종료일이 오늘 이전이면 업무 종료
         employee.is_active = True if is_active.upper() == 'YES' else False
-        if len(message) > 0:
+        if message is not None and len(message) > 0:
             #
             # to employee server : message,
             #
