@@ -436,7 +436,7 @@ def login(request):
 
     # 추후 0000은 permission 에 할당
     request.session['op_id'] = 'O0000' + str(staff.id)
-    request.session['get_api(request)'] = get_api(request)
+    request.session['api_before'] = get_api(request)
     request.session['dt_last'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     request.session.save()
     return REG_200_SUCCESS.to_json_response()
@@ -460,7 +460,7 @@ def logout(request):
     staff.save()
     del request.session['op_id']
     del request.session['dt_last']
-    del request.session['get_api(request)']
+    del request.session['api_before'])
     request.session.save()
 
     # id를 None 으로 Setting 하면, 세션은 살아있으면서 값은 None 인 상태가 된다.

@@ -1143,7 +1143,7 @@ def logout(request):
     staff.save()
     del request.session['id']
     del request.session['dt_last']
-    del request.session['get_api(request)']
+    del request.session['api_before']
     # request.session.save()
 
     return REG_200_SUCCESS.to_json_response()
