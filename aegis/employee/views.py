@@ -2318,7 +2318,7 @@ def my_work_histories_for_customer(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_!', 'dt'])
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_!_@', 'dt'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
@@ -2370,9 +2370,14 @@ def my_work_histories_for_customer(request):
     while day < dt_end:
         year_month_day_list.append(day.strftime('%Y-%m-%d'))
         day = day + datetime.timedelta(days=1)
-    logSend(year_month_day_list)
-    pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
-                                                   year_month_day__in=year_month_day_list).order_by('year_month_day')
+    logSend('  work_id: {}, year_month_day_list: {}'.format(work_id, year_month_day_list))
+    if work_id is not None:
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       work_id=work_id,
+                                                       year_month_day__in=year_month_day_list).order_by('year_month_day')
+    else:
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       year_month_day__in=year_month_day_list).order_by('year_month_day')
     workings = []
     # overtime_values = [-1., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
     for pass_record in pass_record_list:
