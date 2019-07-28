@@ -10,7 +10,7 @@ from django.conf import settings
 from .error_handler import exception_handler
 from .status_collection import REG_403_FORBIDDEN
 from .log import logSend, logError
-from .common import get_api
+from .common import get_api, AES_DECRYPT_BASE64
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -36,7 +36,7 @@ def cross_origin_read_allow(function):
                     rqst = request.GET
                 # 함수 파라미터 표시
                 for key in rqst.keys():
-                    logSend('^  {}: {}'.format(key, rqst[key]))
+                    logSend('^  {}: {} {}'.format(key, rqst[key], AES_DECRYPT_BASE64(rqst[key]) if key in '_id' else ''))
                 response = function(request, *args, **kwargs)
                 logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
             except Exception as e:
