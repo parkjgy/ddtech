@@ -1741,6 +1741,8 @@ def reg_work(request):
                                 staff_id=staff_id,
                                 contractor_id=partner_id,
                                 )
+    for work in works:
+        logSend('  existed: {}'.format({x: work.__dict__[x] for x in work.__dict__.keys()}))
     if len(works) > 0:
         return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
 
@@ -2375,7 +2377,7 @@ def reg_employee(request):
                 notification += bad_phone + '<br>'
         if len(bad_condition_list) > 0:
             notification += '<br>' \
-                            '<p style=\"color: #dd0000;\">다른 업무와 기간이 겹치는 근로자입니다.</p>' \
+                            '<p style=\"color: #dd0000;\">다른 업무가 있는 근로자입니다.</p>' \
                             '<p style=\"text-align: center; padding-left: 30px; color: #808080;\">'
             for bad_condition in bad_condition_list:
                 notification += bad_condition + '<br>'
