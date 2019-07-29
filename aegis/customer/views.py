@@ -4520,7 +4520,7 @@ def staff_recognize_employee(request):
                        # 'year_month_day': dt_arrive.strftime('%Y-%m-%d'),
                        'work_id': AES_ENCRYPT_BASE64(str(work.id)),
                        }
-    if not '' == str_dt_arrive:
+    if not '' == str_dt_arrive or str_dt_arrive is not None:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
         dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
@@ -4529,7 +4529,7 @@ def staff_recognize_employee(request):
         employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
         employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
 
-    if not '' == str_dt_leave:
+    if not '' == str_dt_leave or str_dt_leave is not None:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
         dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")

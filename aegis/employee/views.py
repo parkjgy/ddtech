@@ -2391,6 +2391,7 @@ def my_work_histories_for_customer(request):
                    'overtime': pass_record.overtime,  # 2019-07-21 overtime_values[pass_record.overtime + 2],
                    'working_hour': working_hour,
                    'break_hour': break_hour,
+                   # 'work_id': pass_record.work_id,
                    }
         workings.append(working)
 
