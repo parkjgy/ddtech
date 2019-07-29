@@ -4089,7 +4089,7 @@ def staff_change_time(request):
     https://api-dev.aegisfac.com/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     http://0.0.0.0:8000/customer/staff_change_time?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
     overtime 설명 (2019-07-21)
-        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+        연장 근무( -2: 연차, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
@@ -4331,7 +4331,7 @@ def staff_update_employee(request):
     - 값을 넣은 것만 변경한다.
     http://0.0.0.0:8000/customer/staff_update_employee?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_begin=2019-03-01&dt_end=2019-04-30&overtime_type=0
     overtime 설명
-        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+        연장 근무 -2: 연차, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
@@ -4347,7 +4347,7 @@ def staff_update_employee(request):
                 "action": 20,
                 "dt_begin": null,
                 "dt_end": "2019-07-01 07:01:56",
-                "overtime": -1,        # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+                "overtime": -1,        # 연장 근무 -2: 연차, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
                 "working_hour": 8,
                 "break_hour": 0
                 },
@@ -4520,7 +4520,7 @@ def staff_recognize_employee(request):
                        # 'year_month_day': dt_arrive.strftime('%Y-%m-%d'),
                        'work_id': AES_ENCRYPT_BASE64(str(work.id)),
                        }
-    if not '' == str_dt_arrive or str_dt_arrive is not None:
+    if 'dt_arrive' in rqst and str_dt_arrive is not None:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
         dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
@@ -4529,7 +4529,7 @@ def staff_recognize_employee(request):
         employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
         employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
 
-    if not '' == str_dt_leave or str_dt_leave is not None:
+    if 'dt_leave' in rqst and str_dt_leave is not None:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
         dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
