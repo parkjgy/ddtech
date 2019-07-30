@@ -2318,12 +2318,12 @@ def my_work_histories_for_customer(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_!_@', 'dt'])
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_@', 'dt'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     employee_id = parameter_check['parameters']['employee_id']
-    work_id = parameter_check['parameters']['work_id']
+    customer_work_id = parameter_check['parameters']['work_id']  # 이 work_id 는 고객서버의 work_id 라서 암호화된 채로 사용한다.
     year_month = parameter_check['parameters']['dt']
 
     passers = Passer.objects.filter(id=employee_id)
@@ -2370,10 +2370,16 @@ def my_work_histories_for_customer(request):
     while day < dt_end:
         year_month_day_list.append(day.strftime('%Y-%m-%d'))
         day = day + datetime.timedelta(days=1)
-    logSend('  work_id: {}, year_month_day_list: {}'.format(work_id, year_month_day_list))
-    if work_id is not None:
+    logSend('  customer_work_id: {}, year_month_day_list: {}'.format(customer_work_id, year_month_day_list))
+    if customer_work_id is not None:
+        works = Work.objects.filter(customer_work_id=customer_work_id)
+        if len(works) == 0:
+            logError(get_api(request), ' 근로자 서버에 고객서버가 요청한 work_id({}) 가 없다. [발생하면 안됨]'.format(customer_work_id))
+            result = {"working": workings}
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response(result)
+
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
-                                                       work_id=work_id,
+                                                       work_id=works[0].id,
                                                        year_month_day__in=year_month_day_list).order_by('year_month_day')
     else:
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
