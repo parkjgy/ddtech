@@ -1055,10 +1055,13 @@ def pass_verify(request):
         pass_history.dt_out_verify = dt_touch
         pass_history.dt_out_em = dt_touch
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        logSend('  출근시간: {}, overtime: {}'.format(dt_in, datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5)))
+        logSend('  출근시간 + 12시간 + overtime: {}, 퇴근시간: {}'.format(dt_in + datetime.timedelta(hours=12) + datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5), dt_touch))
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
+        elif (dt_in + datetime.timedelta(hours=12)
+              + datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5)) < dt_touch:
             # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
             logError(get_api(request),
                      ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
@@ -2189,7 +2192,7 @@ def update_pass_history(pass_history: dict):
                         action_out = 20
     pass_history.action = action_in + action_out
     pass_history.save()
-    logError('ERROR: pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
+    logSend('employee/update_pass_history: pass_history.action = {}, passer_id = {}, employee.name = {}'.format(pass_history.action, passer.id,
                                                                                         employee.name))
     return
 
