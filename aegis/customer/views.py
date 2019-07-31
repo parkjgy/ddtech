@@ -1973,7 +1973,7 @@ def list_work_from_work_place(request):
     사업장 업무 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/list_work?work_place_id
+    http://0.0.0.0:8000/customer/list_work_from_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg
     GET
         work_place_id   = cipher 사업장 id
         dt_begin        = 과거 업무를 찾을 때 (optional) 2019/2/20 미구현
@@ -2029,19 +2029,20 @@ def list_work_from_work_place(request):
     dt_today = datetime.datetime.now()
     works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
                                 # dt_end=None,
-                                dt_end__gte=dt_today).values('id',
-                                                             'name',
-                                                             'work_place_id',
-                                                             'work_place_name',
-                                                             'type',
-                                                             'contractor_id',
-                                                             'contractor_name',
-                                                             'dt_begin',
-                                                             'dt_end',
-                                                             'staff_id',
-                                                             'staff_name',
-                                                             'staff_pNo',
-                                                             'staff_email')
+                                # dt_end__gte=dt_today,
+                                ).values('id',
+                                         'name',
+                                         'work_place_id',
+                                         'work_place_name',
+                                         'type',
+                                         'contractor_id',
+                                         'contractor_name',
+                                         'dt_begin',
+                                         'dt_end',
+                                         'staff_id',
+                                         'staff_name',
+                                         'staff_pNo',
+                                         'staff_email')
     arr_work = []
     for work in works:
         work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
@@ -3585,11 +3586,14 @@ def staff_fg(request):
         logSend('  업무 id: {}'.format(arr_work_place_id))
         # 해당 사업장의 모든 업무 조회
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
-        works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
+        # works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
+        works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=(dt_today - datetime.timedelta(days=3)))
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
-        works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=dt_today)
-    logSend('  업무 리스트: {}'.format([work.staff_name for work in works]))
+        works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=(dt_today - datetime.timedelta(days=3)))
+        # works = Work.objects.filter(staff_id=app_user.id)
+        logSend('  app_user id: {}'.format(app_user.id))
+    logSend('  업무 리스트: {}'.format([(work.staff_name, work.work_place_name + ' ' + work.name + '(' + work.type + ')') for work in works]))
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
     for work in works:
