@@ -2120,13 +2120,13 @@ def list_work(request):
         dt_begin = datetime.datetime.now() - timedelta(days=365)
     else:
         dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
-    print(dt_begin)
+    logSend('  이날짜 이후 업무'.format(dt_begin))
     str_dt_end = rqst['dt_end']
     if len(str_dt_end) == 0:
         dt_end = datetime.datetime.now() + timedelta(days=365)
     else:
         dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
-    print(dt_end)
+    logSend('  이날짜 까지 업무'.format(dt_end))
     works = Work.objects.filter(name__contains=name,
                                 work_place_name__contains=work_place_name,
                                 type__contains=type,
@@ -3512,7 +3512,7 @@ def staff_fg(request):
     - 응답에 work list 만 온다.
     - 각 work 의 날짜별 근로자 출퇴근 시간은 staff_employees_at_day 를 이용한다.
     - work 가 아직 시작되지 않았으면 staff_employees 를 이용한다.
-    http://0.0.0.0:8000/customer/staff_fg?login_id=think&login_pw=parkjong
+    http://0.0.0.0:8000/customer/staff_fg?login_id=think&login_pw=happy_day!!!
     GET
         login_id=abc
         login_pw=password
@@ -3574,22 +3574,22 @@ def staff_fg(request):
     # request.session['id'] = app_user.id
     # request.session.save()
 
-    logSend(app_user.name, app_user.id, app_user.co_id)
+    logSend('  이름: {}, id: {}, 회사 id: {}'.format(app_user.name, app_user.id, app_user.co_id))
     dt_today = datetime.datetime.now()
     # 업무 추출
     # 사업장 조회 - 사업장을 관리자로 검색해서 있으면 그 사업장의 모든 업무를 볼 수 있게 한다.
     work_places = Work_Place.objects.filter(contractor_id=app_user.co_id, manager_id=app_user.id)
-    logSend([work_place.name for work_place in work_places])
+    logSend('  담당 사업장 리스트: {}'.format([work_place.name for work_place in work_places]))
     if len(work_places) > 0:
         arr_work_place_id = [work_place.id for work_place in work_places]
-        logSend(arr_work_place_id)
+        logSend('  업무 id: {}'.format(arr_work_place_id))
         # 해당 사업장의 모든 업무 조회
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=dt_today)
-    logSend([work.staff_name for work in works])
+    logSend('  업무 리스트: {}'.format([work.staff_name for work in works]))
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
     for work in works:
