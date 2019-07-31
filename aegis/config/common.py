@@ -412,7 +412,8 @@ class Works(object):
             #     count_started += 1
             # else:
             #     count_reserve += 1
-            if (e_begin < x_begin < e_end) or (e_begin < x_end < e_end):
+            if (e_begin <= x_end) or (x_begin <= e_end):
+                # 기존 업무 기간(e_begin ~ e_end) 에 새로운 업무 기간(x_begin ~ x_end) 가 걸쳐지면 중복처리
                 return True
         # if count_started > 0:
         #     if count_reserve > 0:

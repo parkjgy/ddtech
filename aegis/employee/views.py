@@ -282,10 +282,11 @@ def reg_employee_for_customer(request):
     employee_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
     employee_status = {}  # {1:-11}
+    logSend(' employee_status: {}'.format(employee_status))
     for employee in employee_list:
         works = Works(employee.get_works())
         logSend('  - ', works.data)
-        if works.is_overlap({'id': work.id, 'begin': work.begin, 'end': work.end}):
+        if works.is_overlap({'id': work.id, 'begin': dt_begin, 'end': dt_end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
         work_counter = works.work_counter(work.id)
@@ -294,6 +295,7 @@ def reg_employee_for_customer(request):
                 employee_status[employee.id] = -31
         elif work_counter[1] >= 2:
             employee_status[employee.id] = -31
+        logSend(' employee_status: {}'.format(employee_status))
     logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
     phones_state = {}
     for passer in passer_list:
