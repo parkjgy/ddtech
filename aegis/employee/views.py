@@ -2352,33 +2352,11 @@ def my_work_histories_for_customer(request):
     # 이 근로자의 과거 근로 기록을 보여준다.
     # ? 이 근로자의 현재 업무 과거 기록만 보여줘야하지 않나? - work_id 이용 필요
     #
-    dt_begin = str_to_datetime(
-        year_month)  # datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-    dt_today = datetime.datetime.now()
-    if dt_today.strftime('%Y-%m') == year_month:
-        # 근무 내역 요청이 이번달이면 근무 마지막 날을 오늘로 한다.
-        dt_end = datetime.datetime.strptime(dt_today.strftime('%Y-%m-%d') + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
-        dt_end = dt_end + timedelta(hours=24)
+    logSend('  customer_work_id: {}'.format(customer_work_id))
+    if customer_work_id is None or customer_work_id == 'i52bN-IdKYwB4fcddHRn-g':
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
     else:
-        # 이번달이 아니면 그 달의 마지막 날을 계산한다.
-        dt_end = datetime.datetime.strptime(year_month + '-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-        if dt_end.month + 1 == 13:
-            # 12월이면 다음 해 1월로
-            dt_end = dt_end.replace(month=1, year=dt_end.year + 1)
-        else:
-            dt_end = dt_end.replace(month=dt_end.month + 1)
-        dt_end = dt_end - timedelta(days=1)
-        # if dt_today < dt_end:
-        #     dt_end = datetime.datetime.strptime()
-    logSend(' dt_begin: {}  dt_end: {}'.format(dt_begin, dt_end))
-
-    year_month_day_list = []
-    day = dt_begin
-    while day < dt_end:
-        year_month_day_list.append(day.strftime('%Y-%m-%d'))
-        day = day + datetime.timedelta(days=1)
-    logSend('  customer_work_id: {}, year_month_day_list: {}'.format(customer_work_id, year_month_day_list))
-    if customer_work_id is not None:
         works = Work.objects.filter(customer_work_id=customer_work_id)
         if len(works) == 0:
             logError(get_api(request), ' 근로자 서버에 고객서버가 요청한 work_id({}) 가 없다. [발생하면 안됨]'.format(customer_work_id))
@@ -2386,12 +2364,8 @@ def my_work_histories_for_customer(request):
 
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        work_id=works[0].id,
-                                                       year_month_day__in=year_month_day_list).order_by('year_month_day')
-    else:
-        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
-                                                       year_month_day__in=year_month_day_list).order_by('year_month_day')
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
     workings = []
-    # overtime_values = [-1., 0., .5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9.]
     for pass_record in pass_record_list:
         working_time = int(employee.working_time)
         working_hour = (working_time // 4) * 4
