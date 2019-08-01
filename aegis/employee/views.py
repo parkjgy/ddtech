@@ -2259,12 +2259,14 @@ def change_work_period_for_customer(request):
     except Exception as e:
         return status422(get_api(request),
                          {'message': '해당 근로자({})의 업무를 찾을 수 없다. ({})'.format(passer_id, str(e))})
-    logSend('   {}'.format(employee.name))
+    # logSend('   {}'.format(employee.name))
     employee_works = Works(employee.get_works())
+    # logSend('  find: 5 > {}'.format(employee_works.find('5')))
     try:
         work = Work.objects.get(customer_work_id=work_id)
     except Exception as e:
         return status422(get_api(request), {'message': '해당 업무({})를 찾을 수 없다. ({})'.format(work_id, str(e))})
+    # logSend('  work: {}'.format({x: work.__dict__[x] for x in work.__dict__.keys() if not x.startswith('_')}))
     if not employee_works.find(work.id):
         return status422(get_api(request),
                          {'message': '해당 업무({})를 근로자({})에게서 찾을 수 없다.'.format(work_id, passer_id)})

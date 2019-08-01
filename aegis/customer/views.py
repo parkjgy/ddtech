@@ -4455,10 +4455,13 @@ def staff_update_employee(request):
         r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
         result['work_dt_end'] = {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
 
-    if not '' == overtime_type:
-        if overtime_type < -2 or 18 < overtime_type:
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '설정범위를 벗어났습니다.'})
-        employee.overtime = overtime_type
+    if overtime_type is not None:
+        if type(overtime_type) is str:
+            overtime_type.replace(' ', '')
+        if len(overtime_type) > 0:
+            if overtime_type < -2 or 18 < overtime_type:
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '설정범위를 벗어났습니다.'})
+            employee.overtime = overtime_type
 
     employee.save()
     #

@@ -377,7 +377,7 @@ class Works(object):
         """
         today = datetime.datetime.now()
         for element in self.data:
-            logSend(' {} {} {}'.format(element['id'], element['begin'], element['end']))
+            logSend(' id: {}, begin: {}, end: {}'.format(element['id'], element['begin'], element['end']))
             if str_to_dt(element['end']) < today:
                 self.data.remove(element)
 
@@ -455,8 +455,11 @@ class Works(object):
         """
         work_id 가 있는지 찾는다.
         """
-        for self.index in range(len(self.data)):
-            if self.data[self.index]['id'] == work_id:
+        # logSend('  find id: {}, data: {}'.format(work_id, self.data))
+        for element in self.data:
+            # logSend('  element: {}'.format(element))
+            if element['id'] == work_id:
+                # logSend('  finded: {}'.format(work_id))
                 return True
         return False
 
