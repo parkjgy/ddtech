@@ -1970,12 +1970,13 @@ def update_work(request):
 @session_is_none_403
 def list_work_from_work_place(request):
     """
-    사업장 업무 목록
+    사업장에 소속된 업무 목록
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_work_from_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg
     GET
         work_place_id   = cipher 사업장 id
+        is_active       = YES(1), NO(0) default is NO (호환성을 위해 있어도 되고 없으면 0 으로 처리)
         dt_begin        = 과거 업무를 찾을 때 (optional) 2019/2/20 미구현
         dt_end          = 과거 업무를 찾을 때 (optional)
     response
@@ -2026,23 +2027,37 @@ def list_work_from_work_place(request):
     # else:
     #     dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
     # print(dt_end)
-    dt_today = datetime.datetime.now()
-    works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
-                                # dt_end=None,
-                                # dt_end__gte=dt_today,
-                                ).values('id',
-                                         'name',
-                                         'work_place_id',
-                                         'work_place_name',
-                                         'type',
-                                         'contractor_id',
-                                         'contractor_name',
-                                         'dt_begin',
-                                         'dt_end',
-                                         'staff_id',
-                                         'staff_name',
-                                         'staff_pNo',
-                                         'staff_email')
+    if 'is_active' in rqst and rqst['is_active'] is '1':
+        dt_today = datetime.datetime.now()
+        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
+                                    dt_end__gte=dt_today,
+                                    ).values('id',
+                                             'name',
+                                             'work_place_id',
+                                             'work_place_name',
+                                             'type',
+                                             'contractor_id',
+                                             'contractor_name',
+                                             'dt_begin',
+                                             'dt_end',
+                                             'staff_id',
+                                             'staff_name',
+                                             'staff_pNo',
+                                             'staff_email')
+    else:
+        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id)).values('id',
+                                                                                            'name',
+                                                                                            'work_place_id',
+                                                                                            'work_place_name',
+                                                                                            'type',
+                                                                                            'contractor_id',
+                                                                                            'contractor_name',
+                                                                                            'dt_begin',
+                                                                                            'dt_end',
+                                                                                            'staff_id',
+                                                                                            'staff_name',
+                                                                                            'staff_pNo',
+                                                                                            'staff_email')
     arr_work = []
     for work in works:
         work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
@@ -4383,7 +4398,7 @@ def staff_update_employee(request):
         rqst = request.GET
 
     parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'employee_id_!', 'dt_begin', 'dt_end',
-                                             'overtime_type'])
+                                             'overtime_type_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     staff_id = parameter_check['parameters']['staff_id']
