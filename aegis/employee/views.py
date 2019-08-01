@@ -2380,8 +2380,7 @@ def my_work_histories_for_customer(request):
         works = Work.objects.filter(customer_work_id=customer_work_id)
         if len(works) == 0:
             logError(get_api(request), ' 근로자 서버에 고객서버가 요청한 work_id({}) 가 없다. [발생하면 안됨]'.format(customer_work_id))
-            result = {"working": workings}
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response(result)
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '소속된 업무가 없습니다.'})
 
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        work_id=works[0].id,
