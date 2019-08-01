@@ -80,6 +80,7 @@ urlpatterns = [
     url(r'customer/ddtech_update_syatem$', views.ddtech_update_syatem, name='ddtech_update_syatem'),
     url(r'customer/tk_check_employees$', views.tk_check_employees, name='tk_check_employees'),
     url(r'customer/tk_list_employees$', views.tk_list_employees, name='tk_list_employees'),
+    url(r'customer/tk_complete_employees$', views.tk_complete_employees, name='tk_complete_employees'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -38,7 +38,8 @@ def cross_origin_read_allow(function):
                 for key in rqst.keys():
                     logSend('^  {}: {} {}'.format(key, rqst[key],
                                                   AES_DECRYPT_BASE64(rqst[key]) if '_id' in key and
-                                                                                   'n_id' not in key else ''))
+                                                                                   'n_id' not in key and
+                                                                                   '_id_' not in key else ''))
                 response = function(request, *args, **kwargs)
                 logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
             except Exception as e:

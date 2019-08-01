@@ -376,10 +376,10 @@ class Works(object):
         data 중에 날짜가 지난 항목이 있으면 삭제한다.
         """
         today = datetime.datetime.now()
-        for element in self.data:
-            logSend(' id: {}, begin: {}, end: {}'.format(element['id'], element['begin'], element['end']))
-            if str_to_dt(element['end']) < today:
-                self.data.remove(element)
+        # for element in self.data:
+        #     # logSend('  * id: {}, begin: {}, end: {} {}'.format(element['id'], element['begin'], element['end'], (str_to_dt(element['end']) < today)))
+        #     if str_to_dt(element['end']) < today:
+        #         self.data.remove(element)
 
     def add(self, x):
         """
@@ -394,6 +394,7 @@ class Works(object):
                 self.data.append(x)
                 return before_x
         self.data.append(x)
+        logSend(self.data)
         return None
 
     def is_overlap(self, x):

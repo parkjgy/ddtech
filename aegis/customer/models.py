@@ -145,3 +145,15 @@ class Employee(models.Model):
     y = models.FloatField(null=True, default=None) # 경도 longitude
 
 
+class Employee_Backup(models.Model):    
+    """업무가 끝난 근로자 backup"""
+    dt_begin = models.DateTimeField(null=True, blank=True) # 근무 시작일
+    dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
+
+    work_id = models.IntegerField() # 업무 id
+
+    employee_id = models.IntegerField(default=-1) # 출입 서버의 근로자 id (실제 근로자 서버에서는 passer_id)
+    name = models.CharField(max_length=127, default='-----') # 근로자 이름
+    pNo = models.CharField(max_length = 19)
+        
+

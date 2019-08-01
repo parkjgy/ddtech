@@ -33,6 +33,19 @@ class Employee(models.Model):
         return json.loads(self.works)
 
 
+class Employee_Backup(models.Model):    
+    """업무가 끝난 근로자 backup"""
+    dt_begin = models.DateTimeField(null=True, blank=True) # 근무 시작일
+    dt_end = models.DateTimeField(null=True, blank=True) # 근무 종료일
+
+    work_id = models.IntegerField() # 업무 id
+
+    passer_id = models.IntegerField() # 업무 id
+    employee_id = models.IntegerField(default=-1) # 출입 서버의 근로자 id (실제 근로자 서버에서는 passer_id)
+    name = models.CharField(max_length=127, default='-----') # 근로자 이름
+    pNo = models.CharField(max_length = 19)
+
+
 class Notification_Work(models.Model):
     """
     근로자 앱이 처음 시작될 때 배정받은 업무가 있는지 저장하고 있는 table
