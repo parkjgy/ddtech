@@ -26,6 +26,7 @@ from .models import Work
 from .models import Pass
 from .models import Passer
 from .models import Pass_History
+from .models import Employee_Backup
 
 import requests
 from datetime import datetime, timedelta
@@ -3018,3 +3019,90 @@ def tk_passer_list(request):
     passer_list = Passer.objects.all()
     passers = {passer.pNo: passer.id for passer in passer_list}
     return REG_200_SUCCESS.to_json_response({'passers': passers})
+
+
+@cross_origin_read_allow
+def tk_passer_work_backup(request):
+    """
+    [[ 운영 ]] 고객 서버에서 받은 업무 완료된 근로자의 업무에서 업무를 뺀다.
+    POST
+        dt_complete: 2019-07-31
+        passer_id_list: [ 121, 111, ...]
+    http://0.0.0.0:8000/employee/tk_passer_work_backup?dt_complete=2019-05-31&passer_id_list=121&passer_id_list=111&passer_id_list=3
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # parameter_check = is_parameter_ok(rqst, ['key_!'])
+    # if not parameter_check['is_ok']:
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    # parameter_check = is_parameter_ok(rqst, ['work_id'])
+    # if not parameter_check['is_ok']:
+    #     return status422(get_api(request),
+    #                      {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+    # work_id = parameter_check['parameters']['work_id']
+    if request.method == 'GET':
+        passer_id_list = rqst.getlist('passer_id_list')
+    else:
+        passer_id_list = rqst['passer_id_list']
+    logSend('  pass_id_list: {}'.format(passer_id_list))
+
+    dt_complete = str_to_datetime(rqst['dt_complete'])
+    dt_complete = dt_complete + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+    dt_today = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y-%m-%d ") + "00:00:00", "%Y-%m-%d %H:%M:%S")
+
+    logSend('  origin: {}, dt_complete: {}, dt_today: {}'.format(rqst['dt_complete'], dt_complete, dt_today))
+    if dt_today < dt_complete:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '백업할 날짜({})는 오늘({})전이어야 한다.'.format(dt_complete, dt_today)})
+
+    result = []
+    passer_list = Passer.objects.filter(id__in=passer_id_list)
+    # passer_list = Passer.objects.all()
+    passer_dict = {}
+    for passer in passer_list:
+        passer_dict[passer.employee_id] = {'pNo': passer.pNo, 'passer_id': passer.id}
+    logSend('  {}'.format(passer_dict))
+    employee_id_list = [passer.employee_id for passer in passer_list]
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    employee_work_backup = []
+    for employee in employee_list:
+        employee_work_list = employee.get_works()
+        logSend('  employee: {}'.format({x: employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')}))
+        for employee_work in employee_work_list:
+            if str_to_dt(employee_work['end']) < dt_complete:
+                remove_work = {'employee_id': employee.id,
+                               'name': employee.name,
+                               'work_id': employee_work['id'],
+                               'dt_begin': employee_work['begin'],
+                               'dt_end': employee_work['end'],
+                               'pNo': passer_dict[employee.id]['pNo'],
+                               'passer_id': passer_dict[employee.id]['passer_id'],
+                               }
+                employee_work_backup.append(remove_work)
+                employee_work_list.remove(employee_work)
+                employee_work = Employee_Backup(name=remove_work['name'],
+                                                pNo=remove_work['pNo'],
+                                                passer_id=remove_work['passer_id'],
+                                                employee_id=remove_work['employee_id'],
+                                                work_id=remove_work['work_id'],
+                                                dt_begin=str_to_dt(remove_work['dt_begin']),
+                                                dt_end=str_to_dt(remove_work['dt_end']),
+                                                )
+                employee_work.save()
+        employee.set_works(employee_work_list)
+        employee.save()
+        logSend('  >> employee: {}'.format({x: employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')}))
+    result.append(employee_work_backup)
+
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
