@@ -3753,7 +3753,7 @@ def staff_employees_at_day(request):
     employee_ids = []
     for employee in employee_list:
         if employee.dt_begin < datetime.datetime.now():
-            # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭
+            # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭제
             if employee.is_accept_work is None or not employee.is_accept_work:
                 employee.delete()
                 continue
@@ -5151,6 +5151,91 @@ def tk_complete_employees(request):
     """
     Employee 업무 완료 근로자 백업
     
+    passer_id_list
+    """
+    parameter = {"passer_id_list": passer_id_list,
+                 "dt_complete": rqst['dt_complete'],
+                 }
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_passer_work_backup', json=parameter)
+    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+def tk_complete_work_backup(request):
+    """
+    [[ 운영]] 업무가 종료된 근로자를 찾아 별도 저장하고 뺀다.
+    - 몇일을 기준으로 완료된 근로자를 백업할지 정한다.
+    - 오늘 미만 날짜여야한다.
+    http://0.0.0.0:8000/customer/tk_complete_work_backup?dt_complete=2019-07-31
+    GET
+        dt_complete: 2019-07-31
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    # parameter_check = is_parameter_ok(rqst, ['work_id'])
+    # if not parameter_check['is_ok']:
+    #     return status422(get_api(request),
+    #                      {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+    # work_id = parameter_check['parameters']['work_id']
+    dt_complete = str_to_datetime(rqst['dt_complete'])
+    dt_complete = dt_complete + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+    dt_today = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y-%m-%d ") + "00:00:00",
+                                          "%Y-%m-%d %H:%M:%S")
+
+    logSend('  origin: {}, dt_complete: {}, dt_today: {}'.format(rqst['dt_complete'], dt_complete, dt_today))
+    if dt_today < dt_complete:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다.'.format(dt_complete, dt_today)})
+
+    complete_work_list = Work.objects.filter(dt_end__lte=dt_complete)
+    complete_work_id_list = [x.id for x in complete_work_list]
+    complete_employee_list = Employee.objects.filter(work_id__in=complete_work_id_list)
+
+    result = []
+    passer_id_list = []
+    for employee in complete_employee_list:
+        try:
+            employee_backup = Employee_Backup(
+                name=employee.name,
+                pNo=employee.pNo,
+                employee_id=employee.employee_id,
+                work_id=employee.work_id,
+                dt_begin=employee.dt_begin,
+                dt_end=employee.dt_end,
+            )
+            delete_id = employee.id
+            employee_backup.save()
+            employee.delete()
+            result.append({'id': delete_id,
+                           'name': employee.name,
+                           'SUCCESS': dt_null(employee.dt_end),
+                           })
+            passer_id_list.append(employee.employee_id)
+        except Exception as e:
+            result.append({'id': employee.id,
+                           'name': employee.name,
+                           'ERROR': str(e),
+                           })
+    """
+    Employee 업무 완료 근로자 백업
+
     passer_id_list
     """
     parameter = {"passer_id_list": passer_id_list,

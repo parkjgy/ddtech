@@ -3027,8 +3027,10 @@ def tk_passer_work_backup(request):
     [[ 운영 ]] 고객 서버에서 받은 업무 완료된 근로자의 업무에서 업무를 뺀다.
     POST
         dt_complete: 2019-07-31
+        is_all: 1:YES, 0:NO
         passer_id_list: [ 121, 111, ...]
-    http://0.0.0.0:8000/employee/tk_passer_work_backup?dt_complete=2019-05-31&passer_id_list=121&passer_id_list=111&passer_id_list=3
+    http://0.0.0.0:8000/employee/tk_passer_work_backup?dt_complete=2019-05-31&is_all=0&passer_id_list=121&passer_id_list=111&passer_id_list=3
+    http://0.0.0.0:8000/employee/tk_passer_work_backup?dt_complete=2019-07-31&is_all=1
     response
         STATUS 200
         STATUS 403
@@ -3051,12 +3053,6 @@ def tk_passer_work_backup(request):
     #     return status422(get_api(request),
     #                      {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     # work_id = parameter_check['parameters']['work_id']
-    if request.method == 'GET':
-        passer_id_list = rqst.getlist('passer_id_list')
-    else:
-        passer_id_list = rqst['passer_id_list']
-    logSend('  pass_id_list: {}'.format(passer_id_list))
-
     dt_complete = str_to_datetime(rqst['dt_complete'])
     dt_complete = dt_complete + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
     dt_today = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y-%m-%d ") + "00:00:00", "%Y-%m-%d %H:%M:%S")
@@ -3066,8 +3062,15 @@ def tk_passer_work_backup(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '백업할 날짜({})는 오늘({})전이어야 한다.'.format(dt_complete, dt_today)})
 
     result = []
-    passer_list = Passer.objects.filter(id__in=passer_id_list)
-    # passer_list = Passer.objects.all()
+    if 'is_all' in rqst and rqst['is_all'] == '1':
+        passer_list = Passer.objects.all()
+    else:
+        if request.method == 'GET':
+            passer_id_list = rqst.getlist('passer_id_list')
+        else:
+            passer_id_list = rqst['passer_id_list']
+        logSend('  pass_id_list: {}'.format(passer_id_list))
+        passer_list = Passer.objects.filter(id__in=passer_id_list)
     passer_dict = {}
     for passer in passer_list:
         passer_dict[passer.employee_id] = {'pNo': passer.pNo, 'passer_id': passer.id}
