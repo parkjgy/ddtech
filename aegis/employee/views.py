@@ -1674,6 +1674,8 @@ def reg_from_certification_no(request):
 def update_my_info(request):
     """
     근로자 정보 변경 : 근로자의 정보를 변경한다.
+    - 근무시작시간, 근무시간, 휴계시간, 출근알람, 퇴근 알람 각각 변경 가능 (2019-08-05)
+    - 은행과 계좌번호는 항상 같이 들어와야한다. (2019-08-05)
         주)     로그인이 있으면 앱 시작할 때 화면 표출
             항목이 비어있으면 처리하지 않지만 비워서 보내야 한다.
     http://0.0.0.0:8000/employee/update_my_info?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&name=박종기&bank=기업은행&bank_account=00012345600123&pNo=010-2557-3555
@@ -1683,16 +1685,19 @@ def update_my_info(request):
             'name': '이름',
             'bank': '기업은행',
             'bank_account': '12300000012000',
-            'pNo': '010-2222-3333', # 추후 SMS 확인 절차 추가
-            'work_start':'08:00', # 오전 오후로 표시하지 않는다.
+            'pNo': '010-2222-3333',     # 추후 SMS 확인 절차 추가
+
+            'work_start':'08:00',       # 오전 오후로 표시하지 않는다.
             'working_time':'08',        # 시간 4 - 12
+            'rest_time': '01:00'        # 휴계시간 시간 00:00 ~ 06:00, 간격 30분
+
             'work_start_alarm':'1:00',  # '-60'(한시간 전), '-30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
             'work_end_alarm':'30',      # '-30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
         }
     response
         STATUS 200
             {'message':'정상적으로 처리되었습니다.'}
-        STATUS 422
+        STATUS 416
             {'message':'이름은 2자 이상이어야 합니다.'}
             {'message':'전화번호를 확인해 주세요.'}
             {'message':'계좌번호가 너무 짧습니다.\n다시 획인해주세요.'}
@@ -1700,6 +1705,14 @@ def update_my_info(request):
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ServerError: 근로자 id 확인이 필요해요.'}
+            {'message': '은행과 계좌는 둘다 들어와야 한다.'}
+            {'message': '출근 시간({}) 양식(hh:mm)이 잘못됨'.format(work_start)}
+            {'message': '근무 시간({}) 양식이 잘못됨'.format(working_time)}
+            {'message': '근무 시간(4 ~ 12) 범위 초과'}
+            {'message': '휴계 시간({}) 양식(hh:mm)이 잘못됨'.format(rest_time)})
+            {'message': '휴계 시간(00:30 ~ 06:00) 범위 초과 (주:양식도 확인)'})
+            {'message': '출근 알람({})이 틀린 값이예요.'.format(work_start_alarm)}
+            {'message': '퇴근 알람({})이 틀린 값이예요.'.format(work_end_alarm)}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -1725,66 +1738,97 @@ def update_my_info(request):
         logError(get_api(request), ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
         return status422(get_api(request), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
 
-    update_employee_of_customer = {'is_upate': False}
+    change_log = "UPDATE EMPLOYEE"
+    is_update_customer = False
+    # 고객 서버 업데이트: name, phone number
+    update_employee_data = {}
     if 'name' in rqst:
         if len(rqst['name']) < 2:
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '이름은 2자 이상이어야 합니다.'})
-        #
-        # 고객사 업무의 근로자 이름도 변경되어야 함.
-        #
-        update_employee_of_customer['is_upate'] = True
-        update_employee_of_customer['old_name'] = employee.name
-        update_employee_of_customer['new_name'] = rqst['name']
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이름은 2자 이상이어야 합니다.'})
+        change_log = '{}  name: {} > {}'.format(change_log, employee.name, rqst['name'])
+        employee.name = rqst['name']
+        logSend('  update name: {}'.format(employee.name))
+        # 고객 서버 update data
+        is_update_customer = True
+        update_employee_data['name'] = employee.name
 
-        employee.name = rqst['name'];
-        logSend('   ' + rqst['name']);
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
         if len(pNo) < 9:
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '전화번호를 확인해 주세요.'})
-        #
-        # 고객사 업무의 근로자 전화번호도 변경되어야 함.
-        #
-        update_employee_of_customer['is_upate'] = True
-        update_employee_of_customer['old_pNo'] = passer.pNo
-        update_employee_of_customer['new_pNo'] = pNo
-
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '전화번호를 확인해 주세요.'})
+        change_log = '{}  pNo: {} > {}'.format(change_log, passer.pNo, pNo)
         passer.pNo = pNo
-        passer.save()
-        logSend('   ' + pNo)
-    if 'bank' in rqst and 'bank_account' in rqst:
+        logSend('  update phone number: {}'.format(passer.pNo))
+        # 고객 서버 update data
+        is_update_customer = True
+        update_employee_data['pNo'] = pNo
+
+    if 'bank' in rqst or 'bank_account' in rqst:
+        if 'bank' not in rqst or 'bank_account' not in rqst:
+            return status422(get_api(request), {'message': '은행과 계좌는 둘다 들어와야 한다.'})
         if len(rqst['bank_account']) < 5:
-            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계좌번호가 너무 짧습니다.\n다시 획인해주세요.'})
+        change_log = '{}  bank: {} > {}, bank_account: {} > {}'.format(change_log, employee.bank, rqst['bank'],
+                                                                      employee.bank_account, rqst['bank_account'])
         employee.bank = rqst['bank']
         employee.bank_account = rqst['bank_account']
-        logSend('   ' + rqst['bank'], rqst['bank_account'])
-    if 'work_start' in rqst and 'working_time' in rqst and 'work_start_alarm' in rqst and 'work_end_alarm' in rqst:
-        employee.work_start = rqst['work_start']
-        employee.working_time = rqst['working_time']
-        employee.work_start_alarm = rqst['work_start_alarm']
-        employee.work_end_alarm = rqst['work_end_alarm']
-        logSend('   ' + rqst['work_start'], rqst['working_time'], rqst['work_start_alarm'], rqst['work_end_alarm'])
+        logSend('  update bank: {}, account: {}'.format(employee.bank, employee.bank_account))
 
-    employee.save()
+    if 'work_start' in rqst:
+        work_start = rqst['work_start']
+        try:
+            dt_work_start = datetime.datetime.strptime('2019-01-01 ' + work_start + ':00', "%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            return status422(get_api(request), {'message': '출근 시간({}) 양식(hh:mm)이 잘못됨'.format(work_start)})
+        employee.work_start = work_start
+
+    if 'working_time' in rqst:
+        working_time = rqst['working_time']
+        try:
+            working_time = int(working_time)
+        except Exception as e:
+            return status422(get_api(request), {'message': '근무 시간({}) 양식이 잘못됨'.format(working_time)})
+        if not (4 <= working_time <= 12):
+            return status422(get_api(request), {'message': '근무 시간(4 ~ 12) 범위 초과'})
+        employee.working_time = working_time
+
+    if 'rest_time' in rqst:
+        rest_time = rqst['rest_time']
+        try:
+            dt_rest_time = datetime.datetime.strptime('2019-01-01 ' + rest_time + ':00', "%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            return status422(get_api(request), {'message': '휴계 시간({}) 양식(hh:mm)이 잘못됨'.format(rest_time)})
+        if not (str_to_datetime('2019-01-01 00:30:00') <= dt_rest_time < str_to_datetime('2019-01-01 06:00:00')):
+            return status422(get_api(request), {'message': '휴계 시간(00:30 ~ 06:00) 범위 초과 (주:양식도 확인)'})
+        employee.rest_time = rest_time
+
+    if 'work_start_alarm' in rqst:
+        work_start_alarm = rqst['work_start_alarm']
+        if work_start_alarm not in ['-60', '-30', 'X']:
+            return status422(get_api(request), {'message': '출근 알람({})이 틀린 값이예요.'.format(work_start_alarm)})
+        employee.work_start_alarm = rqst['work_start_alarm']
+
+    if 'work_end_alarm' in rqst:
+        work_end_alarm = rqst['work_end_alarm']
+        if work_end_alarm not in ['-30', '0', 'X']:
+            return status422(get_api(request), {'message': '퇴근 알람({})이 틀린 값이예요.'.format(work_end_alarm)})
+        employee.work_end_alarm = rqst['work_end_alarm']
     #
     # to customer server
     # 고객 서버에 근로자 이름, 전화번호 변경 적용
     #
-    if update_employee_of_customer['is_upate']:
-        request_data = {
-            'worker_id': AES_ENCRYPT_BASE64('thinking'),
-            'employee_pNo': update_employee_of_customer[
-                'old_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
-            'new_name': update_employee_of_customer[
-                'old_name'] if 'new_name' in update_employee_of_customer else employee.name,
-            'new_pNo': update_employee_of_customer[
-                'new_pNo'] if 'new_pNo' in update_employee_of_customer else passer.pNo,
-        }
-        logSend(request_data)
-        response_customer = requests.post(settings.CUSTOMER_URL + 'update_employee_for_employee', json=request_data)
-        logSend(response_customer.json())
+    if is_update_customer:
+        update_employee_data['worker_id'] = AES_ENCRYPT_BASE64('thinking')
+        update_employee_data['passer_id'] = AES_ENCRYPT_BASE64(str(passer.id))
+        response_customer = requests.post(settings.CUSTOMER_URL + 'update_employee_for_employee', json=update_employee_data)
         if response_customer.status_code != 200:
+            logError(get_api(request), ' 고객서버 데이터 변경 중 에러: {}'.format(response_customer.json()))
             return ReqLibJsonResponse(response_customer)
+    employee.save()
+    passer.save()
+    if len(change_log) > 15:
+        logError(change_log)
+
     return REG_200_SUCCESS.to_json_response()
 
 

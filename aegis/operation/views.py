@@ -3951,6 +3951,7 @@ def fjfjieie(request):
             {'message':'저리가!!!'}
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
         return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
 
     if request.method == 'POST':

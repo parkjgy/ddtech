@@ -2513,45 +2513,42 @@ def update_employee_for_employee(request):
     POST
         {
             'worker_id': 'cipher_id'  # 운영직원 id
-            'employee_pNo':01011112222,
-            'new_name':name,
-            'new_pNo':pNo
+            'passer_id': 암호화된 id    # 근로자 서버의 출입자 id >> 고객서버의 employee_id
+            'name': 홍길동              # <option> 이름이 바뀔 때만 값이 있다.
+            'pNo': 01099993333        # <option> 전화번호가 바뀔 때만 값이 있다.
         }
     response
         STATUS 200
-            {
-                'msg': '정상처리되었습니다.',
-                'login_id': staff.login_id,
-            }
-        STATUS 409
-            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
-        STATUS 542
-            {'message':'파견사 측에 근로자 정보가 없습니다.'}
-        STATUS 422  # 개발자 수정사항
-            {'message':'업무 참여 시간이 종료되었습니다.'}
+        STATUS 403
+            {'message':'저리가!!!'}
     """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-
-    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장한다.
+    #
+    # 운영 서버에서 호출했을 때 - 운영 스텝의 id를 로그에 저장?
+    #
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
-    logSend('   from employee server : operation staff id ', worker_id)
+    if worker_id != 'thinking':
+        logError(get_api(request), ' worker_id({}) 가 정상이 아니다.'.format(rqst['worker_id']))
 
-    logSend(rqst['employee_pNo'])
-    logSend(rqst['new_name'])
-    logSend(rqst['new_pNo'])
-
-    employees = Employee.objects.filter(pNo=rqst['employee_pNo'])
+    employees = Employee.objects.filter(employee_id=AES_DECRYPT_BASE64(rqst['passer_id']))
 
     for employee in employees:
-        employee.name = rqst['new_name']
-        employee.pNo = rqst['new_pNo']
+        if 'name' in rqst:
+            employee.name = rqst['name']
+        if 'pNo' in rqst:
+            employee.pNo = rqst['pNo']
         employee.save()
-
-    return REG_200_SUCCESS.to_json_response()
+    #
+    # backup employee data update?
+    #
+    return REG_200_SUCCESS.to_json_response({'message': '모두 {}개의 업무에서 근로자 이름이나 전화번호가 변경되었습니다.'.format(len(employees))})
 
 
 @cross_origin_read_allow
