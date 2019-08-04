@@ -14,11 +14,10 @@ class Employee(models.Model):
 
     work_start = models.CharField(max_length = 20, default='')         # 출근 시간 23:00
     working_time = models.CharField(max_length = 20, default='')       # 근무 시간 04 ~ 12
+    rest_time = models.CharField(max_length = 7, default='-1')          # 근무 시간 00:30 ~ 06:00
     work_start_alarm = models.CharField(max_length = 20, default='')   # 출근 알람 1:00, 30, X
     work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
     
-    # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
-
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
 
