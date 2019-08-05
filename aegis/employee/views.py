@@ -1686,9 +1686,9 @@ def update_my_info(request):
             'bank_account': '12300000012000',
             'pNo': '010-2222-3333',     # 추후 SMS 확인 절차 추가
 
-            'work_start':'08:00',       # 오전 오후로 표시하지 않는다.
-            'working_time':'08',        # 시간 4 - 12
-            'rest_time': '01:00'        # 휴계시간 시간 00:00 ~ 06:00, 간격 30분
+            'work_start':'08:00',       # 출근시간: 24시간제 표시
+            'working_time':'8',        # 근무시간: 시간 4 ~ 12
+            'rest_time': '01:00'        # 휴계시간: 시간 00:00 ~ 06:00, 간격 30분
 
             'work_start_alarm':'1:00',  # '-60'(한시간 전), '-30'(30분 전), 'X'(없음) 셋중 하나로 보낸다.
             'work_end_alarm':'30',      # '-30'(30분 전), '0'(정각), 'X'(없음) 셋중 하나로 보낸다.
@@ -1705,6 +1705,7 @@ def update_my_info(request):
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ServerError: 근로자 id 확인이 필요해요.'}
             {'message': '은행과 계좌는 둘다 들어와야 한다.'}
+            {'message': '출근시간, 근무시간, (휴계시간)은 같이 들어와야한다.'}
             {'message': '출근 시간({}) 양식(hh:mm)이 잘못됨'.format(work_start)}
             {'message': '근무 시간({}) 양식이 잘못됨'.format(working_time)}
             {'message': '근무 시간(4 ~ 12) 범위 초과'}
@@ -1723,19 +1724,24 @@ def update_my_info(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     passer_id = parameter_check['parameters']['passer_id']
-    logSend('   ' + passer_id)
+    logSend('   request passer_id: {}'.format(passer_id))
+
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
         # 출입자에 없는 사람을 수정하려는 경우
         logError(get_api(request), ' passer_id = {} Passer 에 없다.\n{}'.format(passer_id, e))
         return status422(get_api(request), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+    logSend('  passer: {}'.format({x: passer.__dict__[x] for x in passer.__dict__.keys() if not x.startswith('_')}))
+
     try:
         employee = Employee.objects.get(id=passer.employee_id)
+        # employee = Employee.objects.filter(id=passer.employee_id)
     except Exception as e:
         # 출입자에 근로자 정보가 없는 경우
         logError(get_api(request), ' passer.employee_id = {} Employee 에 없다.\n{}'.format(passer.employee_id, e))
         return status422(get_api(request), {'message': 'ServerError: 근로자 id 확인이 필요해요.'})
+    logSend('  employee: {}'.format({x: employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')}))
 
     change_log = "UPDATE EMPLOYEE"
     is_update_customer = False
@@ -1773,6 +1779,10 @@ def update_my_info(request):
         employee.bank_account = rqst['bank_account']
         logSend('  update bank: {}, account: {}'.format(employee.bank, employee.bank_account))
 
+    if 'work_start' in rqst or 'working_time' in rqst or 'rest_time' in rqst:
+        if 'work_start' not in rqst or 'working_time' not in rqst: # or 'rest_time' not in rqst:
+            return status422(get_api(request), {'message': '출근시간, 근무시간, (휴계시간)은 같이 들어와야한다.'})
+
     if 'work_start' in rqst:
         work_start = rqst['work_start']
         try:
@@ -1784,12 +1794,20 @@ def update_my_info(request):
     if 'working_time' in rqst:
         working_time = rqst['working_time']
         try:
-            working_time = int(working_time)
+            int_working_time = int(working_time)
         except Exception as e:
             return status422(get_api(request), {'message': '근무 시간({}) 양식이 잘못됨'.format(working_time)})
-        if not (4 <= working_time <= 12):
+        if not (4 <= int_working_time <= 12):
             return status422(get_api(request), {'message': '근무 시간(4 ~ 12) 범위 초과'})
         employee.working_time = working_time
+        #
+        # App 에서 휴계시간(rest_time)을 처리하기 전 한시적 기능
+        #   rest_time 이 없을 때는 4시간당 30분으로 계산해서 휴계시간을 넣는다.
+        if 'rest_time' not in rqst:
+            int_rest_time = int_working_time // 4
+            rest_time = '{0:02d}:{1:02d}'.format(int_rest_time // 2, (int_rest_time % 2) * 30)
+            employee.rest_time = rest_time
+            employee.working_time = '{}'.format(int_working_time - int_rest_time / 2)
 
     if 'rest_time' in rqst:
         rest_time = rqst['rest_time']
@@ -3048,6 +3066,10 @@ def tk_passer_list(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -3062,6 +3084,85 @@ def tk_passer_list(request):
     passer_list = Passer.objects.all()
     passers = {passer.pNo: passer.id for passer in passer_list}
     return REG_200_SUCCESS.to_json_response({'passers': passers})
+
+
+@cross_origin_read_allow
+def tk_update_rest_time(request):
+    """
+    [[ 운영 ]] 근로시간에 휴계시간 기능이 추가되면서 근무시간(working_time)과 휴계 시간(rest_time) 분리 작업을 한다.
+    GET
+        key=vChLo3rsRAl0B4NNuaZOsg (thinking)
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    try:
+        # 삭제 대상 출입자 검색
+        passer_list = Passer.objects.filter(employee_id=-1)
+        logSend('--- 삭제 대상: 인증 중 중단, 인증문자를 보낼 수 없는 전화번호(이건 나타나면 안되지)')
+        for passer in passer_list:
+            logSend('   {}, pNo: {}, employee_id: {}, dt_cn: {}'.format(passer.id, passer.pNo, passer.employee_id, dt_null(passer.dt_cn)))
+
+        # 근로자 등록일자 업데이트 - pass_history 를 뒤져서 기록의 제일 먼저 시간을 넣는다.
+        employee_list = Employee.objects.all()
+        employee_id_list = [x.id for x in employee_list]
+        passer_list = Passer.objects.filter(employee_id__in=employee_id_list)
+        logSend('  len - employee: {}, passer: {}'.format(len(employee_list), len(passer_list)))
+        if len(employee_list) != len(passer_list):
+            REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '등록된 근로자({})가 출입자({})에 없습니다.'.format(len(employee_list), len(passer_list))})
+        passer_dict = {x.employee_id: x.id for x in passer_list}
+        # pass_history_list = Pass_History.objects.all()
+        for employee in employee_list:
+            passer_id = passer_dict[employee.id]
+            # logSend('  passer_id: {} < {}'.format(passer_id, employee.id))
+            pass_history_list = Pass_History.objects.filter(passer_id=passer_id).order_by('id')
+            if len(pass_history_list) > 0:
+                ph = pass_history_list[0]
+                # logSend('  {}: {} {} {} {} {}'.format(employee.name, ph.year_month_day, ph.dt_in, ph.dt_in_verify, ph.dt_out, ph.dt_out_verify))
+                dt_reg = str_to_datetime(ph.year_month_day)
+                if ph.dt_out_verify is not None:
+                    dt_reg = ph.dt_out_verify
+                if ph.dt_out is not None:
+                    dt_reg = ph.dt_out
+                if ph.dt_in_verify is not None:
+                    dt_reg = ph.dt_in_verify
+                if ph.dt_in is not None:
+                    dt_reg = ph.dt_in
+                logSend('  {}: {}'.format(employee.name, dt_reg))
+            else:
+                logSend('  {}: X'.format(employee.name))
+        return REG_200_SUCCESS.to_json_response()
+
+        update_employee_list = Employee.objects.filter(rest_time=-1, work_start='')
+        for update_employee in update_employee_list:
+            logSend('   {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
+        employee_id_list = [x.id for x in update_employee_list]
+        passer_list = Passer.objects.filter(employee_id__in=employee_id_list)
+        for passer in passer_list:
+            logSend('   {} - pType: {}'.format(passer.id, passer.pType))
+
+        update_employee_list = Employee.objects.filter(rest_time=-1).exclude(work_start='')
+        for update_employee in update_employee_list:
+            logSend('   {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
+            try:
+                working_time = int(update_employee.working_time)
+            except Exception as e:
+                working_time = int(float(update_employee.working_time))
+                # logSend('   {} - working_time: {} > {}'.format(update_employee.name, update_employee.working_time, working_time))
+            rest_time = int(working_time) // 4
+            update_employee.working_time = '{}'.format(working_time - rest_time / 2)
+            update_employee.rest_time = '{0:02d}:{1:02d}'.format(rest_time // 2, (rest_time % 2) * 30)
+            # logSend('  {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
+            # update_employee.save()
+    except Exception as e:
+        REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': ' error: {}'.format(str(e))})
+
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -3081,6 +3182,10 @@ def tk_passer_work_backup(request):
         STATUS 416
             {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
     """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:

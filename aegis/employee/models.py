@@ -19,11 +19,10 @@ class Employee(models.Model):
     work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
     
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
-    bank_account = models.CharField(max_length = 20, default='')    # 급여 계좌
+    bank_account = models.CharField(max_length=20, default='')    # 급여 계좌
 
     works = models.CharField(max_length=1024, default='[]')  # data type: json: [ {'id': 99, 'begin': '2019/05/05', 'end': '2019/06/06'}, {'id': 999, 'begin': '2019/06/06', 'end': '2019/07/07'} ]
-    dt_reg = models.DateTimeField(auto_now_add = True) # 등록 일
-
+    dt_reg = models.DateTimeField(auto_now_add=True) # 등록 일
 
     def set_works(self, x):
         self.works = json.dumps(x)
