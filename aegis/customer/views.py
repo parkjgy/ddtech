@@ -2188,7 +2188,7 @@ def reg_employee(request):
     - SMS 를 보내지 못한 전화번호는 근로자 등록을 하지 않는다.
     - response 로 확인된 SMS 못보낸 전화번호에 표시해야 하다.
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_employee?work_id=qgf6YHf1z2Fx80DR8o_Lvg&dt_answer_deadline=2019-03-01 19:00:00&phone_numbers=010-3333-5555&phone_numbers=010-5555-7777&phone_numbers=010-7777-9999
+    http://0.0.0.0:8000/customer/reg_employee?work_id=4dnQVYFTi501mmdz6hX6CA&dt_answer_deadline=2019-08-06 19:00:00&dt_begin=2019-08-25&phone_numbers=010-2557-3555
     POST
         {
             'work_id':'사업장 업무 id',
@@ -2457,6 +2457,9 @@ def employee_work_accept_for_employee(request):
 
             {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
     """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2497,6 +2500,7 @@ def employee_work_accept_for_employee(request):
         employee.employee_id = employee_id
         employee.name = employee_name
         employee.is_accept_work = is_accept
+        employee.dt_accept = datetime.datetime.now()
         employee.save()
 
     return REG_200_SUCCESS.to_json_response()
@@ -3486,11 +3490,13 @@ def staff_version(request):
         STATUS 200
         STATUS 551
         {
-            'message': '업그레이드가 필요합니다.',
+            'msg': '업그레이드가 필요합니다.'
             'url': 'http://...' # itune, google play update
         }
-        STATUS 520
-        {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message': "ClientError: parameter 'v' 가 없어요'}
+            {'message': 'v: A.1.0.0.190111 에서 A 가 잘못된 값이 들어왔어요'}
+            {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
 
     if request.method == 'POST':
@@ -3498,22 +3504,38 @@ def staff_version(request):
     else:
         rqst = request.GET
 
-    version = rqst['v']
+    parameter_check = is_parameter_ok(rqst, ['v'])
+    if not parameter_check['is_ok']:
+        return status422(get_api(request),
+                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    version = parameter_check['parameters']['v']
+
     items = version.split('.')
-    ver_dt = items[len(items) - 1]
-    logSend(ver_dt)
-    if len(ver_dt) < 6:
-        return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
-
-    dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
-                                            '%Y-%m-%d %H:%M:%S')
-    dt_check = datetime.datetime.strptime('2019-04-01 00:00:00', '%Y-%m-%d %H:%M:%S')
-    logSend(dt_version)
+    phone_type = items[0]
+    if phone_type != 'A' and phone_type != 'i':
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'v: A.1.0.0.190111 에서 A 가 잘못된 값이 들어왔어요'})
+    str_dt_ver = items[len(items) - 1]
+    logSend('  version dt: {}'.format(str_dt_ver))
+    try:
+        dt_version = str_to_datetime('20' + str_dt_ver[:2] + '-' + str_dt_ver[2:4] + '-' + str_dt_ver[4:6])
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
+    response_operation = requests.post(settings.OPERATION_URL + 'currentEnv', json={})
+    logSend('  current environment', response_operation.status_code, response_operation.json())
+    cur_env = response_operation.json()['env_list'][0]
+    dt_check = str_to_datetime(cur_env['dt_android_mng_upgrade'] if phone_type == 'A' else cur_env['dt_iOS_mng_upgrade'])
+    logSend('  DB dt_check: {} vs dt_version: {}'.format(dt_check, dt_version))
     if dt_version < dt_check:
-        logSend('dt_version < dt_check')
-
-        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': 'http://...'})
-
+        url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.manager"
+        url_iOS = "https://apps.apple.com/kr/app/keullaesi-obeu-keullaen/id1468894636"
+        url_install = ""
+        if phone_type == 'A':
+            url_install = url_android
+        elif phone_type == 'i':
+            url_install = url_iOS
+        return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
+                                                                })
     return REG_200_SUCCESS.to_json_response()
 
 

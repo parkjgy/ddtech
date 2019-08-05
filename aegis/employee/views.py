@@ -111,8 +111,8 @@ def check_version(request):
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: 잘못된 id 예요'}  # i 에 들어가는 [암호화된 id] 가 잘못되었다.
             {'message': "ClientError: parameter 'v' 가 없어요'}
-            {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'}
-
+            {'message': 'v: A.1.0.0.190111 에서 A 가 잘못된 값이 들어왔어요'}
+            {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -149,20 +149,19 @@ def check_version(request):
 
     items = version.split('.')
     phone_type = items[0]
-    ver_dt = items[len(items) - 1]
-    logSend(ver_dt)
-    if len(ver_dt) < 6:
+    if phone_type != 'A' and phone_type != 'i':
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'v: A.1.0.0.190111 에서 A 가 잘못된 값이 들어왔어요'})
+    str_dt_ver = items[len(items) - 1]
+    logSend('  version dt: {}'.format(str_dt_ver))
+    try:
+        dt_version = str_to_datetime('20' + str_dt_ver[:2] + '-' + str_dt_ver[2:4] + '-' + str_dt_ver[4:6])
+    except Exception as e:
         return REG_520_UNDEFINED.to_json_response({'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'})
-
-    dt_version = datetime.datetime.strptime('20' + ver_dt[:2] + '-' + ver_dt[2:4] + '-' + ver_dt[4:6] + ' 00:00:00',
-                                            '%Y-%m-%d %H:%M:%S')
-    response_operation = requests.post(settings.OPERATION_URL + 'dt_android_upgrade', json={})
-    logSend('status', response_operation.status_code, response_operation.json())
-    dt_android_upgrade = response_operation.json()['dt_update']
-    logSend(dt_android_upgrade, datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S'))
-
-    dt_check = datetime.datetime.strptime(dt_android_upgrade, '%Y-%m-%d %H:%M:%S')
-    logSend(dt_version)
+    response_operation = requests.post(settings.OPERATION_URL + 'currentEnv', json={})
+    logSend('  current environment', response_operation.status_code, response_operation.json())
+    cur_env = response_operation.json()['env_list'][0]
+    dt_check = str_to_datetime(cur_env['dt_android_upgrade'] if phone_type == 'A' else cur_env['dt_iOS_upgrade'])
+    logSend('  DB dt_check: {} vs dt_version: {}'.format(dt_check, dt_version))
     if dt_version < dt_check:
         url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.employee"
         url_iOS = "https://..."
@@ -171,8 +170,6 @@ def check_version(request):
             url_install = url_android
         elif phone_type == 'i':
             url_install = url_iOS
-        else:
-            return status422(get_api(request), {'message': 'ClientError: parameter \'v\' 에 phone type 이 없어요'})
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
                                                                 })
     return REG_200_SUCCESS.to_json_response()
@@ -1564,12 +1561,13 @@ def reg_from_certification_no(request):
         {
             'phone_no' : '010-1111-2222',
             'cn' : '6자리 SMS 인증숫자',
-            'phone_type' : 'A', # 안드로이드 폰
+            'phone_type' : 'A', # 안드로이드 폰, 'i': 아이폰
             'push_token' : 'push token',
         }
     response
-        STATUS 422
-            {'message':'인증번호 요청없이 인증번호 요청이 들어왔습니다.'}
+        STATUS 416
+            {'message': '잘못된 전화번호입니다.'}
+            {'message': '인증번호 요청을 해주세요.'}
         STATUS 550
             {'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'} # 인증시간 3분
             {'message': '인증번호가 틀립니다.'}
@@ -1609,18 +1607,19 @@ def reg_from_certification_no(request):
 
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) > 1:
-        duplicate_id = [passer.id for passer in passers]
-        logSend('ERROR: ', phone_no, duplicate_id)
+        logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in passers]))
+    elif len(passers) == 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '잘못된 전화번호입니다.'})
     passer = passers[0]
-    if passer.dt_cn == None:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '인증번호 요청없이 인증요청(해킹?)'})
+    if passer.dt_cn == 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호 요청을 해주세요.'})
 
     if passer.dt_cn < datetime.datetime.now():
-        logSend(passer.dt_cn, datetime.datetime.now())
+        logSend('  인증 시간: {} < 현재 시간: {}'.format(passer.dt_cn, datetime.datetime.now()))
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
-        logSend(passer.cn, ' vs ', cn, ' is test = {}'.format(settings.IS_TEST))
+        logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
         if not settings.IS_TEST and passer.cn != int(cn):
             # if passer.cn != int(cn):
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()

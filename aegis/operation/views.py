@@ -197,8 +197,9 @@ def updateEnv(request):
     response
         STATUS 200
         STATUS 422
-            {'message': 'timeCheckServer 양식이 틀렸습니다.'}
-        STATUS 524
+            {'message': '서버점검시간({})의 양식(hh:mm:ss)이 틀렸습니다.'.format(rqst['timeCheckServer']}
+            {'message': '{}: {}의 양식(2019-01-01 18:00:00)이 틀렸습니다.'.format(dt_type)}
+        STATUS 401
             {'message': '권한이 없습니다.'}
     """
     if request.method == 'POST':
@@ -213,8 +214,8 @@ def updateEnv(request):
 
     worker = Staff.objects.get(id=worker_id)
     if not (worker.id in [1, 2]):
-        logSend('524')
-        return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
+        logSend('   {}님은 변경 권한이 없습니다.'.format(worker.name))
+        return REG_401_UNAUTHORIZED.to_json_response()
 
     is_update = False
 
@@ -223,7 +224,8 @@ def updateEnv(request):
             dt = datetime.datetime.strptime('2019-01-01 ' + rqst['timeCheckServer'], "%Y-%m-%d %H:%M:%S")
             timeCheckServer = dt.strftime("%H:%M:%S")
         except Exception as err:
-            return status422(get_api(request), {'message': 'timeCheckServer 양식이 틀렸습니다.'})
+            return status422(get_api(request),
+                             dict(message='서버점검시간({})의 양식(hh:mm:ss)이 틀렸습니다.'.format(rqst['timeCheckServer'])))
     else:
         timeCheckServer = env.curEnv.timeCheckServer
 
@@ -237,7 +239,7 @@ def updateEnv(request):
             try:
                 dt = datetime.datetime.strptime(rqst[dt_type], "%Y-%m-%d %H:%M:%S")
             except Exception as err:
-                return status422(get_api(request), {'message': '{} 양식이 틀렸습니다.'.format(dt_type)})
+                return status422(get_api(request), {'message': '{}: {}의 양식(2019-01-01 18:00:00)이 틀렸습니다.'.format(dt_type)})
             new_env[dt_type] = dt
             is_update = True
         else:
@@ -252,7 +254,7 @@ def updateEnv(request):
         )
         for key in new_env.keys():
             new_env_model.__dict__[key] = new_env[key]
-        # new_env_model.save()
+        new_env_model.save()
         env.start()
         logSend(
             '  new_env_model: {}'.format({key: new_env_model.__dict__[key] for key in new_env_model.__dict__.keys()}))
