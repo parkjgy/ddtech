@@ -2749,6 +2749,21 @@ def rebuild_pass_history(request):
     response
         STATUS 200
     """
+    result = []
+    employee_list = Employee.objects.all()
+    for employee in employee_list:
+        logSend('  {}'.format(employee.name))
+        if employee.id < 155:
+            employee.dt_reg = str_to_datetime('2019-6-30 23:59:59')
+        elif employee.id < 188:
+            employee.dt_reg = str_to_datetime('2019-07-31 23:59:59')
+        else:
+            employee.dt_reg = str_to_datetime('2019-08-01 00:00:00')
+        logSend('  {}: {}'.format(employee.name, employee.dt_reg))
+        result.append({employee.name: employee.dt_reg})
+        employee.save()
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:

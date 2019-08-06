@@ -1,4 +1,26 @@
+1. Homebrew 설치
+$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
+2. 유틸리티 tree 설치
+$ brew search tree
+$ brew install tree
+
+3. Openssl 설치
+$ brew search openssl
+$ brew install openssl
+
+4. Mysql 설치
+$ brew search mysql
+$ brew install mysql
+
+5. Mysql setting
+$ mysql.server start
+$ mysql_secure_installation
+
+6. Boot to mysql execute
+$ ln -sfv /usr/local/opt/mysql/*.plist ~/Library/LaunchAgents (booting
+
+7. 이하 중요 실행 결관
 $ brew install mysql
 ==> Downloading https://homebrew.bintray.com/bottles/mysql-8.0.16.mojave.bottle.tar.gz
 Already downloaded: /Users/thinking/Library/Caches/Homebrew/downloads/1915abe414c958592d83e3521097043a01998433332c77a2b00cb5782931e584--mysql-8.0.16.mojave.bottle.tar.gz
@@ -88,5 +110,4 @@ Success.
 
 All done! 
 
-
-$ 
+$
