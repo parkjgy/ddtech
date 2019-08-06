@@ -3239,7 +3239,7 @@ def tk_update_rest_time(request):
     except Exception as e:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': ' error: {}'.format(str(e)), 'result': result})
 
-    return REG_200_SUCCESS.to_json_response({'result': result})
+    return REG_200_SUCCESS.to_json_response({'result': result}) 
 
 
 @cross_origin_read_allow
