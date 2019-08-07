@@ -5282,10 +5282,11 @@ def tk_fix_up_employee(request):
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
 
-    # if request.method == 'POST':
-    #     rqst = json.loads(request.body.decode("utf-8"))
-    # else:
-    #     rqst = request.GET
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    n = int(rqst('n'))
     # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
     # parameter_check = is_parameter_ok(rqst, ['work_id'])
     # if not parameter_check['is_ok']:
@@ -5293,30 +5294,28 @@ def tk_fix_up_employee(request):
     #                      {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     # work_id = parameter_check['parameters']['work_id']
     employee_list = Employee.objects.all()
+    logSend('  # employee: {}'.format(len(employee_list)))
     employee_compare_list = []
+    i = 0
     for employee in employee_list:
+        if i >= n:
+            break
+        i = i + 1
         employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
         employee_compare_list.append(employee_compare)
-    # logSend('  {}'.format(employee_compare_list))
+    logSend('  # employee: {}'.format(len(employee_compare_list)))
 
     s = requests.session()
 
     result = []
-    # parameter = {"pNo": '01020736959',
-    #              "name": '최진',
-    #              }
-    # r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
-    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
-
     parameter = {
                  "employee_compare_list": employee_compare_list,
                  }
-    parameter = {'employee_compare_list': [{'id': 1, 'name': 'unknown', 'pNo': '01024505942', 'employee_id': 70}, {'id': 3, 'name': '김재환', 'pNo': '01074648939', 'employee_id': 1}, {'id': 6, 'name': '최진', 'pNo': '01020736959', 'employee_id': 3}, {'id': 7, 'name': 'unknown', 'pNo': '01024505942', 'employee_id': 2}, {'id': 8, 'name': '김정석', 'pNo': '01093235627', 'employee_id': 4}, {'id': 9, 'name': '김정석', 'pNo': '01093235627', 'employee_id': 4}, {'id': 10, 'name': '-----', 'pNo': '01088533337', 'employee_id': -1}, {'id': 11, 'name': '최성식 ', 'pNo': '01028605031', 'employee_id': 19}, {'id': 12, 'name': '정일현', 'pNo': '01064246747', 'employee_id': 123}, {'id': 13, 'name': '김종훈', 'pNo': '01028463607', 'employee_id': 16}, {'id': 14, 'name': '황홍연', 'pNo': '01067704701', 'employee_id': 26}, {'id': 16, 'name': '조원준', 'pNo': '01093588034', 'employee_id': 29}, {'id': 17, 'name': '성두영', 'pNo': '01057774763', 'employee_id': 20}, {'id': 18, 'name': '배종일', 'pNo': '01086606560', 'employee_id': 30}, {'id': 19, 'name': '정의준', 'pNo': '01033367933', 'employee_id': 23}, {'id': 20, 'name': '박상은', 'pNo': '01065877376', 'employee_id': 5}, {'id': 28, 'name': '박재홍', 'pNo': '01074707558', 'employee_id': 8}, {'id': 29, 'name': '심상임', 'pNo': '01020546362', 'employee_id': 12}, {'id': 30, 'name': '최종호', 'pNo': '01037080874', 'employee_id': 7}, {'id': 31, 'name': '전재열', 'pNo': '01032891805', 'employee_id': 9}]}
     r = s.post(settings.EMPLOYEE_URL + 'tk_match_test_for_customer', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
-    logSend('  result: {}'.format(result))
-    return REG_200_SUCCESS.to_json_response({'employee_compare_list': employee_compare_list})
+    # logSend('  result: {}'.format(result))
+    # return REG_200_SUCCESS.to_json_response({'employee_compare_list': employee_compare_list})
 
     fix_up_list = r.json()['miss_match_list']
 
