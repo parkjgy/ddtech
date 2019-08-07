@@ -3403,17 +3403,17 @@ def tk_verify_employee_from_customer(request):
     else:
         rqst = request.GET
     employee_compare_list = rqst['employee_compare_list']
-    # logSend(employee_compare_list)
+    logSend(employee_compare_list)  #--------------------------------------------
     employee_pNo_dict = {}
     for employee in employee_compare_list:
         if employee['pNo'] not in employee_pNo_dict.keys():
             employee_pNo_dict[employee['pNo']] = '|'
-    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))
+    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))  #--------------------------------------------
     employee_pNo_list = [x for x in employee_pNo_dict.keys()]
-    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))
+    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))  #--------------------------------------------
     passer_list = Passer.objects.filter(pNo__in=employee_pNo_list)
     passer_pNo_dict = {x.pNo: {'id': x.id, 'employee_id': x.employee_id} for x in passer_list}
-    logSend('  {}'.format(passer_pNo_dict))
+    logSend('  {}'.format(passer_pNo_dict))  #--------------------------------------------
     passer_employee_id_dict = {x.id: x.employee_id for x in passer_list if x.employee_id != -1}
     # logSend(passer_pNo_dict)
     employee_id_list = []

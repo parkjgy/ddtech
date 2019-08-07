@@ -5297,7 +5297,7 @@ def tk_fix_up_employee(request):
     for employee in employee_list:
         employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
         employee_compare_list.append(employee_compare)
-    logSend('  {}'.format(employee_compare_list))
+    # logSend('  {}'.format(employee_compare_list))
 
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json={'employee_compare_list': employee_compare_list})
