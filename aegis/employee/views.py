@@ -33,6 +33,7 @@ from datetime import datetime, timedelta
 import datetime
 
 from django.conf import settings
+from django.db.models import Q
 
 
 @cross_origin_read_allow
@@ -3102,6 +3103,62 @@ def tk_passer_list(request):
 
 
 @cross_origin_read_allow
+def tk_list_reg_stop(request):
+    """
+    [[ 운영 ]] 등록 중지 중인 출입자 list
+    - 일정 날짜(until_day) 이전에 중지된 경우
+    http://0.0.0.0:8000/employee/tk_list_reg_stop?until_day=2019-08-15
+
+    GET
+        until_day: 2019-08-15 # 2019-08-15 까지 등록 시도한 출입자 (default: 오늘)
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    if 'until_day' in rqst:
+        try:
+            dt_until = str_to_datetime(rqst['until_day'])
+        except Exception as e:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '검사할 날짜({})의 양식(2019-08-15)이 잘못되었어요.'})
+    else:
+        dt_until = datetime.datetime.now()
+
+    result = []
+    # 삭제 대상 출입자 검색
+    passer_list = Passer.objects.filter(~Q(cn=0))
+    # logSend('--- 삭제 대상: 인증 중 중단, 인증문자를 보낼 수 없는 전화번호(이건 나타나면 안되지)')
+    reg_stop_employee_id_list = [x.employee_id for x in passer_list if x.employee_id != -1]
+    employee_list = Employee.objects.filter(id__in=reg_stop_employee_id_list)
+    employee_dict = {x.id: {'name': x.name, 'td_reg': dt_str(x.dt_reg, "%Y-%m-%d %H:%M:%S")} for x in employee_list}
+    reg_stop_list = []
+    pType_name = ['모름', '아이폰', '안드로이드폰', '피쳐폰']
+    for passer in passer_list:
+        reg_stop = {
+            'pNo': passer.pNo,
+            'dt_cn': dt_null(passer.dt_cn),
+            'pType': pType_name[passer.pType // 10],
+            'passer_id': passer.id,
+            'employee_id': passer.employee_id,
+        }
+        if passer.employee_id != -1:
+            reg_stop['employee'] = employee_dict[passer.employee_id]
+        reg_stop_list.append(reg_stop)
+        # logSend('  {}'.format(no_employee_id))
+    result.append({'reg_stop_list': reg_stop_list})
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
 def tk_update_rest_time(request):
     """
     [[ 운영 ]] 근로시간에 휴계시간 기능이 추가되면서 근무시간(working_time)과 휴계 시간(rest_time) 분리 작업을 한다.
@@ -3125,119 +3182,107 @@ def tk_update_rest_time(request):
     else:
         rqst = request.GET
 
-    try:
-        result = []
-        # 삭제 대상 출입자 검색
-        passer_list = Passer.objects.filter(employee_id=-1)
-        logSend('--- 삭제 대상: 인증 중 중단, 인증문자를 보낼 수 없는 전화번호(이건 나타나면 안되지)')
-        no_employee_id_list = []
-        for passer in passer_list:
-            no_employee_id = {'pNo': passer.pNo, 'id': passer.id, 'dt_cn': dt_null(passer.dt_cn)}
-            no_employee_id_list.append(no_employee_id)
-            logSend('  {}'.format(no_employee_id))
-        result.append({'no_employee_id': no_employee_id_list})
-        #
-        # 근로자 등록일자 업데이트 - pass_history 를 뒤져서 기록의 제일 먼저 시간을 넣는다.
-        # pass_history 에 없으면 id: < 155(2019-06-30 23:59:59) < 175(2019-07-31 23:59:59) < 226 (2019-08-01 00:00:00)
-        #
-        employee_list = Employee.objects.all()
-        if 'is_reg_update' in rqst and rqst['is_reg_update']:
-            employee_id_list = [x.id for x in employee_list]
-            passer_list = Passer.objects.filter(employee_id__in=employee_id_list)
-            logSend('  len - employee: {}, passer: {}'.format(len(employee_list), len(passer_list)))
-            if len(employee_list) != len(passer_list):
-                REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '등록된 근로자({})가 출입자({})에 없습니다.'.format(len(employee_list), len(passer_list))})
-            passer_dict = {x.employee_id: x.id for x in passer_list}
-            # pass_history_list = Pass_History.objects.all()
-            for employee in employee_list:
-                passer_id = passer_dict[employee.id]
-                # logSend('  passer_id: {} < {}'.format(passer_id, employee.id))
-                pass_history_list = Pass_History.objects.filter(passer_id=passer_id).order_by('id')
-                if len(pass_history_list) > 0:
-                    ph = pass_history_list[0]
-                    # logSend('  {}: {} {} {} {} {}'.format(employee.name, ph.year_month_day, ph.dt_in, ph.dt_in_verify, ph.dt_out, ph.dt_out_verify))
-                    dt_reg = str_to_datetime(ph.year_month_day)
-                    if ph.dt_out_verify is not None:
-                        dt_reg = ph.dt_out_verify
-                    if ph.dt_out is not None:
-                        dt_reg = ph.dt_out
-                    if ph.dt_in_verify is not None:
-                        dt_reg = ph.dt_in_verify
-                    if ph.dt_in is not None:
-                        dt_reg = ph.dt_in
-                    logSend('  {}: {}'.format(employee.name, dt_reg))
-                    employee.dt_reg = dt_reg
-                    employee.save()
-                else:
-                    if employee.id < 155:
-                        employee.dt_reg = str_to_datetime("2019-06-30 23:59:59")
-                    if employee.id < 175:
-                        employee.dt_reg = str_to_datetime("2019-07-31 23:59:59")
-                    if employee.id < 226:
-                        employee.dt_reg = str_to_datetime("2019-08-01 00:00:00")
-                    employee.save()
-                    logSend('  {}: X {}'.format(employee.name, employee.dt_reg))
-
-        # 출근시간이 없는 근로자 분석
-        #
-        no_work_time_employee_list = Employee.objects.filter(work_start='')
-        no_work_time_employee_dict = {x.id: {
-            'name': x.name,
-            'work_start': x.work_start,
-            'working_time': x.working_time,
-            'rest_time': x.rest_time
-        } for x in no_work_time_employee_list}
-        # logSend(no_work_time_employee_dict)
-        employee_id_list = [x.id for x in no_work_time_employee_list]
+    result = []
+    #
+    # 근로자 등록일자 업데이트 - pass_history 를 뒤져서 기록의 제일 먼저 시간을 넣는다.
+    # pass_history 에 없으면 id: < 155(2019-06-30 23:59:59) < 175(2019-07-31 23:59:59) < 226 (2019-08-01 00:00:00)
+    #
+    employee_list = Employee.objects.all()
+    if 'is_reg_update' in rqst and rqst['is_reg_update']:
+        employee_id_list = [x.id for x in employee_list]
         passer_list = Passer.objects.filter(employee_id__in=employee_id_list)
-        no_work_time_list = []
-        for passer in passer_list:
-            e = no_work_time_employee_dict[passer.employee_id]
-            passer_employee_complex_info = {
-                'name': e['name'],
-                'pNo': passer.pNo,
-                'pType': passer.pType,
-                'passer_id': passer.id,
-                'employee_id': passer.employee_id,
-                'work_start': e['work_start'],
-                'working_time': e['working_time'],
-                'rest_time': e['rest_time'],
-            }
-            no_work_time_list.append(passer_employee_complex_info)
-            logSend('  {}'.format(passer_employee_complex_info))
-        result.append({'no_work_time_employee': no_work_time_list})
+        logSend('  len - employee: {}, passer: {}'.format(len(employee_list), len(passer_list)))
+        if len(employee_list) != len(passer_list):
+            REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '등록된 근로자({})가 출입자({})에 없습니다.'.format(len(employee_list), len(passer_list))})
+        passer_dict = {x.employee_id: x.id for x in passer_list}
+        # pass_history_list = Pass_History.objects.all()
+        for employee in employee_list:
+            passer_id = passer_dict[employee.id]
+            # logSend('  passer_id: {} < {}'.format(passer_id, employee.id))
+            pass_history_list = Pass_History.objects.filter(passer_id=passer_id).order_by('id')
+            if len(pass_history_list) > 0:
+                ph = pass_history_list[0]
+                # logSend('  {}: {} {} {} {} {}'.format(employee.name, ph.year_month_day, ph.dt_in, ph.dt_in_verify, ph.dt_out, ph.dt_out_verify))
+                dt_reg = str_to_datetime(ph.year_month_day)
+                if ph.dt_out_verify is not None:
+                    dt_reg = ph.dt_out_verify
+                if ph.dt_out is not None:
+                    dt_reg = ph.dt_out
+                if ph.dt_in_verify is not None:
+                    dt_reg = ph.dt_in_verify
+                if ph.dt_in is not None:
+                    dt_reg = ph.dt_in
+                logSend('  {}: {}'.format(employee.name, dt_reg))
+                employee.dt_reg = dt_reg
+                employee.save()
+            else:
+                if employee.id < 155:
+                    employee.dt_reg = str_to_datetime("2019-06-30 23:59:59")
+                if employee.id < 175:
+                    employee.dt_reg = str_to_datetime("2019-07-31 23:59:59")
+                if employee.id < 226:
+                    employee.dt_reg = str_to_datetime("2019-08-01 00:00:00")
+                employee.save()
+                logSend('  {}: X {}'.format(employee.name, employee.dt_reg))
 
-        # 휴계시간 update
-        # working_time: 9 >> working_time: 8 + rest_time: 1
-        #
-        change_work_time_list = []
-        update_employee_list = Employee.objects.filter(rest_time=-1).exclude(work_start='')
-        for update_employee in update_employee_list:
-            change_work_time = {
-                'id': update_employee.id,
-                'name': update_employee.name,
-                'work_start': update_employee.work_start,
-                'before_working_time': update_employee.working_time,
-                'before_rest_time': update_employee.rest_time,
-            }
-            # logSend('   {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
-            try:
-                working_time = int(update_employee.working_time)
-            except Exception as e:
-                working_time = int(float(update_employee.working_time))
-                # logSend('   {} - working_time: {} > {}'.format(update_employee.name, update_employee.working_time, working_time))
-            rest_time = int(working_time) // 4
-            update_employee.working_time = '{}'.format(working_time - rest_time / 2)
-            update_employee.rest_time = '{0:02d}:{1:02d}'.format(rest_time // 2, (rest_time % 2) * 30)
-            change_work_time['working_time'] = update_employee.working_time
-            change_work_time['rest_time'] = update_employee.rest_time
-            logSend('  {}'.format(change_work_time))
-            # logSend('  {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
-            update_employee.save()
-            change_work_time_list.append(change_work_time)
-        result.append({'change_work_time': change_work_time_list})
-    except Exception as e:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': ' error: {}'.format(str(e)), 'result': result})
+    # 출근시간이 없는 근로자 분석
+    #
+    no_work_time_employee_list = Employee.objects.filter(work_start='')
+    no_work_time_employee_dict = {x.id: {
+        'name': x.name,
+        'work_start': x.work_start,
+        'working_time': x.working_time,
+        'rest_time': x.rest_time
+    } for x in no_work_time_employee_list}
+    # logSend(no_work_time_employee_dict)
+    employee_id_list = [x.id for x in no_work_time_employee_list]
+    passer_list = Passer.objects.filter(employee_id__in=employee_id_list)
+    no_work_time_list = []
+    for passer in passer_list:
+        e = no_work_time_employee_dict[passer.employee_id]
+        passer_employee_complex_info = {
+            'name': e['name'],
+            'pNo': passer.pNo,
+            'pType': passer.pType,
+            'passer_id': passer.id,
+            'employee_id': passer.employee_id,
+            'work_start': e['work_start'],
+            'working_time': e['working_time'],
+            'rest_time': e['rest_time'],
+        }
+        no_work_time_list.append(passer_employee_complex_info)
+        logSend('  {}'.format(passer_employee_complex_info))
+    result.append({'no_work_time_employee': no_work_time_list})
+
+    # 휴계시간 update
+    # working_time: 9 >> working_time: 8 + rest_time: 1
+    #
+    change_work_time_list = []
+    update_employee_list = Employee.objects.filter(rest_time=-1).exclude(work_start='')
+    for update_employee in update_employee_list:
+        change_work_time = {
+            'id': update_employee.id,
+            'name': update_employee.name,
+            'work_start': update_employee.work_start,
+            'before_working_time': update_employee.working_time,
+            'before_rest_time': update_employee.rest_time,
+        }
+        # logSend('   {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
+        try:
+            working_time = int(update_employee.working_time)
+        except Exception as e:
+            working_time = int(float(update_employee.working_time))
+            # logSend('   {} - working_time: {} > {}'.format(update_employee.name, update_employee.working_time, working_time))
+        rest_time = int(working_time) // 4
+        update_employee.working_time = '{}'.format(working_time - rest_time / 2)
+        update_employee.rest_time = '{0:02d}:{1:02d}'.format(rest_time // 2, (rest_time % 2) * 30)
+        change_work_time['working_time'] = update_employee.working_time
+        change_work_time['rest_time'] = update_employee.rest_time
+        logSend('  {}'.format(change_work_time))
+        # logSend('  {} - working_time: {}, rest_time: {}'.format(update_employee.name, update_employee.working_time, update_employee.rest_time))
+        update_employee.save()
+        change_work_time_list.append(change_work_time)
+    result.append({'change_work_time': change_work_time_list})
 
     return REG_200_SUCCESS.to_json_response({'result': result}) 
 
@@ -3334,3 +3379,62 @@ def tk_passer_work_backup(request):
 
     return REG_200_SUCCESS.to_json_response({'result': result})
 
+
+@cross_origin_read_allow
+def tk_verify_employee_from_customer(request):
+    """
+    [[ 운영 ]] 고객 서버: 근로자 정보 > 근로자 서버: 근로자 정보 miss match 확인
+
+    http://0.0.0.0:8000/employee/tk_verify_employee_from_customer
+
+    POST
+        employee_compare_dict: [{'id': "3", 'name': "unknown", 'pNo': "01024505942", 'employee_id': 70}, ...]
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    employee_compare_list = rqst['employee_compare_list']
+    # logSend(employee_compare_list)
+    employee_pNo_dict = {}
+    for employee in employee_compare_list:
+        if employee['pNo'] not in employee_pNo_dict.keys():
+            employee_pNo_dict[employee['pNo']] = '|'
+    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))
+    employee_pNo_list = [x for x in employee_pNo_dict.keys()]
+    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))
+    passer_list = Passer.objects.filter(pNo__in=employee_pNo_list)
+    passer_pNo_dict = {x.pNo: {'id': x.id, 'employee_id': x.employee_id} for x in passer_list}
+    logSend('  {}'.format(passer_pNo_dict))
+    passer_employee_id_dict = {x.id: x.employee_id for x in passer_list if x.employee_id != -1}
+    # logSend(passer_pNo_dict)
+    employee_id_list = []
+    miss_match_list = []
+    for employee in employee_compare_list:
+        if employee['pNo'] in passer_pNo_dict.keys():
+            # logSend('  {} customer:{} vs employee:{}'.format(employee['pNo'],
+            #                                                  employee['employee_id'],
+            #                                                  passer_pNo_dict[employee['pNo']]))
+            if passer_pNo_dict[employee['pNo']]['id'] != employee['employee_id']:
+                logSend('  miss match: {} {} < {}'.format(employee['pNo'], employee['employee_id'], passer_pNo_dict[employee['pNo']]['id']))
+                miss_match_list.append({'id': employee['id'], 'employee_id': passer_pNo_dict[employee['pNo']]['id']})
+                if passer_pNo_dict[employee['pNo']]['employee_id'] != -1:
+                    employee_id_list.append(passer_pNo_dict[employee['pNo']]['employee_id'])
+        else:
+            logSend('  {} customer:{} vs employee:X'.format(employee['pNo'], employee['employee_id']))
+            if employee['employee_id'] != -1:
+                miss_match_list.append({'id': employee['id'], 'employee_id': -1})
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    employee_dict = {x.id: x.name for x in employee_list}
+    for miss_match in miss_match_list:
+        if miss_match['employee_id'] in passer_employee_id_dict:
+            miss_match['name'] = employee_dict[passer_employee_id_dict[miss_match['employee_id']]]
+    return REG_200_SUCCESS.to_json_response({'miss_match_list': miss_match_list})

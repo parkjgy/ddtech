@@ -57,8 +57,11 @@ urlpatterns = [
     url(r'employee/tk_employee$', views.tk_employee, name='tk_employee'),
     url(r'employee/tk_pass$', views.tk_pass, name='tk_pass'),
     url(r'employee/tk_passer_list', views.tk_passer_list, name='tk_passer_list'),
+    url(r'employee/tk_list_reg_stop', views.tk_list_reg_stop, name='tk_list_reg_stop'),
     url(r'employee/tk_update_rest_time', views.tk_update_rest_time, name='tk_update_rest_time'),
     url(r'employee/tk_passer_work_backup', views.tk_passer_work_backup, name='tk_passer_work_backup'),
+    url(r'employee/tk_verify_employee_from_customer', views.tk_verify_employee_from_customer,
+        name='tk_verify_employee_from_customer'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

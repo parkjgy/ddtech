@@ -5063,7 +5063,7 @@ def tk_check_employees(request):
 def tk_list_employees(request):
     """
     [[ 서버 시험]] 근로자를 모두 읽어들여서 전화번호가 중복되는 근로자를 찾고 employee_id 가 다른 경우를 찾는다.
-    http://0.0.0.0:8000/customer/tk_list_employees
+    http://0.0.0.0:8000/customer/tk_list_employees?work_id=5
     GET
         work_id: 5
     response
@@ -5087,16 +5087,13 @@ def tk_list_employees(request):
         return status422(get_api(request),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     work_id = parameter_check['parameters']['work_id']
-
-    employee_list = Employee.objects.filter(work_id=work_id).values('id', 'is_accept_work', 'is_active', 'dt_begin',
-                                                                    'dt_end', 'work_id', 'employee_id', 'name', 'pNo',
-                                                                    'dt_begin_beacon', 'dt_end_beacon',
-                                                                    'dt_begin_touch', 'dt_end_touch', 'overtime', 'x',
-                                                                    'y')
-    json_employee_list = [employee for employee in employee_list]
-    logSend('  employee_list: {}'.format(json_employee_list))
-    result.append({'employee_list': json_employee_list})
-    logSend(result)
+    if work_id == -1:
+        employee_list = Employee.objects.all()
+    else:
+        employee_list = Employee.objects.filter(work_id=work_id)
+    employee_dict_list = [{x: employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')} for employee in employee_list]
+    logSend(employee_dict_list)
+    result.append({'employee_list': employee_dict_list})
 
     return REG_200_SUCCESS.to_json_response({'result': result})
 
@@ -5265,3 +5262,55 @@ def tk_complete_work_backup(request):
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+def tk_fix_up_employee(request):
+    """
+    [[ 운영]] 근로자 전화번호와 이름이 Employee SERVER 내용과 틀린 부분을 바로 잡는다.
+    - customer.employee.employee_id > employee.passer_id 잘못된 부분 수정
+    http://0.0.0.0:8000/customer/tk_fix_up_employee
+    GET
+        dt_complete: 2019-07-31
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    # parameter_check = is_parameter_ok(rqst, ['work_id'])
+    # if not parameter_check['is_ok']:
+    #     return status422(get_api(request),
+    #                      {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+    # work_id = parameter_check['parameters']['work_id']
+    employee_list = Employee.objects.all()
+    employee_compare_list = []
+    for employee in employee_list:
+        employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
+        employee_compare_list.append(employee_compare)
+    # logSend('  {}'.format(employee_compare_list))
+
+    r = requests.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json={'employee_compare_list': employee_compare_list})
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    fix_up_list = r.json()['miss_match_list']
+
+    fixed_up_list = []
+    employee_dict = {x.id: x for x in employee_list}
+    for fix_up in fix_up_list:
+        employee = employee_dict[fix_up['id']]
+        employee.employee_id = fix_up['employee_id']
+        if 'name' in fix_up:
+            employee.name = fix_up['name']
+        # employee.save()
+        fixed_up_list.append({'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'passer_id': employee.employee_id})
+    return REG_200_SUCCESS.to_json_response({'fixed_up_list': fixed_up_list})
