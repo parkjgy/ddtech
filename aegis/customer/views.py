@@ -5298,15 +5298,16 @@ def tk_fix_up_employee(request):
         employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
         employee_compare_list.append(employee_compare)
     # logSend('  {}'.format(employee_compare_list))
+    return REG_200_SUCCESS.to_json_response({'employee_compare_list': employee_compare_list})
 
     s = requests.session()
 
     result = []
-    parameter = {"pNo": '01020736959',
-                 "name": '최진',
-                 }
-    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # parameter = {"pNo": '01020736959',
+    #              "name": '최진',
+    #              }
+    # r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     parameter = {
                  "employee_compare_list": employee_compare_list,
