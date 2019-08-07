@@ -5300,11 +5300,11 @@ def tk_fix_up_employee(request):
     # logSend('  {}'.format(employee_compare_list))
 
     s = requests.session()
-    parameter = {"pNo": '01020736959',
-                 "name": '최진',
-                 }
-    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
-    result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
+    # parameter = {"pNo": '01020736959',
+    #              "name": '최진',
+    #              }
+    # r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=parameter)
+    # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     r = s.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json={'employee_compare_list': employee_compare_list})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
