@@ -5298,7 +5298,6 @@ def tk_fix_up_employee(request):
         employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
         employee_compare_list.append(employee_compare)
     # logSend('  {}'.format(employee_compare_list))
-    return REG_200_SUCCESS.to_json_response({'employee_compare_list': employee_compare_list})
 
     s = requests.session()
 
@@ -5316,6 +5315,7 @@ def tk_fix_up_employee(request):
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend('  result: {}'.format(result))
+    return REG_200_SUCCESS.to_json_response({'employee_compare_list': employee_compare_list})
 
     fix_up_list = r.json()['miss_match_list']
 
