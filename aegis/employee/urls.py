@@ -60,8 +60,7 @@ urlpatterns = [
     url(r'employee/tk_list_reg_stop', views.tk_list_reg_stop, name='tk_list_reg_stop'),
     url(r'employee/tk_update_rest_time', views.tk_update_rest_time, name='tk_update_rest_time'),
     url(r'employee/tk_passer_work_backup', views.tk_passer_work_backup, name='tk_passer_work_backup'),
-    url(r'employee/tk_verify_employee_from_customer', views.tk_verify_employee_from_customer,
-        name='tk_verify_employee_from_customer'),
+    url(r'employee/tk_match_test_for_customer', views.tk_match_test_for_customer, name='tk_match_test_for_customer'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -5312,7 +5312,7 @@ def tk_fix_up_employee(request):
     parameter = {
                  "employee_compare_list": employee_compare_list,
                  }
-    r = s.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json=parameter)
+    r = s.post(settings.EMPLOYEE_URL + 'tk_match_test_for_customer', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
     logSend('  result: {}'.format(result))

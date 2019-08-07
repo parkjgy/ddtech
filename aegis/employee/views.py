@@ -3381,7 +3381,7 @@ def tk_passer_work_backup(request):
 
 
 @cross_origin_read_allow
-def tk_verify_employee_from_customer(request):
+def tk_match_test_for_customer(request):
     """
     [[ 운영 ]] 고객 서버: 근로자 정보 > 근로자 서버: 근로자 정보 miss match 확인
 
