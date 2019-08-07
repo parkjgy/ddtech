@@ -1808,7 +1808,8 @@ def update_my_info(request):
             int_rest_time = int_working_time // 4
             rest_time = '{0:02d}:{1:02d}'.format(int_rest_time // 2, (int_rest_time % 2) * 30)
             employee.rest_time = rest_time
-            employee.working_time = '{}'.format(int_working_time - int_rest_time / 2)
+            # 데이터 분석 결과 근로자는 휴게시간을 제외한 순 근로시간을 넣고 있기 때문에 근무시간에 휴게시간을 뺄 필요가 없다.
+            # employee.working_time = '{}'.format(int_working_time - int_rest_time / 2)
 
     if 'rest_time' in rqst:
         rest_time = rqst['rest_time']
