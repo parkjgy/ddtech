@@ -280,10 +280,10 @@ def list_customer_for_operation(request):
     worker_id = AES_DECRYPT_BASE64(rqst['worker_id'])
     logSend('  --- from operation server : op staff id '.format(AES_DECRYPT_BASE64(worker_id)))
 
-    customer_name = rqst['customer_name']
-    staff_name = rqst['staff_name']
-    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
-    staff_email = rqst['staff_email']
+    # customer_name = rqst['customer_name']
+    # staff_name = rqst['staff_name']
+    # staff_pNo = no_only_phone_no(rqst['staff_pNo'])
+    # staff_email = rqst['staff_email']
 
     customers = Customer.objects.filter(is_contractor=True).values('id', 'corp_name', 'contract_no', 'dt_reg',
                                                                    'dt_accept', 'type', 'staff_id', 'staff_name',
