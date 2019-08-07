@@ -2430,7 +2430,7 @@ def my_work_histories_for_customer(request):
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     workings = []
     for pass_record in pass_record_list:
-        working_time = int(employee.working_time)
+        working_time = int(float(employee.working_time))
         working_hour = (working_time // 4) * 4
         break_hour = working_time - working_hour
         working = {'year_month_day': pass_record.year_month_day,
