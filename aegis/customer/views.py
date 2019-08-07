@@ -5286,7 +5286,7 @@ def tk_fix_up_employee(request):
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
-    n = int(rqst('n'))
+    n = int(rqst['n'])
     # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
     # parameter_check = is_parameter_ok(rqst, ['work_id'])
     # if not parameter_check['is_ok']:
