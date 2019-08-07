@@ -5299,7 +5299,8 @@ def tk_fix_up_employee(request):
         employee_compare_list.append(employee_compare)
     # logSend('  {}'.format(employee_compare_list))
 
-    r = requests.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json={'employee_compare_list': employee_compare_list})
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_verify_employee_from_customer', json={'employee_compare_list': employee_compare_list})
     # result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
     fix_up_list = r.json()['miss_match_list']
 
