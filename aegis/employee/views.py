@@ -1056,8 +1056,6 @@ def pass_verify(request):
         pass_history.dt_out_verify = dt_touch
         pass_history.dt_out_em = dt_touch
         dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
-        logSend('  출근시간: {}, overtime: {}'.format(dt_in, datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5)))
-        logSend('  출근시간 + 12시간 + overtime: {}, 퇴근시간: {}'.format(dt_in + datetime.timedelta(hours=12) + datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5), dt_touch))
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
@@ -2196,7 +2194,7 @@ def update_pass_history(pass_history: dict):
         pass_sms
     """
     logSend('--- pass_history: {}'.format(
-        [(key, pass_history.__dict__[key]) for key in pass_history.__dict__.keys() if not key.startswith('_')]))
+        {key: pass_history.__dict__[key] for key in pass_history.__dict__.keys() if not key.startswith('_')}))
     try:
         passer = Passer.objects.get(id=pass_history.passer_id)
     except Exception as e:
