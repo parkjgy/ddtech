@@ -218,6 +218,9 @@ def is_parameter_ok(rqst, key_list) -> dict:
         if is_blank:
             key = key.replace('_@', '')
             if key in rqst:
+                if rqst[key] is None:
+                    results['parameters'][key] = None
+                    continue
                 if type(rqst[key]) is str:
                     # 문자열이면 공백을 제거했을 때 값이 없으면(즉, key 만 있고 value 가 없는 것으로 처리
                     value = rqst[key].replace(' ', '')

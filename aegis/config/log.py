@@ -19,32 +19,45 @@ def logSend(*args):
     :returns: M: 실패 했을 때 메세지가 실려있다.
     :returns: R: json 양식으로된 게시물이다. {'title': '임신 중 ', 'text': '<!DOCTYPE html><html>...', 'published_date': '2018-10-04', 'author':'Thinking'}
     """
-    try:
-        if not settings.IS_LOG:
-            return
-        str_list = []
-        for arg in args:
-            str_list.append(str(arg))
-        print(''.join(str_list))
-        logger_log.debug(''.join(str_list))
-    except Exception as e:
-        logger_error.error(str(e))
+
+    if not settings.IS_LOG:
         return
+    log = ''.join([str(x) for x in args])
+    if settings.DEBUG:
+        print(log)
+    logger_log.debug(log)
+    return
+    # try:
+    #     if not settings.IS_LOG:
+    #         return
+    #     str_list = []
+    #     for arg in args:
+    #         str_list.append(str(arg))
+    #     logger_log.debug(''.join(str_list))
+    # except Exception as e:
+    #     logger_error.error(str(e))
+    #     return
 
 
 logger_header = logging.getLogger("aegis.header.log")
 
 
 def logHeader(*args):
-    try:
-        str_list = []
-        for arg in args:
-            str_list.append(str(arg))
-        print(''.join(str_list))
-        logger_header.debug(''.join(str_list))
-    except Exception as e:
-        logger_log.debug(str(e))
+    if not settings.IS_LOG:
         return
+    log = ''.join([str(x) for x in args])
+    if settings.DEBUG:
+        print(log)
+    logger_log.debug(log)
+    return
+    # try:
+    #     str_list = []
+    #     for arg in args:
+    #         str_list.append(str(arg))
+    #     logger_header.debug(''.join(str_list))
+    # except Exception as e:
+    #     logger_log.debug(str(e))
+    #     return
 
 
 def logError(*args):
@@ -56,12 +69,16 @@ def logError(*args):
     err_msg : str or None
         Human readable error message, or None on success.
     """
-    try:
-        str_list = []
-        for arg in args:
-            str_list.append(str(arg))
-        print('ERROR: {}'.format(''.join(str_list)))
-        logger_error.debug(''.join(str_list))
-    except Exception as e:
-        logger_error.error(str(e))
-        return
+    log = ''.join([str(x) for x in args])
+    if settings.DEBUG:
+        print(log)
+    logger_log.debug(log)
+    return
+    # try:
+    #     str_list = []
+    #     for arg in args:
+    #         str_list.append(str(arg))
+    #     logger_error.debug(''.join(str_list))
+    # except Exception as e:
+    #     logger_error.error(str(e))
+    #     return

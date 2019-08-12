@@ -3083,7 +3083,7 @@ def tk_passer_list(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -3117,7 +3117,7 @@ def tk_list_reg_stop(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -3174,7 +3174,7 @@ def tk_update_rest_time(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -3305,7 +3305,7 @@ def tk_passer_work_backup(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -3395,7 +3395,7 @@ def tk_match_test_for_customer(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -3513,9 +3513,9 @@ def tk_in_out_null_list(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+    #     logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))

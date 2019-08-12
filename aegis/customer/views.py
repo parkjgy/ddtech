@@ -2458,7 +2458,7 @@ def employee_work_accept_for_employee(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2527,7 +2527,7 @@ def update_employee_for_employee(request):
     """
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -5019,7 +5019,7 @@ def tk_check_employees(request):
     """
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -5072,7 +5072,7 @@ def tk_list_employees(request):
     """
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -5115,7 +5115,7 @@ def tk_complete_employees(request):
     """
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -5196,7 +5196,7 @@ def tk_complete_work_backup(request):
     """
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -5280,7 +5280,7 @@ def tk_fix_up_employee(request):
     """
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
