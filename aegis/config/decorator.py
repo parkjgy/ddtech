@@ -37,11 +37,11 @@ def cross_origin_read_allow(function):
                 # 함수 파라미터 표시
                 for key in rqst.keys():
                     plain_text = ''
-                    # if '_id' in key and 'n_id' not in key and '_id_' not in key:
-                    #     if len(rqst[key]) > 20:  # AES 암호화 된 값이면 22자가 최소임 - 즉 암호화된 값
-                    #         plain_text = AES_DECRYPT_BASE64(rqst[key])
-                    #         if plain_text == '__error':
-                    #             plain_text = ''
+                    if '_id' in key and 'n_id' not in key and '_id_' not in key:
+                        if len(rqst[key]) > 20:  # AES 암호화 된 값이면 22자가 최소임 - 즉 암호화된 값
+                            plain_text = AES_DECRYPT_BASE64(rqst[key])
+                            if plain_text == '__error':
+                                plain_text = ''
                     logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
                 response = function(request, *args, **kwargs)
                 logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
