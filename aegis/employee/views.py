@@ -522,7 +522,7 @@ def notification_list(request):
     logSend(passer.pNo)
     # notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
     notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo)
-    logSend(notification_list)
+    logSend('  notification: {}'.format([x.dt_begin for x in notification_list]))
     arr_notification = []
     for notification in notification_list:
         # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
@@ -3402,17 +3402,170 @@ def tk_match_test_for_customer(request):
     else:
         rqst = request.GET
     employee_compare_list = rqst['employee_compare_list']
-    logSend(employee_compare_list)  #--------------------------------------------
+    logSend(employee_compare_list)
     employee_pNo_dict = {}
     for employee in employee_compare_list:
         if employee['pNo'] not in employee_pNo_dict.keys():
             employee_pNo_dict[employee['pNo']] = '|'
-    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))  #--------------------------------------------
+    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))
     employee_pNo_list = [x for x in employee_pNo_dict.keys()]
-    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))  #--------------------------------------------
+    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))
     passer_list = Passer.objects.filter(pNo__in=employee_pNo_list)
     passer_pNo_dict = {x.pNo: {'id': x.id, 'employee_id': x.employee_id} for x in passer_list}
-    logSend('  {}'.format(passer_pNo_dict))  #--------------------------------------------
+    logSend('  {}'.format(passer_pNo_dict))
+    passer_employee_id_dict = {x.id: x.employee_id for x in passer_list if x.employee_id != -1}
+    # logSend(passer_pNo_dict)
+    employee_id_list = []
+    miss_match_list = []
+    for employee in employee_compare_list:
+        if employee['pNo'] in passer_pNo_dict.keys():
+            # logSend('  {} customer:{} vs employee:{}'.format(employee['pNo'],
+            #                                                  employee['employee_id'],
+            #                                                  passer_pNo_dict[employee['pNo']]))
+            if passer_pNo_dict[employee['pNo']]['id'] != employee['employee_id']:
+                logSend('  miss match: {} {} < {}'.format(employee['pNo'], employee['employee_id'], passer_pNo_dict[employee['pNo']]['id']))
+                miss_match_list.append({'id': employee['id'], 'employee_id': passer_pNo_dict[employee['pNo']]['id']})
+                if passer_pNo_dict[employee['pNo']]['employee_id'] != -1:
+                    employee_id_list.append(passer_pNo_dict[employee['pNo']]['employee_id'])
+        else:
+            logSend('  {} customer:{} vs employee:X'.format(employee['pNo'], employee['employee_id']))
+            if employee['employee_id'] != -1:
+                miss_match_list.append({'id': employee['id'], 'employee_id': -1})
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    employee_dict = {x.id: x.name for x in employee_list}
+    for miss_match in miss_match_list:
+        if miss_match['employee_id'] in passer_employee_id_dict:
+            miss_match['name'] = employee_dict[passer_employee_id_dict[miss_match['employee_id']]]
+    return REG_200_SUCCESS.to_json_response({'miss_match_list': miss_match_list})
+
+
+def work_dict_from_db(id_list):
+    works = Work.objects.filter(id__in=id_list)
+    work_dict = {}
+    for work in works:
+        work_dict[work.id] = work
+    return work_dict
+
+
+def passer_dict_from_db(id_list):
+    passer_list = Passer.objects.filter(id__in=id_list)
+    passer_dict = {passer.id: {key: passer.__dict__[key] for key in passer.__dict__.keys() if not key.startswith('_')} for passer in passer_list}
+    logSend('  passer_dict: {}'.format(passer_dict))
+
+    employee_id_list = [passer.employee_id for passer in passer_list if passer.id is not -1]
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    # employee_dict = {}
+    # for employee in employee_list:
+
+    # employee_dict = {employee.id: {key: emplyee.get_works() if key is "works" else employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')} for employee in employee_list}
+    employee_dict = {employee.id: {key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')} for employee in employee_list}
+    logSend('  employee_dict: {}'.format(employee_dict))
+
+    for passer_key in passer_dict.keys():
+        passer = passer_dict[passer_key]
+        if passer['employee_id'] is not -1:
+            employee = employee_dict[passer['employee_id']]
+            for key in employee.keys():
+                passer['employee_' + key] = employee[key]
+            passer_dict[passer_key] = passer
+    # logSend('  passer + employee: {}'.format(passer_dict))
+    return passer_dict
+
+@cross_origin_read_allow
+def tk_in_out_null_list(request):
+    """
+    [[ 운영 ]] 출입 기록이 없는 근로자 list
+    - employee_pass_histoty 에 날짜는 있는데 출입내역이 없는 근로자 표시
+    - 필요에 따라 업무별로 찾을 수 있다.
+    - 기본 값은 한달이지만 기간을 지정할 수 있다.(월 혹은 날짜까지 만 넣는다. 2019-08, 2019-08-03)
+    http://0.0.0.0:8000/employee/tk_in_out_null_list
+
+    POST
+        work_id: 암호화된 id (optional)
+        dt_begin: '2019-08-01' (optional) default: 이번 달의 1일
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'result': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['work_id_!_@', 'dt_begin_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    dt_begin = parameter_check['parameters']['dt_begin']
+    if dt_begin is None:
+        dt_begin = str_to_datetime(datetime.datetime.now().strftime("%Y-%m") + '-01')
+    else:
+        dt_begin = str_to_datetime(dt_begin)
+    logSend('  work_id: {}, dt_begin: {}'.format(work_id, dt_begin))
+
+    stop_watch = datetime.datetime.now()
+    io_null_list = Pass_History.objects.filter(year_month_day__gt=dt_begin, dt_in=None, dt_in_verify=None, dt_out=None, dt_out_verify=None).exclude(overtime=-2)
+
+    work_dict = work_dict_from_db([x.work_id for x in io_null_list])
+    passer_dict = passer_dict_from_db([x.passer_id for x in io_null_list])
+
+    result = []
+    for io_null in io_null_list:
+        # work = Work.objects.get(id=io_null.work_id)
+        # passer = Passer.objects.get(id=io_null.passer_id)
+        # if passer.employee_id == -1:
+        #     employee = {'name': '-----', 'works': []}
+        # else:
+        #     employee_db = Employee.objects.get(id=passer.employee_id)
+        #     employee = {'name': employee_db.name, 'works': employee_db.get_works()}
+        io_null_employee = {
+            'id': io_null.id,
+            'year_month_day': io_null.year_month_day,
+            'work_id': io_null.work_id,
+            # 'work_place_name': work.work_place_name,
+            # 'work_name_type': work.work_name_type,
+            # 'begin': work.begin,
+            # 'end': work.end,
+            # 'work_place_name': work_dict[int(io_null.work_id)]['work_place_name'],
+            # 'work_name_type': work_dict[int(io_null.work_id)]['work_name_type'],
+            # 'begin': work_dict[int(io_null.work_id)]['begin'],
+            # 'end': work_dict[int(io_null.work_id)]['end'],
+            'work_place_name': work_dict[int(io_null.work_id)].work_place_name,
+            'work_name_type': work_dict[int(io_null.work_id)].work_name_type,
+            'begin': work_dict[int(io_null.work_id)].begin,
+            'end': work_dict[int(io_null.work_id)].end,
+            'passer_id': io_null.passer_id,
+            # 'passer_pNo': passer.pNo,
+            # 'passer_pType': passer.pType,
+            # 'employee_name': employee['name'],
+            # 'employee_works': employee['works'],
+            'passer_pNo': passer_dict[io_null.passer_id]['pNo'],
+            'passer_pType': passer_dict[io_null.passer_id]['pType'],
+            'employee_id': passer_dict[io_null.passer_id]['employee_id'],
+            'employee_name': passer_dict[io_null.passer_id]['employee_name'],
+            'employee_works': passer_dict[io_null.passer_id]['employee_works'],
+        }
+        result.append(io_null_employee)
+    logSend('  time interval: {}'.format(datetime.datetime.now() - stop_watch))
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
+    employee_compare_list = rqst['employee_compare_list']
+    logSend(employee_compare_list)
+    employee_pNo_dict = {}
+    for employee in employee_compare_list:
+        if employee['pNo'] not in employee_pNo_dict.keys():
+            employee_pNo_dict[employee['pNo']] = '|'
+    logSend('  employee_pNo_dict({}): {}'.format(len(employee_pNo_dict.keys()), employee_pNo_dict))
+    employee_pNo_list = [x for x in employee_pNo_dict.keys()]
+    logSend(' employee_pNo_list({}): {}'.format(len(employee_pNo_list), employee_pNo_list))
+    passer_list = Passer.objects.filter(pNo__in=employee_pNo_list)
+    passer_pNo_dict = {x.pNo: {'id': x.id, 'employee_id': x.employee_id} for x in passer_list}
+    logSend('  {}'.format(passer_pNo_dict))
     passer_employee_id_dict = {x.id: x.employee_id for x in passer_list if x.employee_id != -1}
     # logSend(passer_pNo_dict)
     employee_id_list = []
