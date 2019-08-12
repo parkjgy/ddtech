@@ -3450,12 +3450,12 @@ def work_dict_from_db(id_list):
 def passer_dict_from_db(id_list):
     passer_list = Passer.objects.filter(id__in=id_list)
     passer_dict = {passer.id: {key: passer.__dict__[key] for key in passer.__dict__.keys() if not key.startswith('_')} for passer in passer_list}
-    logSend('  passer_dict: {}'.format(passer_dict))
+    # logSend('  passer_dict: {}'.format(passer_dict))
 
     employee_id_list = [passer.employee_id for passer in passer_list if passer.id is not -1]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
     employee_dict = {employee.id: {key: employee.get_works() if key is "works" else employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')} for employee in employee_list}
-    logSend('  employee_dict: {}'.format(employee_dict))
+    # logSend('  employee_dict: {}'.format(employee_dict))
 
     for passer_key in passer_dict.keys():
         passer = passer_dict[passer_key]
@@ -3464,7 +3464,7 @@ def passer_dict_from_db(id_list):
             for key in employee.keys():
                 passer['employee_' + key] = employee[key]
             passer_dict[passer_key] = passer
-    logSend('  passer + employee: {}'.format(passer_dict))
+    # logSend('  passer + employee: {}'.format(passer_dict))
     return passer_dict
 
 @cross_origin_read_allow
@@ -3543,9 +3543,18 @@ def tk_in_out_null_list(request):
     passer_dict = passer_dict_from_db([x.passer_id for x in io_null_list])
 
     result = []
+    delete_history = []
     for io_null in io_null_list:
         if io_null.passer_id not in passer_dict.keys():
             logSend('  Not exist passer_id: {}'.format(io_null.passer_id))
+            delete_history.append({'id': io_null.id,
+                                   'year_month_day': io_null.year_month_day,
+                                   'work_id': io_null.work_id,
+                                   'work_place_name': work_dict[int(io_null.work_id)].work_place_name,
+                                   'work_name_type': work_dict[int(io_null.work_id)].work_name_type,
+                                   'begin': work_dict[int(io_null.work_id)].begin,
+                                   'end': work_dict[int(io_null.work_id)].end,
+                                   })
             io_null.delete()
             continue
         io_null_employee = {
@@ -3566,4 +3575,4 @@ def tk_in_out_null_list(request):
         result.append(io_null_employee)
     # logSend('  time interval: {}'.format(datetime.datetime.now() - stop_watch))
 
-    return REG_200_SUCCESS.to_json_response({'result': result})
+    return REG_200_SUCCESS.to_json_response({'delete_history': delete_history, 'result': result})
