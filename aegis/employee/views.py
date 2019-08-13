@@ -1586,7 +1586,7 @@ def reg_from_certification_no(request):
                     {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
                     {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
                     {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '11:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '23:00', 'working_time': '08', 'rest_time': '00:00'},
                 ],
             'bank_list': ['국민은행', ... 'NH투자증권']
         }
@@ -1685,7 +1685,7 @@ def reg_from_certification_no(request):
                     {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
                     {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
                     {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '11:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '23:00', 'working_time': '08', 'rest_time': '00:00'},
                 ]
 
         result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
