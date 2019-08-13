@@ -1584,8 +1584,9 @@ def reg_from_certification_no(request):
             'default_time':
                 [
                     {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
-                    {'work_start': '18:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '02:00', 'working_time': '08', 'rest_time': '00:00'}
+                    {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '11:00', 'working_time': '08', 'rest_time': '00:00'},
                 ],
             'bank_list': ['국민은행', ... 'NH투자증권']
         }
@@ -1682,8 +1683,9 @@ def reg_from_certification_no(request):
             notification.save()
         result['default_time'] = [
                     {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
-                    {'work_start': '18:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '02:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '11:00', 'working_time': '08', 'rest_time': '00:00'},
                 ]
 
         result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
@@ -3545,9 +3547,9 @@ def tk_in_out_null_list(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-    #     logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))

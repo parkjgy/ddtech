@@ -3988,3 +3988,30 @@ def fjfjieie(request):
 
     logSend(result)
     return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
+def tk_in_out_null_list(request):
+    """
+    [[ 서버 시험]] 단순한 기능 시험
+    GET
+        { "key" : "사용 승인 key"
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_in_out_null_list', json=rqst)
+    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
+    result_json = r.json()
+    return REG_200_SUCCESS.to_json_response(result_json)
