@@ -1572,12 +1572,32 @@ def reg_from_certification_no(request):
             {'message': '인증번호가 틀립니다.'}
         STATUS 200 # 기존 근로자
         {
-            'id': '암호화된 id 그대로 보관되어서 사용되어야 함', 'name': '홍길동', 'bank': '기업은행', 'bank_account': '12300000012000',
+            'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
+            'name': '홍길동',                      # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'work_start': '09:00',               # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'working_time': '12',                # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'rest_time': -1,                     # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'work_start_alarm': 'X',             # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'work_end_alarm': 'X',               # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
+            'bank': '기업은행',                     # 기존 근로자 일 때 (없을 수 있음 - 등록 중 중단한 경우)
+            'bank_account': '12300000012000',     # 기존 근로자 일 때 (없을 수 있음 - 등록 중 중단한 경우)
+            'default_time':
+                [
+                    {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
+                    {'work_start': '18:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '02:00', 'working_time': '08', 'rest_time': '00:00'}
+                ],
             'bank_list': ['국민은행', ... 'NH투자증권']
         }
         STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
         {
             'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
+            'default_time':
+                [
+                    {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
+                    {'work_start': '18:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '02:00', 'working_time': '08', 'rest_time': '00:00'}
+                ],
             'bank_list': ['국민은행', ... 'NH투자증권']
         }
         STATUS 202 # 출입 정보만 처리하는 출입자
@@ -1635,6 +1655,7 @@ def reg_from_certification_no(request):
     else:
         employees = Employee.objects.filter(id=passer.employee_id)
         if len(employees) == 0:
+            logError(get_api(request), ' 발생하면 안됨: passer.employee_id 의 근로자가 employee 에 없다. (새로 만듦)')
             status_code = 201
             employee = Employee(
             )
@@ -1646,6 +1667,11 @@ def reg_from_certification_no(request):
                 status_code = 201
             else:
                 result['name'] = employee.name
+                result['work_start'] = employee.work_start
+                result['working_time'] = employee.working_time
+                result['rest_time'] = employee.rest_time
+                result['work_start_alarm'] = employee.work_start_alarm
+                result['work_end_alarm'] = employee.work_end_alarm
                 result['bank'] = employee.bank
                 result['bank_account'] = employee.bank_account
 
@@ -1654,6 +1680,12 @@ def reg_from_certification_no(request):
         for notification in notification_list:
             notification.employee_id = employee.id
             notification.save()
+        result['default_time'] = [
+                    {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
+                    {'work_start': '18:00', 'working_time': '08', 'rest_time': '00:00'},
+                    {'work_start': '02:00', 'working_time': '08', 'rest_time': '00:00'},
+                ]
+
         result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
                                '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행',
                                '신협중앙회', '우체국', '전북은행', '제주은행', '카카오뱅크', '중국공상은행', 'BNP파리바은행', 'HSBC은행', 'JP모간체이스은행',
