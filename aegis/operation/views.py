@@ -3964,6 +3964,19 @@ def fjfjieie(request):
     result = []
     s = requests.session()
 
+    parameter = {
+        "passer_id": 'J75x0sHanKmZblNaa3HuMg',
+        "dt": '2019-08-14 11:57:07',
+        "is_in": 0,
+        "major": 11001,
+        "beacons": [{'minor': 11003, 'dt_begin': '2019-08-14 11:28:07', 'rssi': -93},
+                    {'minor': 11004, 'dt_begin': '2019-08-14 11:28:07', 'rssi': -93},
+                    {'minor': 11001, 'dt_begin': '2019-08-14 11:57:05', 'rssi': -98}],
+    }
+    r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=parameter)
+    result.append({'url': r.url, 'POST': parameter, 'STATUS': r.status_code, 'R': r.json()})
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
     else:
@@ -3992,15 +4005,42 @@ def fjfjieie(request):
 
 @cross_origin_read_allow
 @session_is_none_403_with_operation
-def tk_in_out_null_list(request):
+def tk_employee(request):
     """
-    [[ 서버 시험]] 단순한 기능 시험
+    [[ Employee ]] 이름이나 전화번호로 근로자 조회
+    http://0.0.0.0:8000/operation/tk_employee
     GET
-        { "key" : "사용 승인 key"
+        pNo: 010-3333-5555   # optional
+        name: 홍길동           # optional
     response
         STATUS 200
-        STATUS 403
-            {'message':'저리가!!!'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=rqst)
+    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
+    result_json = r.json()
+    return REG_200_SUCCESS.to_json_response(result_json)
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
+def tk_in_out_null_list(request):
+    """
+    [[ Employee ]] pass_history 의 출입, 출퇴근, 초과근무 가 빈 경우를 표시
+    http://0.0.0.0:8000/operation/tk_in_out_null_list
+    GET
+        work_id: 암호화된 id        # optional
+        dt_begin: '2019-08-01'    # optional default: 이번 달의 1일
+    response
+        STATUS 200
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
