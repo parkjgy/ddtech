@@ -1696,8 +1696,8 @@ def reg_from_certification_no(request):
                                '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
     passer.pType = 20 if phone_type == 'A' else 10
     passer.push_token = push_token
-    passer.cn = 0
-    passer.dt_cn = None
+    # passer.cn = 0
+    # passer.dt_cn = None
     passer.save()
     return REG_200_SUCCESS.to_json_response(result)
 
