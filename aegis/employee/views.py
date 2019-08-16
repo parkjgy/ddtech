@@ -1862,7 +1862,7 @@ def update_my_info(request):
             dt_rest_time = datetime.datetime.strptime('2019-01-01 ' + rest_time + ':00', "%Y-%m-%d %H:%M:%S")
         except Exception as e:
             return status422(get_api(request), {'message': '휴계 시간({}) 양식(hh:mm)이 잘못됨'.format(rest_time)})
-        if not (str_to_datetime('2019-01-01 00:30:00') <= dt_rest_time <= str_to_datetime('2019-01-01 06:00:00')):
+        if not (str_to_datetime('2019-01-01 00:00:00') <= dt_rest_time <= str_to_datetime('2019-01-01 06:00:00')):
             return status422(get_api(request), {'message': '휴계 시간(00:30 ~ 06:00) 범위 초과 (주:양식도 확인)'})
         employee.rest_time = rest_time
 
