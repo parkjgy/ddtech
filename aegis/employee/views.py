@@ -801,11 +801,23 @@ def pass_reg(request):
     for i in range(len(beacons)):
         # 비콘 이상 유무 확인을 위해 비콘 날짜, 인식한 근로자 앱 저장
         beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
+        logSend('  {} {}: {}'.format(major, beacons[i]['minor'], {x.id: x.dt_last for x in beacon_list}))
         if len(beacon_list) > 0:
-            beacon = beacon_list[0]
-            beacon.dt_last = dt
-            beacon.last_passer_id = passer_id
+            beacon_list.delete()
+            beacon = Beacon(
+                # uuid='12345678-0000-0000-0000-123456789012',
+                uuid='3c06aa91-984b-be81-d8ea-82af46f4cda4',
+                # 1234567890123456789012345678901234567890
+                major=major,
+                minor=beacons[i]['minor'],
+                dt_last=dt,
+                last_passer_id=passer_id,
+            )
             beacon.save()
+            # beacon = beacon_list[0]
+            # beacon.dt_last = dt
+            # beacon.last_passer_id = passer_id
+            # beacon.save()
         else:
             logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
@@ -819,6 +831,7 @@ def pass_reg(request):
             beacon.save()
         # 근로자 앱에서 인식된 비콘 값을 모두 저장 - 아직 용도 없음.
         new_beacon_record = Beacon_Record(
+            passer_id=passer_id,
             major=major,
             minor=beacons[i]['minor'],
             dt_begin=beacons[i]['dt_begin'],
@@ -2988,7 +3001,8 @@ def tk_employee(request):
     else:
         rqst = request.GET
 
-    passers = []
+    passer_dict_list = []
+    passer_list = []
     if 'pNo' in rqst:
         pNo = no_only_phone_no(rqst['pNo'])
         passer_list = Passer.objects.filter(pNo=pNo)
@@ -3012,6 +3026,7 @@ def tk_employee(request):
             passer_dict['name'] = employee.name
             passer_dict['work_start'] = employee.work_start
             passer_dict['working_time'] = employee.working_time
+            passer_dict['rest_time'] = employee.rest_time
             employee_works = Works(employee.get_works())
             works = []
             for employee_work in employee_works.data:
@@ -3028,8 +3043,8 @@ def tk_employee(request):
                 work_dict['work_end'] = work.end
                 works.append(work_dict)
             passer_dict['works'] = works
-    passers.append(passer_dict)
-    return REG_200_SUCCESS.to_json_response({'passers': passers})
+        passer_dict_list.append(passer_dict)
+    return REG_200_SUCCESS.to_json_response({'passers': passer_dict_list})
 
 
 @cross_origin_read_allow
