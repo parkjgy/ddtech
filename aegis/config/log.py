@@ -48,7 +48,7 @@ def logHeader(*args):
     log = ''.join([str(x) for x in args])
     if settings.DEBUG:
         print(log)
-    logger_log.debug(log)
+    logger_header.debug(log)
     return
     # try:
     #     str_list = []
@@ -72,7 +72,7 @@ def logError(*args):
     log = ''.join([str(x) for x in args])
     if settings.DEBUG:
         print(log)
-    logger_log.debug(log)
+    logger_error.debug(log)
     return
     # try:
     #     str_list = []
