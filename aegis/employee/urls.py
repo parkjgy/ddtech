@@ -62,6 +62,7 @@ urlpatterns = [
     url(r'employee/tk_passer_work_backup', views.tk_passer_work_backup, name='tk_passer_work_backup'),
     url(r'employee/tk_match_test_for_customer', views.tk_match_test_for_customer, name='tk_match_test_for_customer'),
     url(r'employee/tk_in_out_null_list', views.tk_in_out_null_list, name='tk_in_out_null_list'),
+    url(r'employee/tk_check_customer_employee', views.tk_check_customer_employee, name='tk_check_customer_employee'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -34,6 +34,7 @@ import datetime
 
 from django.conf import settings
 from django.db.models import Q
+from operator import itemgetter
 
 
 @cross_origin_read_allow
@@ -1477,7 +1478,7 @@ def certification_no_to_sms(request):
         STATUS 542
             {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
         STATUS 552
-            {'message': '인증번호는 3분에 한번씩만 발급합니다.'}
+            {'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
@@ -1528,7 +1529,7 @@ def certification_no_to_sms(request):
     if (passer.dt_cn is not None) and (datetime.datetime.now() < passer.dt_cn):
         # 3분 이내에 인증번호 재요청하면
         logSend('  - dt_cn: {}, today: {}'.format(passer.dt_cn, datetime.datetime.now()))
-        return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.'})
+        return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'})
 
     certificateNo = random.randint(100000, 999999)
     if settings.IS_TEST:
@@ -1709,8 +1710,8 @@ def reg_from_certification_no(request):
                                '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
     passer.pType = 20 if phone_type == 'A' else 10
     passer.push_token = push_token
-    passer.cn = 0
-    passer.dt_cn = None
+    # passer.cn = 0
+    # passer.dt_cn = None
     passer.save()
     return REG_200_SUCCESS.to_json_response(result)
 
@@ -1862,8 +1863,8 @@ def update_my_info(request):
             dt_rest_time = datetime.datetime.strptime('2019-01-01 ' + rest_time + ':00', "%Y-%m-%d %H:%M:%S")
         except Exception as e:
             return status422(get_api(request), {'message': '휴계 시간({}) 양식(hh:mm)이 잘못됨'.format(rest_time)})
-        if not (str_to_datetime('2019-01-01 00:30:00') <= dt_rest_time <= str_to_datetime('2019-01-01 06:00:00')):
-            return status422(get_api(request), {'message': '휴계 시간(00:30 ~ 06:00) 범위 초과 (주:양식도 확인)'})
+        if not (str_to_datetime('2019-01-01 00:00:00') <= dt_rest_time <= str_to_datetime('2019-01-01 06:00:00')):
+            return status422(get_api(request), {'message': '휴계 시간(00:00 ~ 06:00) 범위 초과 (주:양식도 확인)'})
         employee.rest_time = rest_time
 
     if 'work_start_alarm' in rqst:
@@ -3625,3 +3626,125 @@ def tk_in_out_null_list(request):
     # logSend('  time interval: {}'.format(datetime.datetime.now() - stop_watch))
 
     return REG_200_SUCCESS.to_json_response({'delete_history': delete_history, 'result': result})
+
+
+def find_customer_employee(customer_employee_list, passer_id):
+    return
+
+
+@cross_origin_read_allow
+def tk_check_customer_employee(request):
+    """
+    [[ 운영 ]] 근로자의 업무가 고객 서버 근로자에 등록되지 않은 경우를 파악한다.
+    - 하 기껏 만들었더니 걸리는게 없네... (2019-08-17)
+    http://0.0.0.0:8000/employee/tk_check_customer_employee
+
+    POST
+        work_id: 암호화된 id (optional)
+        dt_begin: '2019-08-01' (optional) default: 이번 달의 1일
+    response
+        STATUS 200
+          "message": "정상적으로 처리되었습니다.",
+          "result": [
+            {
+              "id": 1087,
+              "year_month_day": "2019-08-15",
+              "work_id": "18",
+              "work_place_name": "울산1공장",
+              "work_name_type": "생산 (주간)",
+              "begin": "2019/06/14",
+              "end": "2019/06/29",
+              "passer_id": 76,
+              "passer_pNo": "01088533337",
+              "passer_pType": 20,
+              "employee_id": 70,
+              "employee_name": "joseph",
+              "employee_works": [
+                {
+                  "id": 20,
+                  "begin": "2019/08/03",
+                  "end": "2019/08/30"
+                },
+                {
+                  "id": 19,
+                  "begin": "2019/07/02",
+                  "end": "2019/07/15"
+                }
+              ]
+            },....
+           ]
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # parameter_check = is_parameter_ok(rqst, ['work_id_!_@', 'dt_begin_@'])
+    # if not parameter_check['is_ok']:
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    # work_id = parameter_check['parameters']['work_id']
+    # dt_begin = parameter_check['parameters']['dt_begin']
+    # if dt_begin is None:
+    #     dt_begin = str_to_datetime(datetime.datetime.now().strftime("%Y-%m") + '-01')
+    # else:
+    #     dt_begin = str_to_datetime(dt_begin)
+    # logSend('  work_id: {}, dt_begin: {}'.format(work_id, dt_begin))
+
+    # stop_watch = datetime.datetime.now()
+    # if work_id is None:
+    #     io_null_list = Pass_History.objects.filter(year_month_day__gt=dt_begin, dt_in=None, dt_in_verify=None, dt_out=None, dt_out_verify=None).exclude(overtime=-2)
+    # else:
+    #     io_null_list = Pass_History.objects.filter(year_month_day__gt=dt_begin, work_id=work_id, dt_in=None, dt_in_verify=None, dt_out=None, dt_out_verify=None).exclude(overtime=-2)
+
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'tk_list_employees', json={'work_id': -1})
+    logSend('  {}'.format({'url': r.url, 'POST': {'work_id': -1}, 'STATUS': r.status_code, 'R': r.json()}))
+    employee_list = r.json()['employee_list']
+
+    sorted_employee_list = sorted(employee_list, key=itemgetter('employee_id'))
+    # employee_passer_id_dict = {}
+    # for employee_dict in employee_list:
+    #     if str_to_datetime(employee_dict['dt_end']) < datetime.datetime.now():
+    #         logSend('  날짜가 지난 업무 passer_id: {} {} {}'.format(employee_dict['employee_id'], employee_dict['dt_end'], employee_dict))
+    #         continue
+    #     if employee_dict['employee_id'] in employee_passer_id_dict.keys():
+    #         logSend('  중복된 passer_id: {} {}'.format(employee_dict['employee_id'], employee_dict))
+    #         continue
+    #     if employee_dict['employee_id'] == -1:
+    #         logSend('  아직 등록되지 않은 근로자: {}'.format(employee_dict))
+    #         continue
+    #     employee_passer_id_dict[employee_dict['employee_id']] = employee_dict
+    #
+    # logSend('  중복 passer_id: {}'.format(employee_passer_id_dict[76]))
+
+    passer_list = Passer.objects.filter(employee_id__gt=0)
+    passer_dict = {passer.employee_id: {x: passer.__dict__[x] for x in passer.__dict__.keys() if not x.startswith('_')} for passer in passer_list}
+
+    work_list = Work.objects.all()
+    work_dict = {work.id: AES_DECRYPT_BASE64(work.customer_work_id) for work in work_list}
+
+    working_employee_list = Employee.objects.all().exclude(works__in=[[], ""])
+    none_customer_employee_list = []
+    for working_employee in working_employee_list:
+        # logSend('  employee_id: {} passer_id: {} works: {}'.format(working_employee.id, passer_dict[working_employee.id]['id'], working_employee.works))
+        is_find_employee = False
+        for employee_list in sorted_employee_list:
+            # logSend('  {}'.format(employee_list))
+            if employee_list['employee_id'] == passer_dict[working_employee.id]['id']:
+                # logSend('  find works: {} employee_list.work_id: {}'.format(working_employee.works, employee_list['work_id']))
+                for work in working_employee.get_works():
+                    # logSend('  {}'.format(work))
+                    if int(employee_list['work_id']) == int(work_dict[work['id']]):
+                        # logSend('  {} {}'.format(employee_list['work_id'], work_dict[work['id']]))
+                        is_find_employee = True
+        if not is_find_employee:
+            logSend('  Not Found - employee_id: {} passer_id: {} works: {}'.format(working_employee.id, passer_dict[working_employee.id]['id'], working_employee.works))
+            none_customer_employee_list.append({'일이 있는 근로자 id': working_employee.id, '출입자 id': passer_dict[working_employee.id]['id'], '업무 목록': working_employee.works})
+
+    return REG_200_SUCCESS.to_json_response({'none_customer_employee_list': none_customer_employee_list})

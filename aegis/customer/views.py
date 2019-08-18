@@ -5064,7 +5064,7 @@ def tk_list_employees(request):
     [[ 서버 시험]] 근로자를 모두 읽어들여서 전화번호가 중복되는 근로자를 찾고 employee_id 가 다른 경우를 찾는다.
     http://0.0.0.0:8000/customer/tk_list_employees?work_id=5
     GET
-        work_id: 5
+        work_id: 5  # -1 이면 모든 근로자 암호화 되지 않은 값
     response
         STATUS 200
         STATUS 403
@@ -5079,7 +5079,6 @@ def tk_list_employees(request):
     else:
         rqst = request.GET
 
-    result = []
     # parameter_check = is_parameter_ok(rqst, ['work_id_!'])
     parameter_check = is_parameter_ok(rqst, ['work_id'])
     if not parameter_check['is_ok']:
@@ -5090,11 +5089,11 @@ def tk_list_employees(request):
         employee_list = Employee.objects.all()
     else:
         employee_list = Employee.objects.filter(work_id=work_id)
-    employee_dict_list = [{x: employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')} for employee in employee_list]
-    logSend(employee_dict_list)
-    result.append({'employee_list': employee_dict_list})
+    logSend('  datetime type: {}'.format(type(datetime.datetime.now())))
+    employee_dict_list = [{x: dt_null(employee.__dict__[x]) if type(employee.__dict__[x]) is datetime.datetime else employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')} for employee in employee_list]
+    logSend('  employee_dict_list: {}'.format(employee_dict_list))
 
-    return REG_200_SUCCESS.to_json_response({'result': result})
+    return REG_200_SUCCESS.to_json_response({'employee_list': employee_dict_list})
 
 
 @cross_origin_read_allow
