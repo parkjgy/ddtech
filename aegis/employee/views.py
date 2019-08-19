@@ -509,14 +509,25 @@ def notification_list(request):
             begin ~ end
             응답 시한: dt_answer_deadline
             - 담당: staff_name [staff_phone_no] [staff_phone_no]
+        STATUS 422
+            {'message': 'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
 
-    passers = Passer.objects.filter(id=AES_DECRYPT_BASE64(rqst['passer_id']))
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if not parameter_check['is_ok']:
+        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        func_end_log(func_name)
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+
+    passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
+        logError('  employee_passer 에 passer_id:{} 없음.'.format(passer_id))
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
     dt_today = datetime.datetime.now()
