@@ -68,6 +68,8 @@ urlpatterns = [
 
     url(r'operation/tk_employee', views.tk_employee, name='tk_employee'),
     url(r'operation/tk_in_out_null_list', views.tk_in_out_null_list, name='tk_in_out_null_list'),
+
+    url(r'operation/tk_patch_employee', views.tk_patch_employee, name='tk_patch_employee'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

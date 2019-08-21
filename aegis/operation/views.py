@@ -4055,3 +4055,28 @@ def tk_in_out_null_list(request):
     logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
     result_json = r.json()
     return REG_200_SUCCESS.to_json_response(result_json)
+
+
+@cross_origin_read_allow
+@session_is_none_403_with_operation
+def tk_patch_employee(request):
+    """
+    [[ Employee ]] 근로자 서버 패치
+    http://0.0.0.0:8000/operation/tk_patch_employee
+    GET
+    response
+        STATUS 200
+    """
+    # if request.method == 'POST':
+    #     rqst = json.loads(request.body.decode("utf-8"))
+    # else:
+    #     rqst = request.GET
+
+    worker_id = request.session['op_id'][5:]
+    worker = Staff.objects.get(id=worker_id)
+
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_patch', json={})
+    logSend('  {}'.format({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()}))
+    result_json = r.json()
+    return REG_200_SUCCESS.to_json_response(result_json)

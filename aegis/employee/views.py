@@ -3643,10 +3643,6 @@ def tk_in_out_null_list(request):
     return REG_200_SUCCESS.to_json_response({'delete_history': delete_history, 'result': result})
 
 
-def find_customer_employee(customer_employee_list, passer_id):
-    return
-
-
 @cross_origin_read_allow
 def tk_check_customer_employee(request):
     """
@@ -3763,3 +3759,32 @@ def tk_check_customer_employee(request):
             none_customer_employee_list.append({'일이 있는 근로자 id': working_employee.id, '출입자 id': passer_dict[working_employee.id]['id'], '업무 목록': working_employee.works})
 
     return REG_200_SUCCESS.to_json_response({'none_customer_employee_list': none_customer_employee_list})
+
+
+@cross_origin_read_allow
+def tk_patch(request):
+    """
+    [[ 운영 ]] patch 해야할 때 사용
+    http://0.0.0.0:8000/employee/tk_patch
+
+    POST
+    response
+        STATUS 200
+          "message": "정상적으로 처리되었습니다.",
+        STATUS 403
+            {'message':'저리가!!!'}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    # if request.method == 'POST':
+    #     rqst = json.loads(request.body.decode("utf-8"))
+    # else:
+    #     rqst = request.GET
+
+    employee_list = Employee.objects.filter(rest_time='-1')
+    for employee in employee_list:
+        employee.rest_time = '00:00'
+        employee.save()
+    return REG_200_SUCCESS.to_json_response()
