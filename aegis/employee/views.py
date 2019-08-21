@@ -116,6 +116,7 @@ def check_version(request):
             {'message': 'v: A.1.0.0.190111 에서 A 가 잘못된 값이 들어왔어요'}
             {'message': '검사하려는 버전 값이 양식에 맞지 않습니다.'}
     """
+    logSend(request.META)
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
