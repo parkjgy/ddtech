@@ -520,9 +520,7 @@ def notification_list(request):
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
     if not parameter_check['is_ok']:
-        return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+        return status422(get_api(request), {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     passer_id = parameter_check['parameters']['passer_id']
 
     passers = Passer.objects.filter(id=passer_id)
@@ -530,6 +528,8 @@ def notification_list(request):
         logError('  employee_passer 에 passer_id:{} 없음.'.format(passer_id))
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
+    passer.user_agent = request.META['HTTP_USER_AGENT']
+
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)
     # notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)

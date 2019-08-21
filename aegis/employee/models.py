@@ -110,6 +110,7 @@ class Passer(models.Model):
     notification_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)
     cn = models.IntegerField(default = 0)           # 인증 번호 숫자 6자리
     dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
+    user_agent = models.CharField(max_length = 512, default=None) # HTTP_USER_AGENT
 
 
 class Pass(models.Model):
