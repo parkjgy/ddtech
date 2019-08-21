@@ -522,7 +522,7 @@ def notification_list(request):
     if not parameter_check['is_ok']:
         return status422(func_name, {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
         func_end_log(func_name)
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
 
     passers = Passer.objects.filter(id=passer_id)
