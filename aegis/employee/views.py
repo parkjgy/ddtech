@@ -528,8 +528,8 @@ def notification_list(request):
         logError('  employee_passer 에 passer_id:{} 없음.'.format(passer_id))
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
-    passer.user_agent = request.META['HTTP_USER_AGENT']
-    passer.save()
+    # passer.user_agent = request.META['HTTP_USER_AGENT']
+    # passer.save()
 
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)
@@ -1657,6 +1657,9 @@ def reg_from_certification_no(request):
     elif len(passers) == 0:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '잘못된 전화번호입니다.'})
     passer = passers[0]
+    passer.user_agent = request.META['HTTP_USER_AGENT']
+    passer.save()
+
     if passer.dt_cn == 0:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호 요청을 해주세요.'})
 
