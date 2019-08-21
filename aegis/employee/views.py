@@ -529,6 +529,7 @@ def notification_list(request):
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
     passer = passers[0]
     passer.user_agent = request.META['HTTP_USER_AGENT']
+    passer.save()
 
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)

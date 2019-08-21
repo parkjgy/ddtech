@@ -43,7 +43,6 @@ urlpatterns = [
     # path('employee/', include('employee.urls')),
 
     url(r'', include('employee.urls')),
-
     url(r'', include('operation.urls')),
     url(r'', include('customer.urls')),
 
