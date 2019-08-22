@@ -3059,6 +3059,17 @@ def tk_employee(request):
                 work_dict['work_end'] = work.end
                 works.append(work_dict)
             passer_dict['works'] = works
+            pass_history_list = Pass_History.objects.filter(passer_id=passer.id).values('id', 'year_month_day', 'passer_id', 'work_id', 'dt_in',
+                                                                                        'dt_in_verify', 'dt_out', 'dt_out_verify',
+                                                                                        'overtime')
+            pass_histoies = [{x: pass_history[x] for x in pass_history.keys()} for pass_history in pass_history_list]
+            logError(' {}'.format(pass_histoies))
+            if len(pass_histoies) > 0:
+                sorted(pass_histoies, key=itemgetter('year_month_day'))
+                records = [pass_histoies[-1]]
+                if len(pass_histoies) > 1:
+                    records.append(pass_histoies[-2])
+                passer_dict['records'] = records
         passer_dict_list.append(passer_dict)
     return REG_200_SUCCESS.to_json_response({'passers': passer_dict_list})
 
@@ -3786,5 +3797,5 @@ def tk_patch(request):
     employee_list = Employee.objects.filter(rest_time='-1')
     for employee in employee_list:
         employee.rest_time = '00:00'
-        employee.save()
+        # employee.save()
     return REG_200_SUCCESS.to_json_response()
