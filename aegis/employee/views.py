@@ -178,6 +178,92 @@ def check_version(request):
 
 
 @cross_origin_read_allow
+def list_my_work(request):
+    """
+    내가 현재 하고 있는 업무는?
+    - 현재 근무하고 있는 업무의 리스트
+    - 15일 전에 그만둔 업무까지 보내 준다.(분쟁이 생겼을 때 업무 담당자와 통화할 수 있도록)
+    http://0.0.0.0:8000/employee/list_my_work?passer_id=B-jfwtR0WB01TAdjcSLDuA
+    POST : json
+        {
+          "message": "정상적으로 처리되었습니다.",
+          "works": [
+            {
+              "begin": "2019/08/03",
+              "end": "2019/08/30",
+              "work_place_name": "울산1공장",
+              "work_name_type": "경비 (주간)",
+              "staff_name": "이요셉",
+              "staff_pNo": "01024505942"
+            }
+          ]
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 416
+            {'message': '출근처리할 업무가 없습니다.'}  # 출근 버튼을 깜박이고 출퇴근 버튼을 모두 disable 하는 방안을 모색 중...
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)}
+            {'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)}
+    log Error
+        logError(get_api(request), ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) == 0:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
+    elif len(passers) > 1:
+        logError(get_api(request), ' passer id: {} 중복되었다.'.format(passer_id))
+    passer = passers[0]
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) == 0:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
+    elif len(employees) > 1:
+        logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+    employee = employees[0]
+    logSend(employee.get_works())
+    employee_work_list = employee.get_works()
+    before15day = datetime.datetime.now() - timedelta(days=15)
+    logSend(before15day)
+    work_id_list = [employee_work['id'] for employee_work in employee_work_list if before15day < str_to_dt(employee_work['end'])]
+    logSend(work_id_list)
+    work_list = Work.objects.filter(id__in=work_id_list).values('id', 'work_place_name', 'work_name_type', 'staff_name', 'staff_pNo')
+    logSend(work_list)
+    work_dict = {work['id']: work for work in work_list}
+    for employee_work in employee_work_list:
+        if employee_work['id'] in work_dict.keys():
+            work = work_dict[employee_work['id']]
+            employee_work['work_place_name'] = work['work_place_name']
+            employee_work['work_name_type'] = work['work_name_type']
+            employee_work['staff_name'] = work['staff_name']
+            employee_work['staff_pNo'] = work['staff_pNo']
+            del employee_work['id']
+        else:
+            logError(get_api(request), ' 근로자 passer_id: {}, employee_id: {} 에 work_id: {} 에 대당하는 업무가 work table 에 없다.'.format(passer.id, employee.id, employee_work['id']))
+            employee_work_list.remove(employee_work)
+    logSend(employee_work_list)
+    return REG_200_SUCCESS.to_json_response({'works': employee_work_list})
+
+
+@cross_origin_read_allow
 def reg_employee_for_customer(request):
     """
     <<<고객 서버용>>> 고객사에서 보낸 업무 배정 SMS로 알림 (보냈으면 X)
@@ -574,7 +660,7 @@ def notification_accept(request):
         STATUS 416
             {'message': '업무 3개가 꽉 찾습니다.'}
         STATUS 542
-            {'message':'파견사 측에 근로자 정보가 없습니다.'}
+            {'message':'업무 요청이 취소되었습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'notification_id\' 가 없어요'}

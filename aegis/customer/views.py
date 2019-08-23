@@ -2444,9 +2444,9 @@ def employee_work_accept_for_employee(request):
                 'login_id': staff.login_id,
             }
         STATUS 542
-            {'message':'파견사 측에 근로자 정보가 없습니다.'}
+            {'message':'업무 요청이 취소되었습니다.'}
         STATUS 422  # 개발자 수정사항
-            {'message':'업무 참여 시간이 종료되었습니다.'}
+            {'message': '답변시간이 지났습니다.'}
             {'message': 'ClientError: parameter \'worker_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message': 'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
@@ -2471,8 +2471,6 @@ def employee_work_accept_for_employee(request):
     if not parameter_check['is_ok']:
         return status422(get_api(request),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     worker_id = parameter_check['parameters']['worker_id']
     work_id = parameter_check['parameters']['work_id']
     employee_id = parameter_check['parameters']['employee_id']
@@ -2485,12 +2483,12 @@ def employee_work_accept_for_employee(request):
 
     works = Work.objects.filter(id=work_id)
     if len(works) == 0:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무 참여 시간이 종료되었습니다.'})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '답변시간이 자났습니다.'})
     work = works[0]
 
     employees = Employee.objects.filter(work_id=work.id, pNo=employee_pNo)
     if len(employees) == 0:
-        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '파견사 측에 근로자 정보가 없습니다.'})
+        return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '업무 요청이 취소되었습니다.'})
 
     employee = employees[0]
     if employee.dt_begin < datetime.datetime.now() and not is_accept:

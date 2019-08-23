@@ -16,6 +16,7 @@ urlpatterns = [
     # url(r'^beacon_test_d3$', views.beaconTestD3, name = 'beaconTestD3'),
     url(r'employee/table_reset_and_clear_for_operation$', views.table_reset_and_clear_for_operation, name='table_reset_and_clear_for_operation'),
     url(r'employee/check_version$', views.check_version, name='check_version'),
+    url(r'employee/list_my_work$', views.list_my_work, name='list_my_work'),
     url(r'employee/reg_employee_for_customer$', views.reg_employee_for_customer, name='reg_employee_for_customer'),
     url(r'employee/update_work_for_customer$', views.update_work_for_customer, name='update_work_for_customer'),
     url(r'employee/notification_list$', views.notification_list, name='notification_list'),
