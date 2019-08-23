@@ -241,14 +241,14 @@ def list_my_work(request):
     elif len(employees) > 1:
         logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
-    logSend(employee.get_works())
+    # logSend(employee.get_works())
     employee_work_list = employee.get_works()
     before15day = datetime.datetime.now() - timedelta(days=15)
-    logSend(before15day)
+    # logSend(before15day)
     work_id_list = [employee_work['id'] for employee_work in employee_work_list if before15day < str_to_dt(employee_work['end'])]
-    logSend(work_id_list)
+    # logSend(work_id_list)
     work_list = Work.objects.filter(id__in=work_id_list).values('id', 'work_place_name', 'work_name_type', 'staff_name', 'staff_pNo')
-    logSend(work_list)
+    # logSend(work_list)
     work_dict = {work['id']: work for work in work_list}
     for employee_work in employee_work_list:
         if employee_work['id'] in work_dict.keys():
@@ -259,9 +259,10 @@ def list_my_work(request):
             employee_work['staff_pNo'] = phone_format(work['staff_pNo'])
             del employee_work['id']
         else:
-            logError(get_api(request), ' 근로자 passer_id: {}, employee_id: {} 에 work_id: {} 에 대당하는 업무가 work table 에 없다.'.format(passer.id, employee.id, employee_work['id']))
+            if employee_work['id'] in work_id_list:
+                logError(get_api(request), ' 근로자 passer_id: {}, employee_id: {} 에 work_id: {} 에 대당하는 업무가 work table 에 없다.'.format(passer.id, employee.id, employee_work['id']))
             employee_work_list.remove(employee_work)
-    logSend(employee_work_list)
+    # logSend(employee_work_list)
     return REG_200_SUCCESS.to_json_response({'works': employee_work_list})
 
 
