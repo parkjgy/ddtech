@@ -2901,8 +2901,8 @@ def list_employee(request):
     logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, work.dt_begin))
     # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
     if work.dt_begin < datetime.datetime.now():
-        # 업무가 아직 시작되었으면
-        if dt_today < work.dt_begin:
+        # 업무가 이미 시작되었으면
+        if dt_today < (work.dt_begin + datetime.timedelta(days=1)):  # dt_begin + 12시간 보정 필요
             # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
 
