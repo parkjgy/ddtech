@@ -2898,7 +2898,7 @@ def list_employee(request):
 
     if datetime.datetime.now() < dt_today:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로 내용은 오늘까지만 볼 수 있습니다.'})
-    logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, work.dt_begin))
+    logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, (work.dt_begin - timedelta(seconds=1))))
     # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
     if work.dt_begin < datetime.datetime.now():
         # 업무가 이미 시작되었으면
