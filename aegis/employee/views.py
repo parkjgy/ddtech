@@ -185,23 +185,25 @@ def list_my_work(request):
     - 15일 전에 그만둔 업무까지 보내 준다.(분쟁이 생겼을 때 업무 담당자와 통화할 수 있도록)
     http://0.0.0.0:8000/employee/list_my_work?passer_id=B-jfwtR0WB01TAdjcSLDuA
     POST : json
-        {
-          "message": "정상적으로 처리되었습니다.",
-          "works": [
-            {
-              "begin": "2019/08/03",
-              "end": "2019/08/30",
-              "work_place_name": "울산1공장",
-              "work_name_type": "경비 (주간)",
-              "staff_name": "이요셉",
-              "staff_pNo": "01024505942"
-            }
-          ]
-        }
+        passer_id: chiper_text_id  // 암호화된 출입자 id
     response
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
             {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
             {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "works": [
+                {
+                  "begin": "2019/08/03",
+                  "end": "2019/08/30",
+                  "work_place_name": "테덕테크 서울지사",
+                  "work_name_type": "안드로이드 개발 (주간)",
+                  "staff_name": "홍길동",
+                  "staff_pNo": "01077778888"
+                },
+                ...
+              ]
+            }
         STATUS 416
             {'message': '출근처리할 업무가 없습니다.'}  # 출근 버튼을 깜박이고 출퇴근 버튼을 모두 disable 하는 방안을 모색 중...
         STATUS 422 # 개발자 수정사항
@@ -254,7 +256,7 @@ def list_my_work(request):
             employee_work['work_place_name'] = work['work_place_name']
             employee_work['work_name_type'] = work['work_name_type']
             employee_work['staff_name'] = work['staff_name']
-            employee_work['staff_pNo'] = work['staff_pNo']
+            employee_work['staff_pNo'] = phone_format(work['staff_pNo'])
             del employee_work['id']
         else:
             logError(get_api(request), ' 근로자 passer_id: {}, employee_id: {} 에 work_id: {} 에 대당하는 업무가 work table 에 없다.'.format(passer.id, employee.id, employee_work['id']))
