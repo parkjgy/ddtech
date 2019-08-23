@@ -1575,6 +1575,7 @@ def certification_no_to_sms(request):
     response
         STATUS 200
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
+            {'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'}
             {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
         STATUS 542
             {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
@@ -1601,7 +1602,7 @@ def certification_no_to_sms(request):
         passer_id = parameter_check['parameters']['passer_id']
         passer = Passer.objects.get(id=passer_id)
         if passer.pNo == phone_no:
-            return REG_200_SUCCESS.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
         passers = Passer.objects.filter(pNo=phone_no)
