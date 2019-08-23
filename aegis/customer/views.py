@@ -2954,7 +2954,7 @@ def list_employee(request):
         response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
         logSend('  response.json(): {}'.format(response.json()))
         if 'employees' not in response.json():
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 없습니다.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로자가 없습니다.'})
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
