@@ -2073,7 +2073,9 @@ def exchange_phone_no_to_sms(request):
         if (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
             # 3분 이내에 인증번호 재요청하면
             logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
-            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'})
+            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n'
+                                                                        '(혹시 1899-3832 수신 거부하지는 않으셨죠?)',
+                                                             'dt_next': dt_null(temp_passer.dt_cn)})
     else:
         temp_passer = Passer(
             pNo=phone_no,
