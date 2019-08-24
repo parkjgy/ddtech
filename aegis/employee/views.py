@@ -2054,7 +2054,7 @@ def exchange_phone_no_to_sms(request):
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
-        passers = Passer.objects.filter(pNo=phone_no)
+        passers = Passer.objects.filter(pNo=phone_no).exclude(employee_id=-2)
         logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
         if len(passers) > 0:
             logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
@@ -2065,26 +2065,27 @@ def exchange_phone_no_to_sms(request):
         # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
         logError(get_api(request), parameter_check['results'])
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
-    temp_passer = Passer.objects.filter(employee_id=-2, pNo=phone_no)
-    if len(temp_passer) > 0:
-        if len(temp_passer) > 1:
+    temp_passer_list = Passer.objects.filter(employee_id=-2, notification_id=passer_id)
+    if len(temp_passer_list) > 0:
+        if len(temp_passer_list) > 1:
             logError(get_api(request), ' 근로자 임시 전화번호가 2개 이상: {}'.format(phone_no))
-
+        temp_passer = temp_passer_list[0]
         if (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
             # 3분 이내에 인증번호 재요청하면
             logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
             return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'})
+    else:
+        temp_passer = Passer(
+            pNo=phone_no,
+            employee_id=-2,
+            notification_id=passer_id,
+        )
 
     certificateNo = random.randint(100000, 999999)
     if settings.IS_TEST:
         certificateNo = 201903
-    temp_passer = Passer(
-        pNo=phone_no,
-        employee_id=-2,
-        notification_id=passer_id,
-        cn=certificateNo,
-        dt_cn=datetime.datetime.now() + datetime.timedelta(minutes=3)
-    )
+    temp_passer.cn = certificateNo
+    temp_passer.dt_cn = datetime.datetime.now() + datetime.timedelta(minutes=3)
     temp_passer.save()
     logSend('  - phone: {} certificateNo: {}'.format(phone_no, certificateNo))
 
@@ -2150,9 +2151,8 @@ def exchange_phone_no_verify(request):
 
     temp_passers = Passer.objects.filter(employee_id=-2, notification_id=passer_id)
 
-    passers = Passer.objects.filter(pNo=phone_no)
     if len(temp_passers) > 1:
-        logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in passers]))
+        logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in temp_passers]))
     elif len(temp_passers) == 0:
         logError(get_api(request), ' 임시 데에터 없음: notification_id=passer_id({})'.format(passer_id))
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경되지 않았습니다.\n고객센터로 문의해 주십시요.'})
@@ -2161,12 +2161,12 @@ def exchange_phone_no_verify(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호 요청을 해주세요.'})
 
     if temp_passer.dt_cn < datetime.datetime.now():
-        logSend('  인증 시간: {} < 현재 시간: {}'.format(passer.dt_cn, datetime.datetime.now()))
+        logSend('  인증 시간: {} < 현재 시간: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message': '인증시간이 지났습니다.\n다시 인증번호 요청을 해주세요.'})
     else:
         cn = cn.replace(' ', '')
-        logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST: {}'.format(passer.cn, cn, settings.IS_TEST))
-        if not settings.IS_TEST and passer.cn != int(cn):
+        logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST: {}'.format(temp_passer.cn, cn, settings.IS_TEST))
+        if not settings.IS_TEST and temp_passer.cn != int(cn):
             # if passer.cn != int(cn):
             return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     passers = Passer.objects.filter(id=passer_id)
@@ -2181,7 +2181,7 @@ def exchange_phone_no_verify(request):
     passer.save()
     temp_passer.delete()
 
-    return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
