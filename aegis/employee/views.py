@@ -1655,8 +1655,8 @@ def certification_no_to_sms(request):
         'sender': settings.SMS_SENDER_PN,
         'receiver': passer.pNo,
         'msg_type': 'SMS',
-        'msg': '이지체크 앱 사용\n'
-               '인증번호[' + str(certificateNo) + ']입니다.'
+        'msg': '이지체크 [' + str(certificateNo) + ']\n'
+        '인증번호 입니다.'
     }
     if settings.IS_TEST:
         rData['testmode_yn'] = 'Y'
@@ -2008,6 +2008,180 @@ def update_my_info(request):
         logError(change_log)
 
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def exchange_phone_no_to_sms(request):
+    """
+    핸드폰 인증 숫자 6자리를 SMS로 요청 - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
+    - SMS 로 인증 문자(6자리)를 보낸다.
+    http://0.0.0.0:8000/employee/exchange_phone_no_to_sms?phone_no=010-2557-3555&passer_id=
+    POST : json
+    {
+        'phone_no' : '010-1111-2222'
+        'passer_id' : 암호화된 출입자 id
+    }
+    response
+        STATUS 200
+        STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
+            {'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'}
+            {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
+        STATUS 542
+            {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
+        STATUS 552
+            {'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['phone_no'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    phone_no = no_only_phone_no(parameter_check['parameters']['phone_no'])
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if parameter_check['is_ok']:
+        # 기존에 등록된 근로자 일 경우 - 전화번호를 변경하려 한다.
+        passer_id = parameter_check['parameters']['passer_id']
+        passer = Passer.objects.get(id=passer_id)
+        if passer.pNo == phone_no:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
+        # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
+        # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
+        passers = Passer.objects.filter(pNo=phone_no)
+        logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
+        if len(passers) > 0:
+            logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
+                     .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
+                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+    else:
+        # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
+        logError(get_api(request), parameter_check['results'])
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
+    temp_passer = Passer.objects.filter(employee_id=-2, pNo=phone_no)
+    if len(temp_passer) > 0:
+        if len(temp_passer) > 1:
+            logError(get_api(request), ' 근로자 임시 전화번호가 2개 이상: {}'.format(phone_no))
+
+        if (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
+            # 3분 이내에 인증번호 재요청하면
+            logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
+            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'})
+
+    certificateNo = random.randint(100000, 999999)
+    if settings.IS_TEST:
+        certificateNo = 201903
+    temp_passer = Passer(
+        pNo=phone_no,
+        employee_id=-2,
+        notification_id=passer_id,
+        cn=certificateNo,
+        dt_cn=datetime.datetime.now() + datetime.timedelta(minutes=3)
+    )
+    temp_passer.save()
+    logSend('  - phone: {} certificateNo: {}'.format(phone_no, certificateNo))
+
+    rData = {
+        'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+        'user_id': 'yuadocjon22',
+        'sender': settings.SMS_SENDER_PN,
+        'receiver': passer.pNo,
+        'msg_type': 'SMS',
+        'msg': '이지체크 [' + str(certificateNo) + ']\n'
+        '인증번호 입니다.'
+    }
+    if settings.IS_TEST:
+        rData['testmode_yn'] = 'Y'
+        return REG_200_SUCCESS.to_json_response(rData)
+
+    rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
+    # print(rSMS.status_code)
+    # print(rSMS.headers['content-type'])
+    # print(rSMS.text)
+    # print(rSMS.json())
+    logSend('  - ', json.dumps(rSMS.json(), cls=DateTimeEncoder))
+    # rJson = rSMS.json()
+    # rJson['vefiry_no'] = str(certificateNo)
+
+    # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def exchange_phone_no_verify(request):
+    """
+    근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
+    http://0.0.0.0:8000/employee/exchange_phone_no_verify?passer_id=.......&cn=123456
+    POST
+        {
+            'passer_id' : 암호화된 출입자 id,
+            'cn' : '6자리 SMS 인증숫자',
+        }
+    response
+        STATUS 416
+            {'message': '잘못된 전화번호입니다.'}
+            {'message': '인증번호 요청을 해주세요.'}
+        STATUS 550
+            {'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'} # 인증시간 3분
+            {'message': '인증번호가 틀립니다.'}
+        STATUS 200 # 기존 근로자
+            {'message': '정산적으로 처리되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'cn\' 가 없어요'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'cn'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    cn = parameter_check['parameters']['cn']
+
+    temp_passers = Passer.objects.filter(employee_id=-2, notification_id=passer_id)
+
+    passers = Passer.objects.filter(pNo=phone_no)
+    if len(temp_passers) > 1:
+        logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in passers]))
+    elif len(temp_passers) == 0:
+        logError(get_api(request), ' 임시 데에터 없음: notification_id=passer_id({})'.format(passer_id))
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경되지 않았습니다.\n고객센터로 문의해 주십시요.'})
+    temp_passer = temp_passers[0]
+    if temp_passer.dt_cn == 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호 요청을 해주세요.'})
+
+    if temp_passer.dt_cn < datetime.datetime.now():
+        logSend('  인증 시간: {} < 현재 시간: {}'.format(passer.dt_cn, datetime.datetime.now()))
+        return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message': '인증시간이 지났습니다.\n다시 인증번호 요청을 해주세요.'})
+    else:
+        cn = cn.replace(' ', '')
+        logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST: {}'.format(passer.cn, cn, settings.IS_TEST))
+        if not settings.IS_TEST and passer.cn != int(cn):
+            # if passer.cn != int(cn):
+            return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
+    passers = Passer.objects.filter(id=passer_id)
+    if len(passers) > 1:
+        logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in passers]))
+    elif len(passers) == 0:
+        logError(get_api(request), ' 출입자 id({}) 없음.'.format(passer_id))
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경되지 않았습니다.\n고객센터로 문의해 주십시요.'})
+
+    passer = passers[0]
+    passer.pNo = temp_passer.pNo
+    passer.save()
+    temp_passer.delete()
+
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
