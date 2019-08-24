@@ -146,6 +146,7 @@ def check_version(request):
                      ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
         if 't' in rqst:
+            logSend('[{}] vs [{}]'.format(rqst['t'], passer.push_token))
             if rqst['t'] is not passer.push_token:
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
 
