@@ -2112,7 +2112,7 @@ def exchange_phone_no_to_sms(request):
     # rJson['vefiry_no'] = str(certificateNo)
 
     # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'dt_next': dt_null(temp_passer.dt_cn)})
 
 
 @cross_origin_read_allow
