@@ -89,8 +89,10 @@ def check_version(request):
     """
     앱 버전을 확인한다. (마지막 190111 은 필히 6자리)
     - status code:416 이 들오오면 앱의 기존 사용자 데이터를 삭제하고 전화번호 인증부터 다시 받으세요.
+    - 인증할 때는 parameter v 만 보낸다.
+    - 인증 후에는 p, t, i 를 보내서 등록된 전화번호인지, 새로운 폰에 설치되었는지 확인한다.
     http://0.0.0.0:8000/employee/check_version?v=A.1.0.0.190111&i=BbaBa43219999QJ4CSvmpM14fuSxyhyufYQ
-    GET
+    POST
         v=A.1.0.0.190111
             # A.     : phone type - A or i
             # 1.0.0. : 앱의 버전 구분 업그레이드 필요성과 상관 없다.
@@ -100,6 +102,7 @@ def check_version(request):
             # 전화번호: 010-1111-2222 > aBa11112222
             # 전화번호 자릿수: 11 > Bb
             # 근로자 정보: BbaBa11112222eeeeeeeeeeeeeeeeeeeeee << Ba aBa 1111 2222 eeeeeeeeeeeeeeeeeeeeee
+        t=push token (2대의 폰에서 사용을 막기 위한 용도, 로도 사용한다.) 인증 상태일 때는 보내지 않는다.
 
     response
         STATUS 200
@@ -110,6 +113,7 @@ def check_version(request):
         }
         STATUS 416 # 개발자 수정사항 - 앱의 기존 사용자 데이터를 삭제하고 전화번호 인증부터 다시 받으세요.
             {'message': '앱이 리셋됩니다.\n다시 실행해주세요.'}
+            {'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: 잘못된 id 예요'}  # i 에 들어가는 [암호화된 id] 가 잘못되었다.
             {'message': "ClientError: parameter 'v' 가 없어요'}
@@ -141,6 +145,9 @@ def check_version(request):
             logError(get_api(request),
                      ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
+        if 't' in rqst:
+            if rqst['t'] is not passer.push_token:
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
 
     parameter_check = is_parameter_ok(rqst, ['v'])
     if not parameter_check['is_ok']:
@@ -1732,7 +1739,7 @@ def reg_from_certification_no(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type'])  # , 'push_token'])
+    parameter_check = is_parameter_ok(rqst, ['phone_no', 'cn', 'phone_type', 'push_token_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     phone_no = parameter_check['parameters']['phone_no']
