@@ -1574,6 +1574,8 @@ def certification_no_to_sms(request):
     """
     핸드폰 인증 숫자 6자리를 SMS로 요청 - 근로자 앱을 처음 실행할 때 SMS 문자 인증 요청
     - SMS 로 인증 문자(6자리)를 보낸다.
+    - 기존 전화번호를 바꿀 때는 새로운 API 를 사용한다. (2019-08-25) 당분간 호환성 때문에 passer_id 는 그냥 둔다.
+      * exchange_phone_no_to_sms, exchange_phone_no_verify
     http://0.0.0.0:8000/employee/certification_no_to_sms?phone_no=010-2557-3555
     POST : json
     {
@@ -1631,7 +1633,8 @@ def certification_no_to_sms(request):
         passers = Passer.objects.filter(pNo=phone_no)
         if len(passers) == 0:
             passer = Passer(
-                pNo=phone_no
+                pNo=phone_no,
+                employee_id=-6,  # 인증이 안된 근로자: 전화번호가 잘못되었거나 등... (나중에 삭제할 때 기준이 된다. 2019-08-25)
             )
         else:
             passer = passers[0]
@@ -1672,7 +1675,7 @@ def certification_no_to_sms(request):
     # rJson['vefiry_no'] = str(certificateNo)
 
     # response = HttpResponse(json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'dt_next': dt_null(passer.dt_cn)})
 
 
 @cross_origin_read_allow
@@ -2033,7 +2036,6 @@ def exchange_phone_no_to_sms(request):
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
-
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2070,16 +2072,15 @@ def exchange_phone_no_to_sms(request):
         if len(temp_passer_list) > 1:
             logError(get_api(request), ' 근로자 임시 전화번호가 2개 이상: {}'.format(phone_no))
         temp_passer = temp_passer_list[0]
-        if (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
+        if (temp_passer.pNo == phone_no) and (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
             # 3분 이내에 인증번호 재요청하면
             logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
-            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n'
-                                                                        '(혹시 1899-3832 수신 거부하지는 않으셨죠?)',
+            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호가 안가나요? (1899-3832 수신거부?)',
                                                              'dt_next': dt_null(temp_passer.dt_cn)})
     else:
         temp_passer = Passer(
             pNo=phone_no,
-            employee_id=-2,
+            employee_id=-7,  # Temp 의 T 와 7 이 비슷하게 보여서...
             notification_id=passer_id,
         )
 
@@ -2151,7 +2152,7 @@ def exchange_phone_no_verify(request):
     passer_id = parameter_check['parameters']['passer_id']
     cn = parameter_check['parameters']['cn']
 
-    temp_passers = Passer.objects.filter(employee_id=-2, notification_id=passer_id)
+    temp_passers = Passer.objects.filter(employee_id=-7, notification_id=passer_id)
 
     if len(temp_passers) > 1:
         logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in temp_passers]))
