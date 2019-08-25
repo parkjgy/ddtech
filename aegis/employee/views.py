@@ -2028,13 +2028,14 @@ def exchange_phone_no_to_sms(request):
     }
     response
         STATUS 200
+            {'dt_next': '2019-08-15 00:25:00}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
-            {'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'}
-            {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
+            {'message': '기존 전화번호와 같습니다.'}
+            {'message': '계속 이 에러가 나면 지우고 새로 설치하세요.'}
         STATUS 542
-            {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
+            {'message':'다른 사람이 사용 중인 전화번호 입니다.'}
         STATUS 552
-            {'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'}
+            {'message': '인증번호가 안가나요?', 'dt_next': '2019-08-15 00:25:00} << {'message': '인증번호는 3분에 한번씩만 발급합니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
             {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
@@ -2055,7 +2056,7 @@ def exchange_phone_no_to_sms(request):
         passer_id = parameter_check['parameters']['passer_id']
         passer = Passer.objects.get(id=passer_id)
         if passer.pNo == phone_no:
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '기존 전화번호와 같습니다.'})
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
         passers = Passer.objects.filter(pNo=phone_no).exclude(employee_id=-7)
@@ -2064,11 +2065,11 @@ def exchange_phone_no_to_sms(request):
             logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
                      .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
-                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.'})
+                {'message': '다른 사람이 사용 중인 전화번호 입니다.'})
     else:
         # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
         logError(get_api(request), parameter_check['results'])
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 지우고 새로 설치하세요.'})
     temp_passer_list = Passer.objects.filter(employee_id=-7, notification_id=passer_id)
     if len(temp_passer_list) > 0:
         if len(temp_passer_list) > 1:
