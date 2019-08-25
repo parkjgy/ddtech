@@ -1642,7 +1642,9 @@ def certification_no_to_sms(request):
     if (passer.dt_cn is not None) and (datetime.datetime.now() < passer.dt_cn):
         # 3분 이내에 인증번호 재요청하면
         logSend('  - dt_cn: {}, today: {}'.format(passer.dt_cn, datetime.datetime.now()))
-        return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'})
+        return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호는 3분에 한번씩만 발급합니다.\n'
+                                                                    '(혹시 1899-3832 수신 거부하지는 않으셨죠?)',
+                                                         'dt_next': dt_null(passer.dt_cn)})
 
     certificateNo = random.randint(100000, 999999)
     if settings.IS_TEST:
@@ -2056,18 +2058,18 @@ def exchange_phone_no_to_sms(request):
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
         # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
         # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
-        passers = Passer.objects.filter(pNo=phone_no).exclude(employee_id=-2)
+        passers = Passer.objects.filter(pNo=phone_no).exclude(employee_id=-7)
         logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
         if len(passers) > 0:
             logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
                      .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
-                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
+                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.'})
     else:
         # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
         logError(get_api(request), parameter_check['results'])
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
-    temp_passer_list = Passer.objects.filter(employee_id=-2, notification_id=passer_id)
+    temp_passer_list = Passer.objects.filter(employee_id=-7, notification_id=passer_id)
     if len(temp_passer_list) > 0:
         if len(temp_passer_list) > 1:
             logError(get_api(request), ' 근로자 임시 전화번호가 2개 이상: {}'.format(phone_no))
@@ -2075,7 +2077,7 @@ def exchange_phone_no_to_sms(request):
         if (temp_passer.pNo == phone_no) and (temp_passer.dt_cn is not None) and (datetime.datetime.now() < temp_passer.dt_cn):
             # 3분 이내에 인증번호 재요청하면
             logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
-            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호가 안가나요? (1899-3832 수신거부?)',
+            return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호가 안가나요?',
                                                              'dt_next': dt_null(temp_passer.dt_cn)})
     else:
         temp_passer = Passer(
