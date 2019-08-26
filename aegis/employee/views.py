@@ -857,6 +857,8 @@ def pass_reg(request):
                  {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
                  {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
             ]
+            'x': latitude (optional),
+            'y': longitude (optional),
         }
     response
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
@@ -885,7 +887,7 @@ def pass_reg(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons', 'x_@', 'y_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
@@ -901,6 +903,8 @@ def pass_reg(request):
             {'minor': 11002, 'dt_begin': '{} 08:25:31'.format(today), 'rssi': -60},
             {'minor': 11003, 'dt_begin': '{} 08:25:32'.format(today), 'rssi': -50}
         ]
+    x = parameter_check['parameters']['x']
+    y = parameter_check['parameters']['y']
     logSend(beacons)
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) != 1:
@@ -931,7 +935,7 @@ def pass_reg(request):
         else:
             logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
             beacon = Beacon(
-                uuid='12345678-0000-0000-0000-123456789012',
+                uuid='3c06aa91-984b-be81-d8ea-82af46f4cda4',
                 # 1234567890123456789012345678901234567890
                 major=major,
                 minor=beacons[i]['minor'],
@@ -945,7 +949,9 @@ def pass_reg(request):
             major=major,
             minor=beacons[i]['minor'],
             dt_begin=beacons[i]['dt_begin'],
-            rssi=beacons[i]['rssi']
+            rssi=beacons[i]['rssi'],
+            x=x,
+            y=y,
         )
         new_beacon_record.save()
 
@@ -954,7 +960,9 @@ def pass_reg(request):
         passer_id=passer_id,
         is_in=is_in,
         is_beacon=True,
-        dt=dt
+        dt=dt,
+        x=x,
+        y=y,
     )
     new_pass.save()
     #
@@ -1021,6 +1029,8 @@ def pass_reg(request):
                 work_id=work_id,
                 year_month_day=year_month_day,
                 action=0,
+                x=x,
+                y=y,
             )
         else:
             pass_history = pass_histories[0]
@@ -1055,6 +1065,8 @@ def pass_verify(request):
             'passer_id' : '암호화된 출입자 id',
             'dt' : '2018-12-28 12:53:36',
             'is_in' : 1, # 0: out, 1 : in
+            'x': latitude (optional)
+            'y': longitude (optional)
         }
     response
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
@@ -1084,12 +1096,14 @@ def pass_verify(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'x_@', 'y_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
+    x = parameter_check['parameters']['x']
+    y = parameter_check['parameters']['y']
 
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
@@ -1115,6 +1129,8 @@ def pass_verify(request):
         is_in=is_in,
         is_beacon=False,
         dt=dt,
+        x=x,
+        y=y,
     )
     new_pass.save()
 
@@ -1147,6 +1163,8 @@ def pass_verify(request):
                         year_month_day=yesterday_year_month_day,
                         action=0,
                         work_id=work_id,
+                        x=x,
+                        y=y,
                     )
                 else:
                     logSend('  어제 오늘 출퇴근 기록이 없고 9시 이후라 오늘 날짜로 처리한다.')
@@ -1156,6 +1174,8 @@ def pass_verify(request):
                         year_month_day=year_month_day,
                         action=0,
                         work_id=work_id,
+                        x=x,
+                        y=y,
                     )
             elif dt_touch.hour < 9:
                 # 오늘 출퇴근 내역은 없어도 어제건 있다.
@@ -1170,6 +1190,8 @@ def pass_verify(request):
                     year_month_day=year_month_day,
                     action=0,
                     work_id=work_id,
+                    x=x,
+                    y=y,
                 )
         else:
             logSend('  오늘 출퇴근 기록이 있어서 오늘에 넣는다.')
@@ -1197,6 +1219,8 @@ def pass_verify(request):
                 year_month_day=year_month_day,
                 action=0,
                 work_id=work_id,
+                x=x,
+                y=y,
             )
         else:
             pass_history = pass_histories[0]
@@ -1559,7 +1583,7 @@ def beacons_is(request):
         for beacon in beacons:
             if beacon['minor'] in minors:
                 new_beacon = Beacon(
-                    uuid='12345678-0000-0000-0000-123456789012',
+                    uuid='3c06aa91-984b-be81-d8ea-82af46f4cda4',
                     # 1234567890123456789012345678901234567890
                     major=major,
                     minor=beacon['minor'],
