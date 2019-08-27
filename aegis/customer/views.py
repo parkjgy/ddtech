@@ -2911,7 +2911,7 @@ def list_employee(request):
                  'work_id': AES_ENCRYPT_BASE64(str(work.id)),
                  }
     employees = []
-    if work.dt_begin < dt_today:
+    if work.dt_begin <= dt_today:
         # 업무가 시작되었다.
         work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
         response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
