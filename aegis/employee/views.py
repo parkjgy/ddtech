@@ -324,8 +324,6 @@ def reg_employee_for_customer(request):
     else:
         rqst = request.GET
 
-    if request.method == 'GET':
-        phone_numbers = rqst.getlist('phones')
     parameter_check = is_parameter_ok(rqst, ['customer_work_id', 'work_place_name', 'work_name_type', 'dt_begin',
                                              'dt_end', 'staff_name', 'staff_phone', 'phones',
                                              'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee', 'is_update'])
@@ -344,6 +342,8 @@ def reg_employee_for_customer(request):
     dt_end_employee = parameter_check['parameters']['dt_end_employee']
     is_update = parameter_check['parameters']['is_update']
 
+    if request.method == 'GET':
+        phone_numbers = rqst.getlist('phones')
     logSend('  - phone numbers: {}'.format(phone_numbers))
 
     find_works = Work.objects.filter(customer_work_id=customer_work_id)

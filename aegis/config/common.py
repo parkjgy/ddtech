@@ -408,16 +408,24 @@ class Works(object):
         x_end = str_to_dt(x['end'])
         # count_started = 0  # 시작된 업무의 갯수
         # count_reserve = 0  # 시작되지 않은 업무의 갯수
+        # logSend('  새 업무 기간 : {} - {}'.format(x_begin, x_end))
         dt_today = datetime.datetime.now()
         for element in self.data:
             e_begin = str_to_dt(element['begin'])
             e_end = str_to_dt(element['end'])
+            # logSend('    비교 업무 기간 : {} - {}'.format(e_begin, e_end))
             # if e_begin < dt_today < e_end:
             #     count_started += 1
             # else:
             #     count_reserve += 1
-            if (e_begin <= x_end) or (x_begin <= e_end):
-                # 기존 업무 기간(e_begin ~ e_end) 에 새로운 업무 기간(x_begin ~ x_end) 가 걸쳐지면 중복처리
+            if (e_end < x_begin) or (x_end < e_begin):
+                # 새 업무기간 전에 다른 업무가 끝나거나 새 업무가 끝난 후에 다른 업무가 시작되면 중복되지 않음
+                continue
+            if (e_begin <= x_begin <= e_end) or (e_begin <= x_end <= e_end):
+                # 기존 업무 기간 내에 새 업무의 시작이나 끝 날짜가 포함된면 중복 처리
+                return True
+            if (x_begin <= e_begin) and (e_end <= x_end):
+                # 새 업무가 기존업무 기간을 포함하고 있으면 중복 처리
                 return True
         # if count_started > 0:
         #     if count_reserve > 0:
