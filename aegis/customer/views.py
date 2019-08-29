@@ -4968,6 +4968,21 @@ def ddtech_update_syatem(request):
         STATUS 422
             {'message': '이 기능을 사용할 수 있는 기간(~{})이 지났다.'.format(dt_execute.strftime('%Y-%m-%d %H:%M:%S'))}
     """
+    Employee(dt_begin='2019-06-26 00:00:00',
+             dt_end='2019-12-31 00:00:00',
+             work_id=23,
+             employee_id=262,
+             name='홍길동',
+             pNo='01084333579',
+             dt_begin_beacon=None,
+             dt_begin_touch=None,
+             dt_end_beacon=None,
+             dt_end_touch=None,
+             is_accept_work=1,
+             dt_accept='2019-06-25 00:00:00',
+             overtime=0,
+             ).save()
+    return REG_200_SUCCESS.to_json_response()
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
