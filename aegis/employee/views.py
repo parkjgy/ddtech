@@ -1794,11 +1794,14 @@ def reg_from_certification_no(request):
         logSend('  인증 시간: {} < 현재 시간: {}'.format(passer.dt_cn, datetime.datetime.now()))
         return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response({'message': '인증시간이 지났습니다.\n다시 인증요청을 해주세요.'})
     else:
-        cn = cn.replace(' ', '')
-        logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
-        if not settings.IS_TEST and passer.cn != int(cn):
-            # if passer.cn != int(cn):
-            return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
+        if (phone_no == '01084333579') and (int(cn) == 111333):
+            logSend('*** apple 심사용 전화번호')
+        else:
+            cn = cn.replace(' ', '')
+            logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
+            if not settings.IS_TEST and passer.cn != int(cn):
+                # if passer.cn != int(cn):
+                return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
     result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
@@ -4087,50 +4090,50 @@ def tk_patch(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-    #     logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     # if request.method == 'POST':
     #     rqst = json.loads(request.body.decode("utf-8"))
     # else:
     #     rqst = request.GET
 
-    passer = Passer.objects.get(id=130)
-    target_passer = Passer.objects.get(id=262)
-    copy_table(passer, target_passer, ['pType', 'push_token', 'notification_id', 'cn', 'user_agent'])
-    target_passer.save()
-
-    logSend('  {} {}'.format(passer.employee_id, target_passer.employee_id))
-    s_employee = Employee.objects.get(id=passer.employee_id)
-    t_employee = Employee.objects.get(id=target_passer.employee_id)
-    copy_table(s_employee, t_employee, ['bank_account', 'bank', 'work_end_alarm', 'work_start', 'work_start_alarm', 'working_time', 'rest_time', 'works', 'dt_reg'])
-    works = t_employee.get_works()
-    works[0]['id'] = 17
-    logSend(works)
-    t_employee.set_works(works)
-    t_employee.save()
-
-    record_list = Pass_History.objects.filter(passer_id=130)
-    for record in record_list:
-        print(record.year_month_day)
-        new_record = Pass_History(
-            year_month_day=record.year_month_day,
-            passer_id=262,
-            work_id=17,
-            dt_in=record.dt_in,
-            dt_in_em=record.dt_in_em,
-            dt_in_verify=record.dt_in_verify,
-            in_staff_id=record.in_staff_id,
-            dt_out=record.dt_out,
-            dt_out_em=record.dt_out_em,
-            dt_out_verify=record.dt_out_verify,
-            out_staff_id=record.out_staff_id,
-            overtime=record.overtime,
-            overtime_staff_id=record.overtime_staff_id,
-            x=record.x,
-            y=record.y,
-        ).save()
+    # passer = Passer.objects.get(id=130)
+    # target_passer = Passer.objects.get(id=262)
+    # copy_table(passer, target_passer, ['pType', 'push_token', 'notification_id', 'cn', 'user_agent'])
+    # target_passer.save()
+    #
+    # logSend('  {} {}'.format(passer.employee_id, target_passer.employee_id))
+    # s_employee = Employee.objects.get(id=passer.employee_id)
+    # t_employee = Employee.objects.get(id=target_passer.employee_id)
+    # copy_table(s_employee, t_employee, ['bank_account', 'bank', 'work_end_alarm', 'work_start', 'work_start_alarm', 'working_time', 'rest_time', 'works', 'dt_reg'])
+    # works = t_employee.get_works()
+    # works[0]['id'] = 17
+    # logSend(works)
+    # t_employee.set_works(works)
+    # t_employee.save()
+    #
+    # record_list = Pass_History.objects.filter(passer_id=130)
+    # for record in record_list:
+    #     print(record.year_month_day)
+    #     new_record = Pass_History(
+    #         year_month_day=record.year_month_day,
+    #         passer_id=262,
+    #         work_id=17,
+    #         dt_in=record.dt_in,
+    #         dt_in_em=record.dt_in_em,
+    #         dt_in_verify=record.dt_in_verify,
+    #         in_staff_id=record.in_staff_id,
+    #         dt_out=record.dt_out,
+    #         dt_out_em=record.dt_out_em,
+    #         dt_out_verify=record.dt_out_verify,
+    #         out_staff_id=record.out_staff_id,
+    #         overtime=record.overtime,
+    #         overtime_staff_id=record.overtime_staff_id,
+    #         x=record.x,
+    #         y=record.y,
+    #     ).save()
 
     return REG_200_SUCCESS.to_json_response()
 
