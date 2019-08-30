@@ -1858,7 +1858,8 @@ def reg_from_certification_no(request):
     # passer.cn = 0
     # passer.dt_cn = None
     passer.save()
-    return REG_200_SUCCESS.to_json_response(result)
+    return StatusCollection(status_code, '정상적으로 처리되었습니다.').to_json_response(result)
+    # return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
