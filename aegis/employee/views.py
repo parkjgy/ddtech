@@ -1608,6 +1608,7 @@ def certification_no_to_sms(request):
     }
     response
         STATUS 200
+            {'dt_next': '2019-09-02 00:00:00'}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
             {'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'}
             {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
