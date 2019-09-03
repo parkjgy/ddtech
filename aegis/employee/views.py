@@ -1854,7 +1854,8 @@ def reg_from_certification_no(request):
                                '케이뱅크', '교보증권', '대신증권', 'DB금융투자', '메리츠종합금융증권', '미래에셋대우', '부국증권', '삼성증권', '신영증권',
                                '신한금융투자', '에스케이증권', '현대차증권주식회사', '유안타증권주식회사', '유진투자증권', '이베스트증권', '케이프투자증권', '키움증권',
                                '펀드온라인코리아', '하나금융투자', '하이투자증권', '한국투자증권', '한화투자증권', 'KB증권', 'KTB투자증권', 'NH투자증권']
-    passer.pType = 20 if phone_type == 'A' else 10
+    phone_type = phone_type.upper()
+    passer.pType = 20 if phone_type[:1] == 'A' else 10
     passer.push_token = push_token
     # passer.cn = 0
     # passer.dt_cn = None
@@ -1862,6 +1863,7 @@ def reg_from_certification_no(request):
     if phone_type.upper() == 'A':
         if 200 <= status_code <= 202:
             status_code = 200
+            logSend('    ***exchange: 200, 201, 202 to 200')
     return StatusCollection(status_code, '정상적으로 처리되었습니다.').to_json_response(result)
     # return REG_200_SUCCESS.to_json_response(result)
 
