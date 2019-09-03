@@ -1778,8 +1778,8 @@ def reg_from_certification_no(request):
     phone_type = parameter_check['parameters']['phone_type']
     push_token = rqst['push_token']
     phone_no = no_only_phone_no(phone_no)
-    logSend('   *** phone_type: ({})'.format(phone_type))
-    
+    # logSend('   *** phone_type: ({})'.format(phone_type))
+
     passers = Passer.objects.filter(pNo=phone_no)
     if len(passers) > 1:
         logError(get_api(request), ' 출입자 등록된 전화번호 중복: {}'.format([passer.id for passer in passers]))
