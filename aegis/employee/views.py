@@ -1859,6 +1859,9 @@ def reg_from_certification_no(request):
     # passer.cn = 0
     # passer.dt_cn = None
     passer.save()
+    if phone_type.upper() == 'A':
+        if 200 <= status_code <= 202:
+            status_code = 200
     return StatusCollection(status_code, '정상적으로 처리되었습니다.').to_json_response(result)
     # return REG_200_SUCCESS.to_json_response(result)
 
