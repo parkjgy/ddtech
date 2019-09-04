@@ -36,6 +36,9 @@ from django.conf import settings
 from django.db.models import Q
 from operator import itemgetter
 
+# APNs
+from config.apns import notification_new, push_notification  #, notificataion
+
 
 @cross_origin_read_allow
 def table_reset_and_clear_for_operation(request):
@@ -4155,10 +4158,6 @@ def copy_table(source, target, key_list):
             target.__dict__[key] = source.__dict__[key]
             logSend('   {}: {}'.format(key, target.__dict__[key]))
     return
-
-
-# APNs Test
-from config.apns import notification_new, notificataion, push_notification
 
 
 def apns_test(request):

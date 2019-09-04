@@ -9,7 +9,7 @@ from django.conf import settings
 import threading
 
 # from APNSWrapper import *
-from AndroidMessage import *
+# from AndroidMessage import *
 
 import ssl
 # import json
@@ -18,9 +18,11 @@ import struct
 import binascii
 from socket import socket, AF_INET, SOCK_STREAM
 
-from common import logSend
-from common import logHeader
-from common import logError
+from .log import logSend, logError
+
+# from common import logSend
+# from common import logHeader
+# from common import logError
 
 
 ############################################################################
@@ -98,7 +100,7 @@ def APNs(token, targetType, isSound, alert, data):
         elif targetType == 'voip_driver':
             logSend('   >> VoIP driver')
             certFile = settings.APNS_PEM_VOIP_DRIVER
-    logSend('apns_address = ' + `apns_address`)
+    logSend('apns_address = ' + apns_address)
     pushSocket = socket(AF_INET, SOCK_STREAM)
     pushSocket.connect(apns_address)
     # sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile, ssl_version=ssl.PROTOCOL_SSLv3)
