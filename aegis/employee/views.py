@@ -4148,10 +4148,33 @@ def tk_patch(request):
 
     return REG_200_SUCCESS.to_json_response()
 
+
 def copy_table(source, target, key_list):
     for key in source.__dict__.keys():
         if key in key_list:
             target.__dict__[key] = source.__dict__[key]
             logSend('   {}: {}'.format(key, target.__dict__[key]))
     return
+
+
+# APNs Test
+from config.apns import notification_new, notificataion, push_notification
+
+
+def apns_test(request):
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+        #_userCode = rqst['uc']
+        token = rqst['t']
+    elif settings.IS_COVER_GET :
+        logSend('>>> :-(')
+        return HttpResponse(":-(")
+    else :
+        #rqst = json.loads(request.GET)
+        #logSend(`rqst['uc']` + ' ' + `rqst['array']`)
+        #_userCode = rqst['uc']
+        token = request.GET['t']
+    logSend('token = ' + token)
+    response = notification('user_Airkorea', 100, token, 00, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    return testResponse(json.dumps(response))
 
