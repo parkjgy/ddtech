@@ -2918,7 +2918,7 @@ def list_employee(request):
         employee_list = response.json()['employees']
         for employee in employee_list:
             logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
-            if str_to_datetime(employee['dt_begin']) < dt_today:
+            if str_to_datetime(employee['dt_begin']) < (dt_today + timedelta(days=1)):
                 state_dict = {-2: '연(월)차', -1: '조기 퇴근', 0: '',
                               1: '연장 30분', 2: '연장 1시간', 3: '연장 1시간 30분', 4: '연장 2시간', 5: '연장 2시간 30분',
                               6: '연장 3시간', 7: '연장 3시간 30분', 8: '연장 4시간', 9: '연장 4시간 30분', 10: '연장 5시간',
