@@ -2218,6 +2218,7 @@ def reg_employee(request):
               "notification": "html message",
             }
         STATUS 416
+            {'message': '종료된 업무에는 근로자를 추가할 수 없습니다.'}
             {'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'}
             {'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'}
             {'message': '답변 시한은 현재 시각보다 빨라야 합니다.'}
@@ -2259,6 +2260,11 @@ def reg_employee(request):
     elif len(work_list) > 1:
         logError(get_api(request), ' Work(id:{})가 중복되었다.'.format(work_id))
     work = work_list[0]
+    #
+    # 업무 종료 검사
+    #
+    if work.dt_end < datetime.datetime.now():
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '종료된 업무에는 근로자를 추가할 수 없습니다.'})
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phone_numbers')

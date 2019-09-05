@@ -1,7 +1,7 @@
 """
-Customer view
+Notification Processer
 
-Copyright 2019. DaeDuckTech Corp. All rights reserved.
+Copyright 2012 - 2019. Park, Jong-Kee. All rights reserved.
 """
 # -*- encoding:utf-8-*-
 
@@ -20,20 +20,6 @@ from socket import socket, AF_INET, SOCK_STREAM
 
 from .log import logSend, logError
 
-# from common import logSend
-# from common import logHeader
-# from common import logError
-
-
-############################################################################
-#
-#   Common Constant
-#
-
-############################################################################
-#
-#   common function
-#
 
 class PushThread(threading.Thread):
 
@@ -71,15 +57,6 @@ def APNs(token, targetType, isSound, alert, data):
         elif targetType == 'mng':
             logSend('   >> staff')
             certFile = settings.APNS_PEM_MNG
-        elif targetType == 'voip_mng':
-            logSend('   >> voip_mng')
-            certFile = settings.APNS_PEM_VOIP_MNG
-        elif targetType == 'voip_user':
-            logSend('   >> voip_user')
-            certFile = settings.APNS_PEM_VOIP_USER
-        elif targetType == 'voip_driver':
-            logSend('   >> voip_driver')
-            certFile = settings.APNS_PEM_VOIP_DRIVER
     else:
         apns_address = ('gateway.sandbox.push.apple.com', 2195)  # development url
         if targetType == 'user':
@@ -91,15 +68,6 @@ def APNs(token, targetType, isSound, alert, data):
         elif targetType == 'mng':
             logSend('   >> staff')
             certFile = settings.DEV_PEM_MNG
-        elif targetType == 'voip_mng':
-            logSend('   >> VoIP staff')
-            certFile = settings.APNS_PEM_VOIP_MNG
-        elif targetType == 'voip_user':
-            logSend('   >> VoIP user')
-            certFile = settings.APNS_PEM_VOIP_USER
-        elif targetType == 'voip_driver':
-            logSend('   >> VoIP driver')
-            certFile = settings.APNS_PEM_VOIP_DRIVER
     logSend('apns_address = ' + apns_address)
     pushSocket = socket(AF_INET, SOCK_STREAM)
     pushSocket.connect(apns_address)
@@ -199,12 +167,6 @@ def push_notification(functionName, target_id, token, phoneType, alert, isSound,
                 targetType = 'mng'
             elif (functionName[0:4] == 'user'):
                 targetType = 'user'
-            elif (functionName[0:8] == 'voip_mng'):
-                targetType = 'voip_mng'
-            elif (functionName[0:9] == 'voip_user'):
-                targetType = 'voip_user'
-            elif (functionName[0:8] == 'voip_app'):
-                targetType = 'voip_driver'
             result = APNs(token, targetType, isSound, alert, data)
             result = "success: APNS " + str(target_id)  # + ', data = ' + result
         else:

@@ -481,7 +481,11 @@ class Works(object):
         """
         today = datetime.datetime.now()
         for self.index in range(len(self.data)):
-            if str_to_dt(self.data[self.index]['begin']) < today < str_to_dt(self.data[self.index]['end']):
+            if str_to_dt(self.data[self.index]['begin']) <= today <= str_to_dt(self.data[self.index]['end']):
+                logSend('  work id: {}, begin: {} <= today: {} <= end: {}'.format(self.data[self.index]['id'],
+                                                                                  self.data[self.index]['begin'],
+                                                                                  today,
+                                                                                  self.data[self.index]['end']))
                 return True
         return False
 
