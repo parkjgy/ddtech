@@ -37,7 +37,9 @@ from django.db.models import Q
 from operator import itemgetter
 
 # APNs
-from config.apns import notification_new, push_notification  #, notificataion
+from config.apns import notification, notification_new # , push_notification
+# import time
+# from config.apns import APNs, Frame, Payload
 
 
 @cross_origin_read_allow
@@ -150,7 +152,10 @@ def check_version(request):
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
         if 't' in rqst:
             logSend('[{}] vs [{}]'.format(rqst['t'], passer.push_token))
-            if rqst['t'] != passer.push_token:
+            if rqst['t'] == 'Token_did_not_registration':
+                passer.push_token = rqst['t']
+                passer.save()
+            elif rqst['t'] != passer.push_token:
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
 
     parameter_check = is_parameter_ok(rqst, ['v'])
@@ -4148,7 +4153,7 @@ def tk_patch(request):
     #         x=record.x,
     #         y=record.y,
     #     ).save()
-
+    apns_test(request)
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -4161,19 +4166,48 @@ def copy_table(source, target, key_list):
 
 
 def apns_test(request):
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-        #_userCode = rqst['uc']
-        token = rqst['t']
-    elif settings.IS_COVER_GET :
-        logSend('>>> :-(')
-        return HttpResponse(":-(")
-    else :
-        #rqst = json.loads(request.GET)
-        #logSend(`rqst['uc']` + ' ' + `rqst['array']`)
-        #_userCode = rqst['uc']
-        token = request.GET['t']
+    # if request.method == 'POST':
+    #     rqst = json.loads(request.body.decode("utf-8"))
+    #     #_userCode = rqst['uc']
+    #     token = rqst['t']
+    # elif settings.IS_COVER_GET :
+    #     logSend('>>> :-(')
+    #     return HttpResponse(":-(")
+    # else :
+    #     #rqst = json.loads(request.GET)
+    #     #logSend(`rqst['uc']` + ' ' + `rqst['array']`)
+    #     #_userCode = rqst['uc']
+    #     token = request.GET['t']
+
+    # apns = APNs(use_sandbox=True, cert_file='cert.pem', key_file='key.pem')
+    # apns = APNs(use_sandbox=True, cert_file=settings.APNS_PEM_EMPLOYEE_FILE)
+    # # Send a notification
+    # token_hex = '5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a'
+    # payload = Payload(alert="Hello World!", sound="default", badge=1)
+    # apns.gateway_server.send_notification(token_hex, payload)
+    #
+    # # Send multiple notifications in a single transmission
+    # frame = Frame()
+    # identifier = 1
+    # expiry = time.time() + 3600
+    # priority = 10
+    # frame.add_item('5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a', payload, identifier, expiry, priority)
+    # apns.gateway_server.send_notification_multiple(frame)
+
+
+    passer = Passer.objects.get(pNo='01084333579')
+    token = passer.push_token
     logSend('token = ' + token)
-    response = notification('user_Airkorea', 100, token, 00, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
-    return testResponse(json.dumps(response))
+    token = '5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a'
+    logSend('token = ' + token)
+    # def notification(functionName, target_id, token, phoneType, alert, isSound, data):
+    response = notification('user', 100, token, 0, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+
+    """
+    def notification_new(push_contents):
+    push_contents = {'func': 'mng_testPush', 'id': staff.id, 'token': staff.pToken, 'pType': staff.pType, \
+            'push_control': {'alertMsg': '푸쉬를 시험합니다.', 'isSound': 1, 'badgeCount': 3}, \
+            'push_contents': {'action':'testPush', 'current':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}}
+    """
+    return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 

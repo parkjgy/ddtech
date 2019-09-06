@@ -25,6 +25,12 @@ DATABASES = {
 CUSTOMER_URL = 'http://127.0.0.1:8000/customer/'
 OPERATION_URL = 'http://127.0.0.1:8000/operation/'
 EMPLOYEE_URL = 'http://127.0.0.1:8000/employee/'
+
 SMS_SENDER_PN = '1899-3832'
 
 IS_TEST = False
+IS_SERVICE = False
+
+# APNs 인증서 경로
+APNS_PEM_EMPLOYEE_FILE = os.path.join(STATIC_ROOT, 'employee_dev.pem')
+APNS_PEM_MANAGER_FILE = os.path.join(STATIC_ROOT, 'mng_dev.pem')

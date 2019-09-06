@@ -30,3 +30,8 @@ EMPLOYEE_URL = 'https://api.ezchek.co.kr/employee/'
 SMS_SENDER_PN = '1899-3832'
 
 IS_TEST = False
+IS_SERVICE = True
+
+# APNs 인증서 경로
+APNS_PEM_EMPLOYEE_FILE = os.path.join(STATIC_ROOT, 'employee_pro.pem')
+APNS_PEM_MANAGER_FILE = os.path.join(STATIC_ROOT, 'mng_pro.pem')

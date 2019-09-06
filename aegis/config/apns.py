@@ -2,6 +2,12 @@
 Notification Processer
 
 Copyright 2012 - 2019. Park, Jong-Kee. All rights reserved.
+
+1. notificataion or notification_new
+2. PushThread __init__
+3. push_notification
+4. APNs or FCM or GCM
+5. PushThread __del__
 """
 # -*- encoding:utf-8-*-
 
@@ -12,14 +18,14 @@ import threading
 # from AndroidMessage import *
 
 import ssl
-# import json
+import json
 # import socket
 import struct
 import binascii
 from socket import socket, AF_INET, SOCK_STREAM
+import time
 
 from .log import logSend, logError
-
 
 class PushThread(threading.Thread):
 
@@ -35,54 +41,57 @@ class PushThread(threading.Thread):
         threading.Thread.__init__(self)
 
     def __del__(self):
-        logSend('   >>> PUSH del ' + self.functionName + ' target_id = ' + str(
-            self.target_id) + ': result = ' + self.result)
+        logSend('   >>> PUSH del {} target_id = {}: result = {}'.format(self.functionName,
+                                                                        str(self.target_id),
+                                                                        self.result))
 
     def run(self):
-        self.result = push_notification(self.functionName, self.target_id, self.token, self.phoneType, self.alert,
-                                        self.isSound, self.data)
-        logSend('   >>> PUSH run = ' + str(self.target_id) + ' ' + self.token)
+        self.result = push_notification(self.functionName,
+                                        self.target_id,
+                                        self.token,
+                                        self.phoneType,
+                                        self.alert,
+                                        self.isSound,
+                                        self.data)
+        logSend('   >>> PUSH run = {}: {}'.format(str(self.target_id), self.token))
         # self.__del__()
 
 
-def APNs(token, targetType, isSound, alert, data):
+def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, expiry=None, data=None):
     if settings.IS_SERVICE:
         apns_address = ('gateway.push.apple.com', 2195)  # production url
-        if targetType == 'user':
-            logSend('   >> User')
-            certFile = settings.APNS_PEM_USER
-        elif targetType == 'driver':
-            logSend('   >> Driver')
-            certFile = settings.APNS_PEM_DRIVER
-        elif targetType == 'mng':
-            logSend('   >> staff')
-            certFile = settings.APNS_PEM_MNG
     else:
         apns_address = ('gateway.sandbox.push.apple.com', 2195)  # development url
-        if targetType == 'user':
-            logSend('   >> User')
-            certFile = settings.DEV_PEM_USER
-        elif targetType == 'driver':
-            logSend('   >> Driver')
-            certFile = settings.DEV_PEM_DRIVER
-        elif targetType == 'mng':
-            logSend('   >> staff')
-            certFile = settings.DEV_PEM_MNG
-    logSend('apns_address = ' + apns_address)
+    logSend('apns_address = {}'.format(apns_address))
+
+    if targetType == 'user':
+        logSend('   >> User')
+        certFile = settings.APNS_PEM_EMPLOYEE_FILE
+    elif targetType == 'mng':
+        logSend('   >> staff')
+        certFile = settings.APNS_PEM_MANAGER_FILE
+    else:
+        return {'message': 'targetType unknown - \'user\' or \'mng\''}
     pushSocket = socket(AF_INET, SOCK_STREAM)
     pushSocket.connect(apns_address)
     # sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile, ssl_version=ssl.PROTOCOL_SSLv3)
     logSend('   >>> 00 ' + certFile)
     sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile)
-    # logSend('   >>> 01')
-    token = binascii.unhexlify(token)
+    logSend('   >>> 01')
     # >>> notification 1 'user_pushMessage': target_id = 1L, alert = 알림, data = {'action': 'Message', 'msg': '알림 시험'}
+    token = binascii.unhexlify(token)
     aps = {}
-    if isSound:
-        aps['sound'] = 'default'
-    # aps['content-available'] = 1  # content-available: 1
-    aps['alert'] = alert
-    aps['badge'] = 0
+    if alert is not None:
+        aps['alert'] = alert
+    if sound is not None:
+        aps['sound'] = sound
+    if badge is not None:
+        aps['badge'] = badge
+    # if isSound:
+    #     aps['sound'] = 'default'
+    # # aps['content-available'] = 1  # content-available: 1
+    # aps['alert'] = alert
+    # aps['badge'] = 0
     # aps['badge'] = random.randint(0, 5)
     """
     aps = {
@@ -96,20 +105,18 @@ def APNs(token, targetType, isSound, alert, data):
         'sound' : 'chime.aiff'
     }
     """
-    message = {}
-    message['aps'] = aps
-    # aps = {'aps' : {"sound": "default", "alert": "알림"}, }
+    message = {'aps': aps}
     for cell in data:
         message[cell] = data[cell]
-    # logSend('   >>> APNs message = ' + `message`)
-    # '\x00\x00 =\xbb\x14\x00n{"aps":{"sound":"default","alert":"알림"},"action":"Message","msg":"알림 시험"}'
     payload = json.dumps(message)
-    # payload = json.dumps({"apn": {"alert":"APNs test", "badge":1, "sound":"bingbong.aiff"}})
-    # payload = {alert : data}
-    # logSend('   >>> APNs payload = ' + payload)
-    fmt = "!cH32sH{0:d}s".format(len(payload))
-    cmd = '\x00'
-    msg = struct.pack(fmt, cmd, len(token), token, len(payload), payload)
+    logSend('   >>> APNs payload = ' + payload)
+    length = len(payload)
+    if expiry is None:
+        expiry = int(time.time() + 365 * 86400)
+    msg = struct.pack(
+            "!bIIH32sH%(length)ds" % {"length": length},
+            1, identifier, expiry,
+            32, token, length, payload.encode('utf8'))
     sslSocket.write(msg)
     sslSocket.close()
     return payload
@@ -156,8 +163,9 @@ def push_notification(functionName, target_id, token, phoneType, alert, isSound,
     try:
         # logSend('>>> phoneType ' + str(phoneType))
         # logSend('   >>> notification ' + functionName + ': target_id = ' + target_id + ', alert = ' + unicode(alert, "UTF-8") + ', data = ' + data + token)
-        logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(
-            data['action']))  # + ' token:' + token)
+        logSend('>>> notification: fn:{} tid:{} t:{} pt:{} a:{} s:{} d:{}'.format(functionName, target_id, token, phoneType, alert, isSound, data))
+        # logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(
+        #     data['action']))  # + ' token:' + token)
         # logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(data))
         # send push
         if (phoneType == 00):
@@ -167,7 +175,12 @@ def push_notification(functionName, target_id, token, phoneType, alert, isSound,
                 targetType = 'mng'
             elif (functionName[0:4] == 'user'):
                 targetType = 'user'
-            result = APNs(token, targetType, isSound, alert, data)
+            if isSound:
+                sound = 'default'
+            result = APNs(token, targetType, alert, sound, None, 99, None, data)
+
+            # def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, expiry=None, data=None):
+
             result = "success: APNS " + str(target_id)  # + ', data = ' + result
         else:
             if (functionName[0:5] == 'voip_'):
@@ -199,3 +212,4 @@ def push_notification(functionName, target_id, token, phoneType, alert, isSound,
     except Exception as e:
         logSend('   PUSH ' + functionName + ' Fail: ' + str(e))
         return "fail: " + str(e)
+
