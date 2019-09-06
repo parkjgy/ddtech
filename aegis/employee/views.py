@@ -4194,12 +4194,16 @@ def apns_test(request):
     # frame.add_item('5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a', payload, identifier, expiry, priority)
     # apns.gateway_server.send_notification_multiple(frame)
 
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
 
-    passer = Passer.objects.get(pNo='01084333579')
+    passer = Passer.objects.get(pNo=rqst['pNo'])
     token = passer.push_token
     logSend('token = ' + token)
-    token = '5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a'
-    logSend('token = ' + token)
+    # token = '5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a'
+    # logSend('token = ' + token)
     # def notification(functionName, target_id, token, phoneType, alert, isSound, data):
     response = notification('user', 100, token, 0, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
 

@@ -4067,16 +4067,17 @@ def tk_patch_employee(request):
     response
         STATUS 200
     """
-    # if request.method == 'POST':
-    #     rqst = json.loads(request.body.decode("utf-8"))
-    # else:
-    #     rqst = request.GET
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
 
     worker_id = request.session['op_id'][5:]
     worker = Staff.objects.get(id=worker_id)
 
     s = requests.session()
-    r = s.post(settings.EMPLOYEE_URL + 'tk_patch', json={})
-    logSend('  {}'.format({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()}))
+    passer = {'pNo': rqst['pNo']}
+    r = s.post(settings.EMPLOYEE_URL + 'tk_patch', json=passer)
+    logSend('  {}'.format({'url': r.url, 'POST': passer, 'STATUS': r.status_code, 'R': r.json()}))
     result_json = r.json()
     return REG_200_SUCCESS.to_json_response(result_json)
