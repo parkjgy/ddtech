@@ -4199,19 +4199,21 @@ def apns_test(request):
     else:
         rqst = request.GET
 
-    passer = Passer.objects.get(pNo=rqst['pNo'])
-    token = passer.push_token
-    logSend('token = ' + token)
-    # token = '5503313048040d911e7dc8979ddc640499fd3e8c2b61054641caf4893ed9a12a'
-    # logSend('token = ' + token)
-    # def notification(functionName, target_id, token, phoneType, alert, isSound, data):
-    response = notification('user', 100, token, 0, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    parameter_check = is_parameter_ok(rqst, ['pNo'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    pNo = parameter_check['parameters']['pNo']
 
-    """
-    def notification_new(push_contents):
-    push_contents = {'func': 'mng_testPush', 'id': staff.id, 'token': staff.pToken, 'pType': staff.pType, \
-            'push_control': {'alertMsg': '푸쉬를 시험합니다.', 'isSound': 1, 'badgeCount': 3}, \
-            'push_contents': {'action':'testPush', 'current':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}}
-    """
+    passer = Passer.objects.get(pNo=pNo)
+    # def notification(functionName, target_id, token, phoneType, alert, isSound, data):
+    # response = notification('user', 100, passer.push_token, 10, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+
+    push_contents = {
+        'func': 'user', 'id': passer.id, 'token': passer.push_token, 'pType': passer.pType,
+        'push_control': {'alertMsg': '푸쉬를 시험합니다.', 'isSound': 1, 'badge': 3},
+        'push_contents': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 'title': '제목', 'subtitle': '부제목'}
+    }
+    response = notification_new(push_contents)
+
     return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 

@@ -939,7 +939,7 @@ def reg_staff(request):
     pNo = no_only_phone_no(parameter['parameters']['pNo'])
     email = parameter['parameters']['email']
 
-    if len(login_id) < 8 or not login_id.isidentifier():
+    if len(login_id) < 6 or not login_id.isidentifier():
         return status422(get_api(request), {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 8자 이상이어야 합니다.'})
     if len(name) < 2:
         return status422(get_api(request), {'message': '이름은 최소 2자 이상이어야 합니다.'})

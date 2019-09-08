@@ -75,9 +75,8 @@ def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, ex
     pushSocket = socket(AF_INET, SOCK_STREAM)
     pushSocket.connect(apns_address)
     # sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile, ssl_version=ssl.PROTOCOL_SSLv3)
-    logSend('   >>> 00 ' + certFile)
+    logSend('   >>> cert_file: {}'.format(certFile))
     sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile)
-    logSend('   >>> 01')
     # >>> notification 1 'user_pushMessage': target_id = 1L, alert = 알림, data = {'action': 'Message', 'msg': '알림 시험'}
     token = binascii.unhexlify(token)
     aps = {}
@@ -168,7 +167,7 @@ def push_notification(functionName, target_id, token, phoneType, alert, isSound,
         #     data['action']))  # + ' token:' + token)
         # logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(data))
         # send push
-        if (phoneType == 00):
+        if (phoneType == 10):
             if (functionName[0:3] == 'app'):
                 targetType = 'driver'
             elif (functionName[0:3] == 'mng'):

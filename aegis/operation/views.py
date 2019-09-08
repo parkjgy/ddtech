@@ -4072,11 +4072,13 @@ def tk_patch_employee(request):
     else:
         rqst = request.GET
 
-    worker_id = request.session['op_id'][5:]
-    worker = Staff.objects.get(id=worker_id)
+    parameter_check = is_parameter_ok(rqst, ['pNo'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    pNo = parameter_check['parameters']['pNo']
 
     s = requests.session()
-    passer = {'pNo': rqst['pNo']}
+    passer = {'pNo': pNo}
     r = s.post(settings.EMPLOYEE_URL + 'tk_patch', json=passer)
     logSend('  {}'.format({'url': r.url, 'POST': passer, 'STATUS': r.status_code, 'R': r.json()}))
     result_json = r.json()
