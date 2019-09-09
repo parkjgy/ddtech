@@ -24,8 +24,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 SECRET_KEY = 'd*)n0s&_3cufmn4x^&0_ny_pplg&1a4k1==r7cxronkfd$7no@'
 
 # ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['api.aegisfac.com', 'was', '127.0.0.1', '0.0.0.0', '192.168.219.55', '211.220.119.24', 'dev.ddtechi.com', '192.168.219.1', '192.168.0.33',
-                 '61.78.188.250', 'dev1.ddtechi.com', '192.168.219.62', '125.142.28.181', 'api-dev.ezchk.co.kr', '52.78.233.31', 'api.ezchek.co.kr']
+ALLOWED_HOSTS = ['0.0.0.0',  # local
+                 '127.0.0.1',  # server to server
+                 '192.168.219.62',  # 울산 본사 개발 IP
+                 '192.168.123.77',  # 상암동 개발 IP
+                 '125.142.28.181',  # 행신동 박종기 집 IP
+                 'dev.ddtechi.com',  # 개발서버
+                 'api-dev.ezchk.co.kr',  # 상용서버를 통한 개발서버
+                 'api.ezchek.co.kr']  # 상용서버
 
 # Application definition
 
