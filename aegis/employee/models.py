@@ -58,6 +58,11 @@ class Notification_Work(models.Model):
     dt_begin = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 시작 날짜
     dt_end = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 종료 날짜
 
+    dt_reg = models.DateTimeField(auto_now_add=True)  # 등록이 요청된 날짜 : 시스템 관리용
+    work_place_name = models.CharField(max_length=127)  # 사업장 이름 : 시스템 관리용
+    work_name_type = models.CharField(max_length=255)  # 업무 이름 : 시스템 관리용
+    is_x = models.BooleanField(default=False)  # 삭제되었다. : 시스템 관리용
+
 
 class Work_Record(models.Model):
     """

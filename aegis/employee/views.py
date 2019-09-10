@@ -436,11 +436,15 @@ def reg_employee_for_customer(request):
     }
 
     # 업무 요청이 등록된 전화번호
-    notification_list = Notification_Work.objects.filter(customer_work_id=customer_work_id,
+    notification_list = Notification_Work.objects.filter(is_x=False,
+                                                         customer_work_id=customer_work_id,
                                                          employee_pNo__in=last_phone_numbers)
-    notification_phones = [notification.employee_pNo for notification in notification_list]
-    # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에
-    notification_list.delete()
+    # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에...
+    # 업무 요청이 이상 증상을 보여 삭제하지 않고 is_x 로 처리: 2019/09/10
+    for notification in notification_list:
+        notification.is_x = True
+    notification_list.save()
+
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
@@ -455,7 +459,7 @@ def reg_employee_for_customer(request):
             if passer_feature.pType == 30:
                 # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
                 is_feature_phone = True
-                find_notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+                find_notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
                 logSend('  - notification list (pNo:{}) : {}'.format(phone_no,
                                                                      [notification.employee_pNo for notification in
                                                                       find_notification_list]))
@@ -503,6 +507,11 @@ def reg_employee_for_customer(request):
                 dt_answer_deadline=dt_answer_deadline,
                 dt_begin=str_to_dt(dt_begin_employee),
                 dt_end=str_to_dt(dt_end_employee),
+                # 이하 시스템 관리용
+                work_place_name=work_place_name,
+                work_name_type=work_name_type,
+                # is_x=False,  # default
+                # dt_reg=datetime.datetime.now(),  # default
             )
             new_notification.save()
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
@@ -638,8 +647,8 @@ def notification_list(request):
 
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)
-    # notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
-    notification_list = Notification_Work.objects.filter(employee_pNo=passer.pNo)
+    # notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
+    notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=passer.pNo)
     logSend('  notification: {}'.format([x.dt_begin for x in notification_list]))
     arr_notification = []
     for notification in notification_list:
@@ -707,7 +716,7 @@ def notification_accept(request):
         return status422(get_api(request), {'message': '출입자({}) 가 없어요'.format(passer_id)})
     passer = passers[0]
 
-    notifications = Notification_Work.objects.filter(id=notification_id)
+    notifications = Notification_Work.objects.filter(is_x=False, id=notification_id)
     if len(notifications) == 0:
         return status422(get_api(request), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
     notification = notifications[0]
@@ -1219,7 +1228,7 @@ def pass_verify(request):
                      ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
                                                                                                       dt_touch))
     else:
-        # in touch 일 경우
+        # in touch 일 경우 (출근 버튼이 눌렸을 때)
         if len(pass_histories) == 0:
             # 오늘 날짜 pass_history 가 없어서 새로 만든다.
             pass_history = Pass_History(
@@ -1284,7 +1293,7 @@ def pass_sms(request):
     sms = sms.replace('승락', '수락').replace('거부', '거절')
     if ('수락 ' in sms) or ('거절' in sms):
         # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
-        notification_work_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+        notification_work_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
         # 하~~~ 피처폰인데 업무 요청 여러개가 들어오면 처리할 방법이 없네... > 에이 모르겠다 몽땅 보내!!!
         # 수락한 내용을 SMS 로 보내줘야할까? (문자를 무한사용? 답답하네...)
         is_accept = True if '수락 ' in sms else False
@@ -1330,7 +1339,9 @@ def pass_sms(request):
         for notification_work in notification_work_list:
             # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
             if notification_work.dt_answer_deadline < datetime.datetime.now():
-                notification_work.delete()
+                notification.is_x = True
+                notification.save()
+                # notification_work.delete()  # 2019/09/10 삭제하지 않고 유지
                 continue
 
             # 근로자를 강제로 새로 등록한다. (으~~~ 괜히 SMS 기능 넣었나?)
@@ -1846,7 +1857,7 @@ def reg_from_certification_no(request):
                 result['bank_account'] = employee.bank_account
 
     if status_code == 200 or status_code == 201:
-        notification_list = Notification_Work.objects.filter(employee_pNo=phone_no)
+        notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
         for notification in notification_list:
             notification.employee_id = employee.id
             notification.save()
