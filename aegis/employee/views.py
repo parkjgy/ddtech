@@ -443,7 +443,7 @@ def reg_employee_for_customer(request):
     # 업무 요청이 이상 증상을 보여 삭제하지 않고 is_x 로 처리: 2019/09/10
     for notification in notification_list:
         notification.is_x = True
-    notification_list.save()
+        notification.save()
 
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
