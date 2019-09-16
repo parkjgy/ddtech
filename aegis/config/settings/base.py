@@ -31,7 +31,8 @@ ALLOWED_HOSTS = ['0.0.0.0',  # local
                  '125.142.28.181',  # 행신동 박종기 집 IP
                  'dev.ddtechi.com',  # 개발서버
                  'api-dev.ezchk.co.kr',  # 상용서버를 통한 개발서버
-                 'api.ezchek.co.kr']  # 상용서버
+                 'api.ezchek.co.kr',
+                 '52.78.152.108']  # 상용서버
 
 # Application definition
 
