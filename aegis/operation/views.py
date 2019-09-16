@@ -4074,7 +4074,7 @@ def tk_patch_employee(request):
 
     parameter_check = is_parameter_ok(rqst, ['pNo'])
     if not parameter_check['is_ok']:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     pNo = parameter_check['parameters']['pNo']
 
     s = requests.session()

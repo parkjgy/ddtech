@@ -29,69 +29,143 @@ from .log import logSend, logError
 
 class PushThread(threading.Thread):
 
-    def __init__(self, functionName, target_id, token, phoneType, alert, isSound, data):
-        self.functionName = functionName
-        self.target_id = target_id
-        self.token = token
-        self.phoneType = phoneType
-        self.alert = alert
+    def __init__(self, func, target_list, isSound, badge, contents):
+        self.func = func
+        self.target_list = target_list
         self.isSound = isSound
-        self.data = data
+        self.badge = badge
+        self.contents = contents
         self.result = ""
         threading.Thread.__init__(self)
 
     def __del__(self):
-        logSend('   >>> PUSH del {} target_id = {}: result = {}'.format(self.functionName,
-                                                                        str(self.target_id),
-                                                                        self.result))
+        logSend('   >>> PUSH del {} target_list = {}: result = {}'.format(self.func,
+                                                                          self.target_list,
+                                                                          self.result))
 
     def run(self):
-        self.result = push_notification(self.functionName,
-                                        self.target_id,
-                                        self.token,
-                                        self.phoneType,
-                                        self.alert,
+        self.result = push_notification(self.func,
+                                        self.target_list,
                                         self.isSound,
-                                        self.data)
-        logSend('   >>> PUSH run = {}: {}'.format(str(self.target_id), self.token))
+                                        self.badge,
+                                        self.contents)
+        logSend('   >>> PUSH run = {}: {}'.format(str(self.func), self.target_list))
         # self.__del__()
 
+"""
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user', 
+        'isSound': True, 
+        'badge': 3,
+        'contents': {'title': '제목', 
+                     'subtitle': '부제목', 
+                     'body': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     }
+    }
+"""
+# @async
+def push_notification(func, target_list, isSound, badge, contents):
+    # 서버에서 스마트 폰으로 push 한다.
+    # functionName, target_id 는 log 를 위해 필요하다.
+    # return:
+    #    string: "success"
+    #    string: "fail: 사유"
+    try:
+        logSend('^ func: {}, isSound: {}, badge: {}\n^   contents: {}'.format(func, isSound, badge, contents))
+        if (func[0:3] == 'app'):
+            target_type = 'driver'
+        elif (func[0:3] == 'mng'):
+            target_type = 'mng'
+        elif (func[0:4] == 'user'):
+            target_type = 'user'
+        if isSound:
+            sound = 'default'
+        else:
+            sound = None
+        apns_list = []
+        for target in target_list:
+            logSend('^ id: {}, type: {}, token: {}'.format(target['id'], target['pType'], target['token']))
+            if target['pType'] == 10:
+                apns_list.append(target)
+            else:
+                if (func[0:5] == 'voip_'):
+                    func = func[5:]
+                """
+                if (functionName[0:3] == 'app') :
+                    gcmKey = 'AIzaSyCRNWBpY_7buR6cDSbaTmdvTkvwNX7MjEk' # 정용조
+                else :
+                    gcmKey = 'AIzaSyAXEuxGB6aUDrewz50yJaQjgyEaI5bOEXM' # 정용조
+                """
+                # gcmKey = 'AIzaSyD0KiBW4vFeF_qK6g_0sIHcSJ66KQyTeKk' # 곽명석
+                # gcmKey = 'AIzaSyBjAijsOskVybwlWbEo17XNDS9Q7XFOCC0' # 정용조 설레
 
-def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, expiry=None, data=None):
+                gcmKey = 'AIzaSyCSbKzbIwHjMc9IeSRmNKCs5tLgL_t8BB8'  # 'AIzaSyBvwG9bqJnnygadmDwjf6AbPeyZUIrvlUU'
+                sender = GoogleCloudMessaging(gcmKey)
+                sender.registrationId = token
+                # sender.collapseKey = 1
+                # logSend('>>> push GCM ' + str(data))
+                data['alert'] = alert
+                data['isSound'] = isSound
+                logSend('>>> push GCM ' + str(data))
+                sender.data = data
+
+                response = sender.sendMessage()
+                result = "success: GCM response = " + str(target_id) + ', ' + str(response)  # + ', data = ' + str(data)
+                # logSend('>>> debugging 02 ' + result)
+        result = APNs(target_type, apns_list, None, sound, badge, contents)
+
+        return result
+    except Exception as e:
+        logSend('   PUSH ' + func + ' Fail: ' + str(e))
+        return "fail: " + str(e)
+
+
+def APNs(target_type, target_list, alert, sound, badge, contents):
     if settings.IS_SERVICE:
         apns_address = ('gateway.push.apple.com', 2195)  # production url
     else:
         apns_address = ('gateway.sandbox.push.apple.com', 2195)  # development url
     logSend('apns_address = {}'.format(apns_address))
 
-    if targetType == 'user':
+    if target_type == 'user':
         logSend('   >> User')
         certFile = settings.APNS_PEM_EMPLOYEE_FILE
-    elif targetType == 'mng':
+    elif target_type == 'mng':
         logSend('   >> staff')
         certFile = settings.APNS_PEM_MANAGER_FILE
     else:
         return {'message': 'targetType unknown - \'user\' or \'mng\''}
+    payload_list = []
+    for target in target_list:
+        new_payload = set_payload(target['token'], alert, sound, badge, contents)
+        payload_list.append(new_payload)
+
     pushSocket = socket(AF_INET, SOCK_STREAM)
     pushSocket.connect(apns_address)
-    # sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile, ssl_version=ssl.PROTOCOL_SSLv3)
-    logSend('   >>> cert_file: {}'.format(certFile))
+    logSend('   >>> 00 ' + certFile)
     sslSocket = ssl.wrap_socket(pushSocket, certFile, certFile)
-    # >>> notification 1 'user_pushMessage': target_id = 1L, alert = 알림, data = {'action': 'Message', 'msg': '알림 시험'}
-    token = binascii.unhexlify(token)
-    aps = {}
-    if alert is not None:
-        aps['alert'] = alert
-    if sound is not None:
-        aps['sound'] = sound
-    if badge is not None:
-        aps['badge'] = badge
-    # if isSound:
-    #     aps['sound'] = 'default'
-    # # aps['content-available'] = 1  # content-available: 1
-    # aps['alert'] = alert
-    # aps['badge'] = 0
-    # aps['badge'] = random.randint(0, 5)
+
+    result = []
+    for payload in payload_list:
+        result.append(sslSocket.write(payload))
+    sslSocket.close()
+    logSend('<<< push result: {}'.format(result))
+    return {'message': result}
+
+
+def set_payload(token, alert, sound, badge, contents=None):
+    identifier = 0  # default
+    expiry = None   # default
+
+    bin_token = binascii.unhexlify(token)
+    aps = {
+        'category': 'USER_MESSAGE_CATEGORY',
+        'alert': contents,
+        'sound': sound,
+        'badge': badge,
+    }
+    logSend('  >>> aps init: {}'.format(aps))
     """
     aps = {
         'category' : 'NEW_MESSAGE_CATEGORY',
@@ -104,111 +178,41 @@ def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, ex
         'sound' : 'chime.aiff'
     }
     """
-    message = {'aps': aps}
-    for cell in data:
-        message[cell] = data[cell]
-    payload = json.dumps(message)
-    logSend('   >>> APNs payload = ' + payload)
+    payload = json.dumps({'aps': aps, 'contents': contents})
+    logSend('   >>> APNs payload = {}'.format(payload))
     length = len(payload)
     if expiry is None:
         expiry = int(time.time() + 365 * 86400)
-    msg = struct.pack(
-            "!bIIH32sH%(length)ds" % {"length": length},
-            1, identifier, expiry,
-            32, token, length, payload.encode('utf8'))
-    sslSocket.write(msg)
-    sslSocket.close()
-    return payload
+    pack = struct.pack(
+        "!bIIH32sH%(length)ds" % {"length": length},
+        1, identifier, expiry,
+        32, bin_token, length, payload.encode('utf8'))
+    return pack
 
 
-def notification(functionName, target_id, token, phoneType, alert, isSound, data):
-    if len(token) < 20:
-        logSend('>>> notification : cancel >>> none token')
-        return "None token"
-    # push_notification(functionName, target_id, token, phoneType, alert, data)
-    PushThread(functionName, target_id, token, phoneType, alert, isSound, data).start()
-    return "threading"
-
-
-def notification_new(push_contents):
+def notification(push_contents):
     """
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user',
+        'isSound': True,
+        'badge': 3,
+        'contents': {'title': '제목',
+                     'subtitle': '부제목',
+                     'body': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     }
+    }
     push_contents = {'func': 'mng_testPush', 'id': staff.id, 'token': staff.pToken, 'pType': staff.pType, \
             'push_control': {'alertMsg': '푸쉬를 시험합니다.', 'isSound': 1, 'badgeCount': 3}, \
             'push_contents': {'action':'testPush', 'current':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}}
     """
-    functionName = push_contents['func']
-    target_id = push_contents['id']
-    token = push_contents['token']
-    phoneType = push_contents['pType']
-    alert = push_contents['push_control']['alertMsg']
-    isSound = push_contents['push_control']['isSound']
-    # isUpdate = push_contents['push_control']['isUpdate']
-    data = push_contents['push_contents']
-    if len(token) < 20:
-        logSend('>>> notification : cancel >>> none token')
-        return "None token"
-    # push_notification(functionName, target_id, token, phoneType, alert, data)
-    PushThread(functionName, target_id, token, phoneType, alert, isSound, data).start()
+    func = push_contents['func']
+    target_list = push_contents['target_list']
+    isSound = push_contents['isSound']
+    badge = push_contents['badge']
+    contents = push_contents['contents']
+    PushThread(func, target_list, isSound, badge, contents).start()
     return "threading"
 
 
-# @async
-def push_notification(functionName, target_id, token, phoneType, alert, isSound, data):
-    # 서버에서 스마트 폰으로 push 한다.
-    # functionName, target_id 는 log 를 위해 필요하다.
-    # return:
-    #    string: "success"
-    #    string: "fail: 사유"
-    try:
-        # logSend('>>> phoneType ' + str(phoneType))
-        # logSend('   >>> notification ' + functionName + ': target_id = ' + target_id + ', alert = ' + unicode(alert, "UTF-8") + ', data = ' + data + token)
-        logSend('>>> notification: fn:{} tid:{} t:{} pt:{} a:{} s:{} d:{}'.format(functionName, target_id, token, phoneType, alert, isSound, data))
-        # logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(
-        #     data['action']))  # + ' token:' + token)
-        # logSend('>>> notification ' + functionName + ': target_id = ' + str(target_id) + ', action = ' + str(data))
-        # send push
-        if (phoneType == 10):
-            if (functionName[0:3] == 'app'):
-                targetType = 'driver'
-            elif (functionName[0:3] == 'mng'):
-                targetType = 'mng'
-            elif (functionName[0:4] == 'user'):
-                targetType = 'user'
-            if isSound:
-                sound = 'default'
-            result = APNs(token, targetType, alert, sound, None, 99, None, data)
-
-            # def APNs(token, targetType, alert=None, sound=None, badge=None, identifier=0, expiry=None, data=None):
-
-            result = "success: APNS " + str(target_id)  # + ', data = ' + result
-        else:
-            if (functionName[0:5] == 'voip_'):
-                functionName = functionName[5:]
-            """
-            if (functionName[0:3] == 'app') :
-                gcmKey = 'AIzaSyCRNWBpY_7buR6cDSbaTmdvTkvwNX7MjEk' # 정용조
-            else :
-                gcmKey = 'AIzaSyAXEuxGB6aUDrewz50yJaQjgyEaI5bOEXM' # 정용조
-            """
-            # gcmKey = 'AIzaSyD0KiBW4vFeF_qK6g_0sIHcSJ66KQyTeKk' # 곽명석
-            # gcmKey = 'AIzaSyBjAijsOskVybwlWbEo17XNDS9Q7XFOCC0' # 정용조 설레
-
-            gcmKey = 'AIzaSyCSbKzbIwHjMc9IeSRmNKCs5tLgL_t8BB8'  # 'AIzaSyBvwG9bqJnnygadmDwjf6AbPeyZUIrvlUU'
-            sender = GoogleCloudMessaging(gcmKey)
-            sender.registrationId = token
-            # sender.collapseKey = 1
-            # logSend('>>> push GCM ' + str(data))
-            data['alert'] = alert
-            data['isSound'] = isSound
-            logSend('>>> push GCM ' + str(data))
-            sender.data = data
-
-            response = sender.sendMessage()
-            result = "success: GCM response = " + str(target_id) + ', ' + str(response)  # + ', data = ' + str(data)
-            # logSend('>>> debugging 02 ' + result)
-
-        return result
-    except Exception as e:
-        logSend('   PUSH ' + functionName + ' Fail: ' + str(e))
-        return "fail: " + str(e)
 

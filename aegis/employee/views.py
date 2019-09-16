@@ -37,7 +37,7 @@ from django.db.models import Q
 from operator import itemgetter
 
 # APNs
-from config.apns import notification, notification_new # , push_notification
+from config.apns import notification
 # import time
 # from config.apns import APNs, Frame, Payload
 
@@ -4212,19 +4212,28 @@ def apns_test(request):
 
     parameter_check = is_parameter_ok(rqst, ['pNo'])
     if not parameter_check['is_ok']:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     pNo = parameter_check['parameters']['pNo']
 
-    passer = Passer.objects.get(pNo=pNo)
-    # def notification(functionName, target_id, token, phoneType, alert, isSound, data):
-    # response = notification('user', 100, passer.push_token, 10, '푸쉬 시험', 1, {'action': 'test', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    try:
+        passer = Passer.objects.get(pNo=pNo)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '전환번호({}) 로 찾을 수 없다. <{}>'.format(pNo, e)})
 
+    if passer.push_token == 'Token_did_not_registration':
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'did not registration token({})'.format(passer.push_token)})
     push_contents = {
-        'func': 'user', 'id': passer.id, 'token': passer.push_token, 'pType': passer.pType,
-        'push_control': {'alertMsg': '푸쉬를 시험합니다.', 'isSound': 1, 'badge': 3},
-        'push_contents': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 'title': '제목', 'subtitle': '부제목'}
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}, {'id': 262, 'token': '84653d4521cd224c73b21b9f5e8b9646150c94dc34b033c15b8178e2b53c0213', 'pType': 10}],
+        'func': 'user',
+        'isSound': False,
+        'badge': 0,
+        'contents': None,
+        # 'contents': {'title': '제목',
+        #              'subtitle': '부제목',
+        #              'body': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        #              }
     }
-    response = notification_new(push_contents)
+    response = notification(push_contents)
 
     return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 
