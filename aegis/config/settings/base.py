@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['0.0.0.0',  # local
                  'dev.ddtechi.com',  # 개발서버
                  'api-dev.ezchk.co.kr',  # 상용서버를 통한 개발서버
                  'api.ezchek.co.kr',
-                 '52.78.152.108']  # 상용서버
+                 '52.78.152.31']  # 상용서버
 
 # Application definition
 
