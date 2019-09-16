@@ -182,7 +182,7 @@ def check_version(request):
     logSend('  DB dt_check: {} vs dt_version: {}'.format(dt_check, dt_version))
     if dt_version < dt_check:
         url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.employee"
-        url_iOS = "https://..."
+        url_iOS = "https://apps.apple.com/us/app/이지체크/id1477838861?l=ko&ls=1"
         url_install = ""
         if phone_type == 'A':
             url_install = url_android
