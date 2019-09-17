@@ -6,6 +6,7 @@ Copyright 2019. DaeDuckTech Corp. All rights reserved.
 
 import random
 import inspect
+import secrets  # uuid token 만들 때 사용
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
@@ -107,7 +108,8 @@ def check_version(request):
             # 전화번호: 010-1111-2222 > aBa11112222
             # 전화번호 자릿수: 11 > Bb
             # 근로자 정보: BbaBa11112222eeeeeeeeeeeeeeeeeeeeee << Ba aBa 1111 2222 eeeeeeeeeeeeeeeeeeeeee
-        t=push token (2대의 폰에서 사용을 막기 위한 용도, 로도 사용한다.) 인증 상태일 때는 보내지 않는다.
+        t=push token (2대의 폰에서 사용을 막기 위한 용도로도 사용한다.) 인증 상태일 때는 보내지 않는다.값 (삭제 예정)
+        uuid=전화번호 인증하면 받는 기기 고유 32 byte hex
 
     response
         STATUS 200
@@ -157,6 +159,13 @@ def check_version(request):
                 passer.save()
             elif rqst['t'] != passer.push_token:
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
+        if 'uuid' in rqst:
+            logSend('[{}] vs [{}]'.format(rqst['uuid'], passer.uuid))
+            if rqst['uuid'] == 'None':
+                passer.uuid = secrets.token_hex(32)
+                passer.save()
+            elif rqst['uuid'] != passer.uuid:
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
 
     parameter_check = is_parameter_ok(rqst, ['v'])
     if not parameter_check['is_ok']:
@@ -190,6 +199,8 @@ def check_version(request):
             url_install = url_iOS
         return REG_551_AN_UPGRADE_IS_REQUIRED.to_json_response({'url': url_install  # itune, google play update
                                                                 })
+    if 'uuid' in rqst and rqst['uuid'] == 'None':
+        return REG_200_SUCCESS.to_json_response({'uuid': passer.uuid})
     return REG_200_SUCCESS.to_json_response()
 
 
@@ -1745,6 +1756,7 @@ def reg_from_certification_no(request):
             {'message': '인증번호가 틀립니다.'}
         STATUS 200 # 기존 근로자
         {
+            'uuid': 32byte (앱이 하나의 폰에만 설치되서 사용하도록 하기위한 기기 고유 값을 서버에서 만들어 보내는 값)
             'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
             'name': '홍길동',                      # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
             'work_start': '09:00',               # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
@@ -1765,6 +1777,7 @@ def reg_from_certification_no(request):
         }
         STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
         {
+            'uuid': 32byte (앱이 하나의 폰에만 설치되서 사용하도록 하기위한 기기 고유 값을 서버에서 만들어 보내는 값)
             'id': '암호화된 id 그대로 보관되어서 사용되어야 함',
             'default_time':
                 [
@@ -1776,6 +1789,7 @@ def reg_from_certification_no(request):
         }
         STATUS 202 # 출입 정보만 처리하는 출입자
         {
+            'uuid': 32byte (앱이 하나의 폰에만 설치되서 사용하도록 하기위한 기기 고유 값을 서버에서 만들어 보내는 값)
             'id': '암호화된 id'
         }
         STATUS 422 # 개발자 수정사항
@@ -1824,7 +1838,10 @@ def reg_from_certification_no(request):
                 # if passer.cn != int(cn):
                 return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
-    result = {'id': AES_ENCRYPT_BASE64(str(passer.id))}
+    passer.uuid = secrets.token_hex(32)
+    result = {'id': AES_ENCRYPT_BASE64(str(passer.id)),
+              'uuid': passer.uuid
+              }
     if passer.employee_id == -2:  # 근로자 아님 출입만 처리함
         status_code = 202
     elif passer.employee_id < 0:  # 신규 근로자
@@ -1880,13 +1897,6 @@ def reg_from_certification_no(request):
     # passer.cn = 0
     # passer.dt_cn = None
     passer.save()
-    logSend('   *** ({})'.format(phone_type))
-    if phone_type[:1] == 'A':
-        if len(phone_type) == 1:
-            logSend('   *** phone type len: 1')
-            if 200 <= status_code <= 202:
-                status_code = 200
-                logSend('   *** exchange: 200, 201, 202 to 200')
     return StatusCollection(status_code, '정상적으로 처리되었습니다.').to_json_response(result)
     # return REG_200_SUCCESS.to_json_response(result)
 
@@ -2189,6 +2199,7 @@ def exchange_phone_no_verify(request):
             'cn' : '6자리 SMS 인증숫자',
         }
     response
+        STATUS 200
         STATUS 416
             {'message': '잘못된 전화번호입니다.'}
             {'message': '인증번호 요청을 해주세요.'}
