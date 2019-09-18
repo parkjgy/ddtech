@@ -2315,7 +2315,7 @@ def reg_employee(request):
     new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
                          "work_place_name": work.work_place_name,
                          "work_name_type": work.name + ' (' + work.type + ')',
-                         "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
+                         "dt_begin": dt_str(dt_begin, '%Y/%m/%d'),   # work.dt_begin.strftime('%Y/%m/%d'),
                          "dt_end": work.dt_end.strftime('%Y/%m/%d'),
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,

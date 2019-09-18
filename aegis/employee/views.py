@@ -113,6 +113,7 @@ def check_version(request):
 
     response
         STATUS 200
+            {'today': '2019/09/18 00:00:00'}  # 서버의 현재 시간 - 폰의 시간과 10초 이상 차이나면 "폰의 시간이 잘못되어있습니다." 표시하고 앱 종료
         STATUS 551
         {
             'msg': '업그레이드가 필요합니다.'
@@ -201,7 +202,8 @@ def check_version(request):
                                                                 })
     if 'uuid' in rqst and rqst['uuid'] == 'None':
         return REG_200_SUCCESS.to_json_response({'uuid': passer.uuid})
-    return REG_200_SUCCESS.to_json_response()
+    return REG_200_SUCCESS.to_json_response({'today': dt_null(datetime.datetime.now())})
+    # return REG_200_SUCCESS.to_json_response({'today': dt_null(datetime.datetime.now()-datetime.timedelta(seconds=9))})  # 시험용 9초
 
 
 @cross_origin_read_allow
@@ -268,28 +270,29 @@ def list_my_work(request):
     elif len(employees) > 1:
         logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
-    # logSend(employee.get_works())
-    employee_work_list = employee.get_works()
+    logSend('   --- employee works: {}'.format(employee.get_works()))
+    employee_works = employee.get_works()
     before15day = datetime.datetime.now() - timedelta(days=15)
     # logSend(before15day)
-    work_id_list = [employee_work['id'] for employee_work in employee_work_list if before15day < str_to_dt(employee_work['end'])]
+    work_id_list = [employee_work['id'] for employee_work in employee_works if before15day < str_to_dt(employee_work['end'])]
     # logSend(work_id_list)
-    work_list = Work.objects.filter(id__in=work_id_list).values('id', 'work_place_name', 'work_name_type', 'staff_name', 'staff_pNo')
-    # logSend(work_list)
-    work_dict = {work['id']: work for work in work_list}
-    for employee_work in employee_work_list:
-        if employee_work['id'] in work_dict.keys():
-            work = work_dict[employee_work['id']]
-            employee_work['work_place_name'] = work['work_place_name']
-            employee_work['work_name_type'] = work['work_name_type']
-            employee_work['staff_name'] = work['staff_name']
-            employee_work['staff_pNo'] = phone_format(work['staff_pNo'])
-            del employee_work['id']
-        else:
-            if employee_work['id'] in work_id_list:
-                logError(get_api(request), ' 근로자 passer_id: {}, employee_id: {} 에 work_id: {} 에 대당하는 업무가 work table 에 없다.'.format(passer.id, employee.id, employee_work['id']))
-            employee_work_list.remove(employee_work)
-    # logSend(employee_work_list)
+    work_list = Work.objects.filter(id__in=work_id_list)  #.values('id', 'work_place_name', 'work_name_type', 'staff_name', 'staff_pNo')
+    logSend('   --- work list: {}'.format(work_list))
+    employee_work_list = []
+    for work in work_list:
+        for employee_work in employee_works:
+            if employee_work['id'] == work.id:
+                work_dict = {
+                    'begin': employee_work['begin'],
+                    'end': employee_work['end'],
+                    'work_place_name': work.work_place_name,
+                    'work_name_type': work.work_name_type,
+                    'staff_name': work.staff_name,
+                    'staff_pNo': phone_format(work.staff_pNo),
+                }
+                employee_work_list.append(work_dict)
+                continue
+    logSend(employee_work_list)
     return REG_200_SUCCESS.to_json_response({'works': employee_work_list})
 
 
@@ -401,7 +404,7 @@ def reg_employee_for_customer(request):
     logSend(' employee_status: {}'.format(employee_status))
     for employee in employee_list:
         works = Works(employee.get_works())
-        logSend('  - ', works.data)
+        logSend('  1. 현재 업무: {} vs 새 업무: {}'.format(works.data, {'id': work.id, 'begin': dt_begin, 'end': dt_end}))
         if works.is_overlap({'id': work.id, 'begin': dt_begin, 'end': dt_end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11
@@ -455,7 +458,7 @@ def reg_employee_for_customer(request):
     for notification in notification_list:
         notification.is_x = True
         notification.save()
-
+    push_list = []
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
@@ -491,6 +494,15 @@ def reg_employee_for_customer(request):
                     employee.save()
         else:
             phones_state[phone_no] = -1
+
+        is_push = False
+        if passer.pType == 10 or passer.pType == 20:
+            if len(passer.push_token) > 30:
+                # 앱이 설치되어 있는 경우 push
+                push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+                is_push = True
+
+        is_sms_fail = True
         if not settings.IS_TEST:
             logSend('  - sms 보냄 phone: {}'.format(phone_no))
             # SMS 를 보낸다.
@@ -502,11 +514,12 @@ def reg_employee_for_customer(request):
                 rData['msg'] = msg
             response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
             logSend('  - SMS result: {}'.format(response_SMS.json()))
-            is_sms_ok = int(response_SMS.json()['result_code']) < 0
+            is_sms_fail = int(response_SMS.json()['result_code']) < 0
         else:
-            is_sms_ok = len(phone_no) < 11
-        if is_sms_ok:
-            # 전화번호 에러로 문자를 보낼 수 없음.
+            is_sms_fail = len(phone_no) < 10
+
+        if not is_push and is_sms_fail:
+            # push 를 보내지 않고 전화번호 에러로 문자를 보낼 수 없음.
             phones_state[phone_no] = -101
             logSend('  - sms send fail phone: {}'.format(phone_no))
         else:
@@ -525,7 +538,25 @@ def reg_employee_for_customer(request):
                 # dt_reg=datetime.datetime.now(),  # default
             )
             new_notification.save()
+    push_contents = {
+        'target_list': push_list,
+        'func': 'user',
+        'isSound': True,
+        'badge': 1,
+        'contents': {'title': '업무 요청',
+                     'subtitle': '{}: {}'.format(work_place_name, work_name_type),
+                     'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     }
+    }
+    send_push(push_contents)
+
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
+
+
+def send_push(push_contents):
+    push_result = notification(push_contents)
+    logSend('push result: {}'.format(push_result))
+    return
 
 
 @cross_origin_read_allow
@@ -4250,13 +4281,13 @@ def apns_test(request):
     push_contents = {
         'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}, {'id': 262, 'token': '84653d4521cd224c73b21b9f5e8b9646150c94dc34b033c15b8178e2b53c0213', 'pType': 10}],
         'func': 'user',
-        'isSound': False,
-        'badge': 0,
-        'contents': None,
-        # 'contents': {'title': '제목',
-        #              'subtitle': '부제목',
-        #              'body': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        #              }
+        'isSound': True,
+        'badge': 1,
+        # 'contents': None,
+        'contents': {'title': '업무 요청',
+                     'subtitle': 'SK 케미칼: 동력_EGB(3교대)',
+                     'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     }
     }
     response = notification(push_contents)
 
