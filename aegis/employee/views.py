@@ -109,7 +109,7 @@ def check_version(request):
             # 전화번호 자릿수: 11 > Bb
             # 근로자 정보: BbaBa11112222eeeeeeeeeeeeeeeeeeeeee << Ba aBa 1111 2222 eeeeeeeeeeeeeeeeeeeeee
         t=push token (2대의 폰에서 사용을 막기 위한 용도로도 사용한다.) 인증 상태일 때는 보내지 않는다.값 (삭제 예정)
-        uuid=전화번호 인증하면 받는 기기 고유 32 byte hex
+        uuid=전화번호 인증하면 받는 기기 고유 32 byte hex (인증되지 않은 상태일 때는 보내지 않는다.)
 
     response
         STATUS 200
@@ -2252,6 +2252,20 @@ def exchange_phone_no_verify(request):
 
     passer = passers[0]
     passer.pNo = temp_passer.pNo
+    #
+    # to customer server
+    # 고객 서버에 근로자 전화번호 변경 적용
+    #
+    update_employee_data = {
+        'pNo': passer.pNo,
+        'worker_id': AES_ENCRYPT_BASE64('thinking'),
+        'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
+    }
+    response_customer = requests.post(settings.CUSTOMER_URL + 'update_employee_for_employee', json=update_employee_data)
+    if response_customer.status_code != 200:
+        logError(get_api(request), ' 고객서버 데이터 변경 중 에러: {}'.format(response_customer.json()))
+        return ReqLibJsonResponse(response_customer)
+
     passer.save()
     temp_passer.delete()
 
