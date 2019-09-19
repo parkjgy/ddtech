@@ -543,17 +543,18 @@ def reg_employee_for_customer(request):
             # dt_reg=datetime.datetime.now(),  # default
         )
         new_notification.save()
-    push_contents = {
-        'target_list': push_list,
-        'func': 'user',
-        'isSound': True,
-        'badge': 1,
-        'contents': {'title': '업무 요청',
-                     'subtitle': '{}: {}'.format(work_place_name, work_name_type),
-                     'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                     }
-    }
-    send_push(push_contents)
+    if len(push_list) > 0:
+        push_contents = {
+            'target_list': push_list,
+            'func': 'user',
+            'isSound': True,
+            'badge': 1,
+            'contents': {'title': '업무 요청',
+                         'subtitle': '{}: {}'.format(work_place_name, work_name_type),
+                         'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                         }
+        }
+        send_push(push_contents)
 
     return REG_200_SUCCESS.to_json_response({'result': phones_state})
 
