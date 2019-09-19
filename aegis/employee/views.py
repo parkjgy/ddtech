@@ -462,6 +462,7 @@ def reg_employee_for_customer(request):
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
+        is_push = False
         if phone_no in passer_id_dict.keys():
             # 등록된 근로자이면
             phones_state[phone_no] = passer_id_dict[phone_no]
@@ -480,6 +481,12 @@ def reg_employee_for_customer(request):
                 if len(find_notification_list) > 0:  # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
                     phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
                     continue
+            elif passer_feature.pType == 10 or passer_feature.pType == 20:
+                if len(passer_feature.push_token) > 30:
+                    # 앱이 설치되어 있는 경우 push
+                    push_list.append({'id': passer_feature.id, 'token': passer_feature.push_token, 'pType': passer_feature.pType})
+                    is_push = True
+
             # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
             for employee in employee_list:
                 employee_works = Works(employee.get_works())
@@ -494,13 +501,6 @@ def reg_employee_for_customer(request):
                     employee.save()
         else:
             phones_state[phone_no] = -1
-
-        is_push = False
-        if passer.pType == 10 or passer.pType == 20:
-            if len(passer.push_token) > 30:
-                # 앱이 설치되어 있는 경우 push
-                push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
-                is_push = True
 
         is_sms_fail = True
         if not settings.IS_TEST:
