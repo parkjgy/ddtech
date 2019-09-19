@@ -329,7 +329,8 @@ def reg_employee_for_customer(request):
             {
               "message": "정상적으로 처리되었습니다.",
               "result": {
-                "01025573555": 2,   # 고객이 앱을 설치했음
+                "01025573555": 2,   # 고객이 앱을 설치했고 토큰이 있어서 push 를 보낸다.
+                "01084333579": 1,   # 고객이 앱을 설치했지만 토큰이 없어서 SMS 를 보냈다.
                 "01046755165": -1,  # 고객이 앱을 아직 설치하지 않았음
                 "01011112222": -11, # 다른 업무와 기간이 겹쳤다.
                 "01055557777": -31  # 근로자가 받을 수 있는 요청의 갯수가 넘었다.
@@ -376,6 +377,7 @@ def reg_employee_for_customer(request):
         phone_numbers = rqst.getlist('phones')
     logSend('  - phone numbers: {}'.format(phone_numbers))
 
+    # 업무 검색 >> result: work
     find_works = Work.objects.filter(customer_work_id=customer_work_id)
     if len(find_works) == 0:
         work = Work(
@@ -393,29 +395,39 @@ def reg_employee_for_customer(request):
 
     # 업무 요청 전화번호로 등록된 근로자 중에서 업무 요청을 할 수 없는 근로자를 가려낸다.
     # [phone_numbers] - [업무 중이고 예약된 근로자]
+    # 출입자 검색 >> result: passer_list
     passer_list = Passer.objects.filter(pNo__in=phone_numbers)
-    passer_id_dict = {}  # passser_id_dict = {'01033335555': 99, '전환번호': passer_id}
-    for passer in passer_list:
-        passer_id_dict[passer.pNo] = passer.id
-    logSend('  - passer_id_dict: {}'.format(passer_id_dict))
+    # 출입자 전화번호 를 키로하는 dict 만들기
+    passer_pNo_dict = {passer.pNo: passer for passer in passer_list}
+    logSend('  - passer_pNo_dict: {}'.format(passer_pNo_dict))
+
+    # 출입자 list에서 근로자 id list 만들기
     employee_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
-    employee_status = {}  # {1:-11}
+    # 근로자 list 로 업무 중복 근로자 찾기
+    employee_status = {}  # {1:-11} 업무 중복되는 근로자 id 를 key 로하는 근로자 dict
     logSend(' employee_status: {}'.format(employee_status))
     for employee in employee_list:
         works = Works(employee.get_works())
         logSend('  1. 현재 업무: {} vs 새 업무: {}'.format(works.data, {'id': work.id, 'begin': dt_begin, 'end': dt_end}))
+        # 업무 중에 같은 업무가 있으면 삭제한다.
+        for work_dict in works.data:
+            if work_dict['id'] == work.id:
+                works.data.remove(work_dict)
         if works.is_overlap({'id': work.id, 'begin': dt_begin, 'end': dt_end}):
             # 중복되는 업무가 있다.
-            employee_status[employee.id] = -11
-        work_counter = works.work_counter(work.id)
-        if work_counter[0] >= 1:
-            if work_counter[1] >= 1:
-                employee_status[employee.id] = -31
-        elif work_counter[1] >= 2:
-            employee_status[employee.id] = -31
+            employee_status[employee.id] = -11  # 기간이 중복된 경우
+        # 업무 요청 갯수 제한 확인
+        work_counter = works.work_counter(work.id)  # (count_started, count_reserve) 시잔된, 예정된 업무 갯수
+        if work_counter[0] >= 1:  # count_started 시작된 업무 갯수가 한개 이상이면
+            if work_counter[1] >= 1:  # 예정된 업무 갯수가 하나 이상이면
+                employee_status[employee.id] = -31  # 받을 수 있는 업무 갯수 제한에 걸림
+        elif work_counter[1] >= 2:  # 예정된 업무 갯수가 2개 이상이면
+            employee_status[employee.id] = -31  # 받을 수 있는 업무 갯수 제한에 걸림
         logSend(' employee_status: {}'.format(employee_status))
     logSend('  - bad condition phone: {} (기간이 중복되는 업무가 있는 근로자)'.format(employee_status))
+
+    # 기간 중복이나 업무 갯수 제한에 걸린 전화번호 를 걸러낸 전화번호 찾기
     phones_state = {}
     for passer in passer_list:
         if passer.employee_id > 0:
@@ -424,7 +436,18 @@ def reg_employee_for_customer(request):
                 # 출입자의 근로자가 기간 중복되는 근로자에 포함되면
                 phones_state[passer.pNo] = -11  # employee_status[passer.employee_id] == -11
     last_phone_numbers = [phone_no for phone_no in phone_numbers if phone_no not in phones_state.keys()]
-    logSend('  - last_phone_numbers: {}'.format(last_phone_numbers))
+    logSend('  - last_phone_numbers: {} (기간 중복/업무 갯수 제한을 걸러낸 전화번호)'.format(last_phone_numbers))
+
+    # 업무 요청이 등록된 전화번호 삭제처
+    notification_list = Notification_Work.objects.filter(is_x=False,
+                                                         customer_work_id=customer_work_id,
+                                                         employee_pNo__in=phone_numbers)
+    # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에...
+    # 업무 요청이 이상 증상을 보여 삭제하지 않고 is_x 로 처리: 2019/09/10
+    for notification in notification_list:
+        notification.is_x = True
+        notification.save()
+
     # 등록된 근로자 중에서 전화번호로 업무 요청
     msg = '이지체크\n' \
           '새로운 업무를 앱에서 확인해주세요.\n' \
@@ -449,30 +472,29 @@ def reg_employee_for_customer(request):
         # 'msg': msg,
     }
 
-    # 업무 요청이 등록된 전화번호
-    notification_list = Notification_Work.objects.filter(is_x=False,
-                                                         customer_work_id=customer_work_id,
-                                                         employee_pNo__in=last_phone_numbers)
-    # 업무 요청 삭제 - 업무 요청을 새로 만들기 때문에...
-    # 업무 요청이 이상 증상을 보여 삭제하지 않고 is_x 로 처리: 2019/09/10
-    for notification in notification_list:
-        notification.is_x = True
-        notification.save()
     push_list = []
     for phone_no in last_phone_numbers:
         logSend('  - phone_no: {}'.format(phone_no))
         is_feature_phone = False
-        is_push = False
-        if phone_no in passer_id_dict.keys():
-            # 등록된 근로자이면
-            phones_state[phone_no] = passer_id_dict[phone_no]
-            # 등록된 근로자 중에서 피쳐폰 근로자 검색
-            for passer in passer_list:
-                if passer.pNo == phone_no:
-                    passer_feature = passer
-                    break
-            if passer_feature.pType == 30:
-                # 피쳐폰이면 현재 요청 업무외 추가 요청을 막는다.
+        if phone_no in passer_pNo_dict.keys():  # 출입자로 이미 등록된 근로자 일 때
+            # 피쳐폰이면 다른 요청업무가 없을 때만 문자를 보낸다.
+            # 아이폰이면 token 을 확인하고 push 를 보낸다.
+            # 안드로이드폰이면 token 을 확인하고 push 를 보낸다.
+            phones_state[phone_no] = 1  # 등록된 SMS 대상
+            passer = passer_pNo_dict[phone_no]
+            if passer.pType == 10:  # 아이폰
+                if len(passer.push_token) < 64:  # 토큰 없음 SMS 보냄
+                    logSend('   SMS: iOS {}'.format(phone_no))
+                else:
+                    push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+                    phones_state[phone_no] = 2  # push 대상
+            elif passer.pType == 20:  # 안드로이드폰
+                if len(passer.push_token) < 64:  # 토큰 없음 SMS 보냄
+                    logSend('   SMS: android {}'.format(phone_no))
+                else:
+                    push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+                    phones_state[phone_no] = 2  # push 대상
+            elif passer.pType == 30:  # 피쳐폰
                 is_feature_phone = True
                 find_notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
                 logSend('  - notification list (pNo:{}) : {}'.format(phone_no,
@@ -481,63 +503,46 @@ def reg_employee_for_customer(request):
                 if len(find_notification_list) > 0:  # 위에서 업무 요청을 모두 지웠기 때문에 이 요청은 갯수에 안들어 간다.
                     phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
                     continue
-            elif passer_feature.pType == 10 or passer_feature.pType == 20:
-                if len(passer_feature.push_token) > 30:
-                    # 앱이 설치되어 있는 경우 push
-                    push_list.append({'id': passer_feature.id, 'token': passer_feature.push_token, 'pType': passer_feature.pType})
-                    is_push = True
-
-            # 등록된 근로자가 보관하고 있는 업무의 기간을 변경한다.
-            for employee in employee_list:
-                employee_works = Works(employee.get_works())
-                logSend('  - employee id: {}, works: {}'.format(employee.id, employee_works.data))
-                if employee_works.find(work.id):
-                    del employee_works.data[employee_works.index]
-                    logSend('  - employee id: {}, works: {}'.format(employee.id, employee_works.data))
-                    # work = works.data[works.index]
-                    # work['begin'] = dt_begin_employee
-                    # work['end'] = dt_end_employee
-                    employee.set_works(employee_works.data)
-                    employee.save()
         else:
-            phones_state[phone_no] = -1
+            phones_state[phone_no] = -1  # 등록안된 SMS 대상
 
-        is_sms_fail = True
-        if not settings.IS_TEST:
-            logSend('  - sms 보냄 phone: {}'.format(phone_no))
-            # SMS 를 보낸다.
-            rData['receiver'] = phone_no
-            if is_feature_phone:
-                # 피쳐폰일 때는 문자형식을 바꾼다.
-                rData['msg'] = msg_feature
+        if phones_state[phone_no] in [-1, 1]:
+            if not settings.IS_TEST:
+                logSend('  - sms 보냄 phone: {}'.format(phone_no))
+                # SMS 를 보낸다.
+                rData['receiver'] = phone_no
+                if is_feature_phone:
+                    # 피쳐폰일 때는 문자형식을 바꾼다.
+                    rData['msg'] = msg_feature
+                else:
+                    rData['msg'] = msg
+                response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
+                logSend('  - SMS result: {}'.format(response_SMS.json()))
+                if int(response_SMS.json()['result_code']) < 0:
+                    phones_state[phone_no] = -101
+                    logSend('  - sms send fail phone: {}'.format(phone_no))
+                    continue
             else:
-                rData['msg'] = msg
-            response_SMS = requests.post('https://apis.aligo.in/send/', data=rData)
-            logSend('  - SMS result: {}'.format(response_SMS.json()))
-            is_sms_fail = int(response_SMS.json()['result_code']) < 0
-        else:
-            is_sms_fail = len(phone_no) < 10
+                if len(phone_no) < 10:
+                    phones_state[phone_no] = -101
+                    logSend('  - sms send fail phone: {} (전화번호 너무 짧다.)'.format(phone_no))
+                    continue
 
-        if not is_push and is_sms_fail:
-            # push 를 보내지 않고 전화번호 에러로 문자를 보낼 수 없음.
-            phones_state[phone_no] = -101
-            logSend('  - sms send fail phone: {}'.format(phone_no))
-        else:
-            new_notification = Notification_Work(
-                work_id=work.id,
-                customer_work_id=customer_work_id,
-                employee_id=phones_state[phone_no],
-                employee_pNo=phone_no,
-                dt_answer_deadline=dt_answer_deadline,
-                dt_begin=str_to_dt(dt_begin_employee),
-                dt_end=str_to_dt(dt_end_employee),
-                # 이하 시스템 관리용
-                work_place_name=work_place_name,
-                work_name_type=work_name_type,
-                # is_x=False,  # default
-                # dt_reg=datetime.datetime.now(),  # default
-            )
-            new_notification.save()
+        new_notification = Notification_Work(
+            work_id=work.id,
+            customer_work_id=customer_work_id,
+            employee_id=phones_state[phone_no],
+            employee_pNo=phone_no,
+            dt_answer_deadline=dt_answer_deadline,
+            dt_begin=str_to_dt(dt_begin_employee),
+            dt_end=str_to_dt(dt_end_employee),
+            # 이하 시스템 관리용
+            work_place_name=work_place_name,
+            work_name_type=work_name_type,
+            # is_x=False,  # default
+            # dt_reg=datetime.datetime.now(),  # default
+        )
+        new_notification.save()
     push_contents = {
         'target_list': push_list,
         'func': 'user',
@@ -1947,7 +1952,8 @@ def update_my_info(request):
             'name': '이름',
             'bank': '기업은행',
             'bank_account': '12300000012000',
-            'pNo': '010-2222-3333',     # 추후 SMS 확인 절차 추가
+            'pNo': '010-2222-3333',     # 전화번호 인증 따로 있어서 사용 안함
+            'push_token': push_token,        # push token
 
             'work_start':'08:00',       # 출근시간: 24시간제 표시
             'working_time':'8',        # 근무시간: 시간 4 ~ 12
@@ -2030,6 +2036,14 @@ def update_my_info(request):
         # 고객 서버 update data
         is_update_customer = True
         update_employee_data['pNo'] = pNo
+
+    if 'push_token' in rqst:
+        push_token = rqst['push_token']
+        if len(push_token) < 64:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': 'push_token 값이 너무 짧습니다.'})
+        change_log = '{}  push_token: {} > {}'.format(change_log, passer.push_token, push_token)
+        passer.push_token = push_token
+        logSend('  update push token: {}'.format(passer.push_token))
 
     if 'bank' in rqst or 'bank_account' in rqst:
         if 'bank' not in rqst or 'bank_account' not in rqst:

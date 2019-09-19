@@ -451,8 +451,9 @@ class Works(object):
             e_end = str_to_dt(element['end'])
             if e_begin < dt_today < e_end:
                 count_started += 1
-            else:
+            elif dt_today < e_begin:
                 count_reserve += 1
+            # 지난 업무는 갯수에서 제외한다.
         return (count_started, count_reserve)
         # if count_started > 0:
         #     if count_reserve > 0:
