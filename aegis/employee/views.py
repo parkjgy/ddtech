@@ -810,7 +810,9 @@ def notification_accept(request):
             del employee_works.data[employee_works.index]
         employee.set_works(employee_works.data)
         employee.save()
-    notification.delete()
+    # notification.delete()
+    notification.is_x = True
+    notification.save()
     #
     # to customer server
     # 근로자가 수락/거부했음
