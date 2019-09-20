@@ -39,8 +39,6 @@ from operator import itemgetter
 
 # APNs
 from config.apns import notification
-# import time
-# from config.apns import APNs, Frame, Payload
 
 
 @cross_origin_read_allow
@@ -1295,7 +1293,15 @@ def pass_verify(request):
         if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
             pass_history.dt_in_em = dt_touch
-
+    # push to staff
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+        # logSend('  {}'.format(employee.name))
+        work = Work.objects.get(id=work_id)
+        # logSend('  {} {}'.format(work.work_place_name, work.work_name_type))
+        push_staff(employee.name, dt_touch, work.customer_work_id, is_in)
+    except Exception as e:
+        logError(get_api(request), ' push fail: employee or work not found {}'.format(e))
     #
     # 정상, 지각, 조퇴 처리
     #
@@ -1303,6 +1309,22 @@ def pass_verify(request):
 
     pass_history.save()
     return REG_200_SUCCESS.to_json_response()
+
+
+def push_staff(name, dt, customer_work_id, is_in):
+    # logSend('  {} {} {} {}'.format(name, dt, customer_work_id, is_in))
+    push_info = {
+        'name': name,
+        'dt': dt_null(dt),
+        'customer_work_id': customer_work_id,
+        'is_in': is_in,
+    }
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'push_from_employee', json=push_info)
+    logSend('  {}'.format({'url': r.url, 'POST': push_info, 'STATUS': r.status_code, 'R': r.json()}))
+    # result_json = r.json()
+    # return REG_200_SUCCESS.to_json_response(result_json)
+    return
 
 
 @cross_origin_read_allow

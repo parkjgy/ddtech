@@ -77,6 +77,9 @@ urlpatterns = [
     # url(r'customer/staff_list_my_work$', views.staff_list_my_work, name='staff_list_my_work'),
     # url(r'customer/staff_work_list_employee$', views.staff_work_list_employee, name='staff_work_list_employee'),
     # url(r'customer/staff_work_update_employee$', views.staff_work_update_employee, name='staff_work_update_employee'),
+
+    url(r'customer/push_from_employee', views.push_from_employee, name='push_from_employee'),
+
     url(r'customer/ddtech_update_syatem$', views.ddtech_update_syatem, name='ddtech_update_syatem'),
     url(r'customer/tk_check_employees$', views.tk_check_employees, name='tk_check_employees'),
     url(r'customer/tk_list_employees$', views.tk_list_employees, name='tk_list_employees'),

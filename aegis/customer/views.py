@@ -32,6 +32,9 @@ from .models import Employee_Backup
 
 from config.status_collection import *
 
+# APNs
+from config.apns import notification
+
 
 @cross_origin_read_allow
 def table_reset_and_clear_for_operation(request):
@@ -3555,6 +3558,7 @@ def staff_fg(request):
     GET
         login_id=abc
         login_pw=password
+        toten=...
     response
         STATUS 200
             {
@@ -3585,12 +3589,13 @@ def staff_fg(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['login_id', 'login_pw'])
+    parameter_check = is_parameter_ok(rqst, ['login_id', 'login_pw', 'token_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     login_id = parameter_check['parameters']['login_id']
     login_pw = parameter_check['parameters']['login_pw']
+    token = parameter_check['parameters']['token']
 
     staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
@@ -3609,6 +3614,7 @@ def staff_fg(request):
     app_user = staffs[0]
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
+    app_user.push_token = token
     app_user.save()
     # request.session['id'] = app_user.id
     # request.session.save()
@@ -4959,6 +4965,67 @@ def staff_work_update_employee(request):
     staff.save()
 
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def push_from_employee(request):
+    """
+    << 근로자 서버용 >> 근로자서버에서 고객서버를 이용해 push 롤 보낼 때 사용
+    http://0.0.0.0:8000/customer/push_from_employee?name=박종기&dt=2019-09-20 23:00:00&customer_work_id:wG0ueTnPydGK17ktSlOgiA&is_in=0
+    GET
+        'name': '이순신'               # 근로자 이름
+        'dt': '2019-09-20 08:30:00'  # 출퇴근 날짜 시간
+        'customer_work_id': *******  # 암호화된 업무 id
+        'is_in': True                # 출근인가?
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 422
+            {'message': 'work of staff mismatch {}'.format(e)}
+            {'message': 'none token: {}'.format(staff.push_token)}
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['name', 'dt', 'customer_work_id_!', 'is_in'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    name = parameter_check['parameters']['name']
+    dt = str_to_datetime(parameter_check['parameters']['dt'])
+    work_id = parameter_check['parameters']['customer_work_id']
+    is_in = parameter_check['parameters']['is_in']
+
+    # logSend('  - {} {} {} {}'.format(name, dt, work_id, is_in))
+    try:
+        work = Work.objects.get(id=work_id)
+        logSend(work.staff_id, work.staff_name)
+        staff = Staff.objects.get(id=work.staff_id)
+    except Exception as e:
+        logError(get_api(request), ' work or staff mismatch {}'.format(e))
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'work of staff mismatch {}'.format(e)})
+    if len(staff.push_token) < 64:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'none token: {}'.format(staff.push_token)})
+    push_contents = {
+        'target_list': [{'id': staff.id, 'token': staff.push_token, 'pType': staff.pType}],
+        'func': 'mng',
+        'isSound': True,
+        'badge': 1,
+        'contents': {
+            'title': '{}*{}님 {}, 시간: {}'.format(name[:1], name[len(name)-1:], ("출근" if is_in else "퇴근"), dt.strftime("%H:%M")),
+            # 'subtitle': '시간: {}'.format(dt.strftime("%H:%M")),
+            'body': {'action': 'AlertInOut', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
+        }
+    }
+    response = notification(push_contents)
+
+    return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 
 
 @cross_origin_read_allow
