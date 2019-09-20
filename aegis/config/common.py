@@ -387,15 +387,15 @@ class Works(object):
     def add(self, x):
         """
         새로운 업무를 추가한다.
-        단, 같은 id 가 있으면 update 한다.
+        단, 같은 id 가 있으면 update 한다. 2019-09-20 같은 id 가 있어도 삭제하지 않는다.(같은 업무를 하다가 일정기간 지나서 다시 하는 경우)
         :return: None or before data
         """
-        for element in self.data:
-            if element['id'] == x['id']:
-                before_x = element
-                self.data.remove(element)
-                self.data.append(x)
-                return before_x
+        # for element in self.data:
+        #     if element['id'] == x['id']:
+        #         before_x = element
+        #         self.data.remove(element)
+        #         self.data.append(x)
+        #         return before_x
         self.data.append(x)
         logSend(self.data)
         return None

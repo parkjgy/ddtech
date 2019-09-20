@@ -438,7 +438,7 @@ def reg_employee_for_customer(request):
     last_phone_numbers = [phone_no for phone_no in phone_numbers if phone_no not in phones_state.keys()]
     logSend('  - last_phone_numbers: {} (기간 중복/업무 갯수 제한을 걸러낸 전화번호)'.format(last_phone_numbers))
 
-    # 업무 요청이 등록된 전화번호 삭제처
+    # 업무 요청이 등록된 전화번호 삭제처리
     notification_list = Notification_Work.objects.filter(is_x=False,
                                                          customer_work_id=customer_work_id,
                                                          employee_pNo__in=phone_numbers)

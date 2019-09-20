@@ -13,6 +13,7 @@ Copyright 2012 - 2019. Park, Jong-Kee. All rights reserved.
 
 from django.conf import settings
 import threading
+import requests
 
 # from APNSWrapper import *
 # from AndroidMessage import *
@@ -84,37 +85,15 @@ def push_notification(func, target_list, isSound, badge, contents):
         else:
             sound = None
         apns_list = []
+        fcm_list = []
         for target in target_list:
             logSend('^ id: {}, type: {}, token: {}'.format(target['id'], target['pType'], target['token']))
             if target['pType'] == 10:
                 apns_list.append(target)
-            else:
-                if (func[0:5] == 'voip_'):
-                    func = func[5:]
-                """
-                if (functionName[0:3] == 'app') :
-                    gcmKey = 'AIzaSyCRNWBpY_7buR6cDSbaTmdvTkvwNX7MjEk' # 정용조
-                else :
-                    gcmKey = 'AIzaSyAXEuxGB6aUDrewz50yJaQjgyEaI5bOEXM' # 정용조
-                """
-                # gcmKey = 'AIzaSyD0KiBW4vFeF_qK6g_0sIHcSJ66KQyTeKk' # 곽명석
-                # gcmKey = 'AIzaSyBjAijsOskVybwlWbEo17XNDS9Q7XFOCC0' # 정용조 설레
-
-                gcmKey = 'AIzaSyCSbKzbIwHjMc9IeSRmNKCs5tLgL_t8BB8'  # 'AIzaSyBvwG9bqJnnygadmDwjf6AbPeyZUIrvlUU'
-                sender = GoogleCloudMessaging(gcmKey)
-                sender.registrationId = token
-                # sender.collapseKey = 1
-                # logSend('>>> push GCM ' + str(data))
-                data['alert'] = alert
-                data['isSound'] = isSound
-                logSend('>>> push GCM ' + str(data))
-                sender.data = data
-
-                response = sender.sendMessage()
-                result = "success: GCM response = " + str(target_id) + ', ' + str(response)  # + ', data = ' + str(data)
-                # logSend('>>> debugging 02 ' + result)
+            elif target['pType'] == 20:
+                fcm_list.append(target)
         result = APNs(target_type, apns_list, None, sound, badge, contents)
-
+        fcm_result = fcm(target_type, fcm_list, None, sound, badge, contents)
         return result
     except Exception as e:
         logSend('   PUSH ' + func + ' Fail: ' + str(e))
@@ -215,4 +194,52 @@ def notification(push_contents):
     return "threading"
 
 
+"""
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user', 
+        'isSound': True, 
+        'badge': 3,
+        'contents': {'title': '제목', 
+                     'subtitle': '부제목', 
+                     'body': {'action': 'testPush', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     }
+    }
+"""
+def fcm(target_type, target_list, alert, sound, badge, contents):
+    if target_type == 'user':
+        logSend('   >> User')
+        certFile = settings.APNS_PEM_EMPLOYEE_FILE
+    elif target_type == 'mng':
+        logSend('   >> staff')
+        certFile = settings.APNS_PEM_MANAGER_FILE
+    else:
+        return {'message': 'targetType unknown - \'user\' or \'mng\''}
+    token_list = [target['token'] for target in target_list]
+    logSend('   >> token_list: {}'.format(token_list))
+    fcm_notification = contents
+    fcm_notification['sound'] = sound
+    fcm_notification['badge'] = badge
+    result = send_fcm_notification(token_list, fcm_notification)
+    return {'message': result}
 
+
+def send_fcm_notification(token_list, fcm_notification):
+    # fcm 푸시 메세지 요청 주소
+    url = 'https://fcm.googleapis.com/fcm/send'
+
+    # 인증 정보(서버 키)를 헤더에 담아 전달
+    headers = {
+        'Authorization': 'key=AAAAMIzNhok:APA91bFaI3toGWuYJZ4gNh8CnVxMhmebdLg-SQh94nrUoGQfBrs-X-P0Yiw4fh8L3-7xnEGvro1f4bP3dfilytFVEr2BWEeQkD9hauTD7TW_D77CML3UDZbnCiRUSPrx8iGVCuYuuPYl',
+        'Content-Type': 'application/json; UTF-8',
+    }
+
+    # 보낼 내용과 대상을 지정
+    content = {
+        'registration_ids': token_list,
+        'notification': fcm_notification,
+    }
+    logSend('   >> content: {}'.format(content))
+
+    # json 파싱 후 requests 모듈로 FCM 서버에 요청
+    return requests.post(url, data=json.dumps(content), headers=headers)
