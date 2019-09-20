@@ -217,9 +217,12 @@ def fcm(target_type, target_list, alert, sound, badge, contents):
         return {'message': 'targetType unknown - \'user\' or \'mng\''}
     token_list = [target['token'] for target in target_list]
     logSend('   >> token_list: {}'.format(token_list))
-    fcm_notification = contents
-    fcm_notification['sound'] = sound
-    fcm_notification['badge'] = badge
+    fcm_notification = {
+        'title': contents['title'],
+    }
+    # fcm_notification = contents
+    # fcm_notification['sound'] = sound
+    # fcm_notification['badge'] = badge
     result = send_fcm_notification(token_list, fcm_notification)
     return {'message': result}
 
