@@ -909,8 +909,11 @@ def passer_reg(request):
 @cross_origin_read_allow
 def pass_reg(request):
     """
-    출입등록 : 앱에서 비콘을 3개 인식했을 때 서버에 출근(퇴근)으로 인식하고 보내는 기능
-    http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
+    출입등록 : 앱에서 인식된 비콘 값을 서버로 보낸다.
+        - 인식은 앱이 포그라운드가 되어있는 시간동안에 인식된 값이다.
+        - 앱이 포그라운드가 되면 그전 비콘 값을 지우고 새로 수집한다.
+        - 수집 대상은 비콘 처음 인식시간, 처음 인식한 신호 강도, 마지막 인식시간, 처음과 마지막 인식시간 동안 수집된 갯
+        http://0.0.0.0:8000/employee/pass_reg?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
     POST : json
         {
             'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
@@ -918,9 +921,9 @@ def pass_reg(request):
             'is_in' : 1, # 0: out, 1 : in
             'major' : 11001, # 11 (지역) 001(사업장)
             'beacons' : [
-                 {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70},
-                 {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70},
-                 {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70}
+                 {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
+                 {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
+                 {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
             ]
             'x': latitude (optional),
             'y': longitude (optional),
@@ -964,9 +967,9 @@ def pass_reg(request):
     else:
         today = dt_str(datetime.datetime.now(), "%Y-%m-%d")
         beacons = [
-            {'minor': 11001, 'dt_begin': '{} 08:25:30'.format(today), 'rssi': -70},
-            {'minor': 11002, 'dt_begin': '{} 08:25:31'.format(today), 'rssi': -60},
-            {'minor': 11003, 'dt_begin': '{} 08:25:32'.format(today), 'rssi': -50}
+            {'minor': 11001, 'dt_begin': '{} 08:25:30'.format(today), 'rssi': -70, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
+            {'minor': 11002, 'dt_begin': '{} 08:25:31'.format(today), 'rssi': -60, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
+            {'minor': 11003, 'dt_begin': '{} 08:25:32'.format(today), 'rssi': -50, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
         ]
     x = parameter_check['parameters']['x']
     y = parameter_check['parameters']['y']
@@ -1015,6 +1018,8 @@ def pass_reg(request):
             minor=beacons[i]['minor'],
             dt_begin=beacons[i]['dt_begin'],
             rssi=beacons[i]['rssi'],
+            dt_end=beacons[i]['dt_end'],
+            count=beacons[i]['count'],
             x=x,
             y=y,
         )
@@ -1293,6 +1298,9 @@ def pass_verify(request):
         if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
             pass_history.dt_in_em = dt_touch
+        # elif :  # 앱 실행 후 처음이 [출근]이라 [퇴근]눌러야 할 경우 [출근]을 눌러서 [츨근]을 덮어 써야하는 상황
+        # 첫날 데이터가 퇴근 인 상황에서 출근으로 처리하면 퇴근이 안되는 현상
+
     # push to staff
     try:
         employee = Employee.objects.get(id=passer.employee_id)
