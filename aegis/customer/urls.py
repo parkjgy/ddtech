@@ -53,6 +53,7 @@ urlpatterns = [
 
     url(r'customer/staff_version$', views.staff_version, name='staff_version'),
     url(r'customer/staff_fg$', views.staff_fg, name='staff_fg'),
+    url(r'customer/staff_update_me', views.staff_update_me, name='staff_update_me'),
 
     url(r'customer/staff_employees_at_day$', views.staff_employees_at_day, name='staff_employees_at_day'),
     url(r'customer/staff_employees$', views.staff_employees, name='staff_employees'),
@@ -67,7 +68,6 @@ urlpatterns = [
     url(r'customer/staff_update_employee$', views.staff_update_employee, name='staff_update_employee'),
 
     # 이하 사용 보류
-    # url(r'customer/staff_update_me$', views.staff_update_me, name='staff_update_me'),
     # url(r'customer/staff_request_certification_no$', views.staff_request_certification_no,
     #     name='staff_request_certification_no'),
     # url(r'customer/staff_verify_certification_no$', views.staff_verify_certification_no,

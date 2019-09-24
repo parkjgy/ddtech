@@ -165,6 +165,9 @@ def check_version(request):
                 passer.save()
             elif rqst['uuid'] != passer.uuid:
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
+        if 'v' in rqst:
+            passer.app_version = rqst['v']
+            passer.save()
 
     parameter_check = is_parameter_ok(rqst, ['v'])
     if not parameter_check['is_ok']:
@@ -1018,11 +1021,13 @@ def pass_reg(request):
             minor=beacons[i]['minor'],
             dt_begin=beacons[i]['dt_begin'],
             rssi=beacons[i]['rssi'],
-            dt_end=beacons[i]['dt_end'],
-            count=beacons[i]['count'],
             x=x,
             y=y,
         )
+        if 'dt_end' in beacons[i]:
+            new_beacon_record.dt_end = beacons[i]['dt_end']
+        if 'count' in beacons[i]:
+            new_beacon_record.count = beacons[i]['count']
         new_beacon_record.save()
 
     # 통과 기록 저장
@@ -1193,17 +1198,6 @@ def pass_verify(request):
     if not employee_works.is_active():
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     work_id = employee_works.data[employee_works.index]['id']
-    # 통과 기록 저장
-    new_pass = Pass(
-        passer_id=passer_id,
-        is_in=is_in,
-        is_beacon=False,
-        dt=dt,
-        x=x,
-        y=y,
-    )
-    new_pass.save()
-
     #
     # Pass_History update
     #
@@ -1316,6 +1310,18 @@ def pass_verify(request):
     update_pass_history(pass_history)
 
     pass_history.save()
+
+    # 통과 기록 저장
+    new_pass = Pass(
+        passer_id=passer_id,
+        is_in=is_in,
+        is_beacon=False,
+        dt=dt,
+        x=x,
+        y=y,
+    )
+    new_pass.save()
+
     return REG_200_SUCCESS.to_json_response()
 
 

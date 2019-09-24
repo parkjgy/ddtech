@@ -75,6 +75,8 @@ class Staff(models.Model):
     dt_login = models.DateTimeField(null=True, blank=True) # 마지막 로그인 시간 (마지막 로그인 시간으로 부터 15분이 지나면 id pw 확인)
     is_site_owner = models.BooleanField(default=False) # 고객사 담당자 인가?
     is_manager = models.BooleanField(default=False) # 고객사 관리자 인가?
+    is_push_touch = models.BooleanField(default=False) # 근로자의 출퇴근을 푸시로 받는다?
+    app_version = models.CharField(max_length=20, default='') # 관리자 앱 버전
 
 
 class Work_Place(models.Model):

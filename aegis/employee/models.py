@@ -111,6 +111,7 @@ class Passer(models.Model):
     pType = models.IntegerField(default = 0)        # 0:unkown, 10:iPhone, 20:Android, 30:피쳐폰
     push_token = models.CharField(max_length = 255, default='')
     uuid = models.CharField(max_length = 64, default=None)  # 앱이 하나의 폰에만 설치되서 사용하도록 하기위한 기기 고유 값을 서버에서 만들어 보내는 값
+    app_version = models.CharField(max_length = 20, default=None)  # 앱 버전
 
     employee_id = models.IntegerField(default = -1) # 근로자 id -2:전화번호로 출입만 관리되는 사용자, -1: 근로자 정보가 없는 근로자, 1 이상: 근로자 정보가 있는 근로자
     notification_id = models.IntegerField(default = -1)    # 출입을 알릴 id (발주사, 파견 도급사, 협력사)

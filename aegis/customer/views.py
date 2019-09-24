@@ -2318,7 +2318,7 @@ def reg_employee(request):
     new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
                          "work_place_name": work.work_place_name,
                          "work_name_type": work.name + ' (' + work.type + ')',
-                         "dt_begin": dt_str(dt_begin, '%Y/%m/%d'),   # work.dt_begin.strftime('%Y/%m/%d'),
+                         "dt_begin": dt_str(dt_begin, '%Y/%m/%d'),  # work.dt_begin.strftime('%Y/%m/%d'),
                          "dt_end": work.dt_end.strftime('%Y/%m/%d'),
                          "staff_name": work.staff_name,
                          "staff_phone": work.staff_pNo,
@@ -2907,7 +2907,10 @@ def list_employee(request):
 
     if datetime.datetime.now() < dt_today:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로 내용은 오늘까지만 볼 수 있습니다.'})
-    logSend('  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(), dt_today, (work.dt_begin - timedelta(seconds=1))))
+    logSend(
+        '  work.dt_begin: {}, now: {}, dt_today: {}, work.dt_begin: {}'.format(work.dt_begin, datetime.datetime.now(),
+                                                                               dt_today,
+                                                                               (work.dt_begin - timedelta(seconds=1))))
     # if work.dt_begin < datetime.datetime.now() and dt_today < work.dt_begin:
     if work.dt_begin < datetime.datetime.now():
         # 업무가 이미 시작되었으면
@@ -3530,7 +3533,8 @@ def staff_version(request):
     response_operation = requests.post(settings.OPERATION_URL + 'currentEnv', json={})
     logSend('  current environment', response_operation.status_code, response_operation.json())
     cur_env = response_operation.json()['env_list'][0]
-    dt_check = str_to_datetime(cur_env['dt_android_mng_upgrade'] if phone_type == 'A' else cur_env['dt_iOS_mng_upgrade'])
+    dt_check = str_to_datetime(
+        cur_env['dt_android_mng_upgrade'] if phone_type == 'A' else cur_env['dt_iOS_mng_upgrade'])
     logSend('  DB dt_check: {} vs dt_version: {}'.format(dt_check, dt_version))
     if dt_version < dt_check:
         url_android = "https://play.google.com/store/apps/details?id=com.ddtechi.aegis.manager"
@@ -3558,7 +3562,7 @@ def staff_fg(request):
     GET
         login_id=abc
         login_pw=password
-        toten=...
+        token=...
     response
         STATUS 200
             {
@@ -3615,6 +3619,8 @@ def staff_fg(request):
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
     app_user.push_token = token
+    app_user.app_version = request.META['av']
+    # logSend(request.META)
     app_user.save()
     # request.session['id'] = app_user.id
     # request.session.save()
@@ -3631,13 +3637,15 @@ def staff_fg(request):
         # 해당 사업장의 모든 업무 조회
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
         # works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
-        works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=(dt_today - datetime.timedelta(days=3)))
+        works = Work.objects.filter(work_place_id__in=arr_work_place_id,
+                                    dt_end__gt=(dt_today - datetime.timedelta(days=3)))
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=(dt_today - datetime.timedelta(days=3)))
         # works = Work.objects.filter(staff_id=app_user.id)
         logSend('  app_user id: {}'.format(app_user.id))
-    logSend('  업무 리스트: {}'.format([(work.staff_name, work.work_place_name + ' ' + work.name + '(' + work.type + ')') for work in works]))
+    logSend('  업무 리스트: {}'.format(
+        [(work.staff_name, work.work_place_name + ' ' + work.name + '(' + work.type + ')') for work in works]))
     # 관리자, 현장 소장의 소속 업무 조회 완료
     arr_work = []
     for work in works:
@@ -3696,6 +3704,108 @@ def virtual_work(isWorkStart, work) -> dict:
     else:
         work['dt_begin'] = (datetime.datetime.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
     return work
+
+
+@cross_origin_read_allow
+def staff_update_me(request):
+    """
+    [관리자용 앱]:  자기정보 update (사용 보류)
+        주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
+        response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    POST
+        staff_id = 앱 사용자의 식별 id
+        is_push_touch = 0          # 0: NO (default) 1: YES
+
+        ----- 이하 아직 사용하지 않는다.
+        'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
+        'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
+        'before_pw': '기존 비밀번호',     # 필수
+        'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
+        'name': '이름',
+        'position': '직책',
+        'department': '부서 or 소속',
+        'phone_no': '전화번호',
+        'phone_type': '전화 종류', # 10:iPhone, 20: Android
+        'push_token': 'token',
+        'email': 'id@ddtechi.com'
+    response
+        STATUS 200
+        STATUS 422
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message': 'is_push_touch 는 0/1 중 하나입니다.'}
+            {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'is_push_touch'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    staff_id = int(parameter_check['parameters']['staff_id'])
+    is_push_touch = int(parameter_check['parameters']['is_push_touch'])
+    if is_push_touch > 1 or is_push_touch < 0:
+        return status422(get_api(request), {'message': 'is_push_touch 는 0/1 중 하나입니다.'})
+
+    staffs = Work.objects.filter(id=staff_id)
+    if len(staffs) == 0:
+        logError(get_api(request), ' ServerError: Staff 에 staff_id={} 이(가) 없거나 중복됨'.format(staff_id))
+        return status422(get_api(request), {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
+
+    staff = staffs[0]
+    staff.is_push_touch = is_push_touch
+    staff.save()
+
+    return REG_200_SUCCESS.to_json_response()
+
+    id = rqst['id']  # 암호화된 id
+    login_id = rqst['login_id']  # id 로 사용
+    before_pw = rqst['before_pw']  # 기존 비밀번호
+    login_pw = rqst['login_pw']  # 변경하려는 비밀번호
+    name = rqst['name']  # 이름
+    position = rqst['position']  # 직책
+    department = rqst['department']  # 부서 or 소속
+    phone_no = rqst['phone_no']  # 전화번호
+    phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
+    push_token = rqst['push_token']  # token
+    email = rqst['email']  # id@ddtechi.co
+    print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
+
+    if len(phone_no) > 0:
+        phone_no = phone_no.replace('-', '')
+        phone_no = phone_no.replace(' ', '')
+        print(phone_no)
+
+    if len(id) > 0:
+        staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
+    else:
+        staff = Staff.objects.get(login_id=login_id)
+    if before_pw != staff.login_pw:
+        return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
+
+    if len(login_pw) > 0:
+        staff.login_pw = login_pw
+    if len(name) > 0:
+        staff.name = name
+    if len(position) > 0:
+        staff.position = position
+    if len(department) > 0:
+        staff.department = department
+    if len(phone_no) > 0:
+        staff.pNo = phone_no
+    if len(phone_type) > 0:
+        staff.pType = phone_type
+    if len(push_token) > 0:
+        staff.push_token = push_token
+    if len(email) > 0:
+        staff.email = email
+    staff.save()
+
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -4352,8 +4462,8 @@ def staff_employee_working(request):
     employees = Employee.objects.filter(id=employee_id, work_id=work_id)
     if len(employees) != 1:
         return status422(get_api(request), {'message': 'ServerError: Employee 에 '
-                                                              'employee_id: {}, '
-                                                              'work_id: {} 이(가) 없거나 중복됨'.format(employee_id, work_id)})
+                                                       'employee_id: {}, '
+                                                       'work_id: {} 이(가) 없거나 중복됨'.format(employee_id, work_id)})
     employee = employees[0]
 
     #
@@ -4608,84 +4718,6 @@ def staff_recognize_employee(request):
               }
 
     return REG_200_SUCCESS.to_json_response(result)
-
-
-@cross_origin_read_allow
-def staff_update_me(request):
-    """
-    [관리자용 앱]:  자기정보 update (사용 보류)
-    	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
-    		response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
-    POST
-    	{
-    		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
-    		'login_id': 'id 로 사용된다.',  # 위 id 와 둘 중의 하나는 필수
-    		'before_pw': '기존 비밀번호',     # 필수
-    		'login_pw': '변경하려는 비밀번호',   # 사전에 비밀번호를 확인할 것
-    		'name': '이름',
-    		'position': '직책',
-    		'department': '부서 or 소속',
-    		'phone_no': '전화번호',
-    		'phone_type': '전화 종류', # 10:iPhone, 20: Android
-    		'push_token': 'token',
-    		'email': 'id@ddtechi.com'
-    	}
-    response
-    	STATUS 200
-    	STATUS 604
-    		{'message': '비밀번호가 틀립니다.'}
-    """
-
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
-
-    id = rqst['id']  # 암호화된 id
-    login_id = rqst['login_id']  # id 로 사용
-    before_pw = rqst['before_pw']  # 기존 비밀번호
-    login_pw = rqst['login_pw']  # 변경하려는 비밀번호
-    name = rqst['name']  # 이름
-    position = rqst['position']  # 직책
-    department = rqst['department']  # 부서 or 소속
-    phone_no = rqst['phone_no']  # 전화번호
-    phone_type = rqst['phone_type']  # 전화 종류	10:iPhone, 20: Android
-    push_token = rqst['push_token']  # token
-    email = rqst['email']  # id@ddtechi.co
-    print(id, login_id, before_pw, login_pw, name, position, department, phone_no, phone_type, push_token, email)
-
-    if len(phone_no) > 0:
-        phone_no = phone_no.replace('-', '')
-        phone_no = phone_no.replace(' ', '')
-        print(phone_no)
-
-    if len(id) > 0:
-        staff = Staff.objects.get(id=AES_DECRYPT_BASE64(id))
-    else:
-        staff = Staff.objects.get(login_id=login_id)
-    if before_pw != staff.login_pw:
-        return REG_531_PASSWORD_IS_INCORRECT.to_json_response()
-
-    if len(login_pw) > 0:
-        staff.login_pw = login_pw
-    if len(name) > 0:
-        staff.name = name
-    if len(position) > 0:
-        staff.position = position
-    if len(department) > 0:
-        staff.department = department
-    if len(phone_no) > 0:
-        staff.pNo = phone_no
-    if len(phone_type) > 0:
-        staff.pType = phone_type
-    if len(push_token) > 0:
-        staff.push_token = push_token
-    if len(email) > 0:
-        staff.email = email
-    staff.save()
-
-    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
@@ -4979,6 +5011,7 @@ def push_from_employee(request):
         'is_in': True                # 출근인가?
     response
         STATUS 200
+            {'message': 'staff is push off'}
         STATUS 403
             {'message':'저리가!!!'}
         STATUS 422
@@ -5010,6 +5043,9 @@ def push_from_employee(request):
     except Exception as e:
         logError(get_api(request), ' work or staff mismatch {}'.format(e))
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'work of staff mismatch {}'.format(e)})
+    if not staff.is_push_touch:
+        return REG_200_SUCCESS.to_json_response({'message': 'staff is push off'})
+
     if len(staff.push_token) < 64:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'none token: {}'.format(staff.push_token)})
     push_contents = {
@@ -5018,7 +5054,8 @@ def push_from_employee(request):
         'isSound': True,
         'badge': 1,
         'contents': {
-            'title': '{}*{}님 {}, 시간: {}'.format(name[:1], name[len(name)-1:], ("출근" if is_in else "퇴근"), dt.strftime("%H:%M")),
+            'title': '{}*{}님 {}, 시간: {}'.format(name[:1], name[len(name) - 1:], ("출근" if is_in else "퇴근"),
+                                                dt.strftime("%H:%M")),
             # 'subtitle': '시간: {}'.format(dt.strftime("%H:%M")),
             'body': {'action': 'AlertInOut', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
         }
@@ -5160,7 +5197,9 @@ def tk_list_employees(request):
     else:
         employee_list = Employee.objects.filter(work_id=work_id)
     logSend('  datetime type: {}'.format(type(datetime.datetime.now())))
-    employee_dict_list = [{x: dt_null(employee.__dict__[x]) if type(employee.__dict__[x]) is datetime.datetime else employee.__dict__[x] for x in employee.__dict__.keys() if not x.startswith('_')} for employee in employee_list]
+    employee_dict_list = [
+        {x: dt_null(employee.__dict__[x]) if type(employee.__dict__[x]) is datetime.datetime else employee.__dict__[x]
+         for x in employee.__dict__.keys() if not x.startswith('_')} for employee in employee_list]
     logSend('  employee_dict_list: {}'.format(employee_dict_list))
 
     return REG_200_SUCCESS.to_json_response({'employee_list': employee_dict_list})
@@ -5199,11 +5238,13 @@ def tk_complete_employees(request):
     # work_id = parameter_check['parameters']['work_id']
     dt_complete = str_to_datetime(rqst['dt_complete'])
     dt_complete = dt_complete + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
-    dt_today = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y-%m-%d ") + "00:00:00", "%Y-%m-%d %H:%M:%S")
+    dt_today = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y-%m-%d ") + "00:00:00",
+                                          "%Y-%m-%d %H:%M:%S")
 
     logSend('  origin: {}, dt_complete: {}, dt_today: {}'.format(rqst['dt_complete'], dt_complete, dt_today))
     if dt_today < dt_complete:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '백업할 날짜({})는 오늘({})전이어야 한다.'.format(dt_complete, dt_today)})
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다.'.format(dt_complete, dt_today)})
 
     complete_employee_list = Employee.objects.filter(dt_end__lte=dt_complete)
 
@@ -5370,7 +5411,8 @@ def tk_fix_up_employee(request):
         if i >= n:
             break
         i = i + 1
-        employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'employee_id': employee.employee_id}
+        employee_compare = {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo,
+                            'employee_id': employee.employee_id}
         employee_compare_list.append(employee_compare)
     logSend('  # employee: {}'.format(len(employee_compare_list)))
 
@@ -5378,8 +5420,8 @@ def tk_fix_up_employee(request):
 
     result = []
     parameter = {
-                 "employee_compare_list": employee_compare_list,
-                 }
+        "employee_compare_list": employee_compare_list,
+    }
     r = s.post(settings.EMPLOYEE_URL + 'tk_match_test_for_customer', json=parameter)
     result.append({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()})
 
@@ -5396,5 +5438,6 @@ def tk_fix_up_employee(request):
         if 'name' in fix_up:
             employee.name = fix_up['name']
         # employee.save()
-        fixed_up_list.append({'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'passer_id': employee.employee_id})
+        fixed_up_list.append(
+            {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'passer_id': employee.employee_id})
     return REG_200_SUCCESS.to_json_response({'fixed_up_list': fixed_up_list})
