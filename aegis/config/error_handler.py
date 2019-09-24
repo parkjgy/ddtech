@@ -11,6 +11,7 @@ from .log import logSend, logError
 from .status_collection import *
 from .common import str_to_datetime, dt_str, get_api
 
+import requests
 
 class BaseMiddleware:
     def __init__(self, get_response):
@@ -53,6 +54,8 @@ def exception_handler(request, exception):
     # logSend('>>> ProcessExceptionMiddleware: exception_handler: function: {}'.format(get_api(request)))
     stack_trace = get_traceback_str()
     logError('{}\n{}'.format(get_api(request), stack_trace))
+    # 예
+    send_slack(get_api(request), stack_trace, channel='#server_bug')
     # response = HttpResponse(json.dumps(
     #     {'message': str(exception),
     #      'stack_trace': stack_trace}
@@ -85,3 +88,13 @@ def get_traceback_str():
         else:
             nstr += line
     return '\n'.join(rl)
+
+
+# 슬랙 연동용 코드
+def send_slack(title, message, channel='server_bug', username='알리미', icon_emoji='ghost'):
+    slack_hook_url = 'https://hooks.slack.com/services/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'
+    payload = {'text': ':pushpin: ' + title, 'username': username, 'icon_emoji': icon_emoji, 'attachments': []}
+    payload['attachments'].append({'text': message})
+    if channel is not None:
+        payload['channel'] = channel
+    requests.post(slack_hook_url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
