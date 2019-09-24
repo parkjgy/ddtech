@@ -3619,8 +3619,9 @@ def staff_fg(request):
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
     app_user.push_token = token
+    logSend(request.META)
+    logSend(request.META['av'])
     app_user.app_version = request.META['av']
-    # logSend(request.META)
     app_user.save()
     # request.session['id'] = app_user.id
     # request.session.save()
