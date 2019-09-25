@@ -3618,7 +3618,10 @@ def staff_fg(request):
     app_user = staffs[0]
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
-    app_user.push_token = token
+    if token == None:
+        app_user.push_token = "Staff_token_is_None"
+    else:
+        app_user.push_token = token
     # logSend(request.META)
     if 'HTTP_AV' in request.META:
         app_user.app_version = request.META['HTTP_AV']
