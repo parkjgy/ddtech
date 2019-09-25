@@ -3068,17 +3068,26 @@ def my_work_histories(request):
                 ......
             ]
         }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+    parameter_check = is_parameter_ok(rqst, ['passer_id', 'dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-        'employee_id': rqst["passer_id"],
-        'dt': rqst['dt'],
+        'employee_id': passer_id,
+        'dt': dt,
     }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
     logSend(response_employee)
@@ -3116,18 +3125,28 @@ def my_work_records(request):
                 ......
             ]
         }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
         rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id', 'dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-        'employee_id': rqst["passer_id"],
+        'employee_id': passer_id,
         'work_id': AES_ENCRYPT_BASE64('-1'),
-        'dt': rqst['dt'],
+        'dt': dt,
     }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
 
