@@ -476,16 +476,17 @@ class Works(object):
                 return True
         return False
 
-    def is_active(self):
+    def is_active(self, when=datetime.datetime.now()):
         """
         출퇴근이 가능한 업무가 있다. - 업무가 시작되었다.
         """
-        today = datetime.datetime.now()
+        today = when
+        # logSend('  today: {}'.format(today))
         for self.index in range(len(self.data)):
             # logSend('  work id: {}, begin: {}, end: {}'.format(self.data[self.index]['id'],
-            #                                                                   self.data[self.index]['begin'],
-            #                                                                   self.data[self.index]['end']))
-            if str_to_dt(self.data[self.index]['begin']) <= today <= str_to_dt(self.data[self.index]['end']):
+            #                                                    str_to_dt(self.data[self.index]['begin']),
+            #                                                    str_to_dt(self.data[self.index]['end']) + datetime.timedelta(days=1)))
+            if str_to_dt(self.data[self.index]['begin']) <= today <= (str_to_dt(self.data[self.index]['end']) + datetime.timedelta(days=1)):
                 # logSend('  work id: {}, begin: {} <= today: {} <= end: {}'.format(self.data[self.index]['id'],
                 #                                                                   self.data[self.index]['begin'],
                 #                                                                   today,

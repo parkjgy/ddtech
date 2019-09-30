@@ -1179,7 +1179,7 @@ def pass_verify(request):
     is_in = int(parameter_check['parameters']['is_in'])
     x = parameter_check['parameters']['x']
     y = parameter_check['parameters']['y']
-
+    logSend(' x: {}, y:{}'.format(x, y))
     passers = Passer.objects.filter(id=passer_id)
     if len(passers) == 0:
         return status422(get_api(request),
@@ -1201,7 +1201,7 @@ def pass_verify(request):
     #
     # Pass_History update
     #
-    dt_touch = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    dt_touch = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     year_month_day = dt_touch.strftime("%Y-%m-%d")
     pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
     if not is_in:
@@ -1311,6 +1311,7 @@ def pass_verify(request):
 
     pass_history.save()
 
+    logSend(' x: {}, y:{}'.format(x, y))
     # 통과 기록 저장
     new_pass = Pass(
         passer_id=passer_id,
