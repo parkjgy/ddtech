@@ -54,8 +54,10 @@ def exception_handler(request, exception):
     # logSend('>>> ProcessExceptionMiddleware: exception_handler: function: {}'.format(get_api(request)))
     stack_trace = get_traceback_str()
     logError('{}\n{}'.format(get_api(request), stack_trace))
-    # 예
-    send_slack(get_api(request), stack_trace, channel='#server_bug')
+    # To Slack
+    server_type = ' <상용>' if settings.DEBUG else ''
+    stack_title = '{} {}'.format(server_type, get_api(request))
+    send_slack(stack_title, stack_trace, channel='#server_bug')
     # response = HttpResponse(json.dumps(
     #     {'message': str(exception),
     #      'stack_trace': stack_trace}
@@ -91,7 +93,7 @@ def get_traceback_str():
 
 
 # 슬랙 연동용 코드
-def send_slack(title, message, channel='server_bug', username='알리미', icon_emoji='ghost'):
+def send_slack(title, message, channel='#server_bug', username='알리미', icon_emoji='ghost'):
     slack_hook_url = 'https://hooks.slack.com/services/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'
     payload = {'text': ':pushpin: ' + title, 'username': username, 'icon_emoji': icon_emoji, 'attachments': []}
     payload['attachments'].append({'text': message})
