@@ -1584,7 +1584,7 @@ def pass_sms(request):
         if dt_in is None:
             # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
             logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        if (dt_in + datetime.timedelta(hours=12)) < dt_touch:
+        elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
             # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
             logError(get_api(request),
                      ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
