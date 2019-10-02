@@ -2223,6 +2223,7 @@ def exchange_phone_no_to_sms(request):
             logSend('  - dt_cn: {}, today: {}'.format(temp_passer.dt_cn, datetime.datetime.now()))
             return REG_552_NOT_ENOUGH_TIME.to_json_response({'message': '인증번호가 안가나요?',
                                                              'dt_next': dt_null(temp_passer.dt_cn)})
+        temp_passer.pNo = phone_no
     else:
         temp_passer = Passer(
             pNo=phone_no,
