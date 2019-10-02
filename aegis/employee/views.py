@@ -1711,13 +1711,12 @@ def certification_no_to_sms(request):
     POST : json
     {
         'phone_no' : '010-1111-2222'
-        'passer_id' : '......' # 암호화된 id 기존 전화번호를 바꾸려는 경우만 사용
     }
     response
         STATUS 200
             {'dt_next': '2019-09-02 00:00:00'}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
-            {'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'}
+            {'message': '올바른 전화번호가 아닙니다.'}  # 전화번호가 9자리 미만일 때
             {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
         STATUS 542
             {'message':'전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'}
@@ -1725,7 +1724,6 @@ def certification_no_to_sms(request):
             {'message': '인증번호는 3분에 한번씩만 발급합니다.\n(혹시 1899-3832 수신 거부하지는 않으셨죠?)'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'phone_no\' 가 없어요'}
-            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
 
     """
     if request.method == 'POST':
@@ -1737,39 +1735,25 @@ def certification_no_to_sms(request):
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     phone_no = no_only_phone_no(parameter_check['parameters']['phone_no'])
+    if len(phone_no) < 9:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '올바른 전화번호가 아닙니다.'})
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
-    if parameter_check['is_ok']:
-        # 기존에 등록된 근로자 일 경우 - 전화번호를 변경하려 한다.
-        passer_id = parameter_check['parameters']['passer_id']
-        passer = Passer.objects.get(id=passer_id)
-        if passer.pNo == phone_no:
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '변경하려는 전화번호가 기존 전화번호와 같습니다.'})
-        # 등록 사용자가 앱에서 전화번호를 바꾸려고 인증할 때
-        # 출입자 아이디(passer_id) 의 전화번호 외에 전화번호가 있으면 전화번호(542)처리
-        passers = Passer.objects.filter(pNo=phone_no)
-        logSend(('  - phone: {}'.format([(passer.pNo, passer.id) for passer in passers])))
-        if len(passers) > 0:
-            logError(get_api(request), ' phone: ({}, {}), duplication phone: {}'
-                     .format(passer.pNo, passer.id, [(passer.pNo, passer.id) for passer in passers]))
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response(
-                {'message': '전화번호가 이미 등록되어 있어 사용할 수 없습니다.\n고객센터로 문의하십시요.'})
-        passer.pNo = phone_no
+    # 새로 근로자 등록을 하는 경우 - 전화번호 중복을 확인해야한다.
+    # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
+    passers = Passer.objects.filter(pNo=phone_no)
+    for passer in passers:
+        if passer.employee_id == -6:
+            passer.delete()
+    if len(passers) == 0:
+        passer = Passer(
+            pNo=phone_no,
+            employee_id=-6,  # 인증이 안된 근로자: 전화번호가 잘못되었거나 등... (나중에 삭제할 때 기준이 된다. 2019-08-25)
+        )
     else:
-        if parameter_check['is_decryption_error']:
-            # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
-            logError(get_api(request), parameter_check['results'])
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'})
-        # 새로 근로자 등록을 하는 경우 - 전화번호 중복을 확인해야한다.
-        # 신규 등록일 때 전화번호를 사용하고 있으면 에러처리
-        passers = Passer.objects.filter(pNo=phone_no)
-        if len(passers) == 0:
-            passer = Passer(
-                pNo=phone_no,
-                employee_id=-6,  # 인증이 안된 근로자: 전화번호가 잘못되었거나 등... (나중에 삭제할 때 기준이 된다. 2019-08-25)
-            )
-        else:
-            passer = passers[0]
+        # 기존 근로자일 경우
+        if len(passers) > 1:
+            logError(get_api(request), ' 전화번호가 중복된 근로자가 있다. (phone: {})'.format(phone_format(phone_no)))
+        passer = passers[0]
 
     if (passer.dt_cn is not None) and (datetime.datetime.now() < passer.dt_cn):
         # 3분 이내에 인증번호 재요청하면
@@ -2183,6 +2167,7 @@ def exchange_phone_no_to_sms(request):
         STATUS 200
             {'dt_next': '2019-08-15 00:25:00}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
+            {'message': '올바른 전화번호가 아닙니다.'}
             {'message': '기존 전화번호와 같습니다.'}
             {'message': '계속 이 에러가 나면 지우고 새로 설치하세요.'}
         STATUS 542
@@ -2202,6 +2187,8 @@ def exchange_phone_no_to_sms(request):
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     phone_no = no_only_phone_no(parameter_check['parameters']['phone_no'])
+    if len(phone_no) < 9:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '올바른 전화번호가 아닙니다.'})
 
     parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
     if parameter_check['is_ok']:
