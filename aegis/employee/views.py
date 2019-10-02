@@ -2251,7 +2251,7 @@ def exchange_phone_no_to_sms(request):
         'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
         'user_id': 'yuadocjon22',
         'sender': settings.SMS_SENDER_PN,
-        'receiver': passer.pNo,
+        'receiver': phone_no,
         'msg_type': 'SMS',
         'msg': '이지체크 [' + str(certificateNo) + ']\n'
         '인증번호 입니다.'
