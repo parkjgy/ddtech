@@ -147,6 +147,7 @@ def check_version(request):
         except Exception as e:
             logError(get_api(request), ' 등록되지 않은 근로자 전화번호({}) - {}'.format(phone_no, str(e)))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
+        logSend('  passer.id: {} vs passer_id: {}'.format(passer.id, passer_id))
         if passer.id != int(passer_id):
             logError(get_api(request),
                      ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
