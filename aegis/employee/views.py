@@ -1716,6 +1716,7 @@ def certification_no_to_sms(request):
         STATUS 200
             {'dt_next': '2019-09-02 00:00:00'}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
+            {'message': '인증번호를 보낼 수 없는 전화번호 입니다.'}
             {'message': '올바른 전화번호가 아닙니다.'}  # 전화번호가 9자리 미만일 때
             {'message': '계속 이 에러가 나면 앱을 다시 설치해야합니다.'}
         STATUS 542
@@ -1789,6 +1790,8 @@ def certification_no_to_sms(request):
     # print(rSMS.text)
     # print(rSMS.json())
     logSend('  - ', json.dumps(rSMS.json(), cls=DateTimeEncoder))
+    if rSMS.json()['result_code'] < 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호를 보낼 수 없는 전화번호 입니다.'})
     # rJson = rSMS.json()
     # rJson['vefiry_no'] = str(certificateNo)
 
@@ -2168,6 +2171,7 @@ def exchange_phone_no_to_sms(request):
             {'dt_next': '2019-08-15 00:25:00}
         STATUS 416 # 앱에서 아예 리셋을 할 수도 있겠다.
             {'message': '올바른 전화번호가 아닙니다.'}
+            {'message': '인증번호를 보낼 수 없는 전화번호 입니다.'}
             {'message': '기존 전화번호와 같습니다.'}
             {'message': '계속 이 에러가 나면 지우고 새로 설치하세요.'}
         STATUS 542
@@ -2258,6 +2262,10 @@ def exchange_phone_no_to_sms(request):
     # print(rSMS.text)
     # print(rSMS.json())
     logSend('  - ', json.dumps(rSMS.json(), cls=DateTimeEncoder))
+    if rSMS.json()['result_code'] < 0:
+        temp_passer.delete()
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호를 보낼 수 없는 전화번호 입니다.'})
+
     # rJson = rSMS.json()
     # rJson['vefiry_no'] = str(certificateNo)
 
