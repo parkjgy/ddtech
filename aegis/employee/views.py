@@ -2262,7 +2262,7 @@ def exchange_phone_no_to_sms(request):
     # print(rSMS.text)
     # print(rSMS.json())
     logSend('  - ', json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    if rSMS.json()['result_code'] < 0:
+    if int(rSMS.json()['result_code']) < 0:
         temp_passer.delete()
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호를 보낼 수 없는 전화번호 입니다.'})
 
