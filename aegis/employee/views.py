@@ -2210,7 +2210,10 @@ def exchange_phone_no_to_sms(request):
         # passer_id 가 있지만 암호 해독과정에서 에러가 났을 때
         logError(get_api(request), parameter_check['results'])
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '계속 이 에러가 나면 지우고 새로 설치하세요.'})
-    temp_passer_list = Passer.objects.filter(employee_id=-7, notification_id=passer_id)
+    temp_passer_list = Passer.objects.filter(notification_id=passer_id)
+    for temp_passer in temp_passer_list:
+        if temp_passer.employee_id == -7:
+            temp_passer.delete()
     if len(temp_passer_list) > 0:
         if len(temp_passer_list) > 1:
             logError(get_api(request), ' 근로자 임시 전화번호가 2개 이상: {}'.format(phone_no))
