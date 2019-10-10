@@ -55,7 +55,7 @@ def exception_handler(request, exception):
     stack_trace = get_traceback_str()
     logError('{}\n{}'.format(get_api(request), stack_trace))
     # To Slack
-    server_type = ' <상용>' if settings.DEBUG else ''
+    server_type = '' if settings.DEBUG else ' <상용>'
     stack_title = '{} {}'.format(server_type, get_api(request))
     send_slack(stack_title, stack_trace, channel='#server_bug')
     # response = HttpResponse(json.dumps(

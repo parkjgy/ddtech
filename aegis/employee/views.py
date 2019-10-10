@@ -1141,6 +1141,11 @@ def pass_verify(request):
             'passer_id' : '암호화된 출입자 id',
             'dt' : '2018-12-28 12:53:36',
             'is_in' : 1, # 0: out, 1 : in
+            'beacons' : [
+                 {'major': 11001, 'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
+                 {'major': 11001, 'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
+                 {'major': 11001, 'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
+            ]
             'x': latitude (optional)
             'y': longitude (optional)
         }
@@ -1172,12 +1177,13 @@ def pass_verify(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'x_@', 'y_@'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'x_@', 'y_@', 'beacons_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
     is_in = int(parameter_check['parameters']['is_in'])
+    beacons = parameter_check['parameters']['beacons']
     x = parameter_check['parameters']['x']
     y = parameter_check['parameters']['y']
     logSend(' x: {}, y:{}'.format(x, y))
@@ -1199,6 +1205,11 @@ def pass_verify(request):
     if not employee_works.is_active():
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     work_id = employee_works.data[employee_works.index]['id']
+    #
+    # 1. 기존에 인식했던 비콘이면 통과 (passer.beacons)
+    # 2. 새로운 비콘이면 비콘 위치 > 업무 출근 위치 > 업무 출근 위치와 30m 이내이면 출근인정 > 인정된 비콘 저장 (passer.beacons)
+    #
+
     #
     # Pass_History update
     #
@@ -2937,9 +2948,14 @@ def my_work_histories_for_customer(request):
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     workings = []
     for pass_record in pass_record_list:
-        working_time = int(float(employee.working_time))
-        working_hour = (working_time // 4) * 4
-        break_hour = working_time - working_hour
+        try:
+            working_time = int(float(employee.working_time))
+            working_hour = (working_time // 4) * 4
+            break_hour = working_time - working_hour
+        except Exception as e:
+            logError(get_api(request), ' 근무시간이 등록되지 않은 근로자({}) - {}'.format(employee.name, e))
+            working_hour = 8
+            break_hour = 1
         working = {'year_month_day': pass_record.year_month_day,
                    'action': pass_record.action,
                    'dt_begin': dt_null(pass_record.dt_in_verify),
