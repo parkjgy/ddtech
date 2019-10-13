@@ -72,6 +72,8 @@ urlpatterns = [
 
     url(r'employee/apns_test', views.apns_test, name='apns_test'),
     url(r'employee/test_beacon_list', views.test_beacon_list, name='test_beacon_list'),
+    url(r'employee/get_test_beacon_list', views.get_test_beacon_list, name='get_test_beacon_list'),
+    url(r'employee/del_test_beacon_list', views.del_test_beacon_list, name='del_test_beacon_list'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

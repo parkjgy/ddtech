@@ -4422,16 +4422,14 @@ def test_beacon_list(request):
     beacon_list = parameter_check['parameters']['beacon_list']
     for beacon in beacon_list:
         try:
-            passer_id = AES_DECRYPT_BASE64(beacon['passer_id'][:10])
+            passer_id = AES_DECRYPT_BASE64(beacon['passer_id'])
             logSend('  ?? passer_id: ({})'.format(passer_id))
             if passer_id == '__error':
-                logError(get_api(request), ' ERROR: passer_id: {} - {}'.format(e, beacon))
+                logError(get_api(request), ' ERROR: passer_id: {} - {}'.format(passer_id, beacon))
                 continue
-            passer_id = 262
-            logSend('  ?? e = {}'.format(e))
             new_beacon_record = Beacon_Record(
                 passer_id=passer_id,
-                dt=datetime.datetime.strptime(beacon['dt'], "%Y-%m-%d %H:%M:%S.%f"),
+                dt_begin=datetime.datetime.strptime(beacon['dt'], "%Y-%m-%d %H:%M:%S.%f"),
                 major=beacon['major'],
                 minor=beacon['minor'],
                 rssi=beacon['rssi'],
@@ -4440,7 +4438,123 @@ def test_beacon_list(request):
                 is_test=True,
             )
             new_beacon_record.save()
-            logSend('  < {} {} {}'.format(new_beacon_record.passer_id, new_beacon_record.dt, new_beacon_record.rssi))
+            logSend('  < {} {} {}'.format(new_beacon_record.passer_id, new_beacon_record.dt_begin, new_beacon_record.rssi))
         except Exception as err:
             logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(err, beacon))
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def get_test_beacon_list(request):
+    """
+    시험 결과 요청: 스마트폰에서 테스트용으로 수집된 비콘 값들을 가져온다.
+        http://0.0.0.0:8000/employee/get_test_beacon_list?user=thinking
+    POST : json
+        'user': 'thinking'
+    response
+        STATUS 200
+            { 'beacon_list':
+                [
+                    {
+                        'passer_id': passer_id,
+                        'phone_no': 010-3333-5555,
+                        'beacon_list':
+                            [
+                                {
+                                    'major': 11001,
+                                    'minor': 11002,
+                                    'dt': 2019-10-14 05:36:33.555,
+                                    'rssi': -65,
+                                    'x': 35.3333,
+                                    'y': 126.3333,
+                                },
+                                ...
+                            ]
+                    },
+                    ...
+                ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'user\' 가 없어요'}
+            {'message': '사용 권한이 없습니다.'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['user'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    user = parameter_check['parameters']['user']
+    if user != 'thinking':
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '사용 권한이 없습니다.'})
+
+    beacon_list = Beacon_Record.objects.filter(is_test=True).order_by('passer_id')
+    passer_id_dict = {}
+    for beacon in beacon_list:
+        if beacon.passer_id not in passer_id_dict.keys():
+            passer_id_dict[beacon.passer_id] = 'pNo'
+    # logSend('  >> passer: {}'.format(passer_id_dict))
+    passer_list = Passer.objects.filter(id__in=passer_id_dict.keys())
+    for passer in passer_list:
+        passer_id_dict[passer.id] = passer.pNo
+    # logSend('  >> passer: {}'.format(passer_id_dict))
+
+    beacon_dict = {}
+    for beacon in beacon_list:
+        logSend('  ^ {} {}'.format(beacon.passer_id, beacon_dict))
+        if beacon.passer_id not in beacon_dict:
+            beacon_dict[beacon.passer_id] = {'beacon_list': []}
+        get_beacon = {
+            'major': beacon.major,
+            'minor': beacon.minor,
+            'dt': beacon.dt_begin,
+            'rssi': beacon.rssi,
+            'x': beacon.x,
+            'y': beacon.y,
+        }
+        beacon_dict[beacon.passer_id]['beacon_list'].append(get_beacon)
+    get_beacon_list = [{'passer_id': key,
+                        'phone_no': phone_format(passer_id_dict[key]),
+                        'beacon_list': beacon_dict[key]['beacon_list']
+                        } for key in beacon_dict.keys()
+    ]
+    # logSend('  >> beacon: {}'.format(beacon_dict))
+    return REG_200_SUCCESS.to_json_response({'beacon_list': get_beacon_list})
+
+
+@cross_origin_read_allow
+def del_test_beacon_list(request):
+    """
+    테스트 비콘 값 삭제: 새로 테스트하기 위해 시험 데이터를 삭제한다.
+        http://0.0.0.0:8000/employee/get_test_beacon_list?user=thinking
+    POST : json
+        'user': 'thinking'
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'user\' 가 없어요'}
+            {'message': '사용 권한이 없습니다.'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['user'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    user = parameter_check['parameters']['user']
+    if user != 'thinking':
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '사용 권한이 없습니다.'})
+
+    beacon_list = Beacon_Record.objects.filter(is_test=True)
+    for beacon in beacon_list:
+        beacon.delete()
+
     return REG_200_SUCCESS.to_json_response()
