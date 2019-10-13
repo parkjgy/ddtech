@@ -4423,7 +4423,7 @@ def test_beacon_list(request):
     for beacon in beacon_list:
         try:
             passer_id = AES_DECRYPT_BASE64(beacon['passer_id'])
-            logSend('  ?? passer_id: ({})'.format(passer_id))
+            # logSend('  ?? passer_id: ({})'.format(passer_id))
             if passer_id == '__error':
                 logError(get_api(request), ' ERROR: passer_id: {} - {}'.format(passer_id, beacon))
                 continue
@@ -4438,7 +4438,7 @@ def test_beacon_list(request):
                 is_test=True,
             )
             new_beacon_record.save()
-            logSend('  < {} {} {}'.format(new_beacon_record.passer_id, new_beacon_record.dt_begin, new_beacon_record.rssi))
+            # logSend('  < {} {} {}'.format(new_beacon_record.passer_id, new_beacon_record.dt_begin, new_beacon_record.rssi))
         except Exception as err:
             logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(err, beacon))
     return REG_200_SUCCESS.to_json_response()
