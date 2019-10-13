@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'employee/tk_patch', views.tk_patch, name='tk_patch'),
 
     url(r'employee/apns_test', views.apns_test, name='apns_test'),
+    url(r'employee/test_beacon_list', views.test_beacon_list, name='test_beacon_list'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

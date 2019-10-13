@@ -4382,3 +4382,65 @@ def apns_test(request):
 
     return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 
+
+@cross_origin_read_allow
+def test_beacon_list(request):
+    """
+    비콘 값 업로드: 스마트폰에서 테스트용으로 수집된 비콘 값들을 서버로 보낸다.
+        http://0.0.0.0:8000/employee/test_beacon_list
+    POST : json
+        { 'beacon_list': [
+            {
+            'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
+            'dt' : '2018-01-21 08:25:30.333',   # 주) 초 밑 단위 있음.
+            'major': 11001,                     # 11 (지역) 001(사업장)
+            'minor': 11001,                     # 11 (출입) 001(일련번호)
+            'rssi': -65,
+            'x': latitude (optional),
+            'y': longitude (optional),
+            },
+            ......
+            ]
+        }
+    response
+        STATUS 200
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'beacon_list\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['beacon_list'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    beacon_list = parameter_check['parameters']['beacon_list']
+    for beacon in beacon_list:
+        try:
+            passer_id = AES_DECRYPT_BASE64(beacon['passer_id'][:10])
+            logSend('  ?? passer_id: ({})'.format(passer_id))
+            if passer_id == '__error':
+                logError(get_api(request), ' ERROR: passer_id: {} - {}'.format(e, beacon))
+                continue
+            passer_id = 262
+            logSend('  ?? e = {}'.format(e))
+            new_beacon_record = Beacon_Record(
+                passer_id=passer_id,
+                dt=datetime.datetime.strptime(beacon['dt'], "%Y-%m-%d %H:%M:%S.%f"),
+                major=beacon['major'],
+                minor=beacon['minor'],
+                rssi=beacon['rssi'],
+                x=beacon['x'],
+                y=beacon['y'],
+                is_test=True,
+            )
+            new_beacon_record.save()
+            logSend('  < {} {} {}'.format(new_beacon_record.passer_id, new_beacon_record.dt, new_beacon_record.rssi))
+        except Exception as err:
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(err, beacon))
+    return REG_200_SUCCESS.to_json_response()

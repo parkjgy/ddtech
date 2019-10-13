@@ -200,6 +200,7 @@ class Beacon_Record(models.Model):
     rssi = models.IntegerField(default=-1)
     dt_end = models.DateTimeField(null=True, blank=True)
     count = models.IntegerField(default=-1)
+    is_test = models.BooleanField(default=False)
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
