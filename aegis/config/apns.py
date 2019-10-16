@@ -217,10 +217,13 @@ def fcm(target_type, target_list, alert, sound, badge, contents):
         return {'message': 'targetType unknown - \'user\' or \'mng\''}
     token_list = [target['token'] for target in target_list]
     logSend('   >> token_list: {}'.format(token_list))
-    fcm_notification = {
-        'title': contents['title'],
-        'body': contents['subtitle'],
-    }
+    if 'title' not in contents and 'subtitle' not in contents:
+        fcm_notification = None
+    else:
+        fcm_notification = {
+            'title': contents['title'],
+            'body': contents['subtitle'],
+        }
     fcm_data = {
         'data': contents['body']
     }
@@ -244,9 +247,10 @@ def send_fcm_notification(token_list, fcm_notification, fcm_data):
     # 보낼 내용과 대상을 지정
     content = {
         'registration_ids': token_list,
-        'notification': fcm_notification,
         'data': fcm_data,
     }
+    if fcm_notification is not None:
+        content['notification'] = fcm_notification
     logSend('   >> content: {}'.format(content))
 
     # json 파싱 후 requests 모듈로 FCM 서버에 요청
