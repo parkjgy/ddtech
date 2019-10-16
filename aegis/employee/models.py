@@ -118,6 +118,7 @@ class Passer(models.Model):
     cn = models.IntegerField(default = 0)           # 인증 번호 숫자 6자리
     dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
     user_agent = models.CharField(max_length = 512, default=None) # HTTP_USER_AGENT
+    is_camera_stop = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
 
 
 class Pass(models.Model):
@@ -204,4 +205,14 @@ class Beacon_Record(models.Model):
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
+
+class IO_Pass(models.Model):
+    passer_id = models.IntegerField(default=-1)
+    name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
+    pNo = models.CharField(max_length = 19)
+    contents = models.CharField(max_length = 127)  # 암호화 한다.
+    dt = models.DateTimeField(null=True, blank=True)
+    is_accept = models.BooleanField(blank=True)
+    why = models.CharField(max_length = 127, default = '')  # 암호화 한다.
+
 

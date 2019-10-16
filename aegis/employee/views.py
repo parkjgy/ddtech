@@ -28,6 +28,7 @@ from .models import Pass
 from .models import Passer
 from .models import Pass_History
 from .models import Employee_Backup
+from .models import IO_Pass
 
 import requests
 from datetime import datetime, timedelta
@@ -4505,7 +4506,7 @@ def get_test_beacon_list(request):
 
     beacon_dict = {}
     for beacon in beacon_list:
-        logSend('  ^ {} {}'.format(beacon.passer_id, beacon_dict))
+        # logSend('  ^ {} {}'.format(beacon.passer_id, beacon_dict))
         if beacon.passer_id not in beacon_dict:
             beacon_dict[beacon.passer_id] = {'beacon_list': []}
         get_beacon = {
@@ -4558,3 +4559,229 @@ def del_test_beacon_list(request):
         beacon.delete()
 
     return REG_200_SUCCESS.to_json_response()
+
+@cross_origin_read_allow
+def reg_io_pass(request):
+    """
+    출입증 신청
+        http://0.0.0.0:8000/employee/reg_io_pass?passer_id=LjmQXEHbJu-Rdt5pAMBUlw&contents=2020 생산직 채용 홍보 미팅&dt=2019-10-16
+    POST : json
+        passer_id: 암호화된 출입자 id
+        contents: 2020 생산직 채용 홍보 미팅
+        dt: 2019-10-16
+    response
+        STATUS 200
+            {'message': '정상적으로 신청되었습니다.', 'io_pass_id': new_io_pass.id}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'contents\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message': ' 해당 신청자({})가 없습니다.'.format(passer_id)}
+            {'message': ' 해당 신청자({})가 없습니다.'.format(passer.employee_id)}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'contents', 'dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    contents = parameter_check['parameters']['contents']
+    dt = str_to_datetime(parameter_check['parameters']['dt'])
+
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 신청자({})가 없습니다.'.format(passer_id)})
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 신청자({})가 없습니다.'.format(passer.employee_id)})
+    new_io_pass = IO_Pass(
+        passer_id=passer_id,
+        name=employee.name,
+        pNo=passer.pNo,
+        contents=contents,
+        dt=dt,
+    )
+    new_io_pass.save()
+    # push
+    # push_contents = {
+    #     'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}, {'id': 262, 'token': '84653d4521cd224c73b21b9f5e8b9646150c94dc34b033c15b8178e2b53c0213', 'pType': 10}],
+    #     'func': 'user',
+    #     'isSound': True,
+    #     'badge': 1,
+    #     # 'contents': None,
+    #     'contents': {'title': '업무 요청',
+    #                  'subtitle': 'SK 케미칼: 동력_EGB(3교대)',
+    #                  'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    #                  }
+    # }
+    # response = notification(push_contents)
+
+    return REG_200_SUCCESS.to_json_response({'message': '정상적으로 신청되었습니다.', 'io_pass_id': new_io_pass.id})
+
+
+@cross_origin_read_allow
+def list_io_pass(request):
+    """
+    출입증 리스트: 신청된 출입증 리스트(모니터링 앱)
+        - 모니터링 앱에서 5초 간격으로 확인한다.
+        - 확인한 시간을 앱에서 가지고 있어야 한다.
+        http://0.0.0.0:8000/employee/list_io_pass?dt=2019-10-16 15:07:00
+    POST : json
+        dt: 2019-10-16 14:35:00
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    dt = str_to_datetime(parameter_check['parameters']['dt'])
+
+    io_pass_list = IO_Pass.objects.filter(is_accept=None)
+    io_pass_list_json = [{'io_pass_id': io_pass.id,
+                          'name': io_pass.name,
+                          'pNo': io_pass.pNo,
+                          'contents': io_pass.contents,
+                          'dt': io_pass.dt} for io_pass in io_pass_list]
+
+    return REG_200_SUCCESS.to_json_response({'io_pass_id': io_pass_list_json})
+
+
+@cross_origin_read_allow
+def update_io_pass(request):
+    """
+    출입증 승인/거절: 신청된 출입증 승인/거절(모니터링 앱)
+        http://0.0.0.0:8000/employee/update_io_pass?io_pass_id=1&is_accept=0&why=소방훈련으로 방문객을 받을 수 없음.
+    POST : json
+        io_pass_id: 출입 신청 id
+        is_accept: YES / NO
+        why: '거절 사유'
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['io_pass_id', 'is_accept', 'why_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    io_pass_id = parameter_check['parameters']['io_pass_id']
+    is_accept = parameter_check['parameters']['is_accept']
+    why = parameter_check['parameters']['why']
+
+    try:
+        io_pass = IO_Pass.objects.get(id=io_pass_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 출입 신청({})이 없습니다.'.format(io_pass_id)})
+    try:
+        passer = Passer.objects.get(id=io_pass.passer_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 신청자({})가 없습니다.'.format(io_pass.passer_id)})
+    io_pass.is_accept = is_accept
+    io_pass.why = why
+    io_pass.save()
+    accept = '승인' if is_accept else '거절'
+    # push
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user',
+        'isSound': True,
+        'badge': 1,
+        # 'contents': None,
+        'contents': {'title': '출입증 {}'.format(accept),
+                     'subtitle': io_pass.contents,
+                     'body': {'action': 'NewIO',
+                              'accept': accept,
+                              'contents': io_pass.contents,
+                              'name': io_pass.name,
+                              'pNo': phone_format(io_pass.pNo),
+                              'dt': dt_str(io_pass.dt, "%Y-%m-%d"),
+                              'why': io_pass.why,
+                              }
+                     }
+    }
+    response = notification(push_contents)
+
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def update_camera(request):
+    """
+    출입증 승인/거절: 신청된 출입증 승인/거절(모니터링 앱)
+        http://0.0.0.0:8000/employee/update_camera?passer_id=LjmQXEHbJu-Rdt5pAMBUlw&is_stop=1
+    POST : json
+        passer_id: 암호화된 id
+        is_stop: 카메라 스톱
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'is_stop'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    is_stop = parameter_check['parameters']['is_stop']
+
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 근로자({})가 없습니다.'.format(passer_id)})
+    passer.is_camera_stop = is_stop
+    passer.save()
+    if passer.is_camera_stop:
+        stop_tag = '잠금'
+        stop_message = '보안상 이유로 카메라가 사용할 수 없게됩니다.'
+    else:
+        stop_tag = '해제'
+        stop_message = '보안지역을 벗어났기 때문에 카메라 잠금을 해제하였습니다.'
+    # push
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user',
+        'isSound': True,
+        'badge': 0,
+        # 'contents': None,
+        'contents': {'title': '카메라 {}'.format(stop_tag),
+                     'subtitle': stop_message,
+                     'body': {'action': 'camera_status',
+                              'is_stop': is_stop,
+                              'message': stop_message,
+                              }
+                     }
+    }
+    response = notification(push_contents)
+
+    return REG_200_SUCCESS.to_json_response()
+

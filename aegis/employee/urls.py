@@ -74,6 +74,12 @@ urlpatterns = [
     url(r'employee/test_beacon_list', views.test_beacon_list, name='test_beacon_list'),
     url(r'employee/get_test_beacon_list', views.get_test_beacon_list, name='get_test_beacon_list'),
     url(r'employee/del_test_beacon_list', views.del_test_beacon_list, name='del_test_beacon_list'),
+
+    url(r'employee/reg_io_pass', views.reg_io_pass, name='reg_io_pass'),
+    url(r'employee/list_io_pass', views.list_io_pass, name='list_io_pass'),
+    url(r'employee/update_io_pass', views.update_io_pass, name='update_io_pass'),
+
+    url(r'employee/update_camera', views.update_camera, name='update_camera'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
