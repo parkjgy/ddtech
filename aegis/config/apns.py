@@ -219,15 +219,19 @@ def fcm(target_type, target_list, alert, sound, badge, contents):
     logSend('   >> token_list: {}'.format(token_list))
     fcm_notification = {
         'title': contents['title'],
+        'body': contents['subtitle'],
+    }
+    fcm_data = {
+        'data': contents['body']
     }
     # fcm_notification = contents
     # fcm_notification['sound'] = sound
     # fcm_notification['badge'] = badge
-    result = send_fcm_notification(token_list, fcm_notification)
+    result = send_fcm_notification(token_list, fcm_notification, fcm_data)
     return {'message': result}
 
 
-def send_fcm_notification(token_list, fcm_notification):
+def send_fcm_notification(token_list, fcm_notification, fcm_data):
     # fcm 푸시 메세지 요청 주소
     url = 'https://fcm.googleapis.com/fcm/send'
 
@@ -241,6 +245,7 @@ def send_fcm_notification(token_list, fcm_notification):
     content = {
         'registration_ids': token_list,
         'notification': fcm_notification,
+        'data': fcm_data,
     }
     logSend('   >> content: {}'.format(content))
 

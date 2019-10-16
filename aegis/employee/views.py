@@ -4678,6 +4678,20 @@ def update_io_pass(request):
             {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
     log Error
             logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    PUSH
+        notification: {
+            'title': '출입증 {}'.format(accept),  # 거절 / 승인
+            'body': io_pass.contents            # 2020 생산직 채용 홍보 미팅
+            }
+         data: {
+            'action': 'io_pass',
+            'accept': accept,
+            'contents': io_pass.contents,
+            'name': io_pass.name,
+            'pNo': phone_format(io_pass.pNo),
+            'dt': dt_str(io_pass.dt, "%Y-%m-%d"),
+            'why': io_pass.why,
+            }
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -4712,7 +4726,7 @@ def update_io_pass(request):
         # 'contents': None,
         'contents': {'title': '출입증 {}'.format(accept),
                      'subtitle': io_pass.contents,
-                     'body': {'action': 'NewIO',
+                     'body': {'action': 'io_pass',
                               'accept': accept,
                               'contents': io_pass.contents,
                               'name': io_pass.name,
@@ -4742,6 +4756,16 @@ def update_camera(request):
             {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
     log Error
             logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    PUSH
+        notification: {
+            'title': '카메라 {}'.format(stop_tag), # 잠긍 / 해제
+            'body': stop_message, # '보안상 이유로 카메라가 사용할 수 없게됩니다.' / '보안지역을 벗어났기 때문에 카메라 잠금을 해제하였습니다.'
+            }
+        data: {
+            'action': 'camera_status',
+            'is_stop': is_stop,
+            'message': stop_message,
+            }
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
