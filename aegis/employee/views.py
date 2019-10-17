@@ -4512,7 +4512,7 @@ def get_test_beacon_list(request):
         get_beacon = {
             'major': beacon.major,
             'minor': beacon.minor,
-            'dt': beacon.dt_begin,
+            'dt': dt_str(beacon.dt_begin, "%Y-%m-%d %H:%M:%S.%f")[:-3],
             'rssi': beacon.rssi,
             'x': beacon.x,
             'y': beacon.y,
@@ -4630,13 +4630,23 @@ def reg_io_pass(request):
 def list_io_pass(request):
     """
     출입증 리스트: 신청된 출입증 리스트(모니터링 앱)
-        - 모니터링 앱에서 5초 간격으로 확인한다.
-        - 확인한 시간을 앱에서 가지고 있어야 한다.
-        http://0.0.0.0:8000/employee/list_io_pass?dt=2019-10-16 15:07:00
+        - 승인/거절하지 않은 출입 요청 모두 보낸다.
+        http://0.0.0.0:8000/employee/list_io_pass
     POST : json
-        dt: 2019-10-16 14:35:00
     response
         STATUS 200
+            {'io_pass_list':
+                [
+                    {
+                        'io_pass_id': io_pass.id,
+                        'name': io_pass.name,
+                        'pNo': io_pass.pNo,
+                        'contents': io_pass.contents,
+                        'dt': io_pass.dt
+                    },
+                    ...
+                ]
+            }
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'dt\' 가 없어요'}
     log Error
@@ -4647,19 +4657,15 @@ def list_io_pass(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['dt'])
-    if not parameter_check['is_ok']:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
-    dt = str_to_datetime(parameter_check['parameters']['dt'])
-
     io_pass_list = IO_Pass.objects.filter(is_accept=None)
     io_pass_list_json = [{'io_pass_id': io_pass.id,
                           'name': io_pass.name,
                           'pNo': io_pass.pNo,
                           'contents': io_pass.contents,
-                          'dt': io_pass.dt} for io_pass in io_pass_list]
+                          'dt': dt_str(io_pass.dt, "%Y-%m-%d")
+                          } for io_pass in io_pass_list]
 
-    return REG_200_SUCCESS.to_json_response({'io_pass_id': io_pass_list_json})
+    return REG_200_SUCCESS.to_json_response({'io_pass_list': io_pass_list_json})
 
 
 @cross_origin_read_allow
@@ -4785,6 +4791,64 @@ def get_io_pass(request):
                     }
 
     return REG_200_SUCCESS.to_json_response({'io_pass': io_pass_json})
+
+
+@cross_origin_read_allow
+def list_employee(request):
+    """
+    카메라를 제어하기 위한 근로자 리스트(모니터링 앱)
+        http://0.0.0.0:8000/employee/list_employee
+    POST : json
+    response
+        STATUS 200
+            {
+                list_employee: [
+                    {
+                        'passer_id': passer.id,
+                        'name': dict_employee[passer.employee_id],
+                        'pNo': passer.pNo,
+                        'is_camera_stop': passer.is_camera_stop
+                    },
+                    ...
+                ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    list_passer = Passer.objects.all()
+    list_employee = Employee.objects.all()
+    dict_employee = {employee.id: employee.name for employee in list_employee}
+    logSend('  {}'.format(dict_employee))
+    list_passer_json = []
+    for passer in list_passer:
+        try:
+            passer_dict = {
+                'passer_id': passer.id,
+                'name': dict_employee[passer.employee_id],
+                'pNo': passer.pNo,
+                'is_camera_stop': passer.is_camera_stop
+            }
+            list_passer_json.append(passer_dict)
+        except Exception as e:
+            logSend('  {} - {}'.format(passer.employee_id, passer.pNo))
+
+    # list_passer_json = [
+    #     {
+    #         'passer_id': passer.id,
+    #         'name': dict_employee[passer.employee_id],
+    #         'pNo': passer.pNo,
+    #         'is_camera_stop': passer.is_camera_stop
+    #     } for passer in list_passer
+    # ]
+
+    return REG_200_SUCCESS.to_json_response({'list_employee': list_passer_json})
 
 
 @cross_origin_read_allow
