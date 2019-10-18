@@ -4757,6 +4757,15 @@ def get_io_pass(request):
         io_pass_id: 신청한 출입증 id(암호화 안되어 있음)
     response
         STATUS 200
+            io_pass: {
+                'io_pass_id': io_pass.id,
+                'name': io_pass.name,
+                'pNo': io_pass.pNo,
+                'contents': io_pass.contents,
+                'dt': io_pass.dt,
+                'is_accept': io_pass.is_accept,
+                'why': io_pass.why
+            }
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
@@ -4791,6 +4800,45 @@ def get_io_pass(request):
                     }
 
     return REG_200_SUCCESS.to_json_response({'io_pass': io_pass_json})
+
+
+@cross_origin_read_allow
+def del_io_pass(request):
+    """
+    출입증 페기: 사용하던 출입증을 폐기한다.
+        http://0.0.0.0:8000/employee/del_io_pass?passer_id=LjmQXEHbJu-Rdt5pAMBUlw&io_pass_id=1
+    POST : json
+        passer_id: 암호화된 신청자 id
+        io_pass_id: 신청한 출입증 id(암호화 안되어 있음)
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'io_pass_id'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    io_pass_id = parameter_check['parameters']['io_pass_id']
+
+    try:
+        io_pass = IO_Pass.objects.get(id=io_pass_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 출입 신청({})이 없습니다.'.format(io_pass_id)})
+    logSend('  io_pass.passer_id: {}, passer_id: {}'.format(io_pass.passer_id, passer_id))
+    if io_pass.passer_id != int(passer_id):
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 출입 신청자({})가 틀립니다.'.format(passer_id)})
+    io_pass.delete()
+
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow

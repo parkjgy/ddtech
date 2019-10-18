@@ -79,6 +79,7 @@ urlpatterns = [
     url(r'employee/list_io_pass', views.list_io_pass, name='list_io_pass'),
     url(r'employee/update_io_pass', views.update_io_pass, name='update_io_pass'),
     url(r'employee/get_io_pass', views.get_io_pass, name='get_io_pass'),
+    url(r'employee/del_io_pass', views.del_io_pass, name='del_io_pass'),
 
     url(r'employee/list_employee', views.list_employee, name='list_employee'),
     url(r'employee/update_camera', views.update_camera, name='update_camera'),
