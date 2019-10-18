@@ -4948,21 +4948,35 @@ def update_camera(request):
     else:
         stop_tag = '해제'
         stop_message = '보안지역을 벗어났기 때문에 카메라 잠금을 해제하였습니다.'
-    # push
+    # push - 알림 화면이 없이 실행가능한 형태
     push_contents = {
         'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
         'func': 'user',
         'isSound': True,
         'badge': 0,
-        # 'contents': None,
-        # 'contents': {'title': '카메라 {}'.format(stop_tag),
-        #              'subtitle': stop_message,
         'contents': {'body': {'action': 'camera_status',
                               'is_stop': is_stop,
                               'message': stop_message,
                               }
                      }
     }
+    # push - 알림 화면이 있지만 실행되지 않는 형태
+    if passer.pType == 10:  # 아이폰 일 때는 넣어준다.
+        push_contents['contents']['title'] = '카메라 {}'.format(stop_tag)
+        push_contents['contents']['subtitle'] = stop_message
+    # push_contents = {
+    #     'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+    #     'func': 'user',
+    #     'isSound': True,
+    #     'badge': 0,
+    #     'contents': {'title': '카메라 {}'.format(stop_tag),
+    #                  'subtitle': stop_message,
+    #                  'body': {'action': 'camera_status',
+    #                           'is_stop': is_stop,
+    #                           'message': stop_message,
+    #                           }
+    #                  }
+    # }
     response = notification(push_contents)
 
     return REG_200_SUCCESS.to_json_response()
