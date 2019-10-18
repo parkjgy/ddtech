@@ -4910,7 +4910,7 @@ def update_camera(request):
     response
         STATUS 200
         STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
     log Error
             logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
@@ -4930,7 +4930,7 @@ def update_camera(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'is_stop'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id', 'is_stop'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
