@@ -4794,7 +4794,7 @@ def get_io_pass(request):
                     'name': io_pass.name,
                     'pNo': io_pass.pNo,
                     'contents': io_pass.contents,
-                    'dt': io_pass.dt,
+                    'dt': dt_null(io_pass.dt),
                     'is_accept': io_pass.is_accept,
                     'why': io_pass.why
                     }
