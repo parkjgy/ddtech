@@ -7,7 +7,7 @@ Description=Aegis Server Dev
 Type=simple
 User=ddtechi
 WorkingDirectory=/home/ddtechi/ddtech/aegis
-ExecStart=/home/ddtechi/ddtech/aegis/ddtenv/bin/gunicorn --workers 12 --bind unix:/tmp/ddtech_gunicorn.sock config.wsgi --env DJANGO_SETTINGS_MODULE=config.settings.development
+ExecStart=/home/ddtechi/ddtech/ddtenv/bin/gunicorn --workers 12 --bind unix:/tmp/ddtech_gunicorn.sock config.wsgi --env DJANGO_SETTINGS_MODULE=config.settings.development
 
 [Install]
 WantedBy=multi-user.target
