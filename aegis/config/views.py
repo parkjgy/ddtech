@@ -106,7 +106,7 @@ def api_view(request):
                                 str_title = ''
 
                                 if doc_str is None:
-                                    doc_str = "문서가 존재하지 않습니다."
+                                    doc_str = "문서가 존재하지 않습니다"
                                 else:
                                     flag = 0
                                     flag_change_cnt = 0
