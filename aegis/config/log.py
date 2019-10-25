@@ -65,7 +65,8 @@ def logHeader(*args):
     if not settings.IS_LOG:
         return
     # log = ''.join([str(x) for x in args])
-    LogHeader(*args).start()
+    # LogHeader(*args).start()
+    LogSend(*args).start()
     return
     # if settings.DEBUG:
     #     print(log)
