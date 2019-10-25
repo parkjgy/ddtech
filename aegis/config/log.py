@@ -23,11 +23,14 @@ def logSend(*args):
 
     if not settings.IS_LOG:
         return
-    log = ''.join([str(x) for x in args])
-    if settings.DEBUG:
-        print(log)
-    logger_log.debug(log)
+    LogSend(*args).start()
     return
+    # log = ''.join([str(x) for x in args])
+    # if settings.DEBUG:
+    #     print(log)
+    # logger_log.debug(log)
+    # return
+
     # try:
     #     if not settings.IS_LOG:
     #         return
@@ -38,6 +41,19 @@ def logSend(*args):
     # except Exception as e:
     #     logger_error.error(str(e))
     #     return
+
+
+class LogSend(threading.Thread):
+
+    def __init__(self, *args):
+        self.args = args
+        threading.Thread.__init__(self)
+
+    # def __del__(self):
+
+    def run(self):
+        log = ''.join([str(x) for x in self.args])
+        logger_log.debug(log)
 
 
 logger_header = logging.getLogger("aegis.header.log")
