@@ -2,12 +2,13 @@
 
 from django.conf import settings
 
+import random
 import logging
+import threading
 
 logger_log = logging.getLogger("aegis.log")
 logger_error = logging.getLogger("aegis.error.log")
 logger_error.setLevel(logging.DEBUG)
-
 
 def logSend(*args):
     """앱에서 게시물은 요청한다.
@@ -45,11 +46,14 @@ logger_header = logging.getLogger("aegis.header.log")
 def logHeader(*args):
     if not settings.IS_LOG:
         return
-    log = ''.join([str(x) for x in args])
-    if settings.DEBUG:
-        print(log)
-    logger_header.debug(log)
+    # log = ''.join([str(x) for x in args])
+    LogHeader(*args).start()
     return
+    # if settings.DEBUG:
+    #     print(log)
+    # logger_header.debug(log)
+    # return
+
     # try:
     #     str_list = []
     #     for arg in args:
@@ -58,6 +62,19 @@ def logHeader(*args):
     # except Exception as e:
     #     logger_log.debug(str(e))
     #     return
+
+
+class LogHeader(threading.Thread):
+
+    def __init__(self, *args):
+        self.args = args
+        threading.Thread.__init__(self)
+
+    # def __del__(self):
+
+    def run(self):
+        log = ''.join([str(x) for x in self.args])
+        logger_header.debug(log)
 
 
 def logError(*args):

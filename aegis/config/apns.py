@@ -28,6 +28,7 @@ import time
 
 from .log import logSend, logError
 
+
 class PushThread(threading.Thread):
 
     def __init__(self, func, target_list, isSound, badge, contents):
@@ -53,6 +54,7 @@ class PushThread(threading.Thread):
         logSend('   >>> PUSH run = {}: {}'.format(str(self.func), self.target_list))
         # self.__del__()
 
+
 """
     push_contents = {
         'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
@@ -65,6 +67,8 @@ class PushThread(threading.Thread):
                      }
     }
 """
+
+
 # @async
 def push_notification(func, target_list, isSound, badge, contents):
     # 서버에서 스마트 폰으로 push 한다.

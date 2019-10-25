@@ -9,7 +9,7 @@ from django.conf import settings
 
 from .error_handler import exception_handler
 from .status_collection import REG_403_FORBIDDEN
-from .log import logSend, logError
+from .log import logSend, logError, logHeader
 from .common import get_api, AES_DECRYPT_BASE64
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
@@ -26,7 +26,8 @@ def cross_origin_read_allow(function):
             response = HttpResponse()
         else:
             try:
-                logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
+                logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
+                # logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 if request.method == 'POST':
                     if len(request.body) == 0:
                         rqst = {}
@@ -48,9 +49,11 @@ def cross_origin_read_allow(function):
                     #         plain_text = AES_DECRYPT_BASE64(rqst[key])
                     #         if plain_text == '__error':
                     #             plain_text = ''
-                    logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
+                    logHeader('^  {}: {} {}'.format(key, rqst[key], plain_text))
+                    # logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
                 response = function(request, *args, **kwargs)
-                logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
+                logHeader('<<< {}'.format(get_api(request)))  # 함수 끝 표시
+                # logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
                 # logSend('ERROR > {}'.format(get_api(request)))

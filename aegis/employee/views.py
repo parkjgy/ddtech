@@ -2990,6 +2990,7 @@ def my_work_histories_for_customer(request):
     #
     # result = virtual_working_data(dt_begin, dt_end)
     #
+
     return REG_200_SUCCESS.to_json_response(result)
 
 
