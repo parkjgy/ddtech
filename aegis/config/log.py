@@ -53,6 +53,8 @@ class LogSend(threading.Thread):
 
     def run(self):
         log = ''.join([str(x) for x in self.args])
+        if settings.DEBUG:
+            print(log)
         logger_log.debug(log)
 
 
@@ -90,6 +92,8 @@ class LogHeader(threading.Thread):
 
     def run(self):
         log = ''.join([str(x) for x in self.args])
+        if settings.DEBUG:
+            print(log)
         logger_header.debug(log)
 
 
