@@ -4903,7 +4903,7 @@ def list_employee(request):
 @cross_origin_read_allow
 def update_camera(request):
     """
-    출입증 승인/거절: 신청된 출입증 승인/거절(모니터링 앱)
+    카메라 상태 변경: 지정된 근로자의 앱을 통해 카메라 사용을 금지 시킨다.
         http://0.0.0.0:8000/employee/update_camera?passer_id=LjmQXEHbJu-Rdt5pAMBUlw&is_stop=1
     POST : json
         passer_id: 암호화된 id
@@ -4982,3 +4982,70 @@ def update_camera(request):
 
     return REG_200_SUCCESS.to_json_response()
 
+
+@cross_origin_read_allow
+def push_work(request):
+    """
+    새 업무 알림 발송: 구직 신청 근로자에게 새 업무 알림 발송
+        http://0.0.0.0:8000/employee/push_work?passer_id=307
+    POST : json
+        passer_id: 출입 신청 id
+    response
+        STATUS 200
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    PUSH
+        notification: {
+            'title': '출입증 {}'.format(accept),  # 거절 / 승인
+            'body': io_pass.contents            # 2020 생산직 채용 홍보 미팅
+            }
+         data: {
+            'action': 'io_pass',
+            'accept': accept,
+            'contents': io_pass.contents,
+            'name': io_pass.name,
+            'pNo': phone_format(io_pass.pNo),
+            'dt': dt_str(io_pass.dt, "%Y-%m-%d"),
+            'why': io_pass.why,
+            }
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 신청자({})가 없습니다.'.format(io_pass.passer_id)})
+    # push
+    push_contents = {
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}],
+        'func': 'user',
+        'isSound': True,
+        'badge': 1,
+        # 'contents': None,
+        'contents': {'title': '대덕테크 서버운영(3교대)',
+                     'subtitle': '11/11~12:31 20~45 남성 월급제',
+                     'body': {'work_place_name': '대덕테크',
+                              'work_type': '서버운영(3교대)',
+                              'ymd_begin': '2019/11/11',
+                              'ymd_end': '2019/11/11',
+                              'age': '20~45',
+                              'sex': 'Man',
+                              'work_time': '07:00 15:00 23:00',
+                              'pay_type': '월급제',
+                              }
+                     }
+    }
+    response = notification(push_contents)
+
+    return REG_200_SUCCESS.to_json_response()
