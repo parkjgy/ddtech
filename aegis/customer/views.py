@@ -2207,8 +2207,8 @@ def reg_work_v2(request):
             'work_time':
                 [                                   # 주) 업무에 사용되는 모든 시간을 넣는다.
                     {
-                        'begin':    '09:00',        # 출근시간
-                        'end':      '18:00',        # 퇴근시간
+                        'begin':        '09:00',    # 출근시간
+                        'end':          '18:00',    # 퇴근시간
                         'is_fix_rest':  1,          # 시간이 정해져 있나? 1: 그렇다.(12:00-13:00) 0:아니다.
                         'rest_begin':   '12:00',    # is_fix_rest = 1 일때 휴식 시작시간
                         'rest_end':     '13:00',    # is_fix_rest = 1 일때 휴식 종료시간
@@ -2222,7 +2222,8 @@ def reg_work_v2(request):
                 'week':     6,                      # 매주 토요일이 휴일일 때 (0: 일요일, 1: 월요일, ... 6:토요일)
                 'days':     [2, 5, 2, 15, 22, 25],  # 매달 2, 5, 12, 15, 22, 25 일이 휴일일 때
                 },
-            'holiday_paid': {'is_week': 0, 'days': [3, 13, 23] }, # is_week == 0 이면 'days' 만 나온다.
+            'holiday_paid':
+                {'is_week': 0, 'days': [3, 13, 23] }, # is_week == 0 이면 'days' 만 나온다.
             'working_type'  'WEEK'                  # 시급제(WEEK) / 월급제(MONTH)
         }
     response
