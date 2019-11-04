@@ -2183,6 +2183,549 @@ def list_work(request):
 
 @cross_origin_read_allow
 @session_is_none_403
+def reg_work_v2(request):
+    """
+    새업무 등록 V2
+    - 새업무를 등록한다.
+        주)	response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/reg_work?name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
+    POST
+        {
+            'name':         '포장',                  # 생산, 포장, 경비, 미화 등
+            'work_place_id':'암호화된 사업장 id',
+            'type':         '업무 형태',              # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+            'dt_begin':     '2019-01-28',           # 업무 시작 날짜
+            'dt_end':       '2019-02-28',           # 업무 종료 날짜
+            'staff_id':     '암호화된 현장 소장 id',
+            'partner_id':   '암호화된 협력업체 id'
+            'age':          'X'                     # X, 20-50, 25-70 나이 구분은 '-'로 한다.
+            'sex':          'X'                     # X, M, W 각각 제한없음, 남자, 여자
+            'time_work':    [                       # 주) 업무에 사용되는 모든 시간을 넣는다.
+                            '09:00-18:00 12:00-13:00'   # 출근시간-퇴근시간 휴게시간-휴게시간 단, 휴게시간이 없으면 X
+                            '18:00-02:00 X'             # 출근시간-퇴근시간 휴게시간 없음
+                            '02:00-09:00 1:30'          # 출근시간-퇴근시간 휴게시간 1시간 30분
+                            ]
+                                                        # 휴일은 아래 2가지 중 하나를 사용할 수 있다.
+                                                        ? 1개월 이상 업무에서 월이든 주이든 바뀌면 답이 없다.
+            'hd_unpaid'     'W0'                        # 무급휴일(holiday unpaid) W0: 일요일, W1: 월요일, ... W6: 토요일
+            'hd_paid'       '2,5,12,15,22,25'           # 유급휴일(holiday paid)  콤마로 구분한 날짜가 휴일 (월 단위 일 때 사용)
+                                                        #
+            'working_type'  'WEEK'                      # 시급제(WEEK) / 월급제(MONTH)
+        }
+    response
+        STATUS 200
+        STATUS 409
+            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+        STATUS 416
+            {'message': '빈 값은 안 됩니다.'}
+            {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
+            {'message': '3자 이상이어야 합니다.'}
+            {'message': '업무 시작 날짜는 오늘 이후여야 합니다.'}
+            {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
+        STATUS 544
+            {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'}
+        STATUS 422
+            {'message': '사업장 명칭은 최소 4자 이상이어야 합니다.'}
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'name\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 없어요'}
+            {'message': 'ClientError: parameter \'type\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_end\' 가 없어요'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 없어요'}
+
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
+
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!',
+                                             'partner_id_!_@'])
+    if not parameter_check['is_ok']:
+        logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
+    name = parameter_check['parameters']['name']
+    work_place_id = parameter_check['parameters']['work_place_id']
+    type = parameter_check['parameters']['type']
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+    staff_id = parameter_check['parameters']['staff_id']
+    partner_id = parameter_check['parameters']['partner_id']
+    if partner_id is None:
+        # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
+        partner_id = worker.co_id
+
+    result = id_ok(name, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
+    result = type_ok(type, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
+
+    if dt_begin < datetime.datetime.now():
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
+    if dt_end < dt_begin:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
+
+    works = Work.objects.filter(name=name,
+                                type=type,
+                                work_place_id=work_place_id,
+                                staff_id=staff_id,
+                                contractor_id=partner_id,
+                                )
+    for work in works:
+        logSend('  existed: {}'.format({x: work.__dict__[x] for x in work.__dict__.keys()}))
+    if len(works) > 0:
+        return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
+
+    work_place = Work_Place.objects.get(id=work_place_id)
+    staff = Staff.objects.get(id=staff_id)
+    contractor = Customer.objects.get(id=partner_id)
+    new_work = Work(
+        name=name,
+        work_place_id=work_place.id,
+        work_place_name=work_place.name,
+        type=type,
+        contractor_id=contractor.id,
+        contractor_name=contractor.corp_name,
+        dt_begin=dt_begin,  # datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
+        dt_end=dt_end,  # datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d"),
+        staff_id=staff.id,
+        staff_name=staff.name,
+        staff_pNo=staff.pNo,
+        staff_email=staff.email,
+    )
+    new_work.save()
+
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def update_work_v2(request):
+    """
+    사업장 업무 수정
+    - 업무 항목은 지울 수 없기 때문에 blank("")가 오면 수정하지 않는다.
+    - key (예: name) 가 없으면 수정하지 않는다.
+    - 사업장의 각 업무는 기간이 지나면 다시 등록해서 사용해야 한다.
+        주)	값이 있는 항목만 수정한다. ('name':'' 이면 사업장 이름을 수정하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/update_work?work_id=1&name=비콘교체&work_place_id=1&type=3교대&contractor_id=1&dt_begin=2019-01-21&dt_end=2019-01-26&staff_id=2
+    POST
+        {
+            'work_id':      '암호화된 업무 id',
+            'name':         '포장',
+            'work_place_id':'암호화된 사업장 id',
+            'type':         '업무 형태',
+            'dt_begin':     '2019-01-28',           # 업무 시작 날짜
+            'dt_end':       '2019-02-28',           # 업무 종료 날짜
+            'staff_id':     '암호화된 현장 소장 id',
+            'partner_id':   '암호화된 협력업체 id'       # 고객사 id 를 기본으로 한다.
+        }
+    response
+        STATUS 200
+        STATUS 409
+            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+        STATUS 416
+            {'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
+            {'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
+        STATUS 503
+            {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    if not parameter_check['is_ok']:
+        return status422(get_api(request),
+                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+
+    works = Work.objects.filter(id=work_id)
+    if len(works) == 0:
+        logError(get_api(request), ' work id: {} 없음'.format(work_id))
+        return status422(get_api(request), {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'})
+    # if work.contractor_id != worker.co_id:
+    #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
+    #
+    #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
+    work = works[0]
+
+    dt_today = datetime.datetime.now()
+    is_update_dt_begin = False
+    parameter_check = is_parameter_ok(rqst, ['dt_begin'])
+    if parameter_check['is_ok']:
+        # 업무가 시작되었으면 업무 시작 날짜를 변경할 수 없다. - 업무 시작 날짜가 들어왔더라도 무시한다.
+        if dt_today < work.dt_begin:
+            work.dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+            if work.dt_begin < dt_today:
+                # 업무 시작 날짜를 오늘 이전으로 설정할 수 없다.
+
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
+            is_update_dt_begin = True
+        else:
+            if str_to_datetime(parameter_check['parameters']['dt_begin']) != work.dt_begin:
+                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무가 시작되면 시작 날짜를 변경할 수 없습니다.'})
+
+    is_update_dt_end = False
+    parameter_check = is_parameter_ok(rqst, ['dt_end'])
+    if parameter_check['is_ok']:
+        work.dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+        is_update_dt_end = True
+    if work.dt_end < work.dt_begin:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
+    #
+    # 근로자 시간 변경
+    #
+    update_employee_pNo_list = []
+    if is_update_dt_begin or is_update_dt_end:
+        employees = Employee.objects.filter(work_id=work.id)
+        logSend('  - employees = {}'.format([employee.pNo for employee in employees]))
+        for employee in employees:
+            is_update_employee = False
+            if employee.dt_begin < work.dt_begin:
+                # 근로자의 업무 시작 날짜가 업무 시작 날짜 보다 빠르면 업무 시작 날짜로 바꾼다.
+                employee.dt_begin = work.dt_begin
+                is_update_employee = True
+                update_employee_pNo_list.append(employee.pNo)
+            if work.dt_end < employee.dt_end:
+                # 근로자의 업무 종료 날짜가 업무 종료 날짜 보다 느리면 업무 종료 날짜로 바꾼다.
+                employee.dt_end = work.dt_end
+                is_update_employee = True
+                update_employee_pNo_list.append(employee.pNo)
+            if is_update_employee:
+                employee.save()
+
+    is_update_name = False
+    parameter_check = is_parameter_ok(rqst, ['name'])
+    if parameter_check['is_ok']:
+        work.name = parameter_check['parameters']['name']
+        is_update_name = True
+
+    is_update_type = False
+    parameter_check = is_parameter_ok(rqst, ['type'])
+    if parameter_check['is_ok']:
+        work.type = parameter_check['parameters']['type']
+        is_update_type = True
+
+    # 업무의 사업장이 변경되었을 때 처리
+    is_update_work_place = False
+    parameter_check = is_parameter_ok(rqst, ['work_place_id_!'])
+    if parameter_check['is_ok']:
+        work_place_id = parameter_check['parameters']['work_place_id']
+        work_places = Work_Place.objects.filter(id=work_place_id)
+        if len(work_places) > 0:
+            work_place = work_places[0]
+            work.work_place_id = work_place.id
+            work.work_place_name = work_place.name
+            is_update_work_place = True
+    elif parameter_check['is_decryption_error']:
+        logError(get_api(request), parameter_check['results'])
+
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
+
+    # 파견업체가 변경되었을 때 처리
+    is_update_partner = False
+    parameter_check = is_parameter_ok(rqst, ['partner_id_!'])
+    if parameter_check['is_ok']:
+        partner_id = parameter_check['parameters']['partner_id']
+        partners = Customer.objects.filter(id=partner_id)
+        if len(partners) > 0:
+            partner = partners[0]
+            work.contractor_id = partner.id
+            work.contractor_name = partner.corp_name
+            is_update_partner = True
+    elif parameter_check['is_decryption_error']:
+        logError(get_api(request), parameter_check['results'])
+
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
+
+    # 업무 담당자가 바뀌었을 때 처리
+    is_update_staff = False
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
+    if parameter_check['is_ok']:
+        staff_id = parameter_check['parameters']['staff_id']
+        staffs = Staff.objects.filter(id=staff_id)
+        if len(staffs) > 0:
+            staff = staffs[0]
+            work.staff_id = staff.id
+            work.staff_name = staff.name
+            work.staff_pNo = staff.pNo
+            work.staff_email = staff.email
+            is_update_staff = True
+    elif parameter_check['is_decryption_error']:
+        logError(get_api(request), parameter_check['results'])
+
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
+
+    if is_update_dt_begin or is_update_dt_end or is_update_name or is_update_type or is_update_work_place or is_update_partner or is_update_staff:
+        work.save()
+
+    update_employee_work_infor = {
+        'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
+        'work_place_name': work.work_place_name,
+        'work_name_type': '{} ({})'.format(work.name, work.type),
+        'begin': work.dt_begin.strftime('%Y/%m/%d'),
+        'end': work.dt_end.strftime('%Y/%m/%d'),
+        'staff_name': work.staff_name,
+        'staff_pNo': work.staff_pNo,
+        'update_employee_pNo_list': update_employee_pNo_list,
+    }
+    r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
+    logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+    is_update_employee = True if r.status_code == 200 else False
+
+    return REG_200_SUCCESS.to_json_response({'is_update_type': is_update_type,
+                                             'is_update_dt_begin': is_update_dt_begin,
+                                             'is_update_dt_end': is_update_dt_end,
+                                             'is_update_work_place': is_update_work_place,
+                                             'is_update_partner': is_update_partner,
+                                             'is_update_staff': is_update_staff,
+                                             'is_update_name': is_update_name,
+                                             'is_update_employee': is_update_employee
+                                             })
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def list_work_from_work_place_v2(request):
+    """
+    사업장에 소속된 업무 목록
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/list_work_from_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg
+    GET
+        work_place_id   = cipher 사업장 id
+        is_active       = YES(1), NO(0) default is NO (호환성을 위해 있어도 되고 없으면 0 으로 처리)
+        dt_begin        = 과거 업무를 찾을 때 (optional) 2019/2/20 미구현
+        dt_end          = 과거 업무를 찾을 때 (optional)
+    response
+        STATUS 200
+            {
+             	"works":
+             	[
+             		{
+             		    "id": 1,
+             		    "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
+        STATUS 503
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    work_place_id = rqst['work_place_id']
+    # if ('dt_begin' in rqst) and ('dt_end' in rqst):
+    #     # 추후에 작업
+    # if len(str_dt_begin) == 0:
+    #     dt_begin = datetime.datetime.now() - timedelta(days=365)
+    # else:
+    #     dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+    # print(dt_begin)
+    # str_dt_end = rqst['dt_end']
+    # if len(str_dt_end) == 0:
+    #     dt_end = datetime.datetime.now() + timedelta(days=365)
+    # else:
+    #     dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+    # print(dt_end)
+    if 'is_active' in rqst and rqst['is_active'] is '1':
+        dt_today = datetime.datetime.now()
+        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
+                                    dt_end__gte=dt_today,
+                                    ).values('id',
+                                             'name',
+                                             'work_place_id',
+                                             'work_place_name',
+                                             'type',
+                                             'contractor_id',
+                                             'contractor_name',
+                                             'dt_begin',
+                                             'dt_end',
+                                             'staff_id',
+                                             'staff_name',
+                                             'staff_pNo',
+                                             'staff_email')
+    else:
+        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id)).values('id',
+                                                                                            'name',
+                                                                                            'work_place_id',
+                                                                                            'work_place_name',
+                                                                                            'type',
+                                                                                            'contractor_id',
+                                                                                            'contractor_name',
+                                                                                            'dt_begin',
+                                                                                            'dt_end',
+                                                                                            'staff_id',
+                                                                                            'staff_name',
+                                                                                            'staff_pNo',
+                                                                                            'staff_email')
+    arr_work = []
+    for work in works:
+        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
+        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
+        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
+        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
+        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
+        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        work['staff_pNo'] = phone_format(work['staff_pNo'])
+        arr_work.append(work)
+    result = {'works': arr_work}
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def list_work_v2(request):
+    """
+    사업장 업무 목록
+    - 검색 값은 없으면 blank ("")로 보낸다.
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/list_work?name=&manager_name=종기&manager_phone=3555&order_name=대덕
+    GET
+        name            = 업무 이름
+        work_place_name = 사업장 이름
+        type            = 업무 형태
+        contractor_name = 파견(도급)업체 or 협력업체 이름
+        staff_name      = 담당자 이름	    # 담당자가 관리하는 현장 업무를 볼때
+        staff_pNo       = 담당자 전화번호   # 담당자가 관리하는 현장 업무를 볼때
+        dt_begin        = 해당 날짜에 이후에 시작하는 업무 # 없으면 1년 전부터
+        dt_end          = 해당 날짜에 이전에 끝나는 업무  #  없으면 1년 후까지
+    response
+        STATUS 200
+            {
+             	"works":
+             	[
+             		{
+             		    "id": 1,
+             		    "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
+        STATUS 503
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    name = rqst['name']
+    work_place_name = rqst['work_place_name']
+    type = rqst['type']
+    contractor_name = rqst['contractor_name']
+    staff_name = rqst['staff_name']
+    staff_pNo = no_only_phone_no(rqst['staff_pNo'])
+    str_dt_begin = rqst['dt_begin']
+    if len(str_dt_begin) == 0:
+        dt_begin = datetime.datetime.now() - timedelta(days=365)
+    else:
+        dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
+    logSend('  이날짜 이후 업무'.format(dt_begin))
+    str_dt_end = rqst['dt_end']
+    if len(str_dt_end) == 0:
+        dt_end = datetime.datetime.now() + timedelta(days=365)
+    else:
+        dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
+    logSend('  이날짜 까지 업무'.format(dt_end))
+    works = Work.objects.filter(name__contains=name,
+                                work_place_name__contains=work_place_name,
+                                type__contains=type,
+                                contractor_name__contains=contractor_name,
+                                staff_name__contains=staff_name,
+                                staff_pNo__contains=staff_pNo,
+                                dt_begin__gt=dt_begin,
+                                dt_end__lt=dt_end).values('id',
+                                                          'name',
+                                                          'work_place_id',
+                                                          'work_place_name',
+                                                          'type',
+                                                          'contractor_id',
+                                                          'contractor_name',
+                                                          'dt_begin',
+                                                          'dt_end',
+                                                          'staff_id',
+                                                          'staff_name',
+                                                          'staff_pNo',
+                                                          'staff_email')
+    arr_work = []
+    for work in works:
+        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
+        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
+        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
+        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
+        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
+        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
+        work['staff_pNo'] = phone_format(work['staff_pNo'])
+        arr_work.append(work)
+    result = {'works': arr_work}
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
 def reg_employee(request):
     """
     근로자 등록 - 업무 선택 >> 전화번호 목록 입력 >> [등록 SMS 안내 발송]

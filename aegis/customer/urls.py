@@ -39,6 +39,12 @@ urlpatterns = [
     url(r'customer/list_work_from_work_place$', views.list_work_from_work_place, name='list_work_from_work_place'),
     url(r'customer/list_work$', views.list_work, name='list_work'),
 
+    url(r'customer/reg_work_v2', views.reg_work_v2, name='reg_work_v2'),
+    url(r'customer/update_work_v2', views.update_work_v2, name='update_work_v2'),
+    url(r'customer/list_work_v2', views.list_work_v2, name='list_work_v2'),
+    url(r'customer/list_work_from_work_place_v2', views.list_work_from_work_place_v2,
+        name='list_work_from_work_place_v2'),
+
     url(r'customer/reg_employee$', views.reg_employee, name='reg_employee'),
     url(r'customer/employee_work_accept_for_employee$', views.employee_work_accept_for_employee, name='employee_work_accept_for_employee'),
     url(r'customer/update_employee_for_employee$', views.update_employee_for_employee, name='update_employee_for_employee'),
