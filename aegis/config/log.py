@@ -6,6 +6,9 @@ import random
 import logging
 import threading
 
+import requests
+import json
+
 logger_log = logging.getLogger("aegis.log")
 logger_error = logging.getLogger("aegis.error.log")
 logger_error.setLevel(logging.DEBUG)
@@ -120,3 +123,13 @@ def logError(*args):
     # except Exception as e:
     #     logger_error.error(str(e))
     #     return
+
+
+# 슬랙 연동용 코드
+def send_slack(title, message, channel='#server_bug', username='알리미', icon_emoji='ghost'):
+    slack_hook_url = 'https://hooks.slack.com/services/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'
+    payload = {'text': ':pushpin: ' + title, 'username': username, 'icon_emoji': icon_emoji, 'attachments': []}
+    payload['attachments'].append({'text': message})
+    if channel is not None:
+        payload['channel'] = channel
+    requests.post(slack_hook_url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})

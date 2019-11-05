@@ -481,7 +481,7 @@ class Works(object):
         출퇴근이 가능한 업무가 있다. - 업무가 시작되었다.
         """
         today = when
-        # logSend('  today: {}'.format(today))
+        logSend('  today: {}'.format(today))
         for self.index in range(len(self.data)):
             # logSend('  work id: {}, begin: {}, end: {}'.format(self.data[self.index]['id'],
             #                                                    str_to_dt(self.data[self.index]['begin']),

@@ -8,7 +8,7 @@ import random
 import inspect
 import secrets  # uuid token 만들 때 사용
 
-from config.log import logSend, logError
+from config.log import logSend, logError, send_slack
 from config.common import ReqLibJsonResponse
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
 from config.common import str_no, str_to_dt, get_client_ip, get_api
@@ -1204,6 +1204,8 @@ def pass_verify(request):
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
+        message = '출근처리할 업무가 없습니다.\npasser.id: {}\nworks: {}'.format(passer.id, employee.get_works())
+        send_slack(' <상용> employee/pass_verify', message, channel='#server_bug')
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     work_id = employee_works.data[employee_works.index]['id']
     #
