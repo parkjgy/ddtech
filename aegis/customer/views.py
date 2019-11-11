@@ -2188,7 +2188,7 @@ def reg_work_v2(request):
     새업무 등록 V2
     - 새업무를 등록한다.
         주)	response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/reg_work?name=비콘교체&work_place_id=1&type=3교대&dt_begin=2019-01-29&dt_end=2019-01-31&staff_id=1
+    http://0.0.0.0:8000/customer/reg_work_v2
     POST
         {
             'name':         '포장',                  # 생산, 포장, 경비, 미화 등
@@ -2198,33 +2198,38 @@ def reg_work_v2(request):
             'dt_end':       '2019-02-28',           # 업무 종료 날짜
             'staff_id':     '암호화된 현장 소장 id',
             'partner_id':   '암호화된 협력업체 id'
-            'age':          {
-                                'is_all':   1,      # 1: 나이 제한 없음, 0: 아래 조건에 따른 나이 제한
-                                'min':      20,     # 최저 나이 (is_all = 0 일때만 있음)
-                                'max':      50,     # 최고 나이 (is_all = 0 일때만 있음)
-                            },
-            'sex':          'X'                     # X: 제한없음, M: 남자만, W: 여자만
-            'work_time':
-                [                                   # 주) 업무에 사용되는 모든 시간을 넣는다.
+
+            # 신규 추가 사항
+            time_type:      0           # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+            week_hours:     40,         # 시간/주 (소정근로시간)
+            month_hours:    209,        # 시간/원 (소정근로시간)
+            working_days:   [1, 3, 5]   # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+            paid_day:       -1          # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+            is_holiday_work: 1          # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+            # 근무시간
+            # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
+            # 1: 09:00 ~ 21:00, 01:30
+            # 2: 09:00 ~ 21:00
+            work_time_list:
+                [
                     {
-                        'begin':        '09:00',    # 출근시간
-                        'end':          '18:00',    # 퇴근시간
-                        'is_fix_rest':  1,          # 시간이 정해져 있나? 1: 그렇다.(12:00-13:00) 0:아니다.
-                        'rest_begin':   '12:00',    # is_fix_rest = 1 일때 휴식 시작시간
-                        'rest_end':     '13:00',    # is_fix_rest = 1 일때 휴식 종료시간
-                        'rest':         '00:00',    # is_fix_rest = 0 일때 휴식시간 (시간:분 으로 표시)
-                    },
-                    {'begin': '09:00', 'end': '18:00', 'is_fix_rest': 1, 'rest_begin': '12:00', 'rest_end': '13:00', 'rest': '00:00'},
-                    {'begin': '09:00', 'end': '18:00', 'is_fix_rest': 1, 'rest_begin': '12:00', 'rest_end': '13:00', 'rest': '00:00'},
-                ],
-            'holiday_unpaid': {
-                'is_week':  1,                      # 주단위 휴일인가? 1: 매주 ?요일, 0: 지정한 날짜가 휴일
-                'week':     6,                      # 매주 토요일이 휴일일 때 (0: 일요일, 1: 월요일, ... 6:토요일)
-                'days':     [2, 5, 2, 15, 22, 25],  # 매달 2, 5, 12, 15, 22, 25 일이 휴일일 때
-                },
-            'holiday_paid':
-                {'is_week': 0, 'days': [3, 13, 23] }, # is_week == 0 이면 'days' 만 나온다.
-            'working_type'  'WEEK'                  # 시급제(WEEK) / 월급제(MONTH)
+                        t_begin: 09:00,         # 근무 시작 시간
+                        t_end: 21:00,           # 근무 종료 시간
+                        break_time_type: 0      # 휴게시간 구분 (0: list, 1: total, 2: none)
+                        beak_time_list:         # 휴게시간이 0 일 때만
+                            [
+                                {
+                                    bt_begin: 12:00,    # 휴게시간 시작
+                                    bt_end:13:00        # 휴게시간 종료
+                                },
+                                {
+                                    bt_begin: 18:00,    # 휴게시간 시작
+                                    bt_end:19:00        # 휴게시간 종
+                                }
+                            ],
+                        break_time_total: 01:30,    # 휴게시간이 1 일 때만
+                    }
+                ]
         }
     response
         STATUS 200
