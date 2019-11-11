@@ -2300,6 +2300,7 @@ def reg_work_v2(request):
     if dt_end < dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
 
+    return
     works = Work.objects.filter(name=name,
                                 type=type,
                                 work_place_id=work_place_id,
