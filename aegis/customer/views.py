@@ -2240,8 +2240,9 @@ def reg_work_v2(request):
             {'message': '3자 이상이어야 합니다.'}
             {'message': '업무 시작 날짜는 오늘 이후여야 합니다.'}
             {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
+            {'message': '사업장 id, 관리자 id, 협력사 id 가 잘못되었어요.'}
         STATUS 544
-            {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'}
+            {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면서 기간이 중복되면 등록할 수 없습니다.'}
         STATUS 422
             {'message': '사업장 명칭은 최소 4자 이상이어야 합니다.'}
             {'message': '필수 항목(빨간 별)이 비었습니다.'}
@@ -2291,24 +2292,15 @@ def reg_work_v2(request):
     paid_day = parameter_check['parameters']['paid_day']
     is_holiday_work = parameter_check['parameters']['is_holiday_work']
     work_time_list = parameter_check['parameters']['work_time_list']
-    try:
-        db_work_time_list = []
-        for work_time in work_time_list:
-            logSend('   work_time: {}'.format(work_time))
-            work_time_str = '{}-{} '.format(work_time['t_begin'], work_time['t_end'])
-            if work_time['beak_time_type'] == '0':
-                break_time_str = ''
-                for break_time in work_time['break_time_list']:
-                    break_time_str += ' {}-{}'.format(break_time['bt_begin'], break_time['bt_end'])
-                work_time_str += str(len(break_time_list)) + break_time_str
-            elif work_time['beak_time_type'] == '1':
-                work_time_str += '0 {}'.format(work_time['break_time_total'])
-            else:
-                work_time_str += '0 00:00'
-            db_work_time_list.append(work_time_str)
-    except Exception as e:
-        logSend('   {}\nlist: {}'.format(str(e), db_work_time_list))
-    logSend('   list: {}'.format(db_work_time_list))
+    time_info = {
+        'time_type': time_type,
+        'week_hours': week_hours,
+        'month_hours': month_hours,
+        'working_days': working_days,
+        'paid_day': paid_day,
+        'is_holiday_work': is_holiday_work,
+        'work_time_list': work_time_list,
+    }
 
     if partner_id is None:
         # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
@@ -2326,7 +2318,6 @@ def reg_work_v2(request):
     if dt_end < dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
 
-    return
     works = Work.objects.filter(name=name,
                                 type=type,
                                 work_place_id=work_place_id,
@@ -2336,11 +2327,23 @@ def reg_work_v2(request):
     for work in works:
         logSend('  existed: {}'.format({x: work.__dict__[x] for x in work.__dict__.keys()}))
     if len(works) > 0:
-        return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면 등록할 수 없습니다.'})
+        logSend('  new: {} - {}'.format(dt_begin, dt_end))
+        for work in works:
+            exist_dt_begin = work.dt_begin
+            exist_dt_end = work.dt_end
+            logSend('  exist: {} - {}'.format(exist_dt_begin, exist_dt_end))
+            if ((exist_dt_begin <= dt_begin <= exist_dt_end) or
+                (exist_dt_begin <= dt_end <= exist_dt_end) or
+                (dt_begin <= exist_dt_begin <= dt_end)):
+                return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면서 기간이 중복되면 등록할 수 없습니다.'})
 
-    work_place = Work_Place.objects.get(id=work_place_id)
-    staff = Staff.objects.get(id=staff_id)
-    contractor = Customer.objects.get(id=partner_id)
+    try:
+        work_place = Work_Place.objects.get(id=work_place_id)
+        staff = Staff.objects.get(id=staff_id)
+        contractor = Customer.objects.get(id=partner_id)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '사업장 id, 관리자 id, 협력사 id 가 잘못되었어요.'})
+
     new_work = Work(
         name=name,
         work_place_id=work_place.id,
@@ -2355,6 +2358,7 @@ def reg_work_v2(request):
         staff_pNo=staff.pNo,
         staff_email=staff.email,
     )
+    new_work.set_time_info(time_info)
     new_work.save()
 
     return REG_200_SUCCESS.to_json_response()

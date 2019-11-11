@@ -1,4 +1,5 @@
 from django.db import models
+import json
 
 # Create your models here.
 class Customer(models.Model):
@@ -118,30 +119,16 @@ class Work(models.Model):
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
     staff_email = models.CharField(max_length = 320) # 담당자 이메일
 
-    time_type = models.IntegerField(default=0)      # 급여계산 방식
-    week_hours = models.IntegerField(default=40)    # 주 소정근로시간
-    month_hours = models.IntegerField(default=209)  # 월 소정근로시간
-    working_days = models.CharField(max_length=30, default='[1, 2, 3, 4, 5]')  # 근무하는 요일 (0: 일, 1: 월요일, ... 6: 토)
-    paied_day = models.IntegerField(default=-1)             # 유급휴일(주휴일) (-1: 수동지정, 0: 일, 1: 월, ... 6:토)
-    is_holiday_work = models.BooleanField(default=True)     # (무급휴일이)휴무일인가? 1: 휴무일, 0: 휴일(연장근무로 처리) 
-    work_time_list = models.CharField(max_length=2048, default='[09:00-18:00 0 01:30]')  # 근무시간 (출근 09:00 퇴근 18:00 휴게시간 시간지정 0개 휴게시간 01:30)
+    time_info = models.CharField(max_length=8191, default='{}')  # 근무시간 (출근 09:00 퇴근 18:00 휴게시간 시간지정 0개 휴게시간 01:30)
 
-    def set_working_days(self, x):
-        self.working_days = json.dumps(x)
+    def set_time_info(self, x):
+        self.time_info = json.dumps(x)
+        print(len(self.time_info))
 
-    def get_working_days(self):
-        if len(self.working_days) == 0:
-            self.working_days = "[]"
-        return json.loads(self.working_days)
-
-
-    def set_work_time_list(self, x):
-        self.work_time_list = json.dumps(x)
-
-    def get_work_time_list(self):
-        if len(self.work_time_list) == 0:
-            self.work_time_list = "[]"
-        return json.loads(self.work_time_list)
+    def get_time_info(self):
+        if len(self.time_info) == 0:
+            self.time_info = "{}"
+        return json.loads(self.time_info)
 
 
 class Employee(models.Model):

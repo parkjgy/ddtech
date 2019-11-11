@@ -3535,11 +3535,11 @@ def test_go_go(request):
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
     new_work_data = {
-        'name': '포장',  # 생산, 포장, 경비, 미화 등
+        'name': '서버운영',  # 생산, 포장, 경비, 미화 등
         'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
-        'type': '업무 형태',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-        'dt_begin': '2019-01-28',  # 업무 시작 날짜
-        'dt_end': '2019-02-28',  # 업무 종료 날짜
+        'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+        'dt_begin': '2019-11-13',  # 업무 시작 날짜
+        'dt_end': '2019-12-18',  # 업무 종료 날짜
         'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
         'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
         # 신규 추가 사항
@@ -3559,7 +3559,7 @@ def test_go_go(request):
                     't_begin': '09:00',  # 근무 시작 시간
                     't_end': '21:00',  # 근무 종료 시간
                     'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                    'beak_time_list':  # 휴게시간이 0 일 때만
+                    'break_time_list':  # 휴게시간이 0 일 때만
                         [
                             {
                                 'bt_begin': '12:00',  # 휴게시간 시작
@@ -3570,8 +3570,28 @@ def test_go_go(request):
                                 'bt_end': '19:00',  # 휴게시간 종
                             }
                         ],
+                },
+                {
+                    't_begin': '09:00',  # 근무 시작 시간
+                    't_end': '21:00',  # 근무 종료 시간
+                    'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
                     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
-                }
+                },
+                {
+                    't_begin': '07:00',  # 근무 시작 시간
+                    't_end': '15:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
+                {
+                    't_begin': '15:00',  # 근무 시작 시간
+                    't_end': '23:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
+                {
+                    't_begin': '23:00',  # 근무 시작 시간
+                    't_end': '07:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
             ]
     }
     r = s.post(settings.CUSTOMER_URL + 'reg_work_v2', json=new_work_data)

@@ -295,7 +295,7 @@ def type_ok(type, min_length):
         return {'message': '너무 짧습니다.'}
 
 
-def str_to_datetime(date_time):
+def str_to_datetime(date_time: str):
     """
     string to datetime
     - 정해진 양식을 지켜야 한다.
@@ -307,7 +307,7 @@ def str_to_datetime(date_time):
         '2019-05-05 17:30'		2019-05-05 17:30:00
         '2019-05-05 17:30:50'	2019-05-05 17:30:50
     """
-    date_time_divide = date_time.split()
+    date_time_divide = date_time.split(' ')
     date = date_time_divide[0]
     date_divide = date.split('-')
     if len(date_divide) == 2:
