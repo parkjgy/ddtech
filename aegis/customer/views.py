@@ -2191,43 +2191,42 @@ def reg_work_v2(request):
     http://0.0.0.0:8000/customer/reg_work_v2
     POST
         {
-            'name':         '포장',                  # 생산, 포장, 경비, 미화 등
-            'work_place_id':'암호화된 사업장 id',
-            'type':         '업무 형태',              # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-            'dt_begin':     '2019-01-28',           # 업무 시작 날짜
-            'dt_end':       '2019-02-28',           # 업무 종료 날짜
-            'staff_id':     '암호화된 현장 소장 id',
-            'partner_id':   '암호화된 협력업체 id'
-
+            'name': '포장',  # 생산, 포장, 경비, 미화 등
+            'work_place_id': '암호화된 사업장 id',
+            'type': '업무 형태',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+            'dt_begin': '2019-01-28',  # 업무 시작 날짜
+            'dt_end': '2019-02-28',  # 업무 종료 날짜
+            'staff_id': '암호화된 현장 소장 id',
+            'partner_id': '암호화된 협력업체 id',
             # 신규 추가 사항
-            time_type:      0           # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
-            week_hours:     40,         # 시간/주 (소정근로시간)
-            month_hours:    209,        # 시간/원 (소정근로시간)
-            working_days:   [1, 3, 5]   # 근무요일 (0: 일, 1: 월, ..., 6: 토)
-            paid_day:       -1          # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
-            is_holiday_work: 1          # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+            'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+            'week_hours': 40,  # 시간/주 (소정근로시간)
+            'month_hours': 209,  # 시간/원 (소정근로시간)
+            'working_days': [1, 3, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+            'paid_day': -1,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+            'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
             # 근무시간
             # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
             # 1: 09:00 ~ 21:00, 01:30
             # 2: 09:00 ~ 21:00
-            work_time_list:
+            'work_time_list':
                 [
                     {
-                        t_begin: 09:00,         # 근무 시작 시간
-                        t_end: 21:00,           # 근무 종료 시간
-                        break_time_type: 0      # 휴게시간 구분 (0: list, 1: total, 2: none)
-                        beak_time_list:         # 휴게시간이 0 일 때만
+                        't_begin': '09:00',  # 근무 시작 시간
+                        't_end': '21:00',  # 근무 종료 시간
+                        'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                        'beak_time_list':  # 휴게시간이 0 일 때만
                             [
                                 {
-                                    bt_begin: 12:00,    # 휴게시간 시작
-                                    bt_end:13:00        # 휴게시간 종료
+                                    'bt_begin': '12:00',  # 휴게시간 시작
+                                    'bt_end': '13:00'  # 휴게시간 종료
                                 },
                                 {
-                                    bt_begin: 18:00,    # 휴게시간 시작
-                                    bt_end:19:00        # 휴게시간 종
+                                    'bt_begin': '18:00',  # 휴게시간 시작
+                                    'bt_end': '19:00',  # 휴게시간 종
                                 }
                             ],
-                        break_time_total: 01:30,    # 휴게시간이 1 일 때만
+                        'break_time_total': '01:30',  # 휴게시간이 1 일 때만
                     }
                 ]
         }
@@ -2273,7 +2272,8 @@ def reg_work_v2(request):
     worker = Staff.objects.get(id=worker_id)
 
     parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!',
-                                             'partner_id_!_@'])
+                                             'partner_id_!_@', 'time_type', 'week_hours', 'month_hours', 'working_days',
+                                             'paid_day', 'is_holiday_work', 'work_time_list'])
     if not parameter_check['is_ok']:
         logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
@@ -2284,6 +2284,32 @@ def reg_work_v2(request):
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
     partner_id = parameter_check['parameters']['partner_id']
+    time_type = parameter_check['parameters']['time_type']
+    week_hours = parameter_check['parameters']['week_hours']
+    month_hours = parameter_check['parameters']['month_hours']
+    working_days = parameter_check['parameters']['working_days']
+    paid_day = parameter_check['parameters']['paid_day']
+    is_holiday_work = parameter_check['parameters']['is_holiday_work']
+    work_time_list = parameter_check['parameters']['work_time_list']
+    try:
+        db_work_time_list = []
+        for work_time in work_time_list:
+            logSend('   work_time: {}'.format(work_time))
+            work_time_str = '{}-{} '.format(work_time['t_begin'], work_time['t_end'])
+            if work_time['beak_time_type'] == '0':
+                break_time_str = ''
+                for break_time in work_time['break_time_list']:
+                    break_time_str += ' {}-{}'.format(break_time['bt_begin'], break_time['bt_end'])
+                work_time_str += str(len(break_time_list)) + break_time_str
+            elif work_time['beak_time_type'] == '1':
+                work_time_str += '0 {}'.format(work_time['break_time_total'])
+            else:
+                work_time_str += '0 00:00'
+            db_work_time_list.append(work_time_str)
+    except Exception as e:
+        logSend('   {}\nlist: {}'.format(str(e), db_work_time_list))
+    logSend('   list: {}'.format(db_work_time_list))
+
     if partner_id is None:
         # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
         partner_id = worker.co_id
