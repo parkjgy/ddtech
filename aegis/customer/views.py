@@ -14,7 +14,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api
+from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api, str_minute
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -2187,29 +2187,27 @@ def reg_work_v2(request):
     """
     새업무 등록 V2
     - 새업무를 등록한다.
+    ? 필수항목 처리
         주)	response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/reg_work_v2
     POST
         {
-            'name': '포장',  # 생산, 포장, 경비, 미화 등
-            'work_place_id': '암호화된 사업장 id',
-            'type': '업무 형태',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-            'dt_begin': '2019-01-28',  # 업무 시작 날짜
-            'dt_end': '2019-02-28',  # 업무 종료 날짜
-            'staff_id': '암호화된 현장 소장 id',
-            'partner_id': '암호화된 협력업체 id',
+            'name':             '포장',               # 생산, 포장, 경비, 미화 등
+            'work_place_id':    '암호화된 사업장 id',
+            'type':             '업무 형태',            # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+            'dt_begin':         '2019-01-28',       # 업무 시작 날짜
+            'dt_end':           '2019-02-28',       # 업무 종료 날짜
+            'staff_id':         '암호화된 현장 소장 id',
+            'partner_id':       '암호화된 협력업체 id',
+
             # 신규 추가 사항
-            'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
-            'week_hours': 40,  # 시간/주 (소정근로시간)
-            'month_hours': 209,  # 시간/원 (소정근로시간)
-            'working_days': [1, 3, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
-            'paid_day': -1,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
-            'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
-            # 근무시간
-            # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
-            # 1: 09:00 ~ 21:00, 01:30
-            # 2: 09:00 ~ 21:00
-            'work_time_list':
+            'time_type':        0,          # 급여형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+            'week_hours':       40,         # 시간/주 (소정근로시간)
+            'month_hours':      209,        # 시간/월 (소정근로시간)
+            'working_days':     [1, 3, 5],  # 소정근로일(근무요일) (0: 일, 1: 월, ..., 6: 토)
+            'paid_day':         -1,         # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+            'is_holiday_work': 1,           # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+            'work_time_list':               # 근무시간
                 [
                     {
                         't_begin': '09:00',  # 근무 시작 시간
@@ -2235,17 +2233,17 @@ def reg_work_v2(request):
         STATUS 409
             {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
         STATUS 416
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
             {'message': '빈 값은 안 됩니다.'}
             {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
             {'message': '3자 이상이어야 합니다.'}
             {'message': '업무 시작 날짜는 오늘 이후여야 합니다.'}
             {'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'}
             {'message': '사업장 id, 관리자 id, 협력사 id 가 잘못되었어요.'}
+            {'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'}
+            {'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'}
         STATUS 544
             {'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면서 기간이 중복되면 등록할 수 없습니다.'}
-        STATUS 422
-            {'message': '사업장 명칭은 최소 4자 이상이어야 합니다.'}
-            {'message': '필수 항목(빨간 별)이 비었습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: parameter \'name\' 가 없어요'}
             {'message': 'ClientError: parameter \'work_place_id_\' 가 없어요'}
@@ -2262,6 +2260,15 @@ def reg_work_v2(request):
 
             {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
 
+            {'message': '근무시간에 출근시간이 없다.'}
+            {'message': '근무시간에 퇴근시간이 없다.'}
+            {'message': '휴게시간 방식이 없다.'}
+            {'message': '휴게시간에 시작시간이 없다.'}
+            {'message': '휴게시간에 종료시간이 없다.'}
+            {'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'}
+            {'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'}
+            {'message': '근무시간에 휴게시간 구분이 범위를 넘었다.'}
+            {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
     """
 
     if request.method == 'POST':
@@ -2280,7 +2287,7 @@ def reg_work_v2(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
     name = parameter_check['parameters']['name']
     work_place_id = parameter_check['parameters']['work_place_id']
-    type = parameter_check['parameters']['type']
+    work_type = parameter_check['parameters']['type']
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
     staff_id = parameter_check['parameters']['staff_id']
@@ -2292,15 +2299,6 @@ def reg_work_v2(request):
     paid_day = parameter_check['parameters']['paid_day']
     is_holiday_work = parameter_check['parameters']['is_holiday_work']
     work_time_list = parameter_check['parameters']['work_time_list']
-    time_info = {
-        'time_type': time_type,
-        'week_hours': week_hours,
-        'month_hours': month_hours,
-        'working_days': working_days,
-        'paid_day': paid_day,
-        'is_holiday_work': is_holiday_work,
-        'work_time_list': work_time_list,
-    }
 
     if partner_id is None:
         # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
@@ -2309,7 +2307,7 @@ def reg_work_v2(request):
     result = id_ok(name, 2)
     if result is not None:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
-    result = type_ok(type, 2)
+    result = type_ok(work_type, 2)
     if result is not None:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
 
@@ -2317,6 +2315,105 @@ def reg_work_v2(request):
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
     if dt_end < dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
+
+    #'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+    if not (0 <= int(time_type) <= 3):
+        logSend(get_api(request), '급여형태: {} 가 범위 초과(0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직)'.format(int(time_type)))
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))})
+    # 'week_hours': 40,  # 시간/주 (소정근로시간)
+    # 'month_hours': 209,  # 시간/월 (소정근로시간)
+    # 'working_days': [1, 3, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+    int_working_days = [int(working_day) for working_day in working_days]
+    for working_day in int_working_days:
+        if not (0 <= working_day <= 6):
+            logSend(get_api(request), '소정근로일: {} 가 범위 초과(0: 일, 1: 월, ... 6: 토)'.format(working_day))
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
+                {'message': '소정근로일: {} 가 범위 초과(0: 일, 1: 월, ... 6: 토)'.format(working_day)})
+
+    # 'paid_day': -1,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+    int_paid_day = int(paid_day)
+    if not (-1 <= int_paid_day <= 6):
+        logSend(get_api(request), '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day))
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
+            {'message': '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day)})
+    if int_paid_day in int_working_days:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '소정근로일을 유급휴일로 설정할 수 없습니다.'})
+    # 'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+    # {
+    #     't_begin': '09:00',  # 근무 시작 시간
+    #     't_end': '21:00',  # 근무 종료 시간
+    #     'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #     'beak_time_list':  # 휴게시간이 0 일 때만
+    #         [
+    #             {
+    #                 'bt_begin': '12:00',  # 휴게시간 시작
+    #                 'bt_end': '13:00'  # 휴게시간 종료
+    #             },
+    #             {
+    #                 'bt_begin': '18:00',  # 휴게시간 시작
+    #                 'bt_end': '19:00',  # 휴게시간 종
+    #             }
+    #         ],
+    #     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+    # }
+    for work_time in work_time_list:
+        logSend('work_time: {}'.format(work_time))
+        if 't_begin' not in work_time:
+            logSend(get_api(request), '근무시간에 출근시간이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 출근시간이 없다.'})
+        if 't_end' not in work_time:
+            logSend(get_api(request), '근무시간에 퇴근시간이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 퇴근시간이 없다.'})
+        t_begin = str_minute(work_time['t_begin'])
+        t_end = str_minute(work_time['t_end'])
+        if t_end <= t_begin:
+            t_end += 24 * 60
+        logSend('   t_begin: {}, t_end: {}'.format(t_begin, t_end))
+        if 'break_time_type' not in work_time:
+            logSend(get_api(request), '휴게시간 방식이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간 방식이 없다.'})
+        int_break_time_type = int(work_time['break_time_type'])
+        if int_break_time_type == 0:  # 휴게시간(들)이 정해져 있을 때
+            if 'break_time_list' in work_time:
+                for break_time in work_time['break_time_list']:
+                    if 'bt_begin' not in break_time:
+                        logSend(get_api(request), '휴게시간에 시작시간이 없다.')
+                        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 시작시간이 없다.'})
+                    bt_begin = str_minute(break_time['bt_begin'])
+                    if bt_begin < t_begin:
+                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'})
+                    if 'bt_end' not in break_time:
+                        logSend(get_api(request), '휴게시간에 종료시간이 없다.')
+                        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 종료시간이 없다.'})
+                    bt_end = str_minute(break_time['bt_end'])
+                    if bt_end <= bt_begin:
+                        bt_end += 24 * 60
+                    if bt_end > t_end:
+                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'})
+            else:
+                logSend(get_api(request), '휴게시간이 시간지정인데 지정시간 리스트가 없다.')
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'})
+        elif int_break_time_type == 1:  # 휴게시간의 총 시간만 정할 때
+            if 'break_time_total' not in work_time:
+                logSend(get_api(request), '휴게시간이 총 휴게시간인데 휴게시간이 없다.')
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'})
+            # else:  #
+            #     bt_total = str_minute(work_time['break_time_total'])
+            #     if not (0 <= bt_total <= (t_end - t_begin)/8):  # 4시간당 30분의 휴게시간을 주면 24시간 근무해도 8시간을 초과할 수 없다.
+            #         logSend(get_api(request), '휴게시간은 8시간을 초과할 수 없다.')
+            #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간은 8시간을 초과할 수 없다.'})
+        elif int_break_time_type > 2:  # 휴게시간을 별도 정하지 않았을 때
+            logSend(get_api(request), '휴게시간 방식이 범위를 넘었다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'})
+    time_info = {
+        'time_type': time_type,
+        'week_hours': week_hours,
+        'month_hours': month_hours,
+        'working_days': int_working_days,
+        'paid_day': int_paid_day,
+        'is_holiday_work': is_holiday_work,
+        'work_time_list': work_time_list,
+    }
 
     works = Work.objects.filter(name=name,
                                 type=type,
@@ -2571,7 +2668,7 @@ def list_work_from_work_place_v2(request):
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/list_work_from_work_place?work_place_id=qgf6YHf1z2Fx80DR8o_Lvg
     GET
-        work_place_id   = cipher 사업장 id
+        work_place_id   = cipher 사업장 id (필수 항목
         is_active       = YES(1), NO(0) default is NO (호환성을 위해 있어도 되고 없으면 0 으로 처리)
         dt_begin        = 과거 업무를 찾을 때 (optional) 2019/2/20 미구현
         dt_end          = 과거 업무를 찾을 때 (optional)
@@ -2598,7 +2695,12 @@ def list_work_from_work_place_v2(request):
              		......
              	]
             }
-        STATUS 503
+        STATUS 409
+            {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
+        STATUS 416
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'work_place_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_place_id\' 가 정상적인 값이 아니예요.'}
     """
 
     if request.method == 'POST':
@@ -2609,61 +2711,32 @@ def list_work_from_work_place_v2(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    work_place_id = rqst['work_place_id']
-    # if ('dt_begin' in rqst) and ('dt_end' in rqst):
-    #     # 추후에 작업
-    # if len(str_dt_begin) == 0:
-    #     dt_begin = datetime.datetime.now() - timedelta(days=365)
-    # else:
-    #     dt_begin = datetime.datetime.strptime(str_dt_begin, '%Y-%m-%d')
-    # print(dt_begin)
-    # str_dt_end = rqst['dt_end']
-    # if len(str_dt_end) == 0:
-    #     dt_end = datetime.datetime.now() + timedelta(days=365)
-    # else:
-    #     dt_end = datetime.datetime.strptime(str_dt_end, '%Y-%m-%d')
-    # print(dt_end)
-    if 'is_active' in rqst and rqst['is_active'] is '1':
+    parameter_check = is_parameter_ok(rqst, ['work_place_id_!', 'is_active_@'])
+    if not parameter_check['is_ok']:
+        logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response()
+    work_place_id = parameter_check['parameters']['work_place_id']
+    is_active = parameter_check['parameters']['is_active']
+    if is_active is '1':
         dt_today = datetime.datetime.now()
-        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id),
+        works = Work.objects.filter(work_place_id=work_place_id,
                                     dt_end__gte=dt_today,
-                                    ).values('id',
-                                             'name',
-                                             'work_place_id',
-                                             'work_place_name',
-                                             'type',
-                                             'contractor_id',
-                                             'contractor_name',
-                                             'dt_begin',
-                                             'dt_end',
-                                             'staff_id',
-                                             'staff_name',
-                                             'staff_pNo',
-                                             'staff_email')
+                                    )
     else:
-        works = Work.objects.filter(work_place_id=AES_DECRYPT_BASE64(work_place_id)).values('id',
-                                                                                            'name',
-                                                                                            'work_place_id',
-                                                                                            'work_place_name',
-                                                                                            'type',
-                                                                                            'contractor_id',
-                                                                                            'contractor_name',
-                                                                                            'dt_begin',
-                                                                                            'dt_end',
-                                                                                            'staff_id',
-                                                                                            'staff_name',
-                                                                                            'staff_pNo',
-                                                                                            'staff_email')
+        works = Work.objects.filter(work_place_id=work_place_id)
     arr_work = []
     for work in works:
-        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
-        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
-        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
-        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
-        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
-        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
-        work['staff_pNo'] = phone_format(work['staff_pNo'])
-        arr_work.append(work)
+        work_dict = work.get_time_info()
+        # 기존에 업무 시간 정보가 없으면 여기서 만들어 넣어야 한다.
+        # if len(work_dict) == 0:  # 근무정보가 없는 경우
+        work_dict['id'] = AES_ENCRYPT_BASE64(str(work.id))
+        work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
+        work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
+        work_dict['staff_id'] = AES_ENCRYPT_BASE64(str(work.staff_id))
+        work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
+        work_dict['dt_end'] = work.dt_end.strftime('%Y-%m-%d')
+        work_dict['staff_pNo'] = phone_format(work.staff_pNo)
+        arr_work.append(work_dict)
     result = {'works': arr_work}
 
     return REG_200_SUCCESS.to_json_response(result)
@@ -2674,6 +2747,7 @@ def list_work_from_work_place_v2(request):
 def list_work_v2(request):
     """
     사업장 업무 목록
+    - 필터 항목: 사업장 id, 담당자 id, dt_begin, dt_end
     - 검색 값은 없으면 blank ("")로 보낸다.
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.

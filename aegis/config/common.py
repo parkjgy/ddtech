@@ -295,6 +295,16 @@ def type_ok(type, min_length):
         return {'message': '너무 짧습니다.'}
 
 
+def str_minute(time: str) -> int:
+    """
+    문자열 'hh:mm' 을 (정수)분으로 변경
+    :param time: 'hh:mm'
+    :return: minute
+    """
+    time_list = time.split(':')
+    return int(time_list[0]) * 60 + int(time_list[1])
+
+
 def str_to_datetime(date_time: str):
     """
     string to datetime
