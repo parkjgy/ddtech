@@ -2730,12 +2730,18 @@ def list_work_from_work_place_v2(request):
         # 기존에 업무 시간 정보가 없으면 여기서 만들어 넣어야 한다.
         # if len(work_dict) == 0:  # 근무정보가 없는 경우
         work_dict['id'] = AES_ENCRYPT_BASE64(str(work.id))
+        work_dict['name'] = work.name
         work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
+        work_dict['work_place_name'] = work.work_place_name
+        work_dict['type'] = work.type
         work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
-        work_dict['staff_id'] = AES_ENCRYPT_BASE64(str(work.staff_id))
+        work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
         work_dict['dt_end'] = work.dt_end.strftime('%Y-%m-%d')
+        work_dict['staff_id'] = AES_ENCRYPT_BASE64(str(work.staff_id))
+        work_dict['staff_name'] = work.staff_name
         work_dict['staff_pNo'] = phone_format(work.staff_pNo)
+        work_dict['staff_email'] = work.staff_email
         arr_work.append(work_dict)
     result = {'works': arr_work}
 
