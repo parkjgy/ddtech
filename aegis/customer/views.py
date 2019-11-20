@@ -2826,29 +2826,26 @@ def list_work_v2(request):
                                 staff_name__contains=staff_name,
                                 staff_pNo__contains=staff_pNo,
                                 dt_begin__gt=dt_begin,
-                                dt_end__lt=dt_end).values('id',
-                                                          'name',
-                                                          'work_place_id',
-                                                          'work_place_name',
-                                                          'type',
-                                                          'contractor_id',
-                                                          'contractor_name',
-                                                          'dt_begin',
-                                                          'dt_end',
-                                                          'staff_id',
-                                                          'staff_name',
-                                                          'staff_pNo',
-                                                          'staff_email')
+                                dt_end__lt=dt_end)
     arr_work = []
     for work in works:
-        work['id'] = AES_ENCRYPT_BASE64(str(work['id']))
-        work['work_place_id'] = AES_ENCRYPT_BASE64(str(work['work_place_id']))
-        work['contractor_id'] = AES_ENCRYPT_BASE64(str(work['contractor_id']))
-        work['staff_id'] = AES_ENCRYPT_BASE64(str(work['staff_id']))
-        work['dt_begin'] = work['dt_begin'].strftime('%Y-%m-%d')
-        work['dt_end'] = work['dt_end'].strftime('%Y-%m-%d')
-        work['staff_pNo'] = phone_format(work['staff_pNo'])
-        arr_work.append(work)
+        work_dict = work.get_time_info()
+        # 기존에 업무 시간 정보가 없으면 여기서 만들어 넣어야 한다.
+        # if len(work_dict) == 0:  # 근무정보가 없는 경우
+        work_dict['id'] = AES_ENCRYPT_BASE64(str(work.id))
+        work_dict['name'] = work.name
+        work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
+        work_dict['work_place_name'] = work.work_place_name
+        work_dict['type'] = work.type
+        work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
+        work_dict['contractor_name'] = work.contractor_name
+        work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
+        work_dict['dt_end'] = work.dt_end.strftime('%Y-%m-%d')
+        work_dict['staff_id'] = AES_ENCRYPT_BASE64(str(work.staff_id))
+        work_dict['staff_name'] = work.staff_name
+        work_dict['staff_pNo'] = phone_format(work.staff_pNo)
+        work_dict['staff_email'] = work.staff_email
+        arr_work.append(work_dict)
     result = {'works': arr_work}
 
     return REG_200_SUCCESS.to_json_response(result)

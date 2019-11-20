@@ -13,6 +13,7 @@ logger_log = logging.getLogger("aegis.log")
 logger_error = logging.getLogger("aegis.error.log")
 logger_error.setLevel(logging.DEBUG)
 
+
 def logSend(*args):
     """앱에서 게시물은 요청한다.
 
@@ -23,10 +24,10 @@ def logSend(*args):
     :returns: M: 실패 했을 때 메세지가 실려있다.
     :returns: R: json 양식으로된 게시물이다. {'title': '임신 중 ', 'text': '<!DOCTYPE html><html>...', 'published_date': '2018-10-04', 'author':'Thinking'}
     """
-
+    global log_thread
     if not settings.IS_LOG:
         return
-    LogSend(*args).start()
+    log_thread.run(*args)
     return
     # log = ''.join([str(x) for x in args])
     # if settings.DEBUG:
@@ -48,34 +49,33 @@ def logSend(*args):
 
 class LogSend(threading.Thread):
 
-    def __init__(self, *args):
-        self.args = args
+    def __init__(self):
+        if settings.DEBUG:
+            print('----------- init. logsend thread')
         threading.Thread.__init__(self)
 
     # def __del__(self):
 
-    def run(self):
-        log = ''.join([str(x) for x in self.args])
+    def run(self, *args: list):
+        log = ''.join([str(x) for x in args])
         if settings.DEBUG:
-            print(log)
+            print('{}'.format(log))
         logger_log.debug(log)
+        # print('----------- log: {}'.format(log))
+
+
+log_thread = LogSend()
 
 
 logger_header = logging.getLogger("aegis.header.log")
 
 
 def logHeader(*args):
+    global log_header_thread
     if not settings.IS_LOG:
         return
-    # log = ''.join([str(x) for x in args])
-    # LogHeader(*args).start()
-    LogSend(*args).start()
+    log_header_thread.run(*args)
     return
-    # if settings.DEBUG:
-    #     print(log)
-    # logger_header.debug(log)
-    # return
-
     # try:
     #     str_list = []
     #     for arg in args:
@@ -88,17 +88,19 @@ def logHeader(*args):
 
 class LogHeader(threading.Thread):
 
-    def __init__(self, *args):
-        self.args = args
-        threading.Thread.__init__(self)
+    def __init__(self):
+       threading.Thread.__init__(self)
 
     # def __del__(self):
 
-    def run(self):
-        log = ''.join([str(x) for x in self.args])
+    def run(self, *args):
+        log = ''.join([str(x) for x in args])
         if settings.DEBUG:
             print(log)
         logger_header.debug(log)
+
+
+log_header_thread = LogHeader()
 
 
 def logError(*args):
