@@ -1204,7 +1204,7 @@ def pass_verify(request):
     employee = employees[0]
     employee_works = Works(employee.get_works())
     if not employee_works.is_active():
-        message = '출근처리할 업무가 없습니다.\npasser.id: {} {}\nworks: {}'.format(passer.id, employee.name, employee_works)
+        message = '출근처리할 업무가 없습니다.\npasser.id: {}\nemployee.name: {}\nworks: {}'.format(passer.id, employee.name, employee_works)
         send_slack(' <상용> employee/pass_verify', message, channel='#server_bug')
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
     work_id = employee_works.data[employee_works.index]['id']
