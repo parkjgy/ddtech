@@ -26,7 +26,9 @@ def cross_origin_read_allow(function):
             response = HttpResponse()
         else:
             try:
-                logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
+                header = ''
+                header += '>>> {}\n'.format(get_api(request))
+                # logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 # logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 if request.method == 'POST':
                     if len(request.body) == 0:
@@ -49,8 +51,10 @@ def cross_origin_read_allow(function):
                     #         plain_text = AES_DECRYPT_BASE64(rqst[key])
                     #         if plain_text == '__error':
                     #             plain_text = ''
-                    logHeader('^  {}: {} {}'.format(key, rqst[key], plain_text))
+                    header += '^  {}: {} {}\n'.format(key, rqst[key], plain_text)
+                    # logHeader('^  {}: {} {}'.format(key, rqst[key], plain_text))
                     # logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
+                logHeader(header)
                 response = function(request, *args, **kwargs)
                 logHeader('<<< {}'.format(get_api(request)))  # 함수 끝 표시
                 # logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시

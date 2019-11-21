@@ -35,17 +35,6 @@ def logSend(*args):
     # logger_log.debug(log)
     # return
 
-    # try:
-    #     if not settings.IS_LOG:
-    #         return
-    #     str_list = []
-    #     for arg in args:
-    #         str_list.append(str(arg))
-    #     logger_log.debug(''.join(str_list))
-    # except Exception as e:
-    #     logger_error.error(str(e))
-    #     return
-
 
 class LogSend(threading.Thread):
 
