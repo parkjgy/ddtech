@@ -3534,76 +3534,81 @@ def test_go_go(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    # new_work_data = {
-    #     'name': '서버운영',  # 생산, 포장, 경비, 미화 등
-    #     'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
-    #     'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-    #     'dt_begin': '2019-11-19',  # 업무 시작 날짜
-    #     'dt_end': '2019-12-18',  # 업무 종료 날짜
-    #     'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
-    #     'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
-    #     # 신규 추가 사항
-    #     'time_type': 0,  # 급여 형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
-    #     'week_hours': 40,  # 시간/주 (소정근로시간)
-    #     'month_hours': 209,  # 시간/원 (소정근로시간)
-    #     'working_days': [1, 2, 3, 4, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
-    #     'paid_day': 0,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
-    #     'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
-    #     # 근무시간
-    #     # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
-    #     # 1: 09:00 ~ 21:00, 01:30
-    #     # 2: 09:00 ~ 21:00
-    #     'work_time_list':
-    #         [
-    #             {
-    #                 't_begin': '09:00',  # 근무 시작 시간
-    #                 't_end': '21:00',  # 근무 종료 시간
-    #                 'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-    #                 'break_time_list':  # 휴게시간이 0 일 때만
-    #                     [
-    #                         {
-    #                             'bt_begin': '12:00',  # 휴게시간 시작
-    #                             'bt_end': '13:00'  # 휴게시간 종료
-    #                         },
-    #                         {
-    #                             'bt_begin': '18:00',  # 휴게시간 시작
-    #                             'bt_end': '19:00',  # 휴게시간 종
-    #                         }
-    #                     ],
-    #             },
-    #             {
-    #                 't_begin': '09:00',  # 근무 시작 시간
-    #                 't_end': '21:00',  # 근무 종료 시간
-    #                 'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-    #                 'break_time_total': '01:30',  # 휴게시간이 1 일 때만
-    #             },
-    #             {
-    #                 't_begin': '07:00',  # 근무 시작 시간
-    #                 't_end': '15:00',  # 근무 종료 시간
-    #                 'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-    #             },
-    #             {
-    #                 't_begin': '15:00',  # 근무 시작 시간
-    #                 't_end': '23:00',  # 근무 종료 시간
-    #                 'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-    #             },
-    #             {
-    #                 't_begin': '23:00',  # 근무 시작 시간
-    #                 't_end': '07:00',  # 근무 종료 시간
-    #                 'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-    #             },
-    #         ]
-    # }
+    new_work_data = {
+        'name': '서버운영',  # 생산, 포장, 경비, 미화 등
+        'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
+        'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+        'dt_begin': '2019-11-23',  # 업무 시작 날짜
+        'dt_end': '2019-12-18',  # 업무 종료 날짜
+        'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
+        'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
+        # 신규 추가 사항
+        'time_type': 0,  # 급여 형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+        'week_hours': 40,  # 시간/주 (소정근로시간)
+        'month_hours': 209,  # 시간/원 (소정근로시간)
+        'working_days': [1, 2, 3, 4, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+        'paid_day': 0,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+        'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+        # 근무시간
+        # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
+        # 1: 09:00 ~ 21:00, 01:30
+        # 2: 09:00 ~ 21:00
+        'work_time_list':
+            [
+                {
+                    't_begin': '09:00',  # 근무 시작 시간
+                    't_end': '21:00',  # 근무 종료 시간
+                    'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                    'break_time_list':  # 휴게시간이 0 일 때만
+                        [
+                            {
+                                'bt_begin': '12:00',  # 휴게시간 시작
+                                'bt_end': '13:00'  # 휴게시간 종료
+                            },
+                            {
+                                'bt_begin': '18:00',  # 휴게시간 시작
+                                'bt_end': '19:00',  # 휴게시간 종
+                            }
+                        ],
+                },
+                {
+                    't_begin': '09:00',  # 근무 시작 시간
+                    't_end': '21:00',  # 근무 종료 시간
+                    'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                    'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+                },
+                {
+                    't_begin': '07:00',  # 근무 시작 시간
+                    't_end': '15:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
+                {
+                    't_begin': '15:00',  # 근무 시작 시간
+                    't_end': '23:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
+                {
+                    't_begin': '23:00',  # 근무 시작 시간
+                    't_end': '07:00',  # 근무 종료 시간
+                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                },
+            ],
+        'work_id': AES_ENCRYPT_BASE64('64')
+    }
     # r = s.post(settings.CUSTOMER_URL + 'reg_work_v2', json=new_work_data)
     # result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
-    work_place_data = {
-        'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ',
-        'is_active': '1',
-        'dt_begin': '',
-        'dt_end': '',
-        }
-    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place_v2', json=work_place_data)
-    result.append({'url': r.url, 'POST': work_place_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    r = s.post(settings.CUSTOMER_URL + 'update_work_v2', json=new_work_data)
+    result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    # work_place_data = {
+    #     'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ',
+    #     'is_active': '1',
+    #     'dt_begin': '',
+    #     'dt_end': '',
+    #     }
+    # r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place_v2', json=work_place_data)
+    # result.append({'url': r.url, 'POST': work_place_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # recognize_data = {"dt_leave": "",
     #              "staff_id": "qgf6YHf1z2Fx80DR8o_Lvg",

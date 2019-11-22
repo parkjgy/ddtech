@@ -2271,6 +2271,8 @@ def reg_work_v2(request):
             {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
     """
 
+    return update_work_v2(request)
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -2490,13 +2492,43 @@ def update_work_v2(request):
         STATUS 416
             {'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
             {'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
+            {'message': '필수 항목(빨간 별)이 비었습니다.'}
+            {'message': '빈 값은 안 됩니다.'}
+            {'message': '숫자로 시작하거나 공백, 특수 문자를 사용하면 안됩니다.'}
+            {'message': '3자 이상이어야 합니다.'}
+            {'message': '사업장 id, 관리자 id, 협력사 id 가 잘못되었어요.'}
+            {'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'}
+            {'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'}
         STATUS 503
             {'message': '사업장을 수정할 권한이 없는 직원입니다.'}
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
             {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
 
+            {'message': 'ClientError: parameter \'name\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 없어요'}
+            {'message': 'ClientError: parameter \'type\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_begin\' 가 없어요'}
+            {'message': 'ClientError: parameter \'dt_end\' 가 없어요'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 없어요'}
+
+            {'message': 'ClientError: parameter \'work_place_id_\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'partner_id\' 가 정상적인 값이 아니예요.'}
+
             {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'}
+
+            {'message': '근무시간에 출근시간이 없다.'}
+            {'message': '근무시간에 퇴근시간이 없다.'}
+            {'message': '휴게시간 방식이 없다.'}
+            {'message': '휴게시간에 시작시간이 없다.'}
+            {'message': '휴게시간에 종료시간이 없다.'}
+            {'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'}
+            {'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'}
+            {'message': '근무시간에 휴게시간 구분이 범위를 넘었다.'}
+            {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
     """
 
     if request.method == 'POST':
@@ -2507,156 +2539,252 @@ def update_work_v2(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+    if 'work_id' in rqst:
+        parameter_check = is_parameter_ok(rqst, ['work_id_!'])
+        if not parameter_check['is_ok']:
+            return status422(get_api(request),
+                             {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+            # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
+        work_id = parameter_check['parameters']['work_id']
+    else:
+        work_id = -1
+
+    parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!',
+                                             'partner_id_!_@', 'time_type', 'week_hours', 'month_hours', 'working_days',
+                                             'paid_day', 'is_holiday_work', 'work_time_list'])
     if not parameter_check['is_ok']:
-        return status422(get_api(request),
-                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
-        # return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message':parameter_check['results']})
-    work_id = parameter_check['parameters']['work_id']
+        logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
+    name = parameter_check['parameters']['name']
+    work_place_id = parameter_check['parameters']['work_place_id']
+    work_type = parameter_check['parameters']['type']
+    dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
+    dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+    staff_id = parameter_check['parameters']['staff_id']
+    partner_id = parameter_check['parameters']['partner_id']
+    time_type = parameter_check['parameters']['time_type']
+    week_hours = parameter_check['parameters']['week_hours']
+    month_hours = parameter_check['parameters']['month_hours']
+    working_days = parameter_check['parameters']['working_days']
+    paid_day = parameter_check['parameters']['paid_day']
+    is_holiday_work = parameter_check['parameters']['is_holiday_work']
+    work_time_list = parameter_check['parameters']['work_time_list']
 
-    works = Work.objects.filter(id=work_id)
-    if len(works) == 0:
-        logError(get_api(request), ' work id: {} 없음'.format(work_id))
-        return status422(get_api(request), {'message': 'ServerError: Work 에 work_id 이(가) 없거나 중복됨'})
-    # if work.contractor_id != worker.co_id:
-    #     logError('ERROR: 발생하면 안되는 에러 - 사업장의 파견사와 직원의 파견사가 틀림', __package__.rsplit('.', 1)[-1], inspect.stack()[0][3])
-    #
-    #     return REG_524_HAVE_NO_PERMISSION_TO_MODIFY.to_json_response()
-    work = works[0]
+    if partner_id is None:
+        # 협력사가 없이 들어오면 default: 작업자의 회사 id 를 쓴다.
+        partner_id = worker.co_id
 
-    dt_today = datetime.datetime.now()
-    is_update_dt_begin = False
-    parameter_check = is_parameter_ok(rqst, ['dt_begin'])
-    if parameter_check['is_ok']:
-        # 업무가 시작되었으면 업무 시작 날짜를 변경할 수 없다. - 업무 시작 날짜가 들어왔더라도 무시한다.
-        if dt_today < work.dt_begin:
-            work.dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
-            if work.dt_begin < dt_today:
-                # 업무 시작 날짜를 오늘 이전으로 설정할 수 없다.
+    result = id_ok(name, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"업무\"가 {}'.format(result['message'])})
+    result = type_ok(work_type, 2)
+    if result is not None:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
 
-                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜를 오늘 이전으로 변경할 수 없습니다.'})
-            is_update_dt_begin = True
-        else:
-            if str_to_datetime(parameter_check['parameters']['dt_begin']) != work.dt_begin:
-                return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무가 시작되면 시작 날짜를 변경할 수 없습니다.'})
+    if dt_begin < datetime.datetime.now():
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
+    if dt_end < dt_begin:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
 
-    is_update_dt_end = False
-    parameter_check = is_parameter_ok(rqst, ['dt_end'])
-    if parameter_check['is_ok']:
-        work.dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
-        is_update_dt_end = True
-    if work.dt_end < work.dt_begin:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜가 종료 날짜보다 먼저라서 안됩니다.'})
-    #
-    # 근로자 시간 변경
-    #
-    update_employee_pNo_list = []
-    if is_update_dt_begin or is_update_dt_end:
-        employees = Employee.objects.filter(work_id=work.id)
+    #'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+    if not (0 <= int(time_type) <= 3):
+        logSend(get_api(request), '급여형태: {} 가 범위 초과(0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직)'.format(int(time_type)))
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))})
+    # 'week_hours': 40,  # 시간/주 (소정근로시간)
+    # 'month_hours': 209,  # 시간/월 (소정근로시간)
+    # 'working_days': [1, 3, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+    int_working_days = [int(working_day) for working_day in working_days]
+    for working_day in int_working_days:
+        if not (0 <= working_day <= 6):
+            logSend(get_api(request), '소정근로일: {} 가 범위 초과(0: 일, 1: 월, ... 6: 토)'.format(working_day))
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
+                {'message': '소정근로일: {} 가 범위 초과(0: 일, 1: 월, ... 6: 토)'.format(working_day)})
+
+    # 'paid_day': -1,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+    int_paid_day = int(paid_day)
+    if not (-1 <= int_paid_day <= 6):
+        logSend(get_api(request), '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day))
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
+            {'message': '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day)})
+    if int_paid_day in int_working_days:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '소정근로일을 유급휴일로 설정할 수 없습니다.'})
+    # 'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+    # {
+    #     't_begin': '09:00',  # 근무 시작 시간
+    #     't_end': '21:00',  # 근무 종료 시간
+    #     'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #     'beak_time_list':  # 휴게시간이 0 일 때만
+    #         [
+    #             {
+    #                 'bt_begin': '12:00',  # 휴게시간 시작
+    #                 'bt_end': '13:00'  # 휴게시간 종료
+    #             },
+    #             {
+    #                 'bt_begin': '18:00',  # 휴게시간 시작
+    #                 'bt_end': '19:00',  # 휴게시간 종
+    #             }
+    #         ],
+    #     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+    # }
+    for work_time in work_time_list:
+        logSend('work_time: {}'.format(work_time))
+        if 't_begin' not in work_time:
+            logSend(get_api(request), '근무시간에 출근시간이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 출근시간이 없다.'})
+        if 't_end' not in work_time:
+            logSend(get_api(request), '근무시간에 퇴근시간이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 퇴근시간이 없다.'})
+        t_begin = str_minute(work_time['t_begin'])
+        t_end = str_minute(work_time['t_end'])
+        if t_end <= t_begin:
+            t_end += 24 * 60
+        logSend('   t_begin: {}, t_end: {}'.format(t_begin, t_end))
+        if 'break_time_type' not in work_time:
+            logSend(get_api(request), '휴게시간 방식이 없다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간 방식이 없다.'})
+        int_break_time_type = int(work_time['break_time_type'])
+        if int_break_time_type == 0:  # 휴게시간(들)이 정해져 있을 때
+            if 'break_time_list' in work_time:
+                for break_time in work_time['break_time_list']:
+                    if 'bt_begin' not in break_time:
+                        logSend(get_api(request), '휴게시간에 시작시간이 없다.')
+                        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 시작시간이 없다.'})
+                    bt_begin = str_minute(break_time['bt_begin'])
+                    if bt_begin < t_begin:
+                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'})
+                    if 'bt_end' not in break_time:
+                        logSend(get_api(request), '휴게시간에 종료시간이 없다.')
+                        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 종료시간이 없다.'})
+                    bt_end = str_minute(break_time['bt_end'])
+                    if bt_end <= bt_begin:
+                        bt_end += 24 * 60
+                    if bt_end > t_end:
+                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'})
+            else:
+                logSend(get_api(request), '휴게시간이 시간지정인데 지정시간 리스트가 없다.')
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'})
+        elif int_break_time_type == 1:  # 휴게시간의 총 시간만 정할 때
+            if 'break_time_total' not in work_time:
+                logSend(get_api(request), '휴게시간이 총 휴게시간인데 휴게시간이 없다.')
+                return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'})
+            # else:  #
+            #     bt_total = str_minute(work_time['break_time_total'])
+            #     if not (0 <= bt_total <= (t_end - t_begin)/8):  # 4시간당 30분의 휴게시간을 주면 24시간 근무해도 8시간을 초과할 수 없다.
+            #         logSend(get_api(request), '휴게시간은 8시간을 초과할 수 없다.')
+            #         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간은 8시간을 초과할 수 없다.'})
+        elif int_break_time_type > 2:  # 휴게시간을 별도 정하지 않았을 때
+            logSend(get_api(request), '휴게시간 방식이 범위를 넘었다.')
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'})
+    time_info = {
+        'time_type': time_type,
+        'week_hours': week_hours,
+        'month_hours': month_hours,
+        'working_days': int_working_days,
+        'paid_day': int_paid_day,
+        'is_holiday_work': is_holiday_work,
+        'work_time_list': work_time_list,
+    }
+
+    try:
+        work_place = Work_Place.objects.get(id=work_place_id)
+        staff = Staff.objects.get(id=staff_id)
+        contractor = Customer.objects.get(id=partner_id)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '사업장 id, 관리자 id, 협력사 id 가 잘못되었어요.'})
+
+    if work_id == -1:  # 업무를 새로 만들 때
+        works = Work.objects.filter(name=name,
+                                    type=work_type,
+                                    work_place_id=work_place_id,
+                                    staff_id=staff_id,
+                                    contractor_id=partner_id,
+                                    )
+        for work in works:
+            logSend('  existed: {}'.format({x: work.__dict__[x] for x in work.__dict__.keys()}))
+        if len(works) > 0:
+            logSend('  new: {} - {}'.format(dt_begin, dt_end))
+            for work in works:
+                exist_dt_begin = work.dt_begin
+                exist_dt_end = work.dt_end
+                logSend('  exist: {} - {}'.format(exist_dt_begin, exist_dt_end))
+                if ((exist_dt_begin <= dt_begin <= exist_dt_end) or
+                    (exist_dt_begin <= dt_end <= exist_dt_end) or
+                    (dt_begin <= exist_dt_begin <= dt_end)):
+                    return REG_544_EXISTED.to_json_response({'message': '등록된 업무입니다.\n업무명, 근무형태, 사업장, 담당자, 파견사 가 같으면서 기간이 중복되면 등록할 수 없습니다.'})
+        new_work = Work(
+            name=name,
+            work_place_id=work_place.id,
+            work_place_name=work_place.name,
+            type=work_type,
+            contractor_id=contractor.id,
+            contractor_name=contractor.corp_name,
+            dt_begin=dt_begin,  # datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
+            dt_end=dt_end,  # datetime.datetime.strptime(rqst['dt_end'], "%Y-%m-%d"),
+            staff_id=staff.id,
+            staff_name=staff.name,
+            staff_pNo=staff.pNo,
+            staff_email=staff.email,
+        )
+        new_work.set_time_info(time_info)
+        new_work.save()
+    else:  # 기존 업무를 업데이트 할 때
+        try:
+            update_work = Work.objects.get(id = work_id)
+        except Exception as e:
+            return status422(get_api(request), {'message': '업데이트할 업무({}) 찾을 수 없다. ERROR: {}'.format(work_id, e)})
+        update_work.name = name
+        update_work.work_place_id = work_place_id
+        update_work.work_place_name = work_place.name
+        update_work.type = work_type
+        update_work.contractor_id = contractor.id
+        update_work.contractor_name = contractor.corp_name
+        update_work.dt_begin = dt_begin
+        update_work.staff_id = staff.id
+        update_work.staff_name = staff.name
+        update_work.staff_pNo = staff.pNo
+        update_work.staff_email = staff.email
+        update_work.set_time_info(time_info)
+
+        #
+        # 근로자 시간 변경
+        #
+        update_employee_pNo_list = []
+        employees = Employee.objects.filter(work_id=update_work.id)
         logSend('  - employees = {}'.format([employee.pNo for employee in employees]))
         for employee in employees:
             is_update_employee = False
-            if employee.dt_begin < work.dt_begin:
+            if employee.dt_begin < update_work.dt_begin:
                 # 근로자의 업무 시작 날짜가 업무 시작 날짜 보다 빠르면 업무 시작 날짜로 바꾼다.
-                employee.dt_begin = work.dt_begin
+                employee.dt_begin = update_work.dt_begin
                 is_update_employee = True
                 update_employee_pNo_list.append(employee.pNo)
-            if work.dt_end < employee.dt_end:
+            if update_work.dt_end < employee.dt_end:
                 # 근로자의 업무 종료 날짜가 업무 종료 날짜 보다 느리면 업무 종료 날짜로 바꾼다.
-                employee.dt_end = work.dt_end
+                employee.dt_end = update_work.dt_end
                 is_update_employee = True
                 update_employee_pNo_list.append(employee.pNo)
             if is_update_employee:
                 employee.save()
 
-    is_update_name = False
-    parameter_check = is_parameter_ok(rqst, ['name'])
-    if parameter_check['is_ok']:
-        work.name = parameter_check['parameters']['name']
-        is_update_name = True
+        update_employee_work_infor = {
+            'customer_work_id': AES_ENCRYPT_BASE64(str(update_work.id)),
+            'work_place_name': update_work.work_place_name,
+            'work_name_type': '{} ({})'.format(update_work.name, update_work.type),
+            'begin': update_work.dt_begin.strftime('%Y/%m/%d'),
+            'end': update_work.dt_end.strftime('%Y/%m/%d'),
+            'staff_name': update_work.staff_name,
+            'staff_pNo': update_work.staff_pNo,
+            'update_employee_pNo_list': update_employee_pNo_list,
+            'time_info': time_info,
+        }
+        r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
+        logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+        if r.status_code != 200:
+            return r
 
-    is_update_type = False
-    parameter_check = is_parameter_ok(rqst, ['type'])
-    if parameter_check['is_ok']:
-        work.type = parameter_check['parameters']['type']
-        is_update_type = True
+        update_work.save()
 
-    # 업무의 사업장이 변경되었을 때 처리
-    is_update_work_place = False
-    parameter_check = is_parameter_ok(rqst, ['work_place_id_!'])
-    if parameter_check['is_ok']:
-        work_place_id = parameter_check['parameters']['work_place_id']
-        work_places = Work_Place.objects.filter(id=work_place_id)
-        if len(work_places) > 0:
-            work_place = work_places[0]
-            work.work_place_id = work_place.id
-            work.work_place_name = work_place.name
-            is_update_work_place = True
-    elif parameter_check['is_decryption_error']:
-        logError(get_api(request), parameter_check['results'])
-
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
-
-    # 파견업체가 변경되었을 때 처리
-    is_update_partner = False
-    parameter_check = is_parameter_ok(rqst, ['partner_id_!'])
-    if parameter_check['is_ok']:
-        partner_id = parameter_check['parameters']['partner_id']
-        partners = Customer.objects.filter(id=partner_id)
-        if len(partners) > 0:
-            partner = partners[0]
-            work.contractor_id = partner.id
-            work.contractor_name = partner.corp_name
-            is_update_partner = True
-    elif parameter_check['is_decryption_error']:
-        logError(get_api(request), parameter_check['results'])
-
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
-
-    # 업무 담당자가 바뀌었을 때 처리
-    is_update_staff = False
-    parameter_check = is_parameter_ok(rqst, ['staff_id_!'])
-    if parameter_check['is_ok']:
-        staff_id = parameter_check['parameters']['staff_id']
-        staffs = Staff.objects.filter(id=staff_id)
-        if len(staffs) > 0:
-            staff = staffs[0]
-            work.staff_id = staff.id
-            work.staff_name = staff.name
-            work.staff_pNo = staff.pNo
-            work.staff_email = staff.email
-            is_update_staff = True
-    elif parameter_check['is_decryption_error']:
-        logError(get_api(request), parameter_check['results'])
-
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이 메세지를 보시면 로그아웃 하십시요.'})
-
-    if is_update_dt_begin or is_update_dt_end or is_update_name or is_update_type or is_update_work_place or is_update_partner or is_update_staff:
-        work.save()
-
-    update_employee_work_infor = {
-        'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
-        'work_place_name': work.work_place_name,
-        'work_name_type': '{} ({})'.format(work.name, work.type),
-        'begin': work.dt_begin.strftime('%Y/%m/%d'),
-        'end': work.dt_end.strftime('%Y/%m/%d'),
-        'staff_name': work.staff_name,
-        'staff_pNo': work.staff_pNo,
-        'update_employee_pNo_list': update_employee_pNo_list,
-    }
-    r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
-    logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
-    is_update_employee = True if r.status_code == 200 else False
-
-    return REG_200_SUCCESS.to_json_response({'is_update_type': is_update_type,
-                                             'is_update_dt_begin': is_update_dt_begin,
-                                             'is_update_dt_end': is_update_dt_end,
-                                             'is_update_work_place': is_update_work_place,
-                                             'is_update_partner': is_update_partner,
-                                             'is_update_staff': is_update_staff,
-                                             'is_update_name': is_update_name,
-                                             'is_update_employee': is_update_employee
-                                             })
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
