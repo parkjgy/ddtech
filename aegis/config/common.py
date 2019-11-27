@@ -486,11 +486,14 @@ class Works(object):
                 return True
         return False
 
-    def is_active(self, when=datetime.datetime.now()):
+    def is_active(self, when=None):
         """
         출퇴근이 가능한 업무가 있다. - 업무가 시작되었다.
         """
-        today = when
+        if when is None:
+            today = datetime.datetime.now()
+        else:
+            today = when
         logSend('  today: {}'.format(today))
         for self.index in range(len(self.data)):
             # logSend('  work id: {}, begin: {}, end: {}'.format(self.data[self.index]['id'],

@@ -607,6 +607,7 @@ def update_work_for_customer(request):
             staff_name=rqst["staff_name"],
             staff_pNo=rqst["staff_pNo"],
         )
+        work.set_time_info(rqst['time_info'])
         work.save()
     else:
         work = find_works[0]
@@ -617,6 +618,7 @@ def update_work_for_customer(request):
         work.end = rqst['end']
         work.staff_name = rqst['staff_name']
         work.staff_pNo = rqst['staff_pNo']
+        work.set_time_info(rqst['time_info'])
         work.save()
     #
     # 근로자 중에서 업무 날짜가 변경된 근로자의 업무시간을 변경한다.

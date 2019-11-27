@@ -3538,7 +3538,7 @@ def test_go_go(request):
         'name': '서버운영',  # 생산, 포장, 경비, 미화 등
         'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
         'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-        'dt_begin': '2019-11-23',  # 업무 시작 날짜
+        'dt_begin': '2019-11-25',  # 업무 시작 날짜
         'dt_end': '2019-12-18',  # 업무 종료 날짜
         'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
         'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
@@ -3571,27 +3571,27 @@ def test_go_go(request):
                             }
                         ],
                 },
-                {
-                    't_begin': '09:00',  # 근무 시작 시간
-                    't_end': '21:00',  # 근무 종료 시간
-                    'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                    'break_time_total': '01:30',  # 휴게시간이 1 일 때만
-                },
-                {
-                    't_begin': '07:00',  # 근무 시작 시간
-                    't_end': '15:00',  # 근무 종료 시간
-                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                },
-                {
-                    't_begin': '15:00',  # 근무 시작 시간
-                    't_end': '23:00',  # 근무 종료 시간
-                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                },
-                {
-                    't_begin': '23:00',  # 근무 시작 시간
-                    't_end': '07:00',  # 근무 종료 시간
-                    'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                },
+                # {
+                #     't_begin': '09:00',  # 근무 시작 시간
+                #     't_end': '21:00',  # 근무 종료 시간
+                #     'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                #     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+                # },
+                # {
+                #     't_begin': '07:00',  # 근무 시작 시간
+                #     't_end': '15:00',  # 근무 종료 시간
+                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                # },
+                # {
+                #     't_begin': '15:00',  # 근무 시작 시간
+                #     't_end': '23:00',  # 근무 종료 시간
+                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                # },
+                # {
+                #     't_begin': '23:00',  # 근무 시작 시간
+                #     't_end': '07:00',  # 근무 종료 시간
+                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                # },
             ],
         'work_id': AES_ENCRYPT_BASE64('64')
     }
