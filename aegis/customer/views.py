@@ -2861,7 +2861,7 @@ def list_work_from_work_place_v2(request):
         work_dict['name'] = work.name
         work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
         work_dict['work_place_name'] = work.work_place_name
-        work_dict['type'] = work.work_type
+        work_dict['type'] = work.type
         work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
         work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
@@ -2964,7 +2964,7 @@ def list_work_v2(request):
         work_dict['name'] = work.name
         work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
         work_dict['work_place_name'] = work.work_place_name
-        work_dict['type'] = work.work_type
+        work_dict['type'] = work.type
         work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
         work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
