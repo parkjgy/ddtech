@@ -3582,10 +3582,12 @@ def list_employee(request):
         is_working_history = 업무 형태 # YES: 근태내역 추가, NO: 근태내역 없음(default) 2019-07-13: 무시
     response
         STATUS 200
-            # 업무 시직 전 응답 - 업무 수락 상태 표시
             {
               "message": "정상적으로 처리되었습니다.",
+              "enable_post": 1      # 0: [채용 알림] 비 활성화, 1: [채용 알림] 활성화
+              "is_recruiting": 1    # 0: 채용 중이 아님 [채용 알림], 1: 현재 채용 상태임 [채용 중지]
               "employees": [
+                # 업무 시직 전 응답 - 업무 수락 상태 표시
                 {
                   "id": "iZ_rkELjhh18ZZauMq2vQw==",
                   "name": "이순신",
@@ -3622,12 +3624,7 @@ def list_employee(request):
                   "state": "잘못된 전화번호",
                   "is_not_begin": "1"
                 }
-              ]
-            }
-            # 업무 시작 후 응답 - 출입 시간 표시
-            {
-              "message": "정상적으로 처리되었습니다.",
-              "employees": [
+                # 업무 시작 후 응답 - 출입 시간 표시
                 {
                   "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
                   "name": "강감찬",
@@ -3715,6 +3712,114 @@ def list_employee(request):
         if dt_today < (work.dt_begin - datetime.timedelta(seconds=1)):
             # 업무가 시작되었지만 요청한 날짜가 업무 시작 날짜전을 요청하면 에러처리한다.
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'})
+
+    s = requests.session()
+    work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
+                 'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+                 }
+    employees = []
+    if work.dt_begin <= dt_today:
+        # 업무가 시작되었다.
+        work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
+        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
+        employee_list = response.json()['employees']
+        for employee in employee_list:
+            logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
+            if str_to_datetime(employee['dt_begin']) < (dt_today + timedelta(days=1)):
+                state_dict = {-2: '연(월)차', -1: '조기 퇴근', 0: '',
+                              1: '연장 30분', 2: '연장 1시간', 3: '연장 1시간 30분', 4: '연장 2시간', 5: '연장 2시간 30분',
+                              6: '연장 3시간', 7: '연장 3시간 30분', 8: '연장 4시간', 9: '연장 4시간 30분', 10: '연장 5시간',
+                              11: '연장 5시간 30분', 12: '연장 6시간', 13: '연장 6시간 30분', 14: '연장 7시간',
+                              15: '연장 7시간 30분', 16: '연장 8시간', 17: '연장 8시간 30분', 18: '연장 9시간'}
+                employee_web = {
+                    'id': employee['employee_id'],
+                    'name': employee['name'],
+                    'pNo': employee['phone'],
+                    'dt_begin': employee['dt_begin'],
+                    'dt_end': employee['dt_end'],
+                    'dt_begin_beacon': "" if employee['dt_begin_beacon'] is None else employee['dt_begin_beacon'][
+                                                                                      11:16],
+                    'dt_begin_touch': "" if employee['dt_begin_touch'] is None else employee['dt_begin_touch'][11:16],
+                    'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
+                    'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
+                    'state': state_dict[employee['overtime']],
+                    'is_not_begin': False,
+                }
+            else:
+                employee_web = {
+                    'id': employee['employee_id'],
+                    'name': employee['name'],
+                    'pNo': employee['phone'],
+                    'dt_begin': employee['dt_begin'],
+                    'dt_end': employee['dt_end'],
+                    'state': employee['is_accept_work'],
+                    'is_not_begin': True,
+                }
+            employees.append(employee_web)
+    else:
+        # 업무가 아직 시작되지 않았다.
+        response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
+        logSend('  response.json(): {}'.format(response.json()))
+        if 'employees' not in response.json():
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로자가 없습니다.'})
+        employee_list = response.json()['employees']
+        for employee in employee_list:
+            employee_web = {
+                'id': employee['employee_id'],
+                'name': employee['name'],
+                'pNo': employee['phone'],
+                'dt_begin': employee['dt_begin'],
+                'dt_end': employee['dt_end'],
+                'state': employee['is_accept_work'],
+                'is_not_begin': True,
+            }
+            employees.append(employee_web)
+
+    result = {'employees': employees}
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def post_employee(request):
+    """
+    채용 알림: 구직자에게 채용정보를 알림
+    http://0.0.0.0:8000/customer/post_employee?work_id=1&is_recruiting=0
+    POST
+        work_id: 업무 id     # 암호화된 업무 id
+        is_recruiting: 1    # 0: 채용이 중지된 상태 [채용 알림], 1: 채용 중인 상태[채용 중지]
+    response
+        STATUS 200
+            "message": "정상적으로 처리되었습니다."
+            'message': '변경없는 정상처리입니다.'
+        STATUS 416
+            {'message': '근로 내용은 오늘까지만 볼 수 없습니다.'}
+            {'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'}
+        STATUS 422
+            {'message': 파라미터, 파라미터 암호화 에러 등}
+            {'message': '해당 업무({}) 없음. {}'.format(work_id, str(e))}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'is_recruiting'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    is_recruiting = parameter_check['parameters']['is_recruiting']
+    try:
+        work = Work.objects.get(id=work_id)  # 업무 에러 확인용
+    except Exception as e:
+        return status422(get_api(request), {'message': '해당 업무({}) 없음. {}'.format(work_id, str(e))})
+    if work.is_recruiting == is_recruiting:
+        return REG_200_SUCCESS.to_json_response({'message': '변경없는 정상처리입니다.'})
 
     s = requests.session()
     work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),

@@ -119,6 +119,9 @@ class Work(models.Model):
     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
     staff_email = models.CharField(max_length = 320) # 담당자 이메일
 
+    enable_post = models.BooleanField(default=False)    # 채용 알림 사용 여부
+    is_recruiting = models.BooleanField(default=False)  # 채용 중인가?
+
     time_info = models.CharField(max_length=8191, default='{}')  # 급여형태, 소정근로시간, 소정근로일, 유급휴일, 무급휴일 계산방법, 근무시간(09:00~18:00 0 12:00~13:00)
 
     def set_time_info(self, x):
