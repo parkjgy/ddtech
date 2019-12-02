@@ -2418,7 +2418,7 @@ def reg_work_v2(request):
     }
 
     works = Work.objects.filter(name=name,
-                                type=type,
+                                type=work_type,
                                 work_place_id=work_place_id,
                                 staff_id=staff_id,
                                 contractor_id=partner_id,
@@ -2447,7 +2447,7 @@ def reg_work_v2(request):
         name=name,
         work_place_id=work_place.id,
         work_place_name=work_place.name,
-        type=type,
+        type=work_type,
         contractor_id=contractor.id,
         contractor_name=contractor.corp_name,
         dt_begin=dt_begin,  # datetime.datetime.strptime(rqst['dt_begin'], "%Y-%m-%d"),
@@ -2861,7 +2861,7 @@ def list_work_from_work_place_v2(request):
         work_dict['name'] = work.name
         work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
         work_dict['work_place_name'] = work.work_place_name
-        work_dict['type'] = work.type
+        work_dict['type'] = work.work_type
         work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
         work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
@@ -2931,7 +2931,7 @@ def list_work_v2(request):
 
     name = rqst['name']
     work_place_name = rqst['work_place_name']
-    type = rqst['type']
+    work_type = rqst['type']
     contractor_name = rqst['contractor_name']
     staff_name = rqst['staff_name']
     staff_pNo = no_only_phone_no(rqst['staff_pNo'])
@@ -2949,7 +2949,7 @@ def list_work_v2(request):
     logSend('  이날짜 까지 업무'.format(dt_end))
     works = Work.objects.filter(name__contains=name,
                                 work_place_name__contains=work_place_name,
-                                type__contains=type,
+                                type__contains=work_type,
                                 contractor_name__contains=contractor_name,
                                 staff_name__contains=staff_name,
                                 staff_pNo__contains=staff_pNo,
@@ -2964,7 +2964,7 @@ def list_work_v2(request):
         work_dict['name'] = work.name
         work_dict['work_place_id'] = AES_ENCRYPT_BASE64(str(work.work_place_id))
         work_dict['work_place_name'] = work.work_place_name
-        work_dict['type'] = work.type
+        work_dict['type'] = work.work_type
         work_dict['contractor_id'] = AES_ENCRYPT_BASE64(str(work.contractor_id))
         work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y-%m-%d')
