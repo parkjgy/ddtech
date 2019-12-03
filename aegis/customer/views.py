@@ -3775,7 +3775,10 @@ def list_employee(request):
             }
             employees.append(employee_web)
 
-    result = {'employees': employees}
+    result = {'employees': employees,
+              'enable_post': 0,
+              'is_recruiting': 0
+              }
 
     return REG_200_SUCCESS.to_json_response(result)
 
@@ -3785,6 +3788,7 @@ def list_employee(request):
 def post_employee(request):
     """
     채용 알림: 구직자에게 채용정보를 알림
+    - 시험할 때
     http://0.0.0.0:8000/customer/post_employee?work_id=1&is_recruiting=0
     POST
         work_id: 업무 id     # 암호화된 업무 id
