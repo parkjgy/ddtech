@@ -2724,6 +2724,7 @@ def update_work_v2(request):
             staff_name=staff.name,
             staff_pNo=staff.pNo,
             staff_email=staff.email,
+            enable_post=1,
         )
         new_work.set_time_info(time_info)
         new_work.save()
