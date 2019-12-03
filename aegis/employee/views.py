@@ -3285,7 +3285,7 @@ def alert_recruiting(request):
             'badge': 1,
             'contents': {'title': '(채용정보) {}: {}'.format(work.work_place_name, work.work_name_type),
                          'subtitle': '{} ~ {}'.format(work.begin, work.end),
-                         'body': {'action': 'NewRecruiting',
+                         'body': {'action': 'NewWork',  # 'NewRecruiting',
                                   'dt_begin': work.begin,
                                   'dt_end': work.end
                                   }

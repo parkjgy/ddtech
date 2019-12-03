@@ -2539,7 +2539,7 @@ def update_work_v2(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    if 'work_id' in rqst:
+    if 'work_id' in rqst and rqst['work_id'] is not None:
         parameter_check = is_parameter_ok(rqst, ['work_id_!'])
         if not parameter_check['is_ok']:
             return status422(get_api(request),
