@@ -3776,8 +3776,8 @@ def list_employee(request):
             employees.append(employee_web)
 
     result = {'employees': employees,
-              'enable_post': '1' if work.enable_post else '0',
-              'is_recruiting': '1' if work.is_recruiting else '0'
+              'enable_post': 1 if work.enable_post else 0,
+              'is_recruiting': 1 if work.is_recruiting else 0
               }
 
     return REG_200_SUCCESS.to_json_response(result)
