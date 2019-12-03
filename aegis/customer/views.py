@@ -3792,7 +3792,7 @@ def post_employee(request):
     response
         STATUS 200
             "message": "정상적으로 처리되었습니다."
-            'message': '변경없는 정상처리입니다.'
+            'message': '변경없는 정상처리입니다.'      # 채용 알림 / 중지 의 변경이 없이 API 가 호출 되었을 때
         STATUS 416
             {'message': '근로 내용은 오늘까지만 볼 수 없습니다.'}
             {'message': '업무 시작 날짜 이전 업무 내역은 볼 수 없습니다.'}
@@ -3820,72 +3820,16 @@ def post_employee(request):
         return status422(get_api(request), {'message': '해당 업무({}) 없음. {}'.format(work_id, str(e))})
     if work.is_recruiting == is_recruiting:
         return REG_200_SUCCESS.to_json_response({'message': '변경없는 정상처리입니다.'})
-
+    #
+    # 근로자 서버에 채용 알림 전달
+    #
     s = requests.session()
-    work_info = {'staff_id': AES_ENCRYPT_BASE64(str(worker.id)),
-                 'work_id': AES_ENCRYPT_BASE64(str(work.id)),
-                 }
-    employees = []
-    if work.dt_begin <= dt_today:
-        # 업무가 시작되었다.
-        work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
-        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
-        employee_list = response.json()['employees']
-        for employee in employee_list:
-            logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
-            if str_to_datetime(employee['dt_begin']) < (dt_today + timedelta(days=1)):
-                state_dict = {-2: '연(월)차', -1: '조기 퇴근', 0: '',
-                              1: '연장 30분', 2: '연장 1시간', 3: '연장 1시간 30분', 4: '연장 2시간', 5: '연장 2시간 30분',
-                              6: '연장 3시간', 7: '연장 3시간 30분', 8: '연장 4시간', 9: '연장 4시간 30분', 10: '연장 5시간',
-                              11: '연장 5시간 30분', 12: '연장 6시간', 13: '연장 6시간 30분', 14: '연장 7시간',
-                              15: '연장 7시간 30분', 16: '연장 8시간', 17: '연장 8시간 30분', 18: '연장 9시간'}
-                employee_web = {
-                    'id': employee['employee_id'],
-                    'name': employee['name'],
-                    'pNo': employee['phone'],
-                    'dt_begin': employee['dt_begin'],
-                    'dt_end': employee['dt_end'],
-                    'dt_begin_beacon': "" if employee['dt_begin_beacon'] is None else employee['dt_begin_beacon'][
-                                                                                      11:16],
-                    'dt_begin_touch': "" if employee['dt_begin_touch'] is None else employee['dt_begin_touch'][11:16],
-                    'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
-                    'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
-                    'state': state_dict[employee['overtime']],
-                    'is_not_begin': False,
-                }
-            else:
-                employee_web = {
-                    'id': employee['employee_id'],
-                    'name': employee['name'],
-                    'pNo': employee['phone'],
-                    'dt_begin': employee['dt_begin'],
-                    'dt_end': employee['dt_end'],
-                    'state': employee['is_accept_work'],
-                    'is_not_begin': True,
-                }
-            employees.append(employee_web)
-    else:
-        # 업무가 아직 시작되지 않았다.
-        response = s.post(settings.CUSTOMER_URL + 'staff_employees', json=work_info)
-        logSend('  response.json(): {}'.format(response.json()))
-        if 'employees' not in response.json():
-            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로자가 없습니다.'})
-        employee_list = response.json()['employees']
-        for employee in employee_list:
-            employee_web = {
-                'id': employee['employee_id'],
-                'name': employee['name'],
-                'pNo': employee['phone'],
-                'dt_begin': employee['dt_begin'],
-                'dt_end': employee['dt_end'],
-                'state': employee['is_accept_work'],
-                'is_not_begin': True,
-            }
-            employees.append(employee_web)
-
-    result = {'employees': employees}
-
-    return REG_200_SUCCESS.to_json_response(result)
+    recruiting_info = {'work_id': rqst['work_id']}      # 나중에 분야별로 나눌 필요가 있다.
+    response = s.post(settings.EMPLOYEE_URL + 'alert_recruiting', json=recruiting_info)
+    response_dict = response.json()
+    logSend('   response: {}'.format(response_dict))
+    return ReqLibJsonResponse(response)
+    # return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow

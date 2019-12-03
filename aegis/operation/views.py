@@ -1697,111 +1697,110 @@ def customer_test_step_8(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    # 고객 : 사업장 리스트
-    get_parameter = {'name': '',
-                     'manager_name': '',
-                     'manager_phone': '',
-                     'order_name': '대덕'
-                     }
-    r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
-    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
-    logSend(result)
-    logSend(result)
-    work_place_id = r.json()['work_places'][0]['id']
-
-    # 고객 : 업무 리스트
-    get_parameter = {'work_place_id': work_place_id,
-                     'dt_begin': '2019-02-25',
-                     'dt_end': '2019-02-27',
-                     }
-    r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
-    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
-    work_id = r.json()['works'][0]['id']
-
-    # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
-    begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-    end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
-    update_work = {
-        'work_id': work_id,  # 필수
-        'dt_begin': begin_day,  # 근무 시작일
-        'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
-    }
-    r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
-    result.append({'url': r.url, 'POST': update_work, 'STATUS': r.status_code, 'R': r.json()})
-
-    # 고객 : 근로자 등록
-    next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
-    next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
-    employee = {
-        'work_id': work_id,
-        'dt_answer_deadline': next_4_day,
-        'phone_numbers': ['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555', '010-1111-3333',
-                          '010-4444-7777']
-    }
-    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
-    result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
-
-    names = ["양만춘", "강감찬", "이순신", "안중근"]
-    arr_phone_no = ['010-1111-2222', '010-4444-5555', '010-1111-3333', '010-4444-7777']
-    for pNo in arr_phone_no:
-        # 근로자 : 인증번호 요청
-        phone_no = {'phone_no': pNo}
-        settings.IS_TEST = True
-        r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
-        settings.IS_TEST = False
-        result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
-
-        # 근로자 : 근로자 확인
-        certification_data = {
-            'phone_no': pNo,
-            'cn': '201903',
-            'phone_type': 'A',  # 안드로이드 폰
-            'push_token': 'push token'
-        }
-        settings.IS_TEST = True
-        r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
-        settings.IS_TEST = False
-        result.append({'url': r.url, 'POST': certification_data, 'STATUS': r.status_code, 'R': r.json()})
-        logSend(r.json())
-
-        employee_info = {
-            'passer_id': r.json()['id'],
-            'name': names[arr_phone_no.index(pNo)],
-            'bank': '기업은행',
-            'bank_account': '12300000012000',
-            'pNo': pNo,  # 추후 SMS 확인 절차 추가
-        }
-        r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
-        result.append({'url': r.url, 'POST': employee_info, 'STATUS': r.status_code, 'R': r.json()})
-
-    # 근로자 리스트 - 전화번호에 1111 가 포함된 근로자
-    phone_no = {
-        'phone_no': '1111'
-    }
-    r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
-    result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
-    passers = r.json()['passers']
-
-    if len(passers) > 0:
-        for ex_passer in passers:
-            # 근로자 : 알림 확인
-            passer = {'passer_id': ex_passer['id']}
-            r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
-            result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
-            print(r.json())
-            if len(r.json()['notifications']) == 0:
-                # 알림이 없는 출입자 - 대상이 아님
-                continue
-            notification_id = r.json()['notifications'][0]['id']
-
-            # 근로자 : 업무 수락 / 거절
-            accept = {
-                'passer_id': ex_passer['id'],  # 암호화된 값임
-                'notification_id': notification_id,
-                'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
-            }
-            r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
-            result.append({'url': r.url, 'POST': accept, 'STATUS': r.status_code, 'R': r.json()})
+    # # 고객 : 사업장 리스트
+    # get_parameter = {'name': '',
+    #                  'manager_name': '',
+    #                  'manager_phone': '',
+    #                  'order_name': '대덕'
+    #                  }
+    # r = s.post(settings.CUSTOMER_URL + 'list_work_place', json=get_parameter)
+    # result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    # logSend(result)
+    # work_place_id = r.json()['work_places'][0]['id']
+    #
+    # # 고객 : 업무 리스트
+    # get_parameter = {'work_place_id': work_place_id,
+    #                  'dt_begin': '2019-02-25',
+    #                  'dt_end': '2019-02-27',
+    #                  }
+    # r = s.post(settings.CUSTOMER_URL + 'list_work_from_work_place', json=get_parameter)
+    # result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    # work_id = r.json()['works'][0]['id']
+    #
+    # # 업무 시작 날짜 수정 - 근로자 응답 확인을 시험하기 위해 업무 시작 날짜를 오늘 이후로 변경
+    # begin_day = (datetime.datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    # end_day = (datetime.datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+    # update_work = {
+    #     'work_id': work_id,  # 필수
+    #     'dt_begin': begin_day,  # 근무 시작일
+    #     'dt_end': end_day,  # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'update_work', json=update_work)
+    # result.append({'url': r.url, 'POST': update_work, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # # 고객 : 근로자 등록
+    # next_4_day = datetime.datetime.now() + datetime.timedelta(days=4)
+    # next_4_day = next_4_day.strftime('%Y-%m-%d') + ' 19:00:00'
+    # employee = {
+    #     'work_id': work_id,
+    #     'dt_answer_deadline': next_4_day,
+    #     'phone_numbers': ['010-2557-3555', '010-1111-2222', '010-3333-44', '010-4444-5555', '010-1111-3333',
+    #                       '010-4444-7777']
+    # }
+    # r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee)
+    # result.append({'url': r.url, 'POST': employee, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # names = ["양만춘", "강감찬", "이순신", "안중근"]
+    # arr_phone_no = ['010-1111-2222', '010-4444-5555', '010-1111-3333', '010-4444-7777']
+    # for pNo in arr_phone_no:
+    #     # 근로자 : 인증번호 요청
+    #     phone_no = {'phone_no': pNo}
+    #     settings.IS_TEST = True
+    #     r = s.post(settings.EMPLOYEE_URL + 'certification_no_to_sms', json=phone_no)
+    #     settings.IS_TEST = False
+    #     result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    #     # 근로자 : 근로자 확인
+    #     certification_data = {
+    #         'phone_no': pNo,
+    #         'cn': '201903',
+    #         'phone_type': 'A',  # 안드로이드 폰
+    #         'push_token': 'push token'
+    #     }
+    #     settings.IS_TEST = True
+    #     r = s.post(settings.EMPLOYEE_URL + 'reg_from_certification_no', json=certification_data)
+    #     settings.IS_TEST = False
+    #     result.append({'url': r.url, 'POST': certification_data, 'STATUS': r.status_code, 'R': r.json()})
+    #     logSend(r.json())
+    #
+    #     employee_info = {
+    #         'passer_id': r.json()['id'],
+    #         'name': names[arr_phone_no.index(pNo)],
+    #         'bank': '기업은행',
+    #         'bank_account': '12300000012000',
+    #         'pNo': pNo,  # 추후 SMS 확인 절차 추가
+    #     }
+    #     r = s.post(settings.EMPLOYEE_URL + 'update_my_info', json=employee_info)
+    #     result.append({'url': r.url, 'POST': employee_info, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # # 근로자 리스트 - 전화번호에 1111 가 포함된 근로자
+    # phone_no = {
+    #     'phone_no': '1111'
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'passer_list', json=phone_no)
+    # result.append({'url': r.url, 'POST': phone_no, 'STATUS': r.status_code, 'R': r.json()})
+    # passers = r.json()['passers']
+    #
+    # if len(passers) > 0:
+    #     for ex_passer in passers:
+    #         # 근로자 : 알림 확인
+    #         passer = {'passer_id': ex_passer['id']}
+    #         r = s.post(settings.EMPLOYEE_URL + 'notification_list', json=passer)
+    #         result.append({'url': r.url, 'GET': passer, 'STATUS': r.status_code, 'R': r.json()})
+    #         print(r.json())
+    #         if len(r.json()['notifications']) == 0:
+    #             # 알림이 없는 출입자 - 대상이 아님
+    #             continue
+    #         notification_id = r.json()['notifications'][0]['id']
+    #
+    #         # 근로자 : 업무 수락 / 거절
+    #         accept = {
+    #             'passer_id': ex_passer['id'],  # 암호화된 값임
+    #             'notification_id': notification_id,
+    #             'is_accept': 0  # 1 : 업무 수락, 0 : 업무 거부
+    #         }
+    #         r = s.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept)
+    #         result.append({'url': r.url, 'POST': accept, 'STATUS': r.status_code, 'R': r.json()})
 
     # # 근로자 리스트
     # phone_no = {
@@ -3534,72 +3533,79 @@ def test_go_go(request):
     r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
     result.append({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
 
-    new_work_data = {
-        'name': '서버운영',  # 생산, 포장, 경비, 미화 등
-        'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
-        'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
-        'dt_begin': '2019-11-25',  # 업무 시작 날짜
-        'dt_end': '2019-12-18',  # 업무 종료 날짜
-        'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
-        'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
-        # 신규 추가 사항
-        'time_type': 0,  # 급여 형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
-        'week_hours': 40,  # 시간/주 (소정근로시간)
-        'month_hours': 209,  # 시간/원 (소정근로시간)
-        'working_days': [1, 2, 3, 4, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
-        'paid_day': 0,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
-        'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
-        # 근무시간
-        # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
-        # 1: 09:00 ~ 21:00, 01:30
-        # 2: 09:00 ~ 21:00
-        'work_time_list':
-            [
-                {
-                    't_begin': '09:00',  # 근무 시작 시간
-                    't_end': '21:00',  # 근무 종료 시간
-                    'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                    'break_time_list':  # 휴게시간이 0 일 때만
-                        [
-                            {
-                                'bt_begin': '12:00',  # 휴게시간 시작
-                                'bt_end': '13:00'  # 휴게시간 종료
-                            },
-                            {
-                                'bt_begin': '18:00',  # 휴게시간 시작
-                                'bt_end': '19:00',  # 휴게시간 종
-                            }
-                        ],
-                },
-                # {
-                #     't_begin': '09:00',  # 근무 시작 시간
-                #     't_end': '21:00',  # 근무 종료 시간
-                #     'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                #     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
-                # },
-                # {
-                #     't_begin': '07:00',  # 근무 시작 시간
-                #     't_end': '15:00',  # 근무 종료 시간
-                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                # },
-                # {
-                #     't_begin': '15:00',  # 근무 시작 시간
-                #     't_end': '23:00',  # 근무 종료 시간
-                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                # },
-                # {
-                #     't_begin': '23:00',  # 근무 시작 시간
-                #     't_end': '07:00',  # 근무 종료 시간
-                #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
-                # },
-            ],
-        'work_id': AES_ENCRYPT_BASE64('64')
-    }
-    # r = s.post(settings.CUSTOMER_URL + 'reg_work_v2', json=new_work_data)
-    # result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
+    get_parameter = {'work_id': '3uVx14f5NFyPTauyp2k2oA',
+                     'is_recruiting': '1',
+                     }
+    r = s.post(settings.CUSTOMER_URL + 'post_employee', json=get_parameter)
+    result.append({'url': r.url, 'POST': get_parameter, 'STATUS': r.status_code, 'R': r.json()})
+    logSend(result)
 
-    r = s.post(settings.CUSTOMER_URL + 'update_work_v2', json=new_work_data)
-    result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
+    # new_work_data = {
+    #     'name': '서버운영',  # 생산, 포장, 경비, 미화 등
+    #     'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ', # 암호화된 사업장 id',
+    #     'type': '3교대',  # 3교대, 주간, 야간, 2교대 등 (매번 입력하는 걸로)
+    #     'dt_begin': '2019-11-25',  # 업무 시작 날짜
+    #     'dt_end': '2019-12-18',  # 업무 종료 날짜
+    #     'staff_id': 'GB-SPRhVjauzMWe7Q83VQg', # 암호화된 현장 소장 id',
+    #     'partner_id': 'qgf6YHf1z2Fx80DR8o_Lvg', #암호화된 협력업체 id',
+    #     # 신규 추가 사항
+    #     'time_type': 0,  # 급여 형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+    #     'week_hours': 40,  # 시간/주 (소정근로시간)
+    #     'month_hours': 209,  # 시간/원 (소정근로시간)
+    #     'working_days': [1, 2, 3, 4, 5],  # 근무요일 (0: 일, 1: 월, ..., 6: 토)
+    #     'paid_day': 0,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+    #     'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+    #     # 근무시간
+    #     # 0: 09:00 ~ 21:00, 12:00~13:00, 18:00~19:00
+    #     # 1: 09:00 ~ 21:00, 01:30
+    #     # 2: 09:00 ~ 21:00
+    #     'work_time_list':
+    #         [
+    #             {
+    #                 't_begin': '09:00',  # 근무 시작 시간
+    #                 't_end': '21:00',  # 근무 종료 시간
+    #                 'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #                 'break_time_list':  # 휴게시간이 0 일 때만
+    #                     [
+    #                         {
+    #                             'bt_begin': '12:00',  # 휴게시간 시작
+    #                             'bt_end': '13:00'  # 휴게시간 종료
+    #                         },
+    #                         {
+    #                             'bt_begin': '18:00',  # 휴게시간 시작
+    #                             'bt_end': '19:00',  # 휴게시간 종
+    #                         }
+    #                     ],
+    #             },
+    #             # {
+    #             #     't_begin': '09:00',  # 근무 시작 시간
+    #             #     't_end': '21:00',  # 근무 종료 시간
+    #             #     'break_time_type': 1,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #             #     'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+    #             # },
+    #             # {
+    #             #     't_begin': '07:00',  # 근무 시작 시간
+    #             #     't_end': '15:00',  # 근무 종료 시간
+    #             #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #             # },
+    #             # {
+    #             #     't_begin': '15:00',  # 근무 시작 시간
+    #             #     't_end': '23:00',  # 근무 종료 시간
+    #             #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #             # },
+    #             # {
+    #             #     't_begin': '23:00',  # 근무 시작 시간
+    #             #     't_end': '07:00',  # 근무 종료 시간
+    #             #     'break_time_type': 2,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+    #             # },
+    #         ],
+    #     'work_id': AES_ENCRYPT_BASE64('64')
+    # }
+    # # r = s.post(settings.CUSTOMER_URL + 'reg_work_v2', json=new_work_data)
+    # # result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
+    #
+    # r = s.post(settings.CUSTOMER_URL + 'update_work_v2', json=new_work_data)
+    # result.append({'url': r.url, 'POST': new_work_data, 'STATUS': r.status_code, 'R': r.json()})
 
     # work_place_data = {
     #     'work_place_id': 'gDoPqy_Pea6imtYYzWrEXQ',

@@ -3203,6 +3203,100 @@ def get_dic_passer():
 
 
 @cross_origin_read_allow
+def alert_recruiting(request):
+    """
+    채용 알림 : 근로자에게 채용 내용을 알림
+        1. 채용 대상자 선정: 구인 ON 인 사람
+        2. 알림 DB 설정
+        3. push 알림
+    http://0.0.0.0:8000/employee/alert_recruiting?
+    POST
+        work_id: 고객 서버의 업무 id   # 암호화 된 상태
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    parameter_check = is_parameter_ok(rqst, ['work_id'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    customer_work_id = parameter_check['parameters']['work_id']
+    try:
+        work = Work.objects.get(customer_work_id=customer_work_id)
+    except Exception as e:
+        return status422(get_api(request), {'message': '해당 업무(customer_work_id: {}) 없음. {}'.format(customer_work_id, str(e))})
+    recruiting_passer_list = Passer.objects.filter(is_recruiting=True)
+    #
+    # 구직 등록자 중에서 업무 시작일이 가능한 근로자 검색
+    #
+    push_list = []
+    push_phone_list = []
+    for passer in recruiting_passer_list:
+        try:
+            employee = Employee.objects.get(id=passer.employee_id)
+        except Exception as e:
+            logError('   passer: {} 의 employee: {} 없음'.format(passer.id, passer.employee_id))
+            continue
+        works = Works(employee.get_works())
+        work_term = { 'begin': work.begin, 'end': work.end }
+        if not works.is_overlap(work_term):
+            # 근로자의 업무 기간이 겹치지 않는 경우 채용정보 푸시, 알림 등록
+            dt_work_begin = str_to_dt(work.begin)
+            new_notification = Notification_Work(
+                work_id=work.id,
+                customer_work_id=customer_work_id,
+                employee_id=employee.id,
+                employee_pNo=passer.pNo,
+                dt_answer_deadline=dt_work_begin + datetime.timedelta(days= -2),
+                dt_begin=dt_work_begin,
+                dt_end=str_to_dt(work.end),
+                # 이하 시스템 관리용
+                work_place_name=work.work_place_name,
+                work_name_type=work.work_name_type,
+                # is_x=False,  # default
+                # dt_reg=datetime.datetime.now(),  # default
+            )
+            new_notification.save()
+            push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+            push_phone_list.append(passer.pNo)
+    logSend('push_list: {}'.format(push_phone_list))
+    if len(push_list) > 0:
+        push_contents = {
+            'target_list': push_list,
+            'func': 'user',
+            'isSound': True,
+            'badge': 1,
+            'contents': {'title': '(채용정보) {}: {}'.format(work.work_place_name, work.work_name_type),
+                         'subtitle': '{} ~ {}'.format(work.begin, work.end),
+                         'body': {'action': 'NewRecruiting',
+                                  'dt_begin': work.begin,
+                                  'dt_end': work.end
+                                  }
+                         }
+        }
+        send_push(push_contents)
+
+    return REG_200_SUCCESS.to_json_response({'phone_list': push_phone_list})
+
+
+@cross_origin_read_allow
 def analysys(request):
     """
     출입, 출퇴근 결과 분석
@@ -3406,6 +3500,7 @@ def rebuild_pass_history(request):
     print(len(arr_pass_history), len(error_passes))
     return REG_200_SUCCESS.to_json_response(
         {'pass_histories': arr_pass_history, 'long_interval_list': long_interval_list, 'error_passes': error_passes})
+
 
 
 @cross_origin_read_allow

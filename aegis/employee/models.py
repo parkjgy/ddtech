@@ -130,6 +130,7 @@ class Passer(models.Model):
     dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
     user_agent = models.CharField(max_length = 512, default=None) # HTTP_USER_AGENT
     is_camera_stop = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
+    is_recruiting = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
 
 
 class Pass(models.Model):

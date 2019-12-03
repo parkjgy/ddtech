@@ -55,6 +55,7 @@ urlpatterns = [
     url(r'employee/my_work_records$', views.my_work_records, name='my_work_records'),
     url(r'employee/my_work_histories_for_customer$', views.my_work_histories_for_customer,
         name='my_work_histories_for_customer'),
+    url(r'employee/alert_recruiting', views.alert_recruiting, name='alert_recruiting'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),
     url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),
