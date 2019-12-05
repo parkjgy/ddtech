@@ -26,7 +26,7 @@ def cross_origin_read_allow(function):
             response = HttpResponse()
         else:
             try:
-                header = ''
+                header = '\n'
                 header += '>>> {}'.format(get_api(request))
                 # logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 # logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
