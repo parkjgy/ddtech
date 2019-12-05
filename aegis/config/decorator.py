@@ -30,6 +30,7 @@ def cross_origin_read_allow(function):
                 header += '>>> {}'.format(get_api(request))
                 # logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 # logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
+                logSend(header)
                 if request.method == 'POST':
                     if len(request.body) == 0:
                         rqst = {}
@@ -56,7 +57,7 @@ def cross_origin_read_allow(function):
                     # logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
                 logHeader(header)
                 response = function(request, *args, **kwargs)
-                logHeader('<<< {}'.format(get_api(request)))  # 함수 끝 표시
+                # logHeader('<<< {}'.format(get_api(request)))  # 함수 끝 표시
                 # logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
