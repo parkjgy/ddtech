@@ -2728,6 +2728,23 @@ def update_work_v2(request):
         )
         new_work.set_time_info(time_info)
         new_work.save()
+
+        new_employee_pNo_list = []
+        new_employee_work_infor = {
+            'customer_work_id': AES_ENCRYPT_BASE64(str(new_work.id)),
+            'work_place_name': new_work.work_place_name,
+            'work_name_type': '{} ({})'.format(new_work.name, new_work.type),
+            'begin': new_work.dt_begin.strftime('%Y/%m/%d'),
+            'end': new_work.dt_end.strftime('%Y/%m/%d'),
+            'staff_name': new_work.staff_name,
+            'staff_pNo': new_work.staff_pNo,
+            'update_employee_pNo_list': new_employee_pNo_list,
+            'time_info': time_info,
+        }
+        r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=new_employee_work_infor)
+        logSend({'url': r.url, 'POST': new_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+        if r.status_code != 200:
+            return r
     else:  # 기존 업무를 업데이트 할 때
         try:
             update_work = Work.objects.get(id = work_id)
