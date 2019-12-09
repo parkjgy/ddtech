@@ -52,6 +52,11 @@ urlpatterns = [
     url(r'customer/list_employee$', views.list_employee, name='list_employee'),
     url(r'customer/post_employee', views.post_employee, name='post_employee'),
 
+    url(r'customer/report_work_place', views.report_work_place, name='report_work_place'),
+    url(r'customer/report_contractor', views.report_contractor, name='report_contractor'),
+    # url(r'customer/report_staff', views.report_staff, name='report_staff'),
+    # url(r'customer/report_employee', views.report_employee, name='report_employee'),
+
     url(r'customer/report$', views.report, name='report'),
     url(r'customer/report_of_manager$', views.report_of_manager, name='report_of_manager'),
     url(r'customer/report_all$', views.report_all, name='report_all'),

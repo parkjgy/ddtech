@@ -2762,7 +2762,6 @@ def update_work_v2(request):
         update_work.staff_pNo = staff.pNo
         update_work.staff_email = staff.email
         update_work.set_time_info(time_info)
-
         #
         # 근로자 시간 변경
         #
@@ -3852,6 +3851,182 @@ def post_employee(request):
     logSend('   response: {}'.format(response_dict))
     return ReqLibJsonResponse(response)
     # return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_work_place(request):
+    """
+    보고서: 사업장별
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report_work_place?year_month=2019-12
+    GET
+        year_month: 2019-12     # 대상 년 월
+
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "arr_work_place": [
+                {
+                  "id": 2,
+                  "name": "효성용연3공장_필름",
+                  "manager": "김종민 (010-7290-8113)",
+                  "arr_work": [
+                    {
+                      "id": 2,
+                      "name_type": "생산 (3조3교대)",
+                      "staff": "박상은 (010-6587-7376)"
+                    },
+                    {
+                      "id": 3,
+                      "name_type": "출하 (주간)",
+                      "staff": "박상은 (010-6587-7376)"
+                    },
+                    {
+                      "id": 4,
+                      "name_type": "포장 (3조3교대)",
+                      "staff": "박상은 (010-6587-7376)"
+                    }
+                  ]
+                },
+                ......
+            }
+        STATUS 503
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    work_place_list = Work_Place.objects.filter(contractor_id=worker.co_id)
+    arr_work_place = []
+    for work_place in work_place_list:
+        new_work_place = {'id': work_place.id,
+                          'name': work_place.name,
+                          'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
+                          }
+        work_list = Work.objects.filter(work_place_id=work_place.id)
+        arr_work = []
+        for work in work_list:
+            new_work = {'id': work.id,
+                        'name_type': '{} ({})'.format(work.name, work.type),
+                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                        }
+            arr_work.append(new_work)
+        new_work_place['arr_work'] = arr_work
+        arr_work_place.append(new_work_place)
+    result = {'arr_work_place': arr_work_place}
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_contractor(request):
+    """
+    보고서: 사업장별
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report_contractor?year_month=2019-12
+    GET
+        year_month: 2019-12     # 대상 년 월
+
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "arr_work_place": [
+                {
+                  "id": 2,
+                  "name": "효성용연3공장_필름",
+                  "manager": "김종민 (010-7290-8113)",
+                  "arr_work": [
+                    {
+                      "id": 2,
+                      "name_type": "생산 (3조3교대)",
+                      "staff": "박상은 (010-6587-7376)"
+                    },
+                    {
+                      "id": 3,
+                      "name_type": "출하 (주간)",
+                      "staff": "박상은 (010-6587-7376)"
+                    },
+                    {
+                      "id": 4,
+                      "name_type": "포장 (3조3교대)",
+                      "staff": "박상은 (010-6587-7376)"
+                    }
+                  ]
+                },
+                ......
+            }
+        STATUS 503
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    dict_contractor = {}
+    work_place_list = Work_Place.objects.filter(contractor_id=worker.co_id)
+    # arr_work_place = {}
+    for work_place in work_place_list:
+        new_work_place = {'id': work_place.id,
+                          'name': work_place.name,
+                          'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
+                          }
+        work_list = Work.objects.filter(work_place_id=work_place.id)
+        # arr_work = []
+        for work in work_list:
+            new_work = {'id': work.id,
+                        'name_type': '{} ({})'.format(work.name, work.type),
+                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
+                        'contractor_id': work.contractor_id,
+                        'contractor_name': work.contractor_name,
+                        }
+            if work.contractor_id in dict_contractor.keys():
+                work_place_dict = dict_contractor[work.contractor_id]
+                if work_place.id in work_place_dict.keys():
+                    work_place_list = work_place_dict[work_place.id]['arr_work']
+                    work_place_list.append(new_work)
+                else:
+                    work_place_dict[work_place.id] = new_work_place
+                    work_place_dict[work_place.id]['arr_work'] = [new_work]
+            else:
+                new_work_place['arr_work'] = [new_work]
+                dict_contractor[work.contractor_id] = {'name': work.contractor_name, 'arr_work_place': [new_work_place]}
+            # print(dict_contractor)
+            # arr_work.append(new_work)
+        # new_work_place['arr_work'] = arr_work
+        # arr_work_place.append(new_work_place)
+    arr_contractor = []
+    for key in dict_contractor.keys():
+        arr_work_place = []
+        print('>>> {}'.format(dict_contractor[key]))
+        # work_place_list = dict_contractor[key]['arr_work_place']
+        # for work_place in work_place_list:
+        #     print('  > {}'.format(work_place_list))
+        #
+        #     work_place = work_place_dict[work_place_key]
+        #     work_place['id'] = work_place_key
+        #     # work_place['arr_work'] = work_place_dict['arr_work']
+        #     arr_work_place.append(work_place)
+        contractor = dict_contractor[key]
+        contractor['id'] = key
+        # contractor['arr_work_place'] = arr_work_place
+        arr_contractor.append(contractor)
+
+    result = {'arr_contractor': arr_contractor}
+    return REG_200_SUCCESS.to_json_response(result)
 
 
 @cross_origin_read_allow
