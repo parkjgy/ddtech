@@ -3939,7 +3939,7 @@ def report_work_place(request):
 @session_is_none_403
 def report_contractor(request):
     """
-    보고서: 사업장별
+    보고서: 협력사별
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/report_contractor?year_month=2019-12
