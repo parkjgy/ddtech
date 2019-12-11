@@ -3870,29 +3870,32 @@ def report_work_place(request):
               "message": "정상적으로 처리되었습니다.",
               "arr_work_place": [
                 {
-                  "id": 2,
+                  "id": "_LdMng5jDTwK-LMNlj22Vw",
                   "name": "효성용연3공장_필름",
-                  "order": "효성용연3공장",
+                  "order": "효성용연공장",
                   "manager": "김종민 (010-7290-8113)",
                   "arr_work": [
                     {
-                      "id": 2,
+                      "id": "_LdMng5jDTwK-LMNlj22Vw",
                       "name_type": "생산 (3조3교대)",
-                      "staff": "박상은 (010-6587-7376)"
+                      "staff": "박상은 (010-6587-7376)",
+                      "work": "생산",
+                      "type": "3조3교대",
+                      "contractor_name": "(주)티에스엔지",
+                      "dt_begin": "2019-06-19",
+                      "dt_end": "2019-12-31",
+                      "time_type": 0,
+                      "week_hours": 40,
+                      "month_hours": 209,
+                      "working_days": [1,2,3,4,5],
+                      "paid_day": 0,
+                      "is_holiday_work": 1
                     },
-                    {
-                      "id": 3,
-                      "name_type": "출하 (주간)",
-                      "staff": "박상은 (010-6587-7376)"
-                    },
-                    {
-                      "id": 4,
-                      "name_type": "포장 (3조3교대)",
-                      "staff": "박상은 (010-6587-7376)"
-                    }
+                    ......  # 다른 업무
                   ]
                 },
-                ......
+                ......  # 다른 사업장
+              ]
             }
         STATUS 422
             {'message': 'ClientError: parameter \'is_all\' 가 없어요'}
@@ -3926,9 +3929,21 @@ def report_work_place(request):
             work_list = Work.objects.filter(work_place_id=work_place.id, dt_end__gt=datetime.datetime.now())
         arr_work = []
         for work in work_list:
+            work_time = work.get_time_info()
             new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
                         'name_type': '{} ({})'.format(work.name, work.type),
-                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
+                        'work': work.name,
+                        'type': work.type,
+                        'contractor_name': work.contractor_name,
+                        'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
+                        'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
+                        'time_type': work_time['time_type'],
+                        'week_hours': work_time['week_hours'],
+                        'month_hours': work_time['month_hours'],
+                        'working_days': work_time['working_days'],
+                        'paid_day': work_time['paid_day'],
+                        'is_holiday_work': work_time['is_holiday_work'],
                         }
             arr_work.append(new_work)
         new_work_place['arr_work'] = arr_work
@@ -3944,7 +3959,7 @@ def report_contractor(request):
     보고서: 협력사별
         주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
             response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/report_contractor?year_month=2019-12
+    http://0.0.0.0:8000/customer/report_contractor?is_all=1
     GET
         year_month: 2019-12     # 대상 년 월
 
@@ -3954,29 +3969,40 @@ def report_contractor(request):
               "message": "정상적으로 처리되었습니다.",
               "arr_contractor": [
                 {
-                  "id": 10,
+                  "id": "voGxXzbAurv_GvSDv1nciw",
                   "name": "(주)티에스엔지",
                   "arr_work_place": [
                     {
-                      "id": 2,
+                      "id": "_LdMng5jDTwK-LMNlj22Vw",
                       "name": "효성용연3공장_필름",
-                      "order": "효성용연3공장",
+                      "order": "효성용연공장",
                       "manager": "김종민 (010-7290-8113)",
                       "arr_work": [
                         {
-                          "id": 2,
+                          "id": "_LdMng5jDTwK-LMNlj22Vw",
                           "name_type": "생산 (3조3교대)",
                           "staff": "박상은 (010-6587-7376)",
-                          "contractor_id": 10,
-                          "contractor_name": "(주)티에스엔지"
+                          "work": "생산",
+                          "type": "3조3교대",
+                          "contractor_name": "(주)티에스엔지",
+                          "dt_begin": "2019-06-19",
+                          "dt_end": "2019-12-31",
+                          "time_type": 0,
+                          "week_hours": 40,
+                          "month_hours": 209,
+                          "working_days": [1,2,3,4,5],
+                          "paid_day": 0,
+                          "is_holiday_work": 1
                         },
-                        ......
+                        ......  # 다른 업무
                       ]
                     },
-                    ......
+                    ......  # 다른 사업장
                   ]
-                }
-              }
+                },
+                ......  # 다른 협력사
+              ]
+            }
         STATUS 422
             {'message': 'ClientError: parameter \'is_all\' 가 없어요'}
             {'message': 'ClientError: parameter \'is_all\' 가 정상적인 값이 아니예요.'}
@@ -4008,11 +4034,21 @@ def report_contractor(request):
         else:
             work_list = Work.objects.filter(work_place_id=work_place.id, dt_end__gt=datetime.datetime.now())
         for work in work_list:
+            work_time = work.get_time_info()
             new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
                         'name_type': '{} ({})'.format(work.name, work.type),
                         'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
-                        # 'contractor_id': AES_ENCRYPT_BASE64(str(work.contractor_id)),
-                        # 'contractor_name': work.contractor_name,
+                        'work': work.name,
+                        'type': work.type,
+                        'contractor_name': work.contractor_name,
+                        'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
+                        'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
+                        'time_type': work_time['time_type'],
+                        'week_hours': work_time['week_hours'],
+                        'month_hours': work_time['month_hours'],
+                        'working_days': work_time['working_days'],
+                        'paid_day': work_time['paid_day'],
+                        'is_holiday_work': work_time['is_holiday_work'],
                         }
             if work.contractor_id in dict_contractor.keys():
                 work_place_dict = dict_contractor[work.contractor_id]['work_place_dict']
@@ -4066,35 +4102,29 @@ def report_staff(request):
                 {
                   "id": "GB-SPRhVjauzMWe7Q83VQg",
                   "name": "바스프화성(식당)",
-                  "order": "바스프",
+                  "order": "바스프 화성공장",
                   "manager": "전미숙 (010-5556-0163)",
                   "arr_work": [
                     {
                       "id": "61qvFaTlQIPL7mtfslc5Lg",
                       "name_type": "테스트 (주간)",
-                      "staff": "전미숙 (010-5556-0163)"
+                      "staff": "전미숙 (010-5556-0163)",
+                      "work": "테스트",
+                      "type": "주간",
+                      "contractor_name": "(주)대덕에프엔에스",
+                      "dt_begin": "2019-08-07",
+                      "dt_end": "2019-08-09",
+                      "time_type": 0,
+                      "week_hours": 40,
+                      "month_hours": 209,
+                      "working_days": [1,2,3,4,5],
+                      "paid_day": 0,
+                      "is_holiday_work": 1
                     },
-                    {
-                      "id": "G2IvG3_DU5fWy_-a9hd-_w",
-                      "name_type": "식당 (주간근무)",
-                      "staff": "김미경 (010-2397-6143)"
-                    }
+                    ......  # 다른 업무
                   ]
                 },
-                {
-                  "id": "XPPZLEgTFd6IaFSWhu4syQ",
-                  "name": "바스프안료_안료",
-                  "order": "바스",
-                  "manager": "전미숙 (010-5556-0163)",
-                  "arr_work": [
-                    {
-                      "id": "APVVrmTYI_kfRemH4Tmfsw",
-                      "name_type": "식당 (주간)",
-                      "staff": "한지희 (010-6579-1540)"
-                    }
-                  ]
-                },
-                ......
+                ......  # 다른 사업장
               ]
             }
         STATUS 422
@@ -4144,11 +4174,22 @@ def report_staff(request):
             for work in work_list:
                 if work.work_place_id != work_place.id:
                     continue
+                work_time = work.get_time_info()
                 new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
                             'name_type': '{} ({})'.format(work.name, work.type),
-                            'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                            'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
+                            'work': work.name,
+                            'type': work.type,
+                            'contractor_name': work.contractor_name,
+                            'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
+                            'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
+                            'time_type': work_time['time_type'],
+                            'week_hours': work_time['week_hours'],
+                            'month_hours': work_time['month_hours'],
+                            'working_days': work_time['working_days'],
+                            'paid_day': work_time['paid_day'],
+                            'is_holiday_work': work_time['is_holiday_work'],
                             }
-                print('   > {}'.format(new_work))
                 arr_work.append(new_work)
             new_work_place['arr_work'] = arr_work
             arr_work_place.append(new_work_place)
@@ -4168,11 +4209,22 @@ def report_staff(request):
                 work_list = Work.objects.filter(work_place_id=work_place.id, dt_end__gt=datetime.datetime.now())
             arr_work = []
             for work in work_list:
+                work_time = work.get_time_info()
                 new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
                             'name_type': '{} ({})'.format(work.name, work.type),
-                            'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                            'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
+                            'work': work.name,
+                            'type': work.type,
+                            'contractor_name': work.contractor_name,
+                            'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
+                            'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
+                            'time_type': work_time['time_type'],
+                            'week_hours': work_time['week_hours'],
+                            'month_hours': work_time['month_hours'],
+                            'working_days': work_time['working_days'],
+                            'paid_day': work_time['paid_day'],
+                            'is_holiday_work': work_time['is_holiday_work'],
                             }
-                print('   > {}'.format(new_work))
                 arr_work.append(new_work)
             new_work_place['arr_work'] = arr_work
             arr_work_place.append(new_work_place)
@@ -4209,31 +4261,64 @@ def report_employee(request):
                 {
                   "id": "3EP9Yb9apLUn2Ymof8Mw9A",
                   "name": "test_1",
-                  "order": "대덕테",
-                  "manager프": "최진 (010-2073-6959)",
+                  "order": "요셉",
+                  "manager": "최진 (010-2073-6959)",
                   "arr_work": [
                     {
                       "id": "3W0uYO_TlmLvE-e_WhMQoA",
                       "name_type": "test_1_4 (주간)",
-                      "staff": "최진 (010-2073-6959)"
+                      "staff": "최진 (010-2073-6959)",
+                      "work": "test_1_4",
+                      "type": "주간",
+                      "contractor_name": "테스트",
+                      "dt_begin": "2019-08-01",
+                      "dt_end": "2019-08-30",
+                      "time_type": 0,
+                      "week_hours": 40,
+                      "month_hours": 209,
+                      "working_days": [1,2,3,4,5],
+                      "paid_day": 0,
+                      "is_holiday_work": 1
                     }
                   ]
                 },
                 {
                   "id": "N--RtSs4MP3qPHBZpxxL8g",
                   "name": "test_4",
-                  "order": "대덕테크",
+                  "order": "대덕INC",
                   "manager": "최진 (010-2073-6959)",
                   "arr_work": [
                     {
                       "id": "YMAoiMsJ00KdriRqYP2wqA",
                       "name_type": "테스트1 (주간)",
-                      "staff": "최진 (010-2073-6959)"
+                      "staff": "최진 (010-2073-6959)",
+                      "work": "테스트1",
+                      "type": "주간",
+                      "contractor_name": "테스트4",
+                      "dt_begin": "2019-09-05",
+                      "dt_end": "2019-09-30",
+                      "time_type": 0,
+                      "week_hours": 40,
+                      "month_hours": 209,
+                      "working_days": [1,2,3,4,5],
+                      "paid_day": 0,
+                      "is_holiday_work": 1
                     },
                     {
                       "id": "N-Ef_BUENRMlxjvllS4aCQ",
                       "name_type": "테스트2 (야간)",
-                      "staff": "최진 (010-2073-6959)"
+                      "staff": "최진 (010-2073-6959)",
+                      "work": "테스트2",
+                      "type": "야간",
+                      "contractor_name": "테스트",
+                      "dt_begin": "2019-10-01",
+                      "dt_end": "2019-10-31",
+                      "time_type": 0,
+                      "week_hours": 40,
+                      "month_hours": 209,
+                      "working_days": [1,2,3,4,5],
+                      "paid_day": 0,
+                      "is_holiday_work": 1
                     }
                   ]
                 }
@@ -4300,11 +4385,22 @@ def report_employee(request):
         for work in work_list:
             if work.work_place_id != work_place.id:
                 continue
+            work_time = work.get_time_info()
             new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
                         'name_type': '{} ({})'.format(work.name, work.type),
-                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo)),
+                        'work': work.name,
+                        'type': work.type,
+                        'contractor_name': work.contractor_name,
+                        'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
+                        'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
+                        'time_type': work_time['time_type'],
+                        'week_hours': work_time['week_hours'],
+                        'month_hours': work_time['month_hours'],
+                        'working_days': work_time['working_days'],
+                        'paid_day': work_time['paid_day'],
+                        'is_holiday_work': work_time['is_holiday_work'],
                         }
-            print('   > {}'.format(new_work))
             arr_work.append(new_work)
         new_work_place['arr_work'] = arr_work
         arr_work_place.append(new_work_place)
