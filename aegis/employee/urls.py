@@ -53,8 +53,8 @@ urlpatterns = [
     # url(r'employee/employee_day_working_from_customer$', views.employee_day_working_from_customer, name='employee_day_working_from_customer'),
     url(r'employee/my_work_histories$', views.my_work_histories, name='my_work_histories'),
     url(r'employee/my_work_records$', views.my_work_records, name='my_work_records'),
-    url(r'employee/my_work_histories_for_customer$', views.my_work_histories_for_customer,
-        name='my_work_histories_for_customer'),
+    url(r'employee/my_work_histories_for_customer$', views.my_work_histories_for_customer, name='my_work_histories_for_customer'),
+    url(r'employee/work_report_for_customer', views.work_report_for_customer, name='work_report_for_customer'),
     url(r'employee/alert_recruiting', views.alert_recruiting, name='alert_recruiting'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),

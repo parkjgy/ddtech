@@ -2999,6 +2999,137 @@ def my_work_histories_for_customer(request):
     return REG_200_SUCCESS.to_json_response(result)
 
 
+@cross_origin_read_allow
+def work_report_for_customer(request):
+    """
+    <<<고객 서버용>>> 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    http://0.0.0.0:8000/employee/work_report_for_customer?employee_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        employee_id = 서버로 받아 저장해둔 출입자 id'
+        work_id = 고객 서버의 work id   # 암호화되어 있음
+        dt = '2018-01'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id=%s 이(가) 없거나 중복됨' % staff_id }
+            {'message':'ServerError: Employee 에 id=%s 이(가) 없거나 중복됨' % employee_id }
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['employee_id_!', 'work_id_@', 'dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    employee_id = parameter_check['parameters']['employee_id']
+    customer_work_id = parameter_check['parameters']['work_id']  # 이 work_id 는 고객서버의 work_id 라서 암호화된 채로 사용한다.
+    year_month = parameter_check['parameters']['dt']
+
+    passers = Passer.objects.filter(id=employee_id)
+    if len(passers) == 0:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Passer 에 id={} 이(가) 없다'.format(employee_id)})
+    elif len(passers) > 1:
+        logError(get_api(request), ' Passer(id:{})가 중복되었다.'.format(employee_id))
+    passer = passers[0]
+
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) == 0:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Employee 에 id={} 이(가) 없다'.format(passer.employee_id)})
+    elif len(employees) > 1:
+        logError(get_api(request), ' Employee(id:{})가 중복되었다.'.format(passer.employee_id))
+    employee = employees[0]
+    #
+    # 이 근로자의 과거 근로 기록을 보여준다.
+    # ? 이 근로자의 현재 업무 과거 기록만 보여줘야하지 않나? - work_id 이용 필요
+    #
+    logSend('  customer_work_id: {}'.format(customer_work_id))
+    if customer_work_id is None or customer_work_id == 'i52bN-IdKYwB4fcddHRn-g':
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
+    else:
+        works = Work.objects.filter(customer_work_id=customer_work_id)
+        if len(works) == 0:
+            logError(get_api(request), ' 근로자 서버에 고객서버가 요청한 work_id({}) 가 없다. [발생하면 안됨]'.format(customer_work_id))
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '소속된 업무가 없습니다.'})
+
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       work_id=works[0].id,
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
+    workings = []
+    for pass_record in pass_record_list:
+        try:
+            working_time = int(float(employee.working_time))
+            working_hour = (working_time // 4) * 4
+            break_hour = working_time - working_hour
+        except Exception as e:
+            logError(get_api(request), ' 근무시간이 등록되지 않은 근로자({}) - {}'.format(employee.name, e))
+            working_hour = 8
+            break_hour = 1
+        working = {'year_month_day': pass_record.year_month_day,
+                   'action': pass_record.action,
+                   'dt_begin': dt_null(pass_record.dt_in_verify),
+                   'dt_end': dt_null(pass_record.dt_out_verify),
+                   'overtime': pass_record.overtime,  # 2019-07-21 overtime_values[pass_record.overtime + 2],
+                   'working_hour': working_hour,
+                   'break_hour': break_hour,
+                   # 'work_id': pass_record.work_id,
+                   }
+        workings.append(working)
+
+    # year_month = dt_begin.strftime('%Y-%m')
+    # last_day = dt_end - datetime.timedelta(hours=1)
+    # s = requests.session()
+    # workings = []
+    # day_infor = {'employee_id':AES_ENCRYPT_BASE64(str(passer.id))}
+    # for day in range(1, int(last_day.strftime('%d')) + 1):
+    #     day_infor['dt'] = year_month + '-%02d'%day
+    #     r = s.post(settings.EMPLOYEE_URL + 'employee_day_working_from_customer', json=day_infor)
+    #     logSend({'url': r.url, 'POST': day_infor, 'STATUS': r.status_code, 'R': r.json()})
+    #     if 'dt' in r.json():
+    #         work_day = r.json()['dt']
+    #         working = {'action':work_day['action'],
+    #                    'dt_begin':work_day['dt_begin_touch'],
+    #                    'dt_end':work_day['dt_end_touch']
+    #                    }
+    #         workings.append(working)
+    result = {"working": workings}
+    #
+    # 가상 데이터 생성
+    #
+    # result = virtual_working_data(dt_begin, dt_end)
+    #
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
 def virtual_working_data(dt_begin: datetime, dt_end: datetime) -> dict:
     # print(dt_begin.strftime('%Y-%m-%d %H:%M:%S'), ' ', dt_end.strftime('%Y-%m-%d %H:%M:%S'))
     year_month = dt_begin.strftime('%Y-%m')

@@ -3872,6 +3872,7 @@ def report_work_place(request):
                 {
                   "id": 2,
                   "name": "효성용연3공장_필름",
+                  "order": "효성용연3공장",
                   "manager": "김종민 (010-7290-8113)",
                   "arr_work": [
                     {
@@ -3916,6 +3917,7 @@ def report_work_place(request):
     for work_place in work_place_list:
         new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
                           'name': work_place.name,
+                          'order': work_place.order_name,
                           'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                           }
         if is_all:
@@ -3958,6 +3960,7 @@ def report_contractor(request):
                     {
                       "id": 2,
                       "name": "효성용연3공장_필름",
+                      "order": "효성용연3공장",
                       "manager": "김종민 (010-7290-8113)",
                       "arr_work": [
                         {
@@ -3997,6 +4000,7 @@ def report_contractor(request):
     for work_place in work_place_list:
         new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
                           'name': work_place.name,
+                          'order': work_place.order_name,
                           'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                           }
         if is_all:
@@ -4062,6 +4066,7 @@ def report_staff(request):
                 {
                   "id": "GB-SPRhVjauzMWe7Q83VQg",
                   "name": "바스프화성(식당)",
+                  "order": "바스프",
                   "manager": "전미숙 (010-5556-0163)",
                   "arr_work": [
                     {
@@ -4079,6 +4084,7 @@ def report_staff(request):
                 {
                   "id": "XPPZLEgTFd6IaFSWhu4syQ",
                   "name": "바스프안료_안료",
+                  "order": "바스",
                   "manager": "전미숙 (010-5556-0163)",
                   "arr_work": [
                     {
@@ -4130,6 +4136,7 @@ def report_staff(request):
         for work_place in work_place_list:
             new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
                               'name': work_place.name,
+                              'order': work_place.order_name,
                               'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                               }
             print('  >> {}'.format(new_work_place))
@@ -4151,6 +4158,7 @@ def report_staff(request):
         for work_place in work_place_list:
             new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
                               'name': work_place.name,
+                              'order': work_place.order_name,
                               'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                               }
             print('  >> {}'.format(new_work_place))
@@ -4192,6 +4200,140 @@ def report_employee(request):
             {'message': '관리하는 업무가 없습니다.'}
             {
               "message": "정상적으로 처리되었습니다.",
+              "employee_info": {
+                "id": "ryWQkNtiHgkUaY_SZ1o2uA",
+                "pNo": "010-2073-6959",
+                "name": "최진(상용)"
+              },
+              "arr_work_place": [
+                {
+                  "id": "3EP9Yb9apLUn2Ymof8Mw9A",
+                  "name": "test_1",
+                  "order": "대덕테",
+                  "manager프": "최진 (010-2073-6959)",
+                  "arr_work": [
+                    {
+                      "id": "3W0uYO_TlmLvE-e_WhMQoA",
+                      "name_type": "test_1_4 (주간)",
+                      "staff": "최진 (010-2073-6959)"
+                    }
+                  ]
+                },
+                {
+                  "id": "N--RtSs4MP3qPHBZpxxL8g",
+                  "name": "test_4",
+                  "order": "대덕테크",
+                  "manager": "최진 (010-2073-6959)",
+                  "arr_work": [
+                    {
+                      "id": "YMAoiMsJ00KdriRqYP2wqA",
+                      "name_type": "테스트1 (주간)",
+                      "staff": "최진 (010-2073-6959)"
+                    },
+                    {
+                      "id": "N-Ef_BUENRMlxjvllS4aCQ",
+                      "name_type": "테스트2 (야간)",
+                      "staff": "최진 (010-2073-6959)"
+                    }
+                  ]
+                }
+              ]
+            }
+        STATUS 416
+            {'message': '근로한 업무가 없습니다.'}
+        STATUS 422
+            {'message': 'ClientError: parameter \'is_all\' 가 없어요'}
+            {'message': 'ClientError: parameter \'is_all\' 가 정상적인 값이 아니예요.'}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=rqst)
+    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
+    result_json = r.json()
+    print('  >> {}'.format(result_json))
+    # return REG_200_SUCCESS.to_json_response(result_json)
+    employee = r.json()['passers'][0]
+    print('  >> {}'.format(employee))
+
+    new_employee = {
+        'id': AES_ENCRYPT_BASE64(str(employee['id'])),
+        'pNo': employee['pNo'],
+        'name': employee['name'],
+        'work_id_list': [work['customer_work_id'] for work in employee['works']]
+    }
+    print(' >> {}'.format(new_employee))
+    if len(new_employee['work_id_list']) == 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로한 업무가 없습니다.'})
+    parameter_check = is_parameter_ok(rqst, ['is_all'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    is_all = parameter_check['parameters']['is_all']
+    print(new_employee)
+    if is_all:
+        work_list = Work.objects.filter(id__in=new_employee['work_id_list'])
+    else:
+        work_list = Work.objects.filter(staff_id=staff_id, dt_end__gt=datetime.datetime.now())
+    if len(work_list) == 0:
+        return REG_200_SUCCESS.to_json_response({'message': '관리하는 업무가 없습니다.'})
+    work_place_id_list = [work.work_place_id for work in work_list]
+    print('  >> {}'.format(work_place_id_list))
+    # work_place_list = Work_Place.objects.filter(contractor_id=worker.co_id, id__in=work_place_id_list)
+    work_place_list = Work_Place.objects.filter(id__in=work_place_id_list)
+    print('  >> {}'.format(len(work_place_list)))
+    arr_work_place = []
+    for work_place in work_place_list:
+        new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
+                          'name': work_place.name,
+                          'order': work_place.order_name,
+                          'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
+                          }
+        print('  >> {}'.format(new_work_place))
+        arr_work = []
+        for work in work_list:
+            if work.work_place_id != work_place.id:
+                continue
+            new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
+                        'name_type': '{} ({})'.format(work.name, work.type),
+                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
+                        }
+            print('   > {}'.format(new_work))
+            arr_work.append(new_work)
+        new_work_place['arr_work'] = arr_work
+        arr_work_place.append(new_work_place)
+    result = {'employee_info': new_employee,
+              'arr_work_place': arr_work_place
+              }
+    del result['employee_info']['work_id_list']
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
+def report_detail(request):
+    """
+    보고서: 업무의 근로자 근태기록
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report_detail?work_id=YMAoiMsJ00KdriRqYP2wqA&employee_id=ryWQkNtiHgkUaY_SZ1o2uA&year_month=2019-08
+    http://0.0.0.0:8000/customer/report_detail?work_id=YMAoiMsJ00KdriRqYP2wqA&year_month=2019-08
+    GET
+        work_id: 업무 id         # 암호화된 id
+        employee_id: 근로자 id   # 근로자 id (단, 근로자 한명에 대한 근로내역을 볼 때만 사용)
+        year_month: 2019-12    # 요구한 근로 내역
+    response
+        STATUS 200
+            {'message': '관리하는 업무가 없습니다.'}
+            {
+              "message": "정상적으로 처리되었습니다.",
               "arr_work_place": [
                 {
                   "id": "3EP9Yb9apLUn2Ymof8Mw9A",
@@ -4224,9 +4366,17 @@ def report_employee(request):
                 }
               ]
             }
-        STATUS 422
-            {'message': 'ClientError: parameter \'is_all\' 가 없어요'}
-            {'message': 'ClientError: parameter \'is_all\' 가 정상적인 값이 아니예요.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+
+            {'message': '업무가 없어요.'}
+            {'message': '해당 근로자가 없어요.'}     # 근로자를 지정했을 때만 발생
     """
 
     if request.method == 'POST':
@@ -4237,58 +4387,59 @@ def report_employee(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    s = requests.session()
-    r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=rqst)
-    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
-    result_json = r.json()
-    print('  >> {}'.format(result_json))
-    # return REG_200_SUCCESS.to_json_response(result_json)
-    employee = r.json()['passers'][0]
-    print('  >> {}'.format(employee))
-
-    new_employee = {
-        'id': AES_ENCRYPT_BASE64(str(employee['id'])),
-        'pNo': phone_format(employee['pNo']),
-        'name': employee['name'],
-        'work_id_list': [work['customer_work_id'] for work in employee['works']]
-    }
-    parameter_check = is_parameter_ok(rqst, ['is_all'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'employee_id_!_@', 'year_month'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
-    is_all = parameter_check['parameters']['is_all']
+    work_id = parameter_check['parameters']['work_id']
+    try:
+        work = Work.objects.get(id=work_id)
+    except Exception as e:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무가 없어요.({})'.format(e)})
 
-    print(new_employee)
-    if is_all:
-        work_list = Work.objects.filter(id__in=new_employee['work_id_list'])
-    else:
-        work_list = Work.objects.filter(staff_id=staff_id, dt_end__gt=datetime.datetime.now())
-    if len(work_list) == 0:
-        return REG_200_SUCCESS.to_json_response({'message': '관리하는 업무가 없습니다.'})
-    work_place_id_list = [work.work_place_id for work in work_list]
-    print('  >> {}'.format(work_place_id_list))
-    # work_place_list = Work_Place.objects.filter(contractor_id=worker.co_id, id__in=work_place_id_list)
-    work_place_list = Work_Place.objects.filter(id__in=work_place_id_list)
-    print('  >> {}'.format(len(work_place_list)))
-    arr_work_place = []
-    for work_place in work_place_list:
-        new_work_place = {'id': AES_ENCRYPT_BASE64(str(work_place.id)),
-                          'name': work_place.name,
-                          'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
-                          }
-        print('  >> {}'.format(new_work_place))
-        arr_work = []
-        for work in work_list:
-            if work.work_place_id != work_place.id:
-                continue
-            new_work = {'id': AES_ENCRYPT_BASE64(str(work.id)),
-                        'name_type': '{} ({})'.format(work.name, work.type),
-                        'staff': '{} ({})'.format(work.staff_name, phone_format(work.staff_pNo))
-                        }
-            print('   > {}'.format(new_work))
-            arr_work.append(new_work)
-        new_work_place['arr_work'] = arr_work
-        arr_work_place.append(new_work_place)
-    result = {'arr_work_place': arr_work_place}
+    employee_id = parameter_check['parameters']['employee_id']
+    print('   > {}'.format(employee_id))
+    is_one_employee = False
+    if employee_id is not None:
+        is_one_employee = True
+        try:
+            employee = Employee.objects.get(id=employee_id)
+        except Exception as e:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '해당 근로자가 없어요.({})'.format(e)})
+    year_month = parameter_check['parameters']['year_month']
+    logSend(work_id, ' ', employee_id)
+
+    parameters = {"employee_id": AES_ENCRYPT_BASE64(str(employee.employee_id)),
+                  "dt": year_month,
+                  # 'work_id': AES_ENCRYPT_BASE64(str(work_id))
+                  'work_id': rqst['work_id']
+                  }
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=parameters)
+    if r.status_code != 200:
+        return ReqLibJsonResponse(r)
+    month_working = r.json()['working']
+    for working in month_working:
+        working['day'] = working['year_month_day'][8:10]
+        try:
+            working['in_hour_min'] = working['dt_begin'][11:16]
+            working['out_hour_min'] = working['dt_end'][11:16]
+        except Exception as e:
+            logSend(get_api(request),
+                    ' working data 의 날짜 시간 변경 오류 {} {} {} ({})'.format(working['year_month_day'], working['dt_begin'],
+                                                                       working['dt_end'], str(e)))
+            working['in_hour_min'] = "08:30"
+            working['out_hour_min'] = "17:30"
+            # del working
+            # continue
+        del working['action']
+        del working['year_month_day']
+        del working['dt_begin']
+        del working['dt_end']
+    result = {'working': month_working,
+              'working_days': len(month_working),
+              'work_type': work.type,
+              'employee_name': employee.name,
+              }
 
     return REG_200_SUCCESS.to_json_response(result)
 
