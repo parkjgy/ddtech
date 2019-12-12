@@ -33,7 +33,7 @@ from .models import IO_Pass
 import requests
 from datetime import datetime, timedelta
 import datetime
-# from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
 from django.db.models import Q
@@ -3069,10 +3069,9 @@ def work_report_for_customer(request):
     work_begin = str_to_dt(work.begin)
     work_end = str_to_dt(work.end) + datetime.timedelta(days=1)
     ym = str_to_datetime(year_month)
-    ym_log = ym
-    ym_high = ym
-    # ym_low = ym + relativedelta(months=1) - datetime.timedelta(minutes=1)
-    # ym_high = ym_low - relativedelta(months=1)
+
+    ym_low = ym + relativedelta(months=1) - datetime.timedelta(minutes=1)
+    ym_high = ym_low - relativedelta(months=1)
     # print('>>> begin: {}, end: {}'.format(work.begin, work.end))
     # print('  > begin: {}, end: {}'.format(work_begin, work_end))
     # print('  > ym: {}, low: {}, high: {}'.format(ym, ym_low, ym_high))
