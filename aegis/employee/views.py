@@ -11,7 +11,7 @@ import secrets  # uuid token 만들 때 사용
 from config.log import logSend, logError, send_slack
 from config.common import ReqLibJsonResponse
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
-from config.common import str_no, str_to_dt, get_client_ip, get_api
+from config.common import str_no, str_to_dt, get_client_ip, get_api, str2min, min2str, int_none, zero_blank
 from config.common import Works
 
 # secret import
@@ -3020,18 +3020,47 @@ def work_report_for_customer(request):
     response
         STATUS 200
             {'message': '근태내역이 없습니다.'}
-        {
-            'working':
-            [
-                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
-                    'outing':
-                    [
-                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
-                    ]
-                },
-                ......
-            ]
-        }
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "arr_working": [
+                {
+                  "name": "이영길",        # 이름
+                  "break_sum": 0,        # 휴게시간 합계
+                  "basic_sum": 180,      # 기본근로시간 합계
+                  "night_sum": 0,        # 야간근로시간 합계
+                  "overtime_sum": 8,     # 연장근로시간 합계
+                  "holiday_sum": 0,      # 휴일근로시간 합계
+                  "ho_sum": 0,           # 휴일/연장근로시간 합계
+                  "2019-10": [
+                    {
+                      "01": {                       # 근무한 날짜
+                        "dt_in_verify": "06:27",        # 출근시간
+                        "dt_out_verify": "15:00",       # 퇴근시간
+                        "break": "01:00"                # 휴게시간
+                        "basic": "",                    # 기본근로
+                        "night": "",                    # 야간근로
+                        "overtime": 0,                  # 연장근무
+                        "holiday": "",                  # 휴일근로
+                        "ho": ""                        # 휴일/연장 근로
+                      }
+                    },
+                    ......
+                    {
+                      "31": {                       # 근무한 날짜
+                        "dt_in_verify": "06:27",        # 출근시간
+                        "dt_out_verify": "15:00",       # 퇴근시간
+                        "break": "01:00"                # 휴게시간
+                        "basic": "",                    # 기본근로
+                        "night": "",                    # 야간근로
+                        "overtime": 0,                  # 연장근무
+                        "holiday": "",                  # 휴일근로
+                        "ho": ""                        # 휴일/연장 근로
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
         STATUS 416
             {'message': '업무기간을 벗어났습니다.'}
         STATUS 422 # 개발자 수정사항
@@ -3102,7 +3131,7 @@ def work_report_for_customer(request):
             'dt_out_em': dt_str(pass_record.dt_out_em, "%H:%M"),
             'dt_out_verify': dt_str(pass_record.dt_out_verify, "%H:%M"),
             'out_staff_id': pass_record.out_staff_id,
-            'overtime': pass_record.overtime,
+            'overtime': zero_blank(pass_record.overtime),
             'overtime_staff_id': pass_record.overtime_staff_id,
         }
         if pass_record.passer_id in passer_rec_dict.keys():
@@ -3137,7 +3166,54 @@ def work_report_for_customer(request):
             # 여기서 연장근무, 휴게근무, 야간근무를 처리하던가
             #
             print('   {} {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify'], passer_dict[passer_day['passer_id']]['name']))
-    result = {"arr_working": passer_rec_dict}
+    arr_working = []
+    for passer_id in passer_rec_dict.keys():
+        working = {'name': passer_dict[passer_id]['name'],
+                   year_month: []}
+        sum_break = 5
+        sum_basic = 209
+        sum_night = 0
+        sum_overtime = 8
+        sum_holiday = 0
+        sum_ho = 0
+        day_list = passer_rec_dict[passer_id]
+        for day in day_list:
+            day_key = day['year_month_day'][8:10]
+            del day['action']
+            del day['passer_id']
+            del day['year_month_day']
+            del day['work_id']
+            del day['dt_in']
+            del day['dt_in_em']
+            del day['in_staff_id']
+            del day['dt_out']
+            del day['dt_out_em']
+            del day['out_staff_id']
+            del day['overtime_staff_id']
+            day['break'] = '01:00'  # 휴게시간
+            day['basic'] = ''       # 기본근로
+            day['night'] = ''       # 야간근로
+            # day['overtime']       # 연장근로
+            day['holiday'] = ''     # 휴일근무
+            day['ho'] = ''          # 휴일/연장
+
+            sum_break += str2min(day['break'])
+            sum_basic += int_none(day['basic'])
+            sum_night += int_none(day['night'])
+            sum_overtime += int_none(day['overtime'])
+            sum_holiday += int_none(day['holiday'])
+            sum_ho += int_none(day['ho'])
+
+            day_work = {day_key: day}
+            working[year_month].append(day_work)
+        working['break_sum'] = min2str(sum_break)
+        working['basic_sum'] = sum_basic
+        working['night_sum'] = sum_night
+        working['overtime_sum'] = sum_overtime
+        working['holiday_sum'] = sum_holiday
+        working['ho_sum'] = sum_ho
+        arr_working.append(working)
+    result = {"arr_working": arr_working}
     #
     # 가상 데이터 생성
     #

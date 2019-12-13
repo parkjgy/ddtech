@@ -123,6 +123,26 @@ def hash_SHA256(password):
     return hashed.hexdigest()
 
 
+def min2str(min: int) -> str:
+    return '{:02}:{:02}'.format(min//60, min%60)
+
+
+def str2min(min: str) -> int:
+    return int(min[0:2]) * 60 + int(min[3:5])
+
+
+def int_none(int_str: str) -> int:
+    if int_str is None or len(int_str) == 0:
+        return 0
+    return int(int_str)
+
+
+def zero_blank(value: int) -> str:
+    if value is 0:
+        return ''
+    return str(value)
+
+
 def no_only_phone_no(phone_no):
     """
     전화번호에서 숫자 외의 문자를 지운다.
