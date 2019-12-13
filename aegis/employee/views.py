@@ -3086,7 +3086,8 @@ def work_report_for_customer(request):
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     if len(pass_record_list) == 0:
         return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.'})
-    passer_dict = {}
+    # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
+    passer_rec_dict = {}
     for pass_record in pass_record_list:
         passer_record_dict = {
             'passer_id': pass_record.passer_id,
@@ -3104,20 +3105,39 @@ def work_report_for_customer(request):
             'overtime': pass_record.overtime,
             'overtime_staff_id': pass_record.overtime_staff_id,
         }
-        if pass_record.passer_id in passer_dict.keys():
-            passer_dict[pass_record.passer_id].append(passer_record_dict)
+        if pass_record.passer_id in passer_rec_dict.keys():
+            passer_rec_dict[pass_record.passer_id].append(passer_record_dict)
             # print('   + {} {}'.format(passer_record_dict['year_month_day'], passer_record_dict['passer_id']))
         else:
-            passer_dict[pass_record.passer_id] = [passer_record_dict]
+            passer_rec_dict[pass_record.passer_id] = [passer_record_dict]
             # print('   n {} {}'.format(passer_record_dict['year_month_day'], passer_record_dict['passer_id']))
-    for passer_key in passer_dict.keys():
-        passer_list = passer_dict[passer_key]
-        for passer_day in passer_list:
+    # 근로자 정보: 이름 전화번호
+    passer_id_list = passer_rec_dict.keys()
+    passer_list = Passer.objects.filter(id__in=passer_id_list)
+    employee_id_list = [passer.employee_id for passer in passer_list]
+    employee_list = Employee.objects.filter(id__in=employee_id_list)
+    employee_dict = {employee.id: employee.name for employee in employee_list}
+    if len(passer_id_list) != len(employee_list):
+        logError(get_api(request), ' 인원(근로자) != 인원(근로자 정보): 근로자 정보가 없는 근로자가 있다.')
+        for passer in passer_list:
+            if passer.employee_id not in employee_dict.keys():
+                employee_dict[passer.employee_id] = '-----'
+    passer_dict = {}
+    for passer in passer_list:
+        passer_dict[passer.id] = {'pNo': passer.pNo, 'name': employee_dict[passer.employee_id]}
+    if len(passer_id_list) != len(passer_list):
+        logError(get_api(request), ' 인원(근로자) != 인원(근로기록): 근로기록의 근로자가 없다.'.format(work_id))
+        for passer_id in passer_rec_dict.keys():
+            if passer_id not in passer_dict.keys():
+                passer_dict[passer_id] = {'pNo': '01099990000', 'name': '---'}
+    for passer_key in passer_rec_dict.keys():
+        passer_rec_list = passer_rec_dict[passer_key]
+        for passer_day in passer_rec_list:
             #
             # 여기서 연장근무, 휴게근무, 야간근무를 처리하던가
             #
-            print('   {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify']))
-    result = {"arr_working": passer_dict}
+            print('   {} {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify'], passer_dict[passer_day['passer_id']]['name']))
+    result = {"arr_working": passer_rec_dict}
     #
     # 가상 데이터 생성
     #

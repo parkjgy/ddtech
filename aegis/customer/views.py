@@ -4342,6 +4342,8 @@ def report_employee(request):
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'tk_employee', json=rqst)
     logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
+    if r.status_code != 200:
+        return ReqLibJsonResponse(r)
     result_json = r.json()
     # print('  >> {}'.format(result_json))
     # return REG_200_SUCCESS.to_json_response(result_json)
