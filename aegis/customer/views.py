@@ -35,6 +35,9 @@ from config.status_collection import *
 # APNs
 from config.apns import notification
 
+import xlsxwriter  # json to xlsx
+from dateutil.relativedelta import relativedelta
+
 
 @cross_origin_read_allow
 def table_reset_and_clear_for_operation(request):
@@ -4497,8 +4500,64 @@ def report_detail(request):
     result_json = r.json()
     print('  >> {}'.format(result_json))
     if r.status_code != 200:
-        return r
+        return ReqLibJsonResponse(r)
     working_list = r.json()['arr_working']
+
+    employee = working_list[0]
+
+    # Create an new Excel file and add a worksheet.
+    workbook = xlsxwriter.Workbook('{}{}.xlsx'.format(employee['name'], rqst['year_month']))
+    worksheet = workbook.add_worksheet()
+
+
+    # Widen the first column to make the text clearer.
+    worksheet.set_column('A:A', 20)
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': True})
+
+    # Write some simple text.
+    worksheet.write('A1', employee['name'], bold)
+    comment_list = ['날짜', '요일', '출근시간', '퇴근시간', '휴게시간', '기본근로', '야간근로', '연장근로', '휴일근로','휴일/연장']
+    for row in range(0, 9, 1):
+        # Write some numbers, with row/column notation.
+        worksheet.write(row, 1, comment_list[row])
+    year_month = rqst['year_month']
+    working_list = employee[year_month]
+    print('   >> working_list: {}'.format(working_list))
+    row = 0
+    column = 2
+    dt = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(hours=1)
+    last_day = int(dt.strftime("%d"))
+    for day in range(1, last_day, 1):
+        print('row: {} column: {} day: {:02}'.format(row, column, day))
+        if '{:02}'.format(day) in working_list.keys():
+            # Write some numbers, with row/column notation.
+            day_info = working_list['{:02}'.format(day)]
+            print('   >> day_info: {}'.format(day_info))
+            worksheet.write(row + 0, column, str(day))
+            worksheet.write(row + 1, column, day_info['week'])
+            worksheet.write(row + 2, column, day_info['dt_in_verify'])
+            worksheet.write(row + 3, column, day_info['dt_out_verify'])
+            worksheet.write(row + 4, column, day_info['break'])
+            worksheet.write(row + 5, column, day_info['basic'])
+            worksheet.write(row + 6, column, day_info['night'])
+            worksheet.write(row + 7, column, day_info['overtime'])
+            worksheet.write(row + 8, column, day_info['holiday'])
+            worksheet.write(row + 9, column, day_info['ho'])
+        column += 1
+
+    # Text with formatting.
+    # worksheet.write('A2', 'World', bold)
+
+    # Write some numbers, with row/column notation.
+    # worksheet.write(2, 0, 123)
+    # worksheet.write(3, 0, 123.456)
+
+    # Insert an image.
+    # worksheet.insert_image('B5', 'logo.png')
+
+    workbook.close()
 
     result = {'arr_working': working_list}
     return REG_200_SUCCESS.to_json_response(result)
