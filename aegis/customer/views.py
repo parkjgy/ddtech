@@ -4433,49 +4433,54 @@ def report_detail(request):
             {'message': '관리하는 업무가 없습니다.'}
             {
               "message": "정상적으로 처리되었습니다.",
-              "arr_work_place": [
+              "arr_working": [
                 {
-                  "id": "3EP9Yb9apLUn2Ymof8Mw9A",
-                  "name": "test_1",
-                  "manager": "최진 (010-2073-6959)",
-                  "arr_work": [
+                  "name": "이영길",        # 이름
+                  "break_sum": 0,        # 휴게시간 합계
+                  "basic_sum": 180,      # 기본근로시간 합계
+                  "night_sum": 0,        # 야간근로시간 합계
+                  "overtime_sum": 8,     # 연장근로시간 합계
+                  "holiday_sum": 0,      # 휴일근로시간 합계
+                  "ho_sum": 0,           # 휴일/연장근로시간 합계
+                  "2019-10": [
                     {
-                      "id": "3W0uYO_TlmLvE-e_WhMQoA",
-                      "name_type": "test_1_4 (주간)",
-                      "staff": "최진 (010-2073-6959)"
-                    }
-                  ]
-                },
-                {
-                  "id": "N--RtSs4MP3qPHBZpxxL8g",
-                  "name": "test_4",
-                  "manager": "최진 (010-2073-6959)",
-                  "arr_work": [
-                    {
-                      "id": "YMAoiMsJ00KdriRqYP2wqA",
-                      "name_type": "테스트1 (주간)",
-                      "staff": "최진 (010-2073-6959)"
+                      "01": {                       # 근무한 날짜
+                        "dt_in_verify": "06:27",        # 출근시간
+                        "dt_out_verify": "15:00",       # 퇴근시간
+                        "break": "01:00"                # 휴게시간
+                        "basic": "",                    # 기본근로
+                        "night": "",                    # 야간근로
+                        "overtime": 0,                  # 연장근무
+                        "holiday": "",                  # 휴일근로
+                        "ho": ""                        # 휴일/연장 근로
+                      }
                     },
+                    ......
                     {
-                      "id": "N-Ef_BUENRMlxjvllS4aCQ",
-                      "name_type": "테스트2 (야간)",
-                      "staff": "최진 (010-2073-6959)"
+                      "31": {                       # 근무한 날짜
+                        "dt_in_verify": "06:27",        # 출근시간
+                        "dt_out_verify": "15:00",       # 퇴근시간
+                        "break": "01:00"                # 휴게시간
+                        "basic": "",                    # 기본근로
+                        "night": "",                    # 야간근로
+                        "overtime": 0,                  # 연장근무
+                        "holiday": "",                  # 휴일근로
+                        "ho": ""                        # 휴일/연장 근로
+                      }
                     }
                   ]
                 }
               ]
             }
+        STATUS 416
+            {'message': '업무기간을 벗어났습니다.'}
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
-
-            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
-
             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
-
-            {'message': '업무가 없어요.'}
-            {'message': '해당 근로자가 없어요.'}     # 근로자를 지정했을 때만 발생
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message': '업무가 없어요.({})'.format(e)}
+            {'message': '해당 근로자가 없어요.({})'.format(e)}
     """
 
     if request.method == 'POST':

@@ -3116,6 +3116,7 @@ def work_report_for_customer(request):
     if len(pass_record_list) == 0:
         return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.'})
     # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
+    week_comment = ['월', '화', '수', '목', '금', '토', '일']
     passer_rec_dict = {}
     for pass_record in pass_record_list:
         passer_record_dict = {
@@ -3133,6 +3134,7 @@ def work_report_for_customer(request):
             'out_staff_id': pass_record.out_staff_id,
             'overtime': zero_blank(pass_record.overtime),
             'overtime_staff_id': pass_record.overtime_staff_id,
+            'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()]
         }
         if pass_record.passer_id in passer_rec_dict.keys():
             passer_rec_dict[pass_record.passer_id].append(passer_record_dict)
@@ -3159,13 +3161,13 @@ def work_report_for_customer(request):
         for passer_id in passer_rec_dict.keys():
             if passer_id not in passer_dict.keys():
                 passer_dict[passer_id] = {'pNo': '01099990000', 'name': '---'}
-    for passer_key in passer_rec_dict.keys():
-        passer_rec_list = passer_rec_dict[passer_key]
-        for passer_day in passer_rec_list:
-            #
-            # 여기서 연장근무, 휴게근무, 야간근무를 처리하던가
-            #
-            print('   {} {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify'], passer_dict[passer_day['passer_id']]['name']))
+    # for passer_key in passer_rec_dict.keys():
+    #     passer_rec_list = passer_rec_dict[passer_key]
+    #     for passer_day in passer_rec_list:
+    #         #
+    #         # 여기서 연장근무, 휴게근무, 야간근무를 처리하던가
+    #         #
+    #         print('   {} {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify'], passer_dict[passer_day['passer_id']]['name']))
     arr_working = []
     for passer_id in passer_rec_dict.keys():
         working = {'name': passer_dict[passer_id]['name'],
@@ -3214,6 +3216,7 @@ def work_report_for_customer(request):
         working['ho_sum'] = sum_ho
         arr_working.append(working)
     result = {"arr_working": arr_working}
+
     #
     # 가상 데이터 생성
     #
