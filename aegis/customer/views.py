@@ -4574,6 +4574,63 @@ def make_xlsx(work_id, year_month: str, working_list: list):
 
 @cross_origin_read_allow
 @session_is_none_403
+def report_xlsx(request):
+    """
+    보고서: 엑셀로 저장된 근태기록부 다운로드
+    - 업무를 선택하면 자동으로 생성된다.
+        주)	값이 있는 항목만 검색에 사용한다. ('name':'' 이면 사업장 이름으로는 검색하지 않는다.)
+            response 는 추후 추가될 예정이다.
+    http://0.0.0.0:8000/customer/report_xlsx?work_id=YMAoiMsJ00KdriRqYP2wqA&employee_id=ryWQkNtiHgkUaY_SZ1o2uA&year_month=2019-08
+    http://0.0.0.0:8000/customer/report_detail?work_id=_LdMng5jDTwK-LMNlj22Vw&year_month=2019-08
+    http://0.0.0.0:8000/customer/report_detail?work_id=_LdMng5jDTwK-LMNlj22Vw&employee_id=Rdberb80WBnVt9C81mw4Qw&year_month=2019-08
+    GET
+        work_id: 업무 id         # 암호화된 id
+        employee_id: 근로자 id   # 근로자 id (단, 근로자 한명에 대한 근로내역을 볼 때만 사용)
+        year_month: 2019-12    # 요구한 근로 내역
+    response
+        STATUS 200
+            {'message': '관리하는 업무가 없습니다.'}
+            {
+              "message": "정상적으로 처리되었습니다.",
+            }
+        STATUS 416
+            {'message': '업무기간을 벗어났습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message': '업무가 없어요.({})'.format(e)}
+            {'message': '해당 근로자가 없어요.({})'.format(e)}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    worker_id = request.session['id']
+    worker = Staff.objects.get(id=worker_id)
+
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=rqst)
+    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
+    result_json = r.json()
+    print('  >> {}'.format(result_json))
+    if r.status_code != 200:
+        return ReqLibJsonResponse(r)
+    working_list = r.json()['arr_working']
+    #
+    # excel 파일 생성
+    #
+    make_xlsx(rqst['work_id'], rqst['year_month'], working_list)
+
+    result = {'arr_working': working_list}
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+@session_is_none_403
 def report(request):
     """
     현장, 업무별 보고서 (관리자별(X), 요약(X))

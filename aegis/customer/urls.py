@@ -57,6 +57,7 @@ urlpatterns = [
     url(r'customer/report_staff', views.report_staff, name='report_staff'),
     url(r'customer/report_employee', views.report_employee, name='report_employee'),
     url(r'customer/report_detail', views.report_detail, name='report_detail'),
+    url(r'customer/report_xlsx', views.report_xlsx, name='report_xlsx'),
 
     url(r'customer/report$', views.report, name='report'),
     url(r'customer/report_of_manager$', views.report_of_manager, name='report_of_manager'),
