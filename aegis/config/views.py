@@ -192,6 +192,7 @@ def privacy_policy(request):
     with open(os.path.join(APK_FILE_PATH, "desc_worker.txt")) as desc_file:
         return render(request, 'root/privacy_policy.html', json.loads(desc_file.read()))
 
+
 # upload_app ( POST )
 # -- Params
 # type              worker(근로자) or admin(관리자)

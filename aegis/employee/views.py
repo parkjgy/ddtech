@@ -3182,7 +3182,7 @@ def work_report_for_customer(request):
         for day in day_list:
             day_key = day['year_month_day'][8:10]
             del day['action']
-            del day['passer_id']
+            # del day['passer_id']
             del day['year_month_day']
             del day['work_id']
             del day['dt_in']
@@ -3216,12 +3216,7 @@ def work_report_for_customer(request):
         working['ho_sum'] = sum_ho
         arr_working.append(working)
     result = {"arr_working": arr_working}
-
-    #
-    # 가상 데이터 생성
-    #
-    # result = virtual_working_data(dt_begin, dt_end)
-    #
+    logSend('> {}'.format(arr_working))
     return REG_200_SUCCESS.to_json_response(result)
 
 

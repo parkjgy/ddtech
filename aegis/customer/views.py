@@ -3,6 +3,7 @@ Customer view
 
 Copyright 2019. DaeDuckTech Corp. All rights reserved.
 """
+import os
 import random
 import requests
 import datetime
@@ -4445,8 +4446,8 @@ def report_detail(request):
                   "overtime_sum": 8,     # 연장근로시간 합계
                   "holiday_sum": 0,      # 휴일근로시간 합계
                   "ho_sum": 0,           # 휴일/연장근로시간 합계
-                  "2019-10": [
-                    {
+                  "2019-07": {
+                    "01": {
                       "01": {                       # 근무한 날짜
                         "dt_in_verify": "06:27",        # 출근시간
                         "dt_out_verify": "15:00",       # 퇴근시간
@@ -4459,20 +4460,21 @@ def report_detail(request):
                       }
                     },
                     ......
-                    {
-                      "31": {                       # 근무한 날짜
-                        "dt_in_verify": "06:27",        # 출근시간
-                        "dt_out_verify": "15:00",       # 퇴근시간
-                        "break": "01:00"                # 휴게시간
-                        "basic": "",                    # 기본근로
-                        "night": "",                    # 야간근로
-                        "overtime": 0,                  # 연장근무
-                        "holiday": "",                  # 휴일근로
-                        "ho": ""                        # 휴일/연장 근로
-                      }
+                    "31": {
+                      "passer_id": 119,
+                      "dt_in_verify": "22:35",
+                      "dt_out_verify": "",
+                      "overtime": "",
+                      "week": "수",
+                      "break": "01:00",
+                      "basic": "",
+                      "night": "",
+                      "holiday": "",
+                      "ho": ""
                     }
-                  ]
-                }
+                  },
+                },
+                ......
               ]
             }
         STATUS 416
@@ -4502,65 +4504,72 @@ def report_detail(request):
     if r.status_code != 200:
         return ReqLibJsonResponse(r)
     working_list = r.json()['arr_working']
-
-    employee = working_list[0]
-
-    # Create an new Excel file and add a worksheet.
-    workbook = xlsxwriter.Workbook('{}{}.xlsx'.format(employee['name'], rqst['year_month']))
-    worksheet = workbook.add_worksheet()
-
-
-    # Widen the first column to make the text clearer.
-    worksheet.set_column('A:A', 20)
-
-    # Add a bold format to use to highlight cells.
-    bold = workbook.add_format({'bold': True})
-
-    # Write some simple text.
-    worksheet.write('A1', employee['name'], bold)
-    comment_list = ['날짜', '요일', '출근시간', '퇴근시간', '휴게시간', '기본근로', '야간근로', '연장근로', '휴일근로','휴일/연장']
-    for row in range(0, 9, 1):
-        # Write some numbers, with row/column notation.
-        worksheet.write(row, 1, comment_list[row])
-    year_month = rqst['year_month']
-    working_list = employee[year_month]
-    print('   >> working_list: {}'.format(working_list))
-    row = 0
-    column = 2
-    dt = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(hours=1)
-    last_day = int(dt.strftime("%d"))
-    for day in range(1, last_day, 1):
-        print('row: {} column: {} day: {:02}'.format(row, column, day))
-        if '{:02}'.format(day) in working_list.keys():
-            # Write some numbers, with row/column notation.
-            day_info = working_list['{:02}'.format(day)]
-            print('   >> day_info: {}'.format(day_info))
-            worksheet.write(row + 0, column, str(day))
-            worksheet.write(row + 1, column, day_info['week'])
-            worksheet.write(row + 2, column, day_info['dt_in_verify'])
-            worksheet.write(row + 3, column, day_info['dt_out_verify'])
-            worksheet.write(row + 4, column, day_info['break'])
-            worksheet.write(row + 5, column, day_info['basic'])
-            worksheet.write(row + 6, column, day_info['night'])
-            worksheet.write(row + 7, column, day_info['overtime'])
-            worksheet.write(row + 8, column, day_info['holiday'])
-            worksheet.write(row + 9, column, day_info['ho'])
-        column += 1
-
-    # Text with formatting.
-    # worksheet.write('A2', 'World', bold)
-
-    # Write some numbers, with row/column notation.
-    # worksheet.write(2, 0, 123)
-    # worksheet.write(3, 0, 123.456)
-
-    # Insert an image.
-    # worksheet.insert_image('B5', 'logo.png')
-
-    workbook.close()
+    #
+    # excel 파일 생성
+    #
+    make_xlsx(rqst['work_id'], rqst['year_month'], working_list)
 
     result = {'arr_working': working_list}
     return REG_200_SUCCESS.to_json_response(result)
+
+
+def make_xlsx(work_id, year_month: str, working_list: list):
+    #
+    # 1. 양식을 예쁘게 꾸미기
+    # 2. 파일이 있는지 확인하고 있을 때 만들어진 날짜가 2개월 이상 지났으면 다시 만들지 않는다.
+    #
+    data_root = os.path.join(settings.MEDIA_ROOT, 'Data/')
+    workbook = xlsxwriter.Workbook('{}{}{}.xlsx'.format(data_root, work_id, year_month))
+    worksheet = workbook.add_worksheet()
+    # Widen the first column to make the text clearer.
+    worksheet.set_column('A:A', 20)
+
+    merge_format = workbook.add_format({'align': 'center', 'valign': 'vcenter'})
+    bold = workbook.add_format({'bold': True})
+    cell_format = workbook.add_format()
+    cell_format.set_pattern(1)
+    cell_format.set_bg_color('#eeeeee')
+    dt = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(hours=1)
+    last_day = int(dt.strftime("%d"))
+    comment_list = ['날짜', '요일', '출근시간', '퇴근시간', '휴게시간', '기본근로', '야간근로', '연장근로', '휴일근로', '휴일/연장']
+    row = 0
+    for employee in working_list:
+        # worksheet.write(row + 0, 0, employee['name'])
+        worksheet.merge_range(row + 0, 0, row + 8, 0, employee['name'], merge_format)
+        for comment_row in range(0, 9, 1):
+            # Write some numbers, with row/column notation.
+            worksheet.write(row + comment_row, 1, comment_list[comment_row], cell_format)
+        working_list = employee[year_month]
+        # print('   >> working_list: {}'.format(working_list))
+        column = 2
+        for day in range(1, last_day, 1):
+            # print('row: {} column: {} day: {:02}'.format(row, column, day))
+            if '{:02}'.format(day) in working_list.keys():
+                # Write some numbers, with row/column notation.
+                day_info = working_list['{:02}'.format(day)]
+                # print('   >> day_info: {}'.format(day_info))
+                worksheet.write(row + 0, column, str(day))
+                worksheet.write(row + 1, column, day_info['week'])
+                worksheet.write(row + 2, column, day_info['dt_in_verify'])
+                worksheet.write(row + 3, column, day_info['dt_out_verify'])
+                worksheet.write(row + 4, column, day_info['break'])
+                worksheet.write(row + 5, column, day_info['basic'])
+                worksheet.write(row + 6, column, day_info['night'])
+                worksheet.write(row + 7, column, day_info['overtime'])
+                worksheet.write(row + 8, column, day_info['holiday'])
+                worksheet.write(row + 9, column, day_info['ho'])
+            column += 1
+        worksheet.write(row + 0, column, '합계')
+        worksheet.write(row + 4, column, employee['break_sum'])
+        worksheet.write(row + 5, column, employee['basic_sum'])
+        worksheet.write(row + 6, column, employee['night_sum'])
+        worksheet.write(row + 7, column, employee['overtime_sum'])
+        worksheet.write(row + 8, column, employee['holiday_sum'])
+        worksheet.write(row + 9, column, employee['ho_sum'])
+
+        row += 9
+    workbook.close()
+    return
 
 
 @cross_origin_read_allow
