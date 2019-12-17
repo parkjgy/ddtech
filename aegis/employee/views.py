@@ -3171,7 +3171,7 @@ def work_report_for_customer(request):
     arr_working = []
     for passer_id in passer_rec_dict.keys():
         working = {'name': passer_dict[passer_id]['name'],
-                   year_month: {}}
+                   'days': {}}
         sum_break = 5
         sum_basic = 209
         sum_night = 0
@@ -3207,7 +3207,7 @@ def work_report_for_customer(request):
             sum_ho += int_none(day['ho'])
 
             # day_work = {day_key: day}
-            working[year_month][day_key] = day
+            working['days'][day_key] = day
         working['break_sum'] = min2str(sum_break)
         working['basic_sum'] = sum_basic
         working['night_sum'] = sum_night

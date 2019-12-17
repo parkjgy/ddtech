@@ -4446,7 +4446,7 @@ def report_detail(request):
                   "overtime_sum": 8,     # 연장근로시간 합계
                   "holiday_sum": 0,      # 휴일근로시간 합계
                   "ho_sum": 0,           # 휴일/연장근로시간 합계
-                  "2019-07": {
+                  "days": {
                     "01": {
                       "01": {                       # 근무한 날짜
                         "dt_in_verify": "06:27",        # 출근시간
@@ -4539,7 +4539,7 @@ def make_xlsx(work_id, year_month: str, working_list: list):
         for comment_row in range(0, 9, 1):
             # Write some numbers, with row/column notation.
             worksheet.write(row + comment_row, 1, comment_list[comment_row], cell_format)
-        working_list = employee[year_month]
+        working_list = employee['days']
         # print('   >> working_list: {}'.format(working_list))
         column = 2
         for day in range(1, last_day, 1):
