@@ -7063,8 +7063,8 @@ def tk_fix_up_employee(request):
             {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
     """
 
-    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     #
     # customer work > update employee work
