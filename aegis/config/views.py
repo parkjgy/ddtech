@@ -164,8 +164,8 @@ def api_view(request):
                 type] = '<body><style>body{  font-family: "Nanum Gothic Coding", monospace; font-size: 14px; } p{ ' \
                         'white-space: pre; margin: 0px; display: inline; }</style>' + titles.get() + contents.get() + \
                         '</body> '
-        except:
-            html_api_view_str[type] = '<b>Render Error<b/>'
+        except Exception as e:
+            html_api_view_str[type] = '<b>Render Error: {}<b/>'.format(e)
     return HttpResponse(html_api_view_str[type])
 
 

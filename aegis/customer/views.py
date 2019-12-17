@@ -4612,21 +4612,17 @@ def report_xlsx(request):
     worker_id = request.session['id']
     worker = Staff.objects.get(id=worker_id)
 
-    s = requests.session()
-    r = s.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=rqst)
-    logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
-    result_json = r.json()
-    print('  >> {}'.format(result_json))
-    if r.status_code != 200:
-        return ReqLibJsonResponse(r)
-    working_list = r.json()['arr_working']
-    #
-    # excel 파일 생성
-    #
-    make_xlsx(rqst['work_id'], rqst['year_month'], working_list)
-
-    result = {'arr_working': working_list}
-    return REG_200_SUCCESS.to_json_response(result)
+    data_root = os.path.join(settings.MEDIA_ROOT, 'Data/')
+    work_id = rqst['work_id']
+    year_month = rqst['year_month']
+    file_path = '{}{}{}.xlsx'.format(data_root, work_id, year_month)
+    logSend('>>> file_path: {}, is exist: {}'.format(file_path, os.path.isfile(file_path)))
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fh:
+            response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
+            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+            return response
+    raise Http404
 
 
 @cross_origin_read_allow
