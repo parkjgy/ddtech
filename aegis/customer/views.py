@@ -4506,7 +4506,7 @@ def report_detail(request):
     try:
         working_list = r.json()['arr_working']
     except Exception as e:
-        logSend('ERROR: {}\n{}'.format(e, r.json()))
+        logError('ERROR: {}\n{}'.format(e, r.json()))
     #
     # excel 파일 생성
     #

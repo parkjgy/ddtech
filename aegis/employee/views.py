@@ -3019,7 +3019,7 @@ def work_report_for_customer(request):
         year_month = '2018-01'
     response
         STATUS 200
-            {'message': '근태내역이 없습니다.'}
+            {'message': '근태내역이 없습니다.', "arr_working": [] }
             {
               "message": "정상적으로 처리되었습니다.",
               "arr_working": [
@@ -3114,7 +3114,7 @@ def work_report_for_customer(request):
         pass_record_list = Pass_History.objects.filter(work_id=work.id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     if len(pass_record_list) == 0:
-        return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.'})
+        return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
     # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     passer_rec_dict = {}
