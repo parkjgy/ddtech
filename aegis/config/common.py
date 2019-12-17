@@ -337,6 +337,10 @@ def str_to_datetime(date_time: str):
         '2019-05-05 17:30'		2019-05-05 17:30:00
         '2019-05-05 17:30:50'	2019-05-05 17:30:50
     """
+    # if ' ' in date_time:
+    #     date_time_divide = date_time.split(' ')
+    # else:
+    #     return datetime.datetime.strptime(date_time + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
     date_time_divide = date_time.split(' ')
     date = date_time_divide[0]
     date_divide = date.split('-')

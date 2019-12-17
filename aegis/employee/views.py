@@ -587,6 +587,7 @@ def update_work_for_customer(request):
           "dt_begin_employee": "2019/03/04",  # 해당 근로자의 업무 시작날짜
           "dt_end_employee": "2019/03/31",    # 해당 근로자의 업무 종료날짜
           "update_employee_pNo_list": ["010-1111-2222", ...],  # 업무시간이 변경된 근로자 전화번호
+          "time_info": 근로 정보    # 있을 때만 업데이트
         }
     response
         STATUS 200
@@ -4592,6 +4593,34 @@ def tk_patch(request):
         logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
+    # 업무기간 조정이 필요한 근로자 업무기간 조정
+    # 1. works 가 있는 근로자 조회
+    # 2. 업무 리스트 조회 > 올해 이상인 업무 조회
+    # 3. 근로자 중에서 올해 말까지 업무인 근로자의 근로기간 변경
+    all_work = Work.objects.all().values('id', 'begin', 'end', 'work_place_name', 'work_name_type')
+    work_dict = {work['id']: work for work in all_work if str_to_dt(work['end']) > str_to_dt('2019/12/30')}
+    # return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
+
+    all_employee = Employee.objects.all()
+    result_list = []
+    for employee in all_employee:
+        works = employee.get_works()
+        # logSend(' >> {}'.format(works))
+        if len(works) > 0:
+            for work in works:
+                if work['id'] in work_dict.keys():
+                    if str_to_dt(work['end']) > str_to_dt('2019/12/30'):
+                        target = '> {}, {}, {}, {}, {} VS {}'.format(employee.name, work['id'],
+                                                               work_dict[work['id']]['work_place_name'],
+                                                               work_dict[work['id']]['work_name_type'],
+                                                               work_dict[work['id']]['end'],
+                                                               work['end'])
+                        result_list.append(target)
+                        work['end'] = work_dict[work['id']]['end']
+                        employee.set_works(works)
+                        employee.save()
+    return REG_200_SUCCESS.to_json_response({'result': result_list, 'no_of_process': len(result_list)})
+
     # if request.method == 'POST':
     #     rqst = json.loads(request.body.decode("utf-8"))
     # else:
@@ -4632,7 +4661,7 @@ def tk_patch(request):
     #         x=record.x,
     #         y=record.y,
     #     ).save()
-    apns_test(request)
+    # apns_test(request)
     return REG_200_SUCCESS.to_json_response()
 
 

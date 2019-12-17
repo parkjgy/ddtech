@@ -2488,6 +2488,33 @@ def update_work_v2(request):
             'dt_end':       '2019-02-28',           # 업무 종료 날짜
             'staff_id':     '암호화된 현장 소장 id',
             'partner_id':   '암호화된 협력업체 id'       # 고객사 id 를 기본으로 한다.
+
+            'time_type':        0,          # 급여형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+            'week_hours':       40,         # 시간/주 (소정근로시간)
+            'month_hours':      209,        # 시간/월 (소정근로시간)
+            'working_days':     [1, 3, 5],  # 소정근로일(근무요일) (0: 일, 1: 월, ..., 6: 토)
+            'paid_day':         -1,         # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+            'is_holiday_work': 1,           # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
+            'work_time_list':               # 근무시간
+                [
+                    {
+                        't_begin': '09:00',  # 근무 시작 시간
+                        't_end': '21:00',  # 근무 종료 시간
+                        'break_time_type': 0,  # 휴게시간 구분 (0: list, 1: total, 2: none)
+                        'beak_time_list':  # 휴게시간이 0 일 때만
+                            [
+                                {
+                                    'bt_begin': '12:00',  # 휴게시간 시작
+                                    'bt_end': '13:00'  # 휴게시간 종료
+                                },
+                                {
+                                    'bt_begin': '18:00',  # 휴게시간 시작
+                                    'bt_end': '19:00',  # 휴게시간 종
+                                }
+                            ],
+                        'break_time_total': '01:30',  # 휴게시간이 1 일 때만
+                    }
+                ]
         }
     response
         STATUS 200
@@ -7039,6 +7066,37 @@ def tk_fix_up_employee(request):
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
+    #
+    # customer work > update employee work
+    #
+    all_work_list = Work.objects.all()
+    work_list = []
+    for work in all_work_list:
+        # logSend('  > {}'.format(work.dt_end))
+        # logSend('  > {}'.format(str_to_datetime('2019-12-30')))
+        if work.dt_end > str_to_datetime('2019-12-31'):
+            target_work = '{}, {}, {}'.format(work.work_place_name, work.name, work.dt_end)
+            logSend('>>> {}'.format(target_work))
+            work_list.append(target_work)
+            new_employee_work_infor = {
+                'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
+                'work_place_name': work.work_place_name,
+                'work_name_type': '{} ({})'.format(work.name, work.type),
+                'begin': work.dt_begin.strftime('%Y/%m/%d'),
+                'end': work.dt_end.strftime('%Y/%m/%d'),
+                'staff_name': work.staff_name,
+                'staff_pNo': work.staff_pNo,
+                'update_employee_pNo_list': [],
+                # 'time_info': time_info,
+            }
+            r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=new_employee_work_infor)
+            logSend({'url': r.url, 'POST': new_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+            if r.status_code != 200:
+                logSend('>>> {}'.format(r.json()))
+                return r
+
+    return REG_200_SUCCESS.to_json_response({'work_list': work_list})
+
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -7088,3 +7146,4 @@ def tk_fix_up_employee(request):
         fixed_up_list.append(
             {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'passer_id': employee.employee_id})
     return REG_200_SUCCESS.to_json_response({'fixed_up_list': fixed_up_list})
+
