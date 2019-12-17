@@ -4589,9 +4589,9 @@ def tk_patch(request):
         STATUS 403
             {'message':'저리가!!!'}
     """
-    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
-        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+    #     logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     # 업무기간 조정이 필요한 근로자 업무기간 조정
     # 1. works 가 있는 근로자 조회
