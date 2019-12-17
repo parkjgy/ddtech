@@ -4499,11 +4499,14 @@ def report_detail(request):
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=rqst)
     logSend('  {}'.format({'url': r.url, 'POST': request, 'STATUS': r.status_code, 'R': r.json()}))
-    result_json = r.json()
-    print('  >> {}'.format(result_json))
+    # result_json = r.json()
+    # logSend('  >> {}'.format(result_json))
     if r.status_code != 200:
         return ReqLibJsonResponse(r)
-    working_list = r.json()['arr_working']
+    try:
+        working_list = r.json()['arr_working']
+    except Exception as e:
+        logSend('ERROR: {}\n{}'.format(e, r.json()))
     #
     # excel 파일 생성
     #

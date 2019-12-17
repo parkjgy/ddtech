@@ -22,6 +22,8 @@ pip install mysqlclient
 	brew install openssl
 
 pip install pycrypto
+pip install python-dateutil
+pip install XlsxWriter
 
 # 외부 서버 호출
 http://docs.python-requests.org/en/master/
