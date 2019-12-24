@@ -5368,12 +5368,13 @@ def update_camera(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id', 'is_stop'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'is_stop'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     is_stop = parameter_check['parameters']['is_stop']
 
+    print('   >>> passer_id: {}'.format(passer_id))
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
