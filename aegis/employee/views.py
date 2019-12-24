@@ -5341,10 +5341,10 @@ def list_employee(request):
 def update_camera(request):
     """
     카메라 상태 변경: 지정된 근로자의 앱을 통해 카메라 사용을 금지 시킨다.
-        http://0.0.0.0:8000/employee/update_camera?passer_id=LjmQXEHbJu-Rdt5pAMBUlw&is_stop=1
+        http://0.0.0.0:8000/employee/update_camera?passer_id=307&is_stop=1
     POST : json
-        passer_id: 암호화된 id
-        is_stop: 카메라 스톱
+        passer_id: 2    # 근로자 id - 암호화 X
+        is_stop: 1      # 0: 카메라 작동, 1: 카메라 스톱
     response
         STATUS 200
         STATUS 422 # 개발자 수정사항
@@ -5368,13 +5368,12 @@ def update_camera(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'is_stop'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id', 'is_stop'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     is_stop = parameter_check['parameters']['is_stop']
 
-    print('   >>> passer_id: {}'.format(passer_id))
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
