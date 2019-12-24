@@ -5381,7 +5381,7 @@ def update_camera(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': ' 해당 근로자({})가 없습니다.'.format(passer_id)})
     passer.is_camera_stop = is_stop
     passer.save()
-    if passer.is_camera_stop:
+    if passer.is_camera_stop == 1:
         stop_tag = '잠금'
         stop_message = '보안상 이유로 카메라가 사용할 수 없게됩니다.'
     else:
