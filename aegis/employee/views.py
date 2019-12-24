@@ -4867,15 +4867,17 @@ def get_test_beacon_list(request):
     if user != 'thinking':
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '사용 권한이 없습니다.'})
 
+    employee_list = Employee.objects.all()
+    employee_name = {employee.id: employee.name for employee in employee_list}
+
+    passer_list = Passer.objects.all()
+    passer_dict = {passer.id: passer for passer in passer_list}
+
     beacon_list = Beacon_Record.objects.filter(is_test=True).order_by('passer_id')
     passer_id_dict = {}
     for beacon in beacon_list:
         if beacon.passer_id not in passer_id_dict.keys():
             passer_id_dict[beacon.passer_id] = 'pNo'
-    # logSend('  >> passer: {}'.format(passer_id_dict))
-    passer_list = Passer.objects.filter(id__in=passer_id_dict.keys())
-    for passer in passer_list:
-        passer_id_dict[passer.id] = passer.pNo
     # logSend('  >> passer: {}'.format(passer_id_dict))
 
     beacon_dict = {}
@@ -4892,10 +4894,11 @@ def get_test_beacon_list(request):
             'y': beacon.y,
         }
         beacon_dict[beacon.passer_id]['beacon_list'].append(get_beacon)
-    get_beacon_list = [{'passer_id': key,
-                        'phone_no': phone_format(passer_id_dict[key]),
-                        'beacon_list': beacon_dict[key]['beacon_list']
-                        } for key in beacon_dict.keys()
+    get_beacon_list = [{'passer_id': passer_id,
+                        'name': employee_name[passer_dict[passer_id].employee_id],
+                        'phone_no': phone_format(passer_dict[passer_id].pNo),
+                        'beacon_list': beacon_dict[passer_id]['beacon_list'],
+                        } for passer_id in beacon_dict.keys()
     ]
     # logSend('  >> beacon: {}'.format(beacon_dict))
     return REG_200_SUCCESS.to_json_response({'beacon_list': get_beacon_list})
