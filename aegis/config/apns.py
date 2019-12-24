@@ -223,18 +223,22 @@ def fcm(target_type, target_list, alert, sound, badge, contents):
     logSend('   >> token_list: {}'.format(token_list))
     if 'title' not in contents and 'subtitle' not in contents:
         fcm_notification = None
+        print('>>> none')
     else:
         fcm_notification = {
             'title': contents['title'],
             'body': contents['subtitle'],
         }
-    fcm_data = {
-        'data': contents['body']
-    }
+        print('>>> {}'.format(fcm_notification))
+    # fcm_data = {
+    #     'data': contents['body']
+    # }
+    # print('  > {}'.format(fcm_data))
+    result = send_fcm_notification(token_list, fcm_notification, contents['body'])
     # fcm_notification = contents
     # fcm_notification['sound'] = sound
     # fcm_notification['badge'] = badge
-    result = send_fcm_notification(token_list, fcm_notification, fcm_data)
+    # result = send_fcm_notification(token_list, fcm_notification, fcm_data)
     return {'message': result}
 
 

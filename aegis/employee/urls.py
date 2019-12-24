@@ -76,9 +76,11 @@ urlpatterns = [
     url(r'employee/get_test_beacon_list', views.get_test_beacon_list, name='get_test_beacon_list'),
     url(r'employee/del_test_beacon_list', views.del_test_beacon_list, name='del_test_beacon_list'),
 
-    url(r'employee/reg_io_pass', views.reg_io_pass, name='reg_io_pass'),
-    url(r'employee/list_io_pass', views.list_io_pass, name='list_io_pass'),
-    url(r'employee/update_io_pass', views.update_io_pass, name='update_io_pass'),
+    url(r'employee/io_state', views.io_state, name='io_state'),  # 내부 외부 상태
+
+    url(r'employee/reg_io_pass', views.reg_io_pass, name='reg_io_pass'),  # 출입증 신청
+    url(r'employee/list_io_pass', views.list_io_pass, name='list_io_pass'),  # 출입증 리스트
+    url(r'employee/update_io_pass', views.update_io_pass, name='update_io_pass'),  # 출입증 업데이트
     url(r'employee/get_io_pass', views.get_io_pass, name='get_io_pass'),
     url(r'employee/del_io_pass', views.del_io_pass, name='del_io_pass'),
 

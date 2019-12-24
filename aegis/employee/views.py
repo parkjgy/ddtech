@@ -1056,6 +1056,25 @@ def pass_reg(request):
         # 출입자를 db에서 찾지 못하면
         return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
     passer = passer_list[0]
+    #
+    # TTA 대응: passer 에 비콘의 최신 rssi 값을 저장한다.
+    #
+    is_in = passer.rssi_a < passer.rssi_b
+    for beacon in beacons:
+        # print('  > beacon minor: {}'.format(beacon['minor']))
+        if beacon['minor'] == 11001:
+            passer.rssi_a = int(beacon['rssi'])
+            print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
+        elif beacon['minor'] == 11002:
+            passer.rssi_b = int(beacon['rssi'])
+            print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
+    is_in_new = passer.rssi_a < passer.rssi_b
+    if is_in is not is_in_new:
+        passer.dt_io = datetime.datetime.now()
+    passer.save()
+    #
+    #
+
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
     if len(employee_list) == 0:
         # db 에 근로자 정보가 없으면 - 출입자 중에 근로자 정보가 없는 경우, 등록하지 않은 경우, 피쳐폰인 경우
@@ -1811,8 +1830,8 @@ def certification_no_to_sms(request):
     # print(rSMS.text)
     # print(rSMS.json())
     logSend('  - ', json.dumps(rSMS.json(), cls=DateTimeEncoder))
-    if int(rSMS.json()['result_code']) < 0:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호를 보낼 수 없는 전화번호 입니다.'})
+    # if int(rSMS.json()['result_code']) < 0:
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '인증번호를 보낼 수 없는 전화번호 입니다.'})
     # rJson = rSMS.json()
     # rJson['vefiry_no'] = str(certificateNo)
 
@@ -4720,14 +4739,18 @@ def apns_test(request):
     if passer.push_token == 'Token_did_not_registration':
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'did not registration token({})'.format(passer.push_token)})
     push_contents = {
-        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType}, {'id': 262, 'token': '84653d4521cd224c73b21b9f5e8b9646150c94dc34b033c15b8178e2b53c0213', 'pType': 10}],
+        'target_list': [{'id': passer.id, 'token': passer.push_token, 'pType': passer.pType},
+                        # {'id': 262, 'token': '84653d4521cd224c73b21b9f5e8b9646150c94dc34b033c15b8178e2b53c0213', 'pType': 10}
+                        ],
         'func': 'user',
         'isSound': True,
         'badge': 1,
         # 'contents': None,
         'contents': {'title': '업무 요청',
                      'subtitle': 'SK 케미칼: 동력_EGB(3교대)',
-                     'body': {'action': 'NewWork', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                     'body': {
+                         'action': 'NewWork',
+                         'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                      }
     }
     response = notification(push_contents)
@@ -4910,6 +4933,67 @@ def del_test_beacon_list(request):
         beacon.delete()
 
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def io_state(request):
+    """
+    출입 확인: 전체 출입자의 현재 위치가 어느 비콘에 가까운지 확인해서 보낸다.
+    - 0.3, 0.5 초에 한번씩 해본다.
+        http://0.0.0.0:8000/employee/io_state
+    POST : None
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "io_state_list": [
+                {
+                  "name": "박종기",
+                  "rssi_a": -53,
+                  "rssi_b": -72,
+                  "dt_io": "2019-12-24 12:14:43",
+                  "is_in": false
+                },
+                {
+                  "name": "넥소스5",
+                  "rssi_a": -54,
+                  "rssi_b": -57,
+                  "dt_io": "2019-12-24 12:15:27",
+                  "is_in": false
+                }
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'beacon_list\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    # parameter_check = is_parameter_ok(rqst, ['beacon_list'])
+    # if not parameter_check['is_ok']:
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    # beacon_list = parameter_check['parameters']['beacon_list']
+
+    employee_list = Employee.objects.all()
+    employee_dict = {employee.id: employee.name for employee in employee_list}
+    passer_list = Passer.objects.all()
+    io_state_list = []
+    for passer in passer_list:
+        print('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
+        io_state = {'name': employee_dict[passer.employee_id],
+                    'rssi_a': passer.rssi_a,
+                    'rssi_b': passer.rssi_b,
+                    'dt_io': dt_null(passer.dt_io),
+                    'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
+                     }
+        io_state_list.append(io_state)
+    result = {'io_state_list': io_state_list}
+    return REG_200_SUCCESS.to_json_response(result)
+
 
 @cross_origin_read_allow
 def reg_io_pass(request):
