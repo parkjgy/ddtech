@@ -102,11 +102,13 @@ class Env(object):
         return
 
     def start(self):
+        logSend('   --- Env start')
         if not self.is_running:
             self.loadEnvironment()
             self.is_running = True
 
     def stop(self):
+        logSend('   --- Env stop')
         self.is_running = False
 
     def current(self):
