@@ -4991,7 +4991,7 @@ def io_state(request):
                 beacon_dict[beacon.minor] = beacon.dt_last
         else:
             beacon_dict[beacon.minor] = beacon.dt_last
-    logSend('  > beacon: {}'.format(beacon_dict))
+    logSend('  > 11001: {}, 11002: {}'.format(dt_null(beacon_dict[11001]), dt_null(beacon_dict[11002])))
     dt_current = datetime.datetime.now() - datetime.timedelta(seconds=5)
     employee_list = Employee.objects.all()
     employee_dict = {employee.id: employee.name for employee in employee_list}
