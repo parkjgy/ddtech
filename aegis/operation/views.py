@@ -55,13 +55,14 @@ class Env(object):
         strToday = datetime.datetime.now().strftime("%Y-%m-%d ")
         str_dt_reload = strToday + '05:00:00'
         self.dt_reload = datetime.datetime.strptime(str_dt_reload, "%Y-%m-%d %H:%M:%S")
+        logSend('   --- Env:dt_reload: {}'.format(self.dt_reload))
         self.start()
 
     def __del__(self):
         logSend(' <<< Environment class delete')
 
     def loadEnvironment(self):
-        if len(Environment.objects.filter()) == 0:
+        if len(Environment.objects.all()) == 0:
             newEnv = Environment(
                 # dt=datetime.datetime.now() - timedelta(days=3),
                 dt=datetime.datetime.strptime("2019-01-01 00:00:00", "%Y-%m-%d %H:%M:%S"),
