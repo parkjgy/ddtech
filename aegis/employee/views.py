@@ -4985,7 +4985,7 @@ def io_state(request):
     #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     # beacon_list = parameter_check['parameters']['beacon_list']
 
-    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=9)
+    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
     # logSend('  > {}, 11001: {}, 11002: {}'.format(dt_null(dt_current), dt_null(beacon_dict[11001]), dt_null(beacon_dict[11002])))
     employee_list = Employee.objects.all()
     employee_dict = {employee.id: employee.name for employee in employee_list}
