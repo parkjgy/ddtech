@@ -5012,7 +5012,7 @@ def io_state(request):
                     'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
                      }
         io_state_list.append(io_state)
-        logSend('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
+        logSend('>>> {}: rssi_a: {}, rssi_b: {}'.format(passer.id, passer.rssi_a, passer.rssi_b))
     result = {'io_state_list': io_state_list}
     return REG_200_SUCCESS.to_json_response(result)
 
