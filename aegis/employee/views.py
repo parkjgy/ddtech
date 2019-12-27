@@ -4991,19 +4991,20 @@ def io_state(request):
                 beacon_dict[beacon.minor] = beacon.dt_last
         else:
             beacon_dict[beacon.minor] = beacon.dt_last
+    logSend('  > beacon: {}'.format(beacon_dict))
     dt_current = datetime.datetime.now() - datetime.timedelta(seconds=5)
     employee_list = Employee.objects.all()
     employee_dict = {employee.id: employee.name for employee in employee_list}
     passer_list = Passer.objects.all()
     io_state_list = []
     for passer in passer_list:
-        print('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
+        logSend('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
         if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
             # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
             continue
         io_state = {'name': employee_dict[passer.employee_id],
-                    'rssi_a': passer.rssi_a if dt_current < beacon_dict[11001] else -999,
-                    'rssi_b': passer.rssi_b if dt_current < beacon_dict[11002] else -999,
+                    'rssi_a': -999 if beacon_dict[11001] < dt_current else passer.rssi_a ,
+                    'rssi_b': -999 if beacon_dict[11002] < dt_current else passer.rssi_b ,
                     'dt_io': dt_null(passer.dt_io),
                     'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
                      }
