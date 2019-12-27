@@ -4873,7 +4873,7 @@ def get_test_beacon_list(request):
     passer_list = Passer.objects.all()
     passer_dict = {passer.id: passer for passer in passer_list}
 
-    beacon_list = Beacon_Record.objects.filter(is_test=True).order_by('passer_id')
+    beacon_list = Beacon_Record.objects.filter(is_test=True).order_by('passer_id', 'dt_begin')
     passer_id_dict = {}
     for beacon in beacon_list:
         if beacon.passer_id not in passer_id_dict.keys():
