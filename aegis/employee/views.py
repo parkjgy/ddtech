@@ -4995,17 +4995,19 @@ def io_state(request):
         # if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
         #     # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
         #     continue
-        beacon = Beacon_Record.objects.filter(passer_id=passer.id, minor=1101).order_by('-id')[0]
-        if beacon.dt_last < dt_current:
+        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1101).order_by('-id')[:1]
+        if len(beacon_list) > 0 and beacon_list[0].dt_last < dt_current:
             passer.rssi_a = -999
             passer.save()
-        beacon = Beacon_Record.objects.filter(passer_id=passer.id, minor=1102).order_by('-id')[0]
-        if beacon.dt_last < dt_current:
+        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1102).order_by('-id')[:1]
+        if len(beacon_list) > 0 and beacon_list[0].dt_last < dt_current:
             passer.rssi_b = -999
             passer.save()
         io_state = {'name': employee_dict[passer.employee_id],
-                    'rssi_a': -999 if beacon_dict[11001] < dt_current else passer.rssi_a ,
-                    'rssi_b': -999 if beacon_dict[11002] < dt_current else passer.rssi_b ,
+                    # 'rssi_a': -999 if beacon_dict[11001] < dt_current else passer.rssi_a ,
+                    # 'rssi_b': -999 if beacon_dict[11002] < dt_current else passer.rssi_b ,
+                    'rssi_a': passer.rssi_a ,
+                    'rssi_b': passer.rssi_b ,
                     'dt_io': dt_null(passer.dt_io),
                     'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
                      }
