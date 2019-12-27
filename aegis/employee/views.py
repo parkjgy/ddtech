@@ -5000,12 +5000,12 @@ def io_state(request):
         #     logSend('   {}: {}'.format(beacon.passer_id, beacon.dt_begin))
         beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
         if len(beacon_list) == 0:
-            logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_a))
+            # logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_a))
             passer.rssi_a = -999
             passer.save()
         beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
         if len(beacon_list) == 0:
-            logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_b))
+            # logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_b))
             passer.rssi_b = -999
             passer.save()
         io_state = {'name': employee_dict[passer.employee_id],
@@ -5017,7 +5017,7 @@ def io_state(request):
                     'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
                      }
         io_state_list.append(io_state)
-        logSend('>>> {}: rssi_a: {}, rssi_b: {}'.format(passer.id, passer.rssi_a, passer.rssi_b))
+        # logSend('>>> {}: rssi_a: {}, rssi_b: {}'.format(passer.id, passer.rssi_a, passer.rssi_b))
     result = {'io_state_list': io_state_list}
     return REG_200_SUCCESS.to_json_response(result)
 
