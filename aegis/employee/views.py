@@ -1064,10 +1064,14 @@ def pass_reg(request):
         # print('  > beacon minor: {}'.format(beacon['minor']))
         if beacon['minor'] == 11001:
             passer.rssi_a = int(beacon['rssi'])
-            print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
+            if passer.rssi_a < -65:
+                passer.rssi_a = -999
+            # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
         elif beacon['minor'] == 11002:
             passer.rssi_b = int(beacon['rssi'])
-            print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
+            if passer.rssi_b < -65:
+                passer.rssi_b = -999
+            # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
     is_in_new = passer.rssi_a < passer.rssi_b
     if is_in is not is_in_new:
         passer.dt_io = datetime.datetime.now()
@@ -4998,9 +5002,9 @@ def io_state(request):
     passer_list = Passer.objects.all()
     io_state_list = []
     for passer in passer_list:
-        if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
-            # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
-            continue
+        # if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
+        #     # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
+        #     continue
         io_state = {'name': employee_dict[passer.employee_id],
                     'rssi_a': -999 if beacon_dict[11001] < dt_current else passer.rssi_a ,
                     'rssi_b': -999 if beacon_dict[11002] < dt_current else passer.rssi_b ,
