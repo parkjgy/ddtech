@@ -4986,7 +4986,7 @@ def io_state(request):
     for beacon in beacon_list:
         logSend('  > {}: {}'.format(beacon.minor, beacon.dt_last))
         if beacon.minor in beacon_dict.keys():
-            logSend('  > {}: {} vs {}'.format(beacon.minor, beacon_dict[beacon.minor], beacon.dt_last))
+            logSend('  > {}-{}: {} vs {}'.format(beacon.minor, beacon_dict[beacon.minor], beacon.dt_last))
             if beacon_dict[beacon.minor] < beacon.dt_last:
                 beacon_dict[beacon.minor] = beacon.dt_last
         else:
@@ -4998,7 +4998,6 @@ def io_state(request):
     passer_list = Passer.objects.all()
     io_state_list = []
     for passer in passer_list:
-        logSend('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
         if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
             # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
             continue
@@ -5009,6 +5008,7 @@ def io_state(request):
                     'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
                      }
         io_state_list.append(io_state)
+        logSend('>>> rssi_a: {}, rssi_b: {}'.format(passer.rssi_a, passer.rssi_b))
     result = {'io_state_list': io_state_list}
     return REG_200_SUCCESS.to_json_response(result)
 
