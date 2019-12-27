@@ -4984,9 +4984,9 @@ def io_state(request):
     beacon_list = Beacon.objects.all()
     beacon_dict = {}
     for beacon in beacon_list:
-        logSend('  > {}: {}'.format(beacon.minor, beacon.dt_last))
+        # logSend('  > {}: {}'.format(beacon.minor, beacon.dt_last))
         if beacon.minor in beacon_dict.keys():
-            logSend('  > {}-{}: {} vs {}'.format(beacon.minor, beacon_dict[beacon.minor], beacon.dt_last))
+            # logSend('  > {}: {} vs {}'.format(beacon.minor, beacon_dict[beacon.minor], beacon.dt_last))
             if beacon_dict[beacon.minor] < beacon.dt_last:
                 beacon_dict[beacon.minor] = beacon.dt_last
         else:
