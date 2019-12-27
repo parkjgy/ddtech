@@ -4995,12 +4995,14 @@ def io_state(request):
         # if beacon_dict[11001] < dt_current and beacon_dict[11002] < dt_current:
         #     # A, B beacon 값이 5초 이상 지났다.(신호 수신이 없은지 오래되었다.) - 표시하지 않는다.
         #     continue
-        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1101).order_by('-id')[:1]
-        if len(beacon_list) > 0 and beacon_list[0].dt_last < dt_current:
+        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1101, dt_last__gt=dt_current)
+        if len(beacon_list) == 0:
+            logSend('   > timeout: {}  {}  {}'.format(passer.id, dt_null(beacon_list[0].dt_last), passer.rssi_a))
             passer.rssi_a = -999
             passer.save()
-        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1102).order_by('-id')[:1]
-        if len(beacon_list) > 0 and beacon_list[0].dt_last < dt_current:
+        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=1102, dt_list__gt=dt_current)
+        if len(beacon_list) == 0:
+            logSend('   > timeout: {}  {}  {}'.format(passer.id, dt_null(beacon_list[0].dt_last), passer.rssi_b))
             passer.rssi_b = -999
             passer.save()
         io_state = {'name': employee_dict[passer.employee_id],
