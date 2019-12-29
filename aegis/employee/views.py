@@ -1059,24 +1059,29 @@ def pass_reg(request):
     #
     # TTA 대응: passer 에 비콘의 최신 rssi 값을 저장한다.
     #
-    is_in = passer.rssi_a < passer.rssi_b
     for beacon in beacons:
         # print('  > beacon minor: {}'.format(beacon['minor']))
         if beacon['minor'] == 11001:
             passer.rssi_a = int(beacon['rssi'])
-            if passer.rssi_a < -65:
-                passer.rssi_a = -999
+            if passer.rssi_a < -75:
+                passer.rssi_a = -888
             # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
         elif beacon['minor'] == 11002:
             passer.rssi_b = int(beacon['rssi'])
-            if passer.rssi_b < -65:
-                passer.rssi_b = -999
+            if passer.rssi_b < -75:
+                passer.rssi_b = -888
             # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
-    is_in_new = passer.rssi_a < passer.rssi_b
-    if is_in is not is_in_new:
-        passer.dt_io = datetime.datetime.now()
+    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
+    beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
+    beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
+    if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
+        is_in_new = passer.rssi_a < passer.rssi_b
+        if passer.is_in is not is_in_new:
+            passer.is_in = is_in_new
+            passer.dt_io = datetime.datetime.now()
     passer.save()
     #
+    # TTA 대응: 끝
     #
 
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
@@ -4985,7 +4990,7 @@ def io_state(request):
     #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     # beacon_list = parameter_check['parameters']['beacon_list']
 
-    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
+    # dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
     # logSend('  > {}, 11001: {}, 11002: {}'.format(dt_null(dt_current), dt_null(beacon_dict[11001]), dt_null(beacon_dict[11002])))
     employee_list = Employee.objects.all()
     employee_dict = {employee.id: employee.name for employee in employee_list}
@@ -4998,23 +5003,23 @@ def io_state(request):
         # beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
         # for beacon in beacon_list:
         #     logSend('   {}: {}'.format(beacon.passer_id, beacon.dt_begin))
-        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
-        if len(beacon_list) == 0:
-            logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_a))
-            passer.rssi_a = -999
-            passer.save()
-        beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
-        if len(beacon_list) == 0:
-            logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_b))
-            passer.rssi_b = -999
-            passer.save()
+        # beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
+        # if len(beacon_list) == 0:
+        #     logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_a))
+        #     passer.rssi_a = -999
+        #     passer.save()
+        # beacon_list = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
+        # if len(beacon_list) == 0:
+        #     logSend('   > timeout: {}  {}'.format(passer.id, passer.rssi_b))
+        #     passer.rssi_b = -999
+        #     passer.save()
         io_state = {'name': employee_dict[passer.employee_id],
                     # 'rssi_a': -999 if beacon_dict[11001] < dt_current else passer.rssi_a ,
                     # 'rssi_b': -999 if beacon_dict[11002] < dt_current else passer.rssi_b ,
                     'rssi_a': passer.rssi_a,
                     'rssi_b': passer.rssi_b,
                     'dt_io': dt_null(passer.dt_io),
-                    'is_in': passer.rssi_a < passer.rssi_b,  # b(내부) 값이 작을수록 거리가 멀다.
+                    'is_in': passer.is_in,
                      }
         io_state_list.append(io_state)
         logSend('>>> {}: rssi_a: {}, rssi_b: {}'.format(passer.id, passer.rssi_a, passer.rssi_b))

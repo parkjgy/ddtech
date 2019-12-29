@@ -135,6 +135,7 @@ class Passer(models.Model):
     rssi_a = models.IntegerField(default = 0)           # 외부(A 지점)에서의 rssi 값 11001
     rssi_b = models.IntegerField(default = 0)           # 내부(B 지정)에서의 rssi 값 11002
     dt_io = models.DateTimeField(null=True, blank=True) # 외부에서 내부로 변경된 시간
+    is_in = models.BooleanField(default=True)           # 마지막 내부/외부 상태
 
 
 class Pass(models.Model):
