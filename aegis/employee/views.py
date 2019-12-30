@@ -1089,6 +1089,7 @@ def pass_reg(request):
         beacon_b = sum_rssi_b / len(beacon_list_b)
     else:
         beacon_b = -999
+    logSend('   >>> A 11001: {} vs B 11002: {} >>> {}'.format(beacon_a, beacon_b, beacon_a < beacon_b))
     is_in_new = beacon_a < beacon_b
     if passer.is_in is not is_in_new:
         passer.is_in = is_in_new
