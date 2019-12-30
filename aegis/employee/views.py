@@ -1077,16 +1077,16 @@ def pass_reg(request):
     if len(beacon_list_a) > 0:
         sum_rssi_a = 0
         for beacon_a in beacon_list_a:
-            sum_srri_a += beacon_a.rssi
-        beaocon_a = sum_rssi_a / len(beacon_list_a)
+            sum_rssi_a += beacon_a.rssi
+        beacon_a = sum_rssi_a / len(beacon_list_a)
     else:
         beacon_a = -999
     beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
     if len(beacon_list_a) > 0:
         sum_rssi_b = 0
         for beacon_b in beacon_list_b:
-            sum_srri_b += beacon_b.rssi
-        beaon_b = sum_rssi_b / len(beacon_list_b)
+            sum_rssi_b += beacon_b.rssi
+        beacon_b = sum_rssi_b / len(beacon_list_b)
     else:
         beacon_b = -999
     is_in_new = beacon_a < beacon_b
