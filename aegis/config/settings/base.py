@@ -27,6 +27,7 @@ SECRET_KEY = 'd*)n0s&_3cufmn4x^&0_ny_pplg&1a4k1==r7cxronkfd$7no@'
 ALLOWED_HOSTS = ['0.0.0.0',  # local
                  '127.0.0.1',  # server to server
                  '59.25.196.95',  # TTA server IP
+                 '192.168.1.174',  # TTA macbook pro
                  '192.168.219.62',  # 울산 본사 개발 IP
                  '192.168.123.77',  # 상암동 개발 IP
                  '125.142.28.181',  # 행신동 박종기 집 IP
