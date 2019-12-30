@@ -1063,15 +1063,15 @@ def pass_reg(request):
         # print('  > beacon minor: {}'.format(beacon['minor']))
         if beacon['minor'] == 11001:
             passer.rssi_a = int(beacon['rssi'])
-            if passer.rssi_a < -75:
+            if passer.rssi_a < -99:
                 passer.rssi_a = -888
             # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
         elif beacon['minor'] == 11002:
             passer.rssi_b = int(beacon['rssi'])
-            if passer.rssi_b < -75:
+            if passer.rssi_b < -99:
                 passer.rssi_b = -888
             # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
-    # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처리
+    # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
     dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
     beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
     beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
