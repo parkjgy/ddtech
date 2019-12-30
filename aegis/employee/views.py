@@ -1074,7 +1074,7 @@ def pass_reg(request):
     # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
     dt_current = datetime.datetime.now() - datetime.timedelta(seconds=3)
     # beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
-    beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001).order_by('-dt_begin')[:5]
+    beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001).order_by('-dt_begin')[:3]
     if len(beacon_list_a) > 0:
         sum_rssi_a = 0
         for beacon_a in beacon_list_a:
@@ -1083,7 +1083,7 @@ def pass_reg(request):
     else:
         beacon_a = -999
     # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
-    beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:5]
+    beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:3]
     if len(beacon_list_a) > 0:
         sum_rssi_b = 0
         for beacon_b in beacon_list_b:
