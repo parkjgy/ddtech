@@ -4962,9 +4962,11 @@ def del_test_beacon_list(request):
     if user != 'thinking':
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '사용 권한이 없습니다.'})
 
-    beacon_list = Beacon_Record.objects.filter(is_test=True)
-    for beacon in beacon_list:
-        beacon.delete()
+    Beacon_Record.objects.all().delete()
+    Pass.objects.all().delete()
+    # beacon_list = Beacon_Record.objects.filter(is_test=True)
+    # for beacon in beacon_list:
+    #     beacon.delete()
 
     return REG_200_SUCCESS.to_json_response()
 
