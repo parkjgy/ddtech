@@ -1072,14 +1072,32 @@ def pass_reg(request):
                 passer.rssi_b = -888
             # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
     # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
-    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=15)
+    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=3)
     beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
+    if len(beacon_list_a) > 0:
+        sum_rssi_a = 0
+        for beacon_a in beacon_list_a:
+            sum_srri_a += beacon_a.rssi
+        beaocon_a = sum_rssi_a / len(beacon_list_a)
+    else:
+        beacon_a = -999
     beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
-    if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
-        is_in_new = passer.rssi_a < passer.rssi_b
-        if passer.is_in is not is_in_new:
-            passer.is_in = is_in_new
-            passer.dt_io = datetime.datetime.now()
+    if len(beacon_list_a) > 0:
+        sum_rssi_b = 0
+        for beacon_b in beacon_list_b:
+            sum_srri_b += beacon_b.rssi
+        beaon_b = sum_rssi_b / len(beacon_list_b)
+    else:
+        beacon_b = -999
+    is_in_new = beacon_a < beacon_b
+    if passer.is_in is not is_in_new:
+        passer.is_in = is_in_new
+        passer.dt_io = datetime.datetime.now()
+    # if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
+    #     is_in_new = passer.rssi_a < passer.rssi_b
+    #     if passer.is_in is not is_in_new:
+    #         passer.is_in = is_in_new
+    #         passer.dt_io = datetime.datetime.now()
     passer.save()
     #
     # TTA 대응: 끝
