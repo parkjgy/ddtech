@@ -1056,55 +1056,55 @@ def pass_reg(request):
         # 출입자를 db에서 찾지 못하면
         return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
     passer = passer_list[0]
-    #
-    # TTA 대응: passer 에 비콘의 최신 rssi 값을 저장한다.
-    #
-    for beacon in beacons:
-        # print('  > beacon minor: {}'.format(beacon['minor']))
-        if beacon['minor'] == 11001:
-            passer.rssi_a = int(beacon['rssi'])
-            if passer.rssi_a < -99:
-                passer.rssi_a = -888
-            # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
-        elif beacon['minor'] == 11002:
-            passer.rssi_b = int(beacon['rssi'])
-            if passer.rssi_b < -99:
-                passer.rssi_b = -888
-            # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
-    # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
-    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=3)
-    # beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
-    beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001).order_by('-dt_begin')[:2]
-    if len(beacon_list_a) > 0:
-        sum_rssi_a = 0
-        for beacon_a in beacon_list_a:
-            sum_rssi_a += beacon_a.rssi
-        beacon_a = sum_rssi_a / len(beacon_list_a)
-    else:
-        beacon_a = -999
-    # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
-    beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:2]
-    if len(beacon_list_a) > 0:
-        sum_rssi_b = 0
-        for beacon_b in beacon_list_b:
-            sum_rssi_b += beacon_b.rssi
-        beacon_b = sum_rssi_b / len(beacon_list_b)
-    else:
-        beacon_b = -999
-    logSend('   >>> A 11001: {} vs B 11002: {} >>> {}'.format(beacon_a, beacon_b, beacon_a < beacon_b))
-    is_in_new = beacon_a < beacon_b
-    if passer.is_in is not is_in_new:
-        passer.is_in = is_in_new
-        passer.dt_io = datetime.datetime.now()
-    # if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
-    #     is_in_new = passer.rssi_a < passer.rssi_b
-    #     if passer.is_in is not is_in_new:
-    #         passer.is_in = is_in_new
-    #         passer.dt_io = datetime.datetime.now()
-    passer.save()
-    #
-    # TTA 대응: 끝
-    #
+    # #
+    # # TTA 대응: passer 에 비콘의 최신 rssi 값을 저장한다.
+    # #
+    # for beacon in beacons:
+    #     # print('  > beacon minor: {}'.format(beacon['minor']))
+    #     if beacon['minor'] == 11001:
+    #         passer.rssi_a = int(beacon['rssi'])
+    #         if passer.rssi_a < -99:
+    #             passer.rssi_a = -888
+    #         # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
+    #     elif beacon['minor'] == 11002:
+    #         passer.rssi_b = int(beacon['rssi'])
+    #         if passer.rssi_b < -99:
+    #             passer.rssi_b = -888
+    #         # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
+    # # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
+    # dt_current = datetime.datetime.now() - datetime.timedelta(seconds=3)
+    # # beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
+    # beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001).order_by('-dt_begin')[:2]
+    # if len(beacon_list_a) > 0:
+    #     sum_rssi_a = 0
+    #     for beacon_a in beacon_list_a:
+    #         sum_rssi_a += beacon_a.rssi
+    #     beacon_a = sum_rssi_a / len(beacon_list_a)
+    # else:
+    #     beacon_a = -999
+    # # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
+    # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:2]
+    # if len(beacon_list_a) > 0:
+    #     sum_rssi_b = 0
+    #     for beacon_b in beacon_list_b:
+    #         sum_rssi_b += beacon_b.rssi
+    #     beacon_b = sum_rssi_b / len(beacon_list_b)
+    # else:
+    #     beacon_b = -999
+    # logSend('   >>> A 11001: {} vs B 11002: {} >>> {}'.format(beacon_a, beacon_b, beacon_a < beacon_b))
+    # is_in_new = beacon_a < beacon_b
+    # if passer.is_in is not is_in_new:
+    #     passer.is_in = is_in_new
+    #     passer.dt_io = datetime.datetime.now()
+    # # if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
+    # #     is_in_new = passer.rssi_a < passer.rssi_b
+    # #     if passer.is_in is not is_in_new:
+    # #         passer.is_in = is_in_new
+    # #         passer.dt_io = datetime.datetime.now()
+    # passer.save()
+    # #
+    # # TTA 대응: 끝
+    # #
 
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
     if len(employee_list) == 0:
@@ -5539,3 +5539,51 @@ def push_work(request):
     response = notification(push_contents)
 
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def get_works(request):
+    """
+    모든 근로자의 업무를 가져온다.
+        http://0.0.0.0:8000/employee/get_works
+    POST : json
+    response
+        STATUS 200
+            {
+                list_employee: [
+                    {
+                        'passer_id': passer.id,
+                        'name': dict_employee[passer.employee_id],
+                        'pNo': passer.pNo,
+                        'is_camera_stop': passer.is_camera_stop
+                    },
+                    ...
+                ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    passer_all = Passer.objects.all()
+    work_all = Work.objects.all()
+    work_dict = {}
+    for work in work_all:
+        work_dict[work.id] = int(AES_DECRYPT_BASE64(work.customer_work_id))
+    employee_all = Employee.objects.all()
+    employee_dict = {}
+    for employee in employee_all:
+        works = employee.get_works()
+        for work in works:
+            # print('   > {} {}'.format(work, work_dict[work['id']]))
+            work['c_id'] = work_dict[work['id']]
+        employee_dict[employee.id] = works
+    passer_dict = {}
+    for passer in passer_all:
+        if passer.employee_id in employee_dict.keys():
+            passer_dict[passer.id] = {'employee_id': passer.id, 'works': employee_dict[passer.employee_id]}
+    result = {'employees_works': employee_dict}
+    return REG_200_SUCCESS.to_json_response(result)
