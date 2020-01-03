@@ -7048,7 +7048,7 @@ def tk_complete_work_backup(request):
 
 
 @cross_origin_read_allow
-def tk_fix_up_employee(request):
+def tk_fix_up_employee_backup(request):
     """
     [[ 운영]] 근로자 전화번호와 이름이 Employee SERVER 내용과 틀린 부분을 바로 잡는다.
     - customer.employee.employee_id > employee.passer_id 잘못된 부분 수정
@@ -7146,4 +7146,45 @@ def tk_fix_up_employee(request):
         fixed_up_list.append(
             {'id': employee.id, 'name': employee.name, 'pNo': employee.pNo, 'passer_id': employee.employee_id})
     return REG_200_SUCCESS.to_json_response({'fixed_up_list': fixed_up_list})
+
+
+@cross_origin_read_allow
+def tk_fix_up_employee(request):
+    """
+    [[ 운영]] 근로자 전화번호와 이름이 Employee SERVER 내용과 틀린 부분을 바로 잡는다.
+    - customer.employee.employee_id > employee.passer_id 잘못된 부분 수정
+    http://0.0.0.0:8000/customer/tk_fix_up_employee
+    GET
+        dt_complete: 2019-07-31
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    # s = requests.session()
+    # r = s.post(settings.EMPLOYEE_URL + 'get_works', json={})
+    # # logSend('  > {}'.format({'url': r.url, 'POST': {}, 'STATUS': r.status_code, 'R': r.json()}))
+    # result_json = r.json()
+    # employee_work_dict = result_json['employees_works']
+
+    work_all = Work.objects.all()
+    today = datetime.datetime.now()
+    work_dict = {work.id: work.dt_end for work in work_all if work.dt_end > today}
+
+    log = []
+    employee_all = Employee.objects.all()
+    for employee in employee_all:
+        if employee.work_id in work_dict.keys():
+            if employee.dt_end < work_dict[employee.work_id] and str_to_datetime('2019-12-30 23:59:59') < employee.dt_end:
+                log.append('{}({}): {} vs {}'.format(employee.id, employee.name, employee.dt_end, work_dict[employee.work_id]))
+                # logSend('  > {}: {} vs {}'.format(employee.id, employee.dt_end, work_dict[employee.work_id]))
+                employee.dt_end = str_to_datetime('2020-12-31 23:59:59')
+                employee.save()
+    return REG_200_SUCCESS.to_json_response({'log': log})
 

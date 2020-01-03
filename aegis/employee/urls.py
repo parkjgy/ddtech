@@ -88,6 +88,8 @@ urlpatterns = [
     url(r'employee/update_camera', views.update_camera, name='update_camera'),
 
     url(r'employee/push_work', views.push_work, name='push_work'),
+
+    url(r'employee/get_works', views.get_works, name='get_works'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
