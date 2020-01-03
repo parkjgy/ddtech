@@ -1084,7 +1084,7 @@ def pass_reg(request):
         beacon_a = -999
     # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
     beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:2]
-    if len(beacon_list_a) > 0:
+    if len(beacon_list_b) > 0:
         sum_rssi_b = 0
         for beacon_b in beacon_list_b:
             sum_rssi_b += beacon_b.rssi
