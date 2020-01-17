@@ -43,6 +43,8 @@ urlpatterns = [
     url(r'employee/certification_no_to_sms$', views.certification_no_to_sms, name='certification_no_to_sms'),
     url(r'employee/reg_from_certification_no$', views.reg_from_certification_no, name='reg_from_certification_no'),
     url(r'employee/update_my_info$', views.update_my_info, name='update_my_info'),
+    url(r'employee/reg_from_certification_no_2', views.reg_from_certification_no_2, name='reg_from_certification_no_2'),
+    url(r'employee/update_my_info_2', views.update_my_info_2, name='update_my_info_2'),
 
     url(r'employee/exchange_phone_no_to_sms$', views.exchange_phone_no_to_sms, name='exchange_phone_no_to_sms'),
     url(r'employee/exchange_phone_no_verify$', views.exchange_phone_no_verify, name='exchange_phone_no_verify'),
