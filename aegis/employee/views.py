@@ -2231,7 +2231,7 @@ def update_my_info(request):
 def reg_from_certification_no_2(request):
     """
     근로자 등록 확인 : 문자로 온 SMS 문자로 근로자를 확인하는 기능 (여기서 사업장에 등록된 근로자인지 확인, 기존 등록 근로자인지 확인)
-    http://0.0.0.0:8000/employee/reg_from_certification_no?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
+    http://0.0.0.0:8000/employee/reg_from_certification_no_2?phone_no=010-2557-3555&cn=580757&phone_type=A&push_token=token
     POST
         {
             'phone_no' : '010-1111-2222',
@@ -2326,7 +2326,7 @@ def reg_from_certification_no_2(request):
         else:
             cn = cn.replace(' ', '')
             logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
-            if not settings.IS_TEST and passer.cn != int(cn):
+            if not settings.IS_TEST and str(passer.cn) != cn:
                 # if passer.cn != int(cn):
                 return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
     status_code = 200
@@ -2357,9 +2357,9 @@ def reg_from_certification_no_2(request):
                 status_code = 201
             else:
                 result['name'] = employee.name
-                result['work_start'] = employee.work_start
-                result['working_time'] = employee.working_time
-                result['rest_time'] = employee.rest_time
+                # result['work_start'] = employee.work_start
+                # result['working_time'] = employee.working_time
+                # result['rest_time'] = employee.rest_time
                 result['work_start_alarm'] = employee.work_start_alarm
                 result['work_end_alarm'] = employee.work_end_alarm
                 result['bank'] = employee.bank
@@ -2368,15 +2368,20 @@ def reg_from_certification_no_2(request):
     if status_code == 200 or status_code == 201:
         notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
         for notification in notification_list:
+            logSend('... {}'.format(notification.employee_pNo))
             if notification.employee_id == -1:
                 notification.employee_id = employee.id
                 notification.save()
-        result['default_time'] = [
-                    {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
-                    {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '23:00', 'working_time': '08', 'rest_time': '00:00'},
-                ]
+            else:
+                work = Work.objects.get(id=notification.work_id)
+                logSend('... {}'.format(work.get_time_info()))
+                result['time_info'] = work.get_time_info()
+        # result['default_time'] = [
+        #             {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
+        #             {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
+        #             {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
+        #             {'work_start': '23:00', 'working_time': '08', 'rest_time': '00:00'},
+        #         ]
 
         result['bank_list'] = ['국민은행', '기업은행', '농협은행', '신한은행', '산업은행', '우리은행', '한국씨티은행', 'KEB하나은행', 'SC은행', '경남은행',
                                '광주은행', '대구은행', '도이치은행', '뱅크오브아메리카', '부산은행', '산림조합중앙회', '저축은행', '새마을금고중앙회', '수협은행',
