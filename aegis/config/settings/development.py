@@ -28,7 +28,7 @@ EMPLOYEE_URL = 'http://127.0.0.1:8000/employee/'
 
 SMS_SENDER_PN = '1899-3832'
 
-IS_TEST = False
+IS_TEST = True
 IS_SERVICE = False
 
 # APNs 인증서 경로

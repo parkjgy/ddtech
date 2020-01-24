@@ -1060,7 +1060,6 @@ def login(request):
 
     staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
-
         return REG_530_ID_OR_PASSWORD_IS_INCORRECT.to_json_response({'message': '아이디가 없습니다.'})
     elif len(staffs) > 1:
         logError(get_api(request), ' login id: {} 가 중복됩니다.')

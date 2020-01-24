@@ -511,6 +511,8 @@ def reg_employee_for_customer(request):
             phones_state[phone_no] = -1  # 등록안된 SMS 대상
 
         if phones_state[phone_no] in [-1, 1]:
+            settings.IS_TEST = True
+            logSend('>>> IS_TEST: {}'.format(settings.IS_TEST))
             if not settings.IS_TEST:
                 logSend('  - sms 보냄 phone: {}'.format(phone_no))
                 # SMS 를 보낸다.
@@ -5902,3 +5904,99 @@ def push_work(request):
     response = notification(push_contents)
 
     return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def reset_passer(request):
+    """
+    시험용: 근로자를 새로 등록할 수 있도록 정보를 삭제한다.
+    - 상용서버에서는 사용할 수 없다.
+        http://0.0.0.0:8000/employee/reset_passer?pNo=01025573555
+    GET
+        pNo: 전화번호  # 삭제할 근로자의 전화번호
+    response
+        STATUS 416
+            {'message': '개발상태에서만 사용할 수 있습니다.'}
+        STATUS 200
+            {'message': '출입자가 이미 삭제 되었습니다.'}
+            {'message': '근로자가 이미 삭제 되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if not settings.DEBUG:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '개발상태에서만 사용할 수 있습니다.'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['pNo'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    pNo = parameter_check['parameters']['pNo']
+
+    passer_infor = {}
+    # 기존 업무 알림 모두 삭제
+    notification_list = Notification_Work.objects.filter(employee_pNo=pNo)
+    if len(notification_list) > 0:
+        for notification in notification_list:
+            logSend('>>> delete notification work: {}'.format(notification.id))
+            notification.delete()
+
+    # 출입자 정보 삭제
+    employee_id = -1
+    try:
+        passer = Passer.objects.get(pNo=pNo)
+        passer_infor['pNo'] = passer.pNo
+        passer_infor['pType'] = passer.pType
+        passer_infor['app_version'] = passer.app_version
+        passer.delete()
+        employee_id = passer.employee_id
+    except Exception as e:
+        passer_infor['passer_delete'] = '>>> 출입자가 이미 삭제되었다.'
+    logSend('>>> {}'.format(passer_infor))
+
+    # 근로자 정보 삭제
+    if employee_id != -1:
+        try:
+            employee = Employee.objects.get(id=employee_id)
+            passer_infor['name'] = employee.name
+            passer_infor['work_start_alarm'] = employee.work_start_alarm
+            passer_infor['work_end_alarm'] = employee.work_end_alarm
+            passer_infor['dt_reg'] = employee.dt_reg
+            passer_infor['works'] = employee.get_works()
+            employee.delete()
+        except Exception as e:
+            passer_infor['employee_delete'] = '>>> 근로자가 이미 삭제되었다'
+    logSend('>>> {}'.format(passer_infor))
+
+    # 새로 업무에 근로자로 등록한다.
+    s = requests.session()
+    login_data = {"login_id": "temp_20",
+                  "login_pw": "happy_day!!!"
+                  }
+    r = s.post(settings.CUSTOMER_URL + 'login', json=login_data)
+    logSend({'url': r.url, 'POST': login_data, 'STATUS': r.status_code, 'R': r.json()})
+
+    today = datetime.datetime.now()
+    tomorrow = today + datetime.timedelta(days=1)
+    str_tomorrow = str_to_datetime(dt_str(tomorrow, "%Y-%m-%d") + " 19")
+    after_tomorrow = today + datetime.timedelta(days=2)
+    str_after_tomorrow = dt_str(tomorrow, "%Y-%m-%d")
+    logSend('>>> {} {} {}'.format(today, str_tomorrow, str_after_tomorrow))
+    employee_info = {
+        'work_id': AES_ENCRYPT_BASE64('37'),
+        'dt_answer_deadline': '2020-01-25 19:00:00',  # 업무 수락/거절 답변 시한
+        'dt_begin': '2020-01-26',  # 등록하는 근로자의 실제 출근 시작 날짜 (업무의 시작 후에 추가되는 근로자를 위한 날짜)
+        'phone_numbers':  [pNo], # 업무에 배치할 근로자들의 전화번호
+        }
+    r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_info)
+    result = {'url': r.url, 'POST': employee_info, 'STATUS': r.status_code, 'R': r.json()}
+
+    logSend(result)
+
+    return REG_200_SUCCESS.to_json_response({'passer_infor': passer_infor, 'R': r.json()})
