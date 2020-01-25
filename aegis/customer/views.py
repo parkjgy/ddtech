@@ -3171,6 +3171,7 @@ def reg_employee(request):
                          "dt_begin_employee": dt_begin.strftime('%Y/%m/%d'),  # 근로자별 업무 시작일
                          "dt_end_employee": work.dt_end.strftime('%Y/%m/%d'),  # 근로자별 업무 종료일 (여기서는 업무종료일과 동일)
                          "is_update": False,
+                         "time_info": work.get_time_info(),
                          "phones": new_phone_list,
                          }
     # logSend(new_employee_data)

@@ -227,12 +227,28 @@ def list_my_work(request):
               "message": "정상적으로 처리되었습니다.",
               "works": [
                 {
-                  "begin": "2019/08/03",
-                  "end": "2019/08/30",
-                  "work_place_name": "테덕테크 서울지사",
-                  "work_name_type": "안드로이드 개발 (주간)",
-                  "staff_name": "홍길동",
-                  "staff_pNo": "01077778888"
+                    'begin': '2019/08/03',
+                    'end': '2019/08/30',
+                    'work_place_name': '테덕테크 서울지사',
+                    'work_name_type': '안드로이드 개발 (주간)',
+                    'staff_name': '홍길동',
+                    'staff_pNo': '01077778888',
+                    'time_info': {
+                      'paid_day': 0,
+                      'time_type': 0,
+                      'week_hours': 40,
+                      'month_hours': 209,
+                      'working_days': [1, 2, 3, 4, 5],
+                      'work_time_list': [
+                        {
+                          't_begin': '09:00',
+                          't_end': '21:00',
+                          'break_time_type': 1,
+                          'break_time_total': '01:30'
+                        },
+                      ],
+                      'is_holiday_work': 1
+                    },
                 },
                 ...
               ]
@@ -294,6 +310,7 @@ def list_my_work(request):
                     'staff_name': work.staff_name,
                     'staff_pNo': phone_format(work.staff_pNo),
                 }
+                work_dict['time_info'] = work.get_time_info()
                 employee_work_list.append(work_dict)
                 continue
     logSend(employee_work_list)
@@ -360,7 +377,7 @@ def reg_employee_for_customer(request):
         rqst = request.GET
 
     parameter_check = is_parameter_ok(rqst, ['customer_work_id', 'work_place_name', 'work_name_type', 'dt_begin',
-                                             'dt_end', 'staff_name', 'staff_phone', 'phones',
+                                             'dt_end', 'staff_name', 'staff_phone', 'phones', 'time_info',
                                              'dt_answer_deadline', 'dt_begin_employee', 'dt_end_employee', 'is_update'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
@@ -376,6 +393,8 @@ def reg_employee_for_customer(request):
     dt_begin_employee = parameter_check['parameters']['dt_begin_employee']
     dt_end_employee = parameter_check['parameters']['dt_end_employee']
     is_update = parameter_check['parameters']['is_update']
+    time_info = parameter_check['parameters']['time_info']
+
 
     if request.method == 'GET':
         phone_numbers = rqst.getlist('phones')
@@ -393,6 +412,7 @@ def reg_employee_for_customer(request):
             staff_name=staff_name,
             staff_pNo=staff_phone,
         )
+        work.set_time_info(time_info)
         work.save()
     else:
         work = find_works[0]
@@ -2260,13 +2280,22 @@ def reg_from_certification_no_2(request):
             'work_end_alarm': 'X',               # 필수: 없으면 입력 받는 화면 표시 (기존 근로자 일 때: 없을 수 있음 - 등록 중 중단한 경우)
             'bank': '기업은행',                     # 기존 근로자 일 때 (없을 수 있음 - 등록 중 중단한 경우)
             'bank_account': '12300000012000',     # 기존 근로자 일 때 (없을 수 있음 - 등록 중 중단한 경우)
-            'default_time':
-                [
-                    {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
-                    {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '15:00', 'working_time': '08', 'rest_time': '00:00'},
-                    {'work_start': '23:00', 'working_time': '08', 'rest_time': '00:00'},
-                ],
+            'time_info': {
+              'paid_day': 0,
+              'time_type': 0,
+              'week_hours': 40,
+              'month_hours': 209,
+              'working_days': [1, 2, 3, 4, 5],
+              'work_time_list': [
+                {
+                  't_begin': '09:00',
+                  't_end': '21:00',
+                  'break_time_type': 1,
+                  'break_time_total': '01:30'
+                },
+              ],
+              'is_holiday_work': 1
+            },
             'bank_list': ['국민은행', ... 'NH투자증권']
         }
         STATUS 201 # 새로운 근로자 : 이름, 급여 이체 은행, 계좌번호를 입력받아야 함
@@ -2366,18 +2395,27 @@ def reg_from_certification_no_2(request):
                 result['work_end_alarm'] = employee.work_end_alarm
                 result['bank'] = employee.bank
                 result['bank_account'] = employee.bank_account
+                works = employee.get_works()
+                logSend('... works: {}'.format(works))
+                today = datetime.datetime.now()
+                for work in works:
+                    logSend('... {} vs {}'.format(work['end'], str_to_dt(work['end']) + datetime.timedelta(days=1)))
+                    if today < str_to_dt(work['end']) + datetime.timedelta(days=1):
+                        current_work = Work.objects.get(id=work['id'])
+                        logSend('... {}'.format(current_work.get_time_info()))
+                        result['time_info'] = current_work.get_time_info()
 
     if status_code == 200 or status_code == 201:
-        notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
-        for notification in notification_list:
-            logSend('... {}'.format(notification.employee_pNo))
-            if notification.employee_id == -1:
-                notification.employee_id = employee.id
-                notification.save()
-            else:
-                work = Work.objects.get(id=notification.work_id)
-                logSend('... {}'.format(work.get_time_info()))
-                result['time_info'] = work.get_time_info()
+        # notification_list = Notification_Work.objects.filter(is_x=0, employee_pNo=phone_no)
+        # logSend('... {}'.format(len(notification_list)))
+        # for notification in notification_list:
+        #     logSend('... {}, {}'.format(notification.employee_pNo, notification.work_id))
+        #     if notification.employee_id == -1:
+        #         notification.employee_id = employee.id
+        #         notification.save()
+        #     work = Work.objects.get(id=notification.work_id)
+        #     logSend('... {}'.format(work.get_time_info()))
+        #     result['time_info'] = work.get_time_info()
         # result['default_time'] = [
         #             {'work_start': '09:00', 'working_time': '08', 'rest_time': '01:00'},
         #             {'work_start': '07:00', 'working_time': '08', 'rest_time': '00:00'},
@@ -5984,16 +6022,17 @@ def reset_passer(request):
 
     today = datetime.datetime.now()
     tomorrow = today + datetime.timedelta(days=1)
-    str_tomorrow = str_to_datetime(dt_str(tomorrow, "%Y-%m-%d") + " 19")
+    str_tomorrow = dt_str(str_to_datetime(dt_str(tomorrow, "%Y-%m-%d") + " 19"), "%Y-%m-%d %H:%M:%S")
     after_tomorrow = today + datetime.timedelta(days=2)
-    str_after_tomorrow = dt_str(tomorrow, "%Y-%m-%d")
+    str_after_tomorrow = dt_str(after_tomorrow, "%Y-%m-%d")
     logSend('>>> {} {} {}'.format(today, str_tomorrow, str_after_tomorrow))
     employee_info = {
         'work_id': AES_ENCRYPT_BASE64('37'),
-        'dt_answer_deadline': '2020-01-25 19:00:00',  # 업무 수락/거절 답변 시한
-        'dt_begin': '2020-01-26',  # 등록하는 근로자의 실제 출근 시작 날짜 (업무의 시작 후에 추가되는 근로자를 위한 날짜)
-        'phone_numbers':  [pNo], # 업무에 배치할 근로자들의 전화번호
+        'dt_answer_deadline': str_tomorrow,  # 업무 수락/거절 답변 시한
+        'dt_begin': str_after_tomorrow,  # 등록하는 근로자의 실제 출근 시작 날짜 (업무의 시작 후에 추가되는 근로자를 위한 날짜)
+        'phone_numbers':  [pNo],  # 업무에 배치할 근로자들의 전화번호
         }
+    logSend('>>> {}'.format(employee_info))
     r = s.post(settings.CUSTOMER_URL + 'reg_employee', json=employee_info)
     result = {'url': r.url, 'POST': employee_info, 'STATUS': r.status_code, 'R': r.json()}
 
