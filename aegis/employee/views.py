@@ -2370,6 +2370,8 @@ def reg_from_certification_no_2(request):
     elif passer.employee_id < 0:  # 신규 근로자
         status_code = 201
         employee = Employee(
+            work_start_alarm='X',
+            work_end_alarm='X',
         )
         employee.save()
         passer.employee_id = employee.id
@@ -2379,6 +2381,8 @@ def reg_from_certification_no_2(request):
             logError(get_api(request), ' 발생하면 안됨: passer.employee_id 의 근로자가 employee 에 없다. (새로 만듦)')
             status_code = 201
             employee = Employee(
+            work_start_alarm='X',
+            work_end_alarm='X',
             )
             employee.save()
             passer.employee_id = employee.id
@@ -3784,13 +3788,33 @@ def my_work_histories(request):
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
+    # employee_info = {
+    #     'employee_id': passer_id,
+    #     'dt': dt,
+    # }
+    # response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
+    # logSend(response_employee)
     employee_info = {
         'employee_id': passer_id,
         'dt': dt,
     }
-    response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=employee_info)
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
     logSend(response_employee)
+    """
+        <<<고객 서버용>>> 근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    http://0.0.0.0:8000/employee/work_report_for_customer?employee_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        employee_id = 근로자 id        # employee 서버의 passer_id
+        work_id = 업무 id             # customer 서버의 work_id  = customer_work_id (암호화되어 있음)
+        year_month = '2018-01'
 
+    """
     result = response_employee.json()
     return REG_200_SUCCESS.to_json_response(result)
 
@@ -6039,3 +6063,128 @@ def reset_passer(request):
     logSend(result)
 
     return REG_200_SUCCESS.to_json_response({'passer_infor': passer_infor, 'R': r.json()})
+
+
+@cross_origin_read_allow
+def make_work_io(request):
+    """
+    시험용: 근로자를 새로 등록할 수 있도록 정보를 삭제한다.
+    - 상용서버에서는 사용할 수 없다.
+        http://0.0.0.0:8000/employee/make_work_io?pNo=01025573555&year_month=2019-12
+    GET
+        pNo: 전화번호           # 삭제할 근로자의 전화번호
+        year_month: 2019-12   # 출퇴근 기록을 만들 년월
+    response
+        STATUS 416
+            {'message': '개발상태에서만 사용할 수 있습니다.'}
+            {'message': '전화번호 {} 로 출입자를 찾을 수 없다.'}
+            {'message': '전화번호 {} 로 근로자를 찾을 수 없다.'}
+        STATUS 200
+            {'message': '출입자가 이미 삭제 되었습니다.'}
+            {'message': '근로자가 이미 삭제 되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    if not settings.DEBUG:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '개발상태에서만 사용할 수 있습니다.'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['pNo', 'year_month'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    pNo = parameter_check['parameters']['pNo']
+    dt_begin = str_to_datetime(parameter_check['parameters']['year_month'])
+    dt_end = dt_begin + relativedelta(months=1) - timedelta(seconds=1)
+    logSend('... begin: {}, end {}'.format(dt_begin, dt_end))
+
+    result = []
+    s = requests.session()
+
+    try:
+        passer = Passer.objects.get(pNo=pNo)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '전화번호 {} 로 출입자를 찾을 수 없다.'.format(pNo)})
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '전화번호 {} 로 근로자를 찾을 수 없다.'.format(pNo)})
+    works = employee.get_works()
+    if len(works) > 0:
+        works[len(works) - 1]['begin'] = dt_str(dt_begin, "%Y/%m/%d")
+        employee.set_works(works)
+        employee.save()
+    dt = dt_begin.replace(hour=8)
+    pass_reg_info = {
+        'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
+        'dt': '2020-01-26 08:30:00',
+        'is_in': 1,
+        'major': 11001,
+        'beacons': [{'minor': 11001, 'dt_begin': '2020-01-26 08:30:00', 'rssi': -70, 'dt_end': '2020-01-26 08:30:00', 'count': 12}],
+    }
+    pass_verify_info = {
+        'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
+        'dt': '2020-01-26 08:30:00',
+        'is_in': 1,
+        'major': 11001,
+        'beacons': [{'minor': 11001, 'dt_begin': '2020-01-26 08:30:00', 'rssi': -70, 'dt_end': '2020-01-26 08:30:00', 'count': 12}],
+    }
+    for day in range(1, dt_end.day + 1):
+        pass_reg_info['is_in'] = 1
+        dt = dt.replace(day=day, hour=8, minute=32)
+        pass_reg_info['dt'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=27)
+        pass_reg_info['beacons'][0]['dt_begin'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=31)
+        pass_reg_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=pass_reg_info)
+        # result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+
+        pass_verify_info['is_in'] = 1
+        dt = dt.replace(day=day, hour=8, minute=29)
+        pass_verify_info['dt'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=27)
+        pass_verify_info['beacons'][0]['dt_begin'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=31)
+        pass_verify_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_verify_info)
+        result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+
+        pass_reg_info['is_in'] = 0
+        dt = dt.replace(day=day, hour=17, minute=32)
+        pass_reg_info['dt'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=31)
+        pass_reg_info['beacons'][0]['dt_begin'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=35)
+        pass_reg_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=pass_reg_info)
+        # result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+
+        pass_verify_info['is_in'] = 0
+        dt = dt.replace(day=day, hour=17, minute=33)
+        pass_verify_info['dt'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=31)
+        pass_verify_info['beacons'][0]['dt_begin'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(minute=35)
+        pass_verify_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
+        r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_verify_info)
+        result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+
+    # parameter = {
+    #     "passer_id": 'J75x0sHanKmZblNaa3HuMg',
+    #     "dt": '2019-08-14 11:57:07',
+    #     "is_in": 0,
+    #     "major": 11001,
+    #     "beacons": [{'minor': 11003, 'dt_begin': '2019-08-14 11:28:07', 'rssi': -93},
+    #                 {'minor': 11004, 'dt_begin': '2019-08-14 11:28:07', 'rssi': -93},
+    #                 {'minor': 11001, 'dt_begin': '2019-08-14 11:57:05', 'rssi': -98}],
+    # }
+    # r = s.post(settings.EMPLOYEE_URL + 'pass_reg', json=parameter)
+    # result.append({'url': r.url, 'POST': parameter, 'STATUS': r.status_code, 'R': r.json()})
+    return REG_200_SUCCESS.to_json_response({'result': result})

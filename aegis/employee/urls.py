@@ -93,6 +93,7 @@ urlpatterns = [
 
     # url(r'employee/get_works', views.get_works, name='get_works'),
     url(r'employee/reset_passer', views.reset_passer, name='reset_passer'),
+    url(r'employee/make_work_io', views.make_work_io, name='make_work_io'),
 
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
