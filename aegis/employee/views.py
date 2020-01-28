@@ -3602,7 +3602,8 @@ def work_report_for_customer(request):
             'out_staff_id': pass_record.out_staff_id,
             'overtime': zero_blank(pass_record.overtime),
             'overtime_staff_id': pass_record.overtime_staff_id,
-            'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()]
+            'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
+            
         }
         if pass_record.passer_id in passer_rec_dict.keys():
             passer_rec_dict[pass_record.passer_id].append(passer_record_dict)
@@ -3847,45 +3848,47 @@ def my_work_records(request):
     response
         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
         STATUS 200
-            {'message': '근태내역이 없습니다.', "arr_working": [] }
+            {'message': '근태내역이 없습니다.', "working": [], "work_infor': [] }
             {
               "message": "정상적으로 처리되었습니다.",
-              "arr_working": [
+              "working": [
                 {
-                  "name": "이영길",        # 이름
-                  "break_sum": 0,        # 휴게시간 합계
-                  "basic_sum": 180,      # 기본근로시간 합계
-                  "night_sum": 0,        # 야간근로시간 합계
-                  "overtime_sum": 8,     # 연장근로시간 합계
-                  "holiday_sum": 0,      # 휴일근로시간 합계
-                  "ho_sum": 0,           # 휴일/연장근로시간 합계
-                  "2019-10": [
-                    {
-                      "01": {                       # 근무한 날짜
-                        "dt_in_verify": "06:27",        # 출근시간
-                        "dt_out_verify": "15:00",       # 퇴근시간
-                        "break": "01:00"                # 휴게시간
-                        "basic": "",                    # 기본근로
-                        "night": "",                    # 야간근로
-                        "overtime": 0,                  # 연장근무
-                        "holiday": "",                  # 휴일근로
-                        "ho": ""                        # 휴일/연장 근로
-                      }
-                    },
-                    ......
-                    {
-                      "31": {                       # 근무한 날짜
-                        "dt_in_verify": "06:27",        # 출근시간
-                        "dt_out_verify": "15:00",       # 퇴근시간
-                        "break": "01:00"                # 휴게시간
-                        "basic": "",                    # 기본근로
-                        "night": "",                    # 야간근로
-                        "overtime": 0,                  # 연장근무
-                        "holiday": "",                  # 휴일근로
-                        "ho": ""                        # 휴일/연장 근로
-                      }
-                    }
-                  ]
+                  "year_month_day": "2020-01-01",
+                  "action": 110,
+                  "dt_begin": "2020-01-01 08:29",
+                  "dt_end": "2020-01-01 17:33",
+                  "overtime": "",
+                  "week": "수",
+                  "break": "01:00",
+                  "basic": "",
+                  "night": "",
+                  "holiday": "",
+                  "ho": ""
+                },
+                ......
+                {
+                  "year_month_day": "2020-01-27",
+                  "action": 110,
+                  "dt_begin": "2020-01-27 08:29",
+                  "dt_end": "2020-01-27 17:33",
+                  "overtime": "",
+                  "week": "월",
+                  "break": "01:00",
+                  "basic": "",
+                  "night": "",
+                  "holiday": "",
+                  "ho": ""
+                }
+              ],
+              "work_infor": [
+                {
+                  "name": "박종기",
+                  "break_sum": "19:05",
+                  "basic_sum": 209,
+                  "night_sum": 0,
+                  "overtime_sum": 8,
+                  "holiday_sum": 0,
+                  "ho_sum": 0
                 }
               ]
             }
@@ -3916,6 +3919,7 @@ def my_work_records(request):
     response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
 
     working_result = []
+    work_infor = []
     arr_working = response_employee.json()['arr_working']
     for working in arr_working:
         days = working['days']
@@ -3936,9 +3940,9 @@ def my_work_records(request):
             }
             working_result.append(day_info)
         del working['days']
-        working_result.append(working)
+        work_infor.append(working)
 
-    return REG_200_SUCCESS.to_json_response({'working': working_result})
+    return REG_200_SUCCESS.to_json_response({'working': working_result, 'work_infor': work_infor})
 
 
 def get_dic_passer():
