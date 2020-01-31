@@ -4286,6 +4286,7 @@ def report_employee(request):
 
     response
         STATUS 200
+            {'message': '해당 근로자를 찾을 수 없습니다.'}
             {'message': '관리하는 업무가 없습니다.'}
             {
               "message": "정상적으로 처리되었습니다.",
@@ -4384,6 +4385,9 @@ def report_employee(request):
     result_json = r.json()
     # print('  >> {}'.format(result_json))
     # return REG_200_SUCCESS.to_json_response(result_json)
+    if len(r.json()['passers']) == 0:
+        return REG_200_SUCCESS.to_json_response({'message': '해당 근로자를 찾을 수 없습니다.'})
+
     employee = r.json()['passers'][0]
     # print('  >> {}'.format(employee))
 

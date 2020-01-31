@@ -4319,12 +4319,12 @@ def tk_employee(request):
 
     passer_dict_list = []
     passer_list = []
-    if 'pNo' in rqst:
+    if 'pNo' in rqst and len(rqst['pNo']) > 9:
         pNo = no_only_phone_no(rqst['pNo'])
         passer_list = Passer.objects.filter(pNo=pNo)
         if len(passer_list) == 0:
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(pNo))})
-    if 'name' in rqst:
+    if 'name' in rqst and len(rqst['name']) > 2:
         name = rqst['name']
         employee_list = Employee.objects.filter(name=name)
         if len(employee_list) == 0:
