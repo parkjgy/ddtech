@@ -1078,55 +1078,6 @@ def pass_reg(request):
         # 출입자를 db에서 찾지 못하면
         return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
     passer = passer_list[0]
-    #
-    # TTA 대응: passer 에 비콘의 최신 rssi 값을 저장한다.
-    #
-    for beacon in beacons:
-        # print('  > beacon minor: {}'.format(beacon['minor']))
-        if beacon['minor'] == 11001:
-            passer.rssi_a = int(beacon['rssi'])
-            if passer.rssi_a < -99:
-                passer.rssi_a = -888
-            # print('   > 11001 rssi_a: {}'.format(passer.rssi_a))
-        elif beacon['minor'] == 11002:
-            passer.rssi_b = int(beacon['rssi'])
-            if passer.rssi_b < -99:
-                passer.rssi_b = -888
-            # print('   > 11002 rssi_b: {}'.format(passer.rssi_b))
-    # 비콘 값이 들어온지 15초가 지났으면 의미 없는 값으로 처
-    dt_current = datetime.datetime.now() - datetime.timedelta(seconds=3)
-    # beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001, dt_begin__gt=dt_null(dt_current))
-    beacon_list_a = Beacon_Record.objects.filter(passer_id=passer.id, minor=11001).order_by('-dt_begin')[:2]
-    if len(beacon_list_a) > 0:
-        sum_rssi_a = 0
-        for beacon_a in beacon_list_a:
-            sum_rssi_a += beacon_a.rssi
-        beacon_a = sum_rssi_a / len(beacon_list_a)
-    else:
-        beacon_a = -999
-    # beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002, dt_begin__gt=dt_null(dt_current))
-    beacon_list_b = Beacon_Record.objects.filter(passer_id=passer.id, minor=11002).order_by('-dt_begin')[:2]
-    if len(beacon_list_b) > 0:
-        sum_rssi_b = 0
-        for beacon_b in beacon_list_b:
-            sum_rssi_b += beacon_b.rssi
-        beacon_b = sum_rssi_b / len(beacon_list_b)
-    else:
-        beacon_b = -999
-    logSend('   >>> A 11001: {} vs B 11002: {} >>> {}'.format(beacon_a, beacon_b, beacon_a < beacon_b))
-    is_in_new = beacon_a < beacon_b
-    if passer.is_in is not is_in_new:
-        passer.is_in = is_in_new
-        passer.dt_io = datetime.datetime.now()
-    # if len(beacon_list_a) != 0 and len(beacon_list_b) != 0:
-    #     is_in_new = passer.rssi_a < passer.rssi_b
-    #     if passer.is_in is not is_in_new:
-    #         passer.is_in = is_in_new
-    #         passer.dt_io = datetime.datetime.now()
-    passer.save()
-    #
-    # TTA 대응: 끝
-    #
 
     employee_list = Employee.objects.filter(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
     if len(employee_list) == 0:
