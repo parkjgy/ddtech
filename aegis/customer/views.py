@@ -4080,12 +4080,12 @@ def report_contractor(request):
                         'contractor_name': work.contractor_name,
                         'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
                         'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
-                        'time_type': work_time['time_type'],
-                        'week_hours': work_time['week_hours'],
-                        'month_hours': work_time['month_hours'],
-                        'working_days': work_time['working_days'],
-                        'paid_day': work_time['paid_day'],
-                        'is_holiday_work': work_time['is_holiday_work'],
+                        # 'time_type': work_time['time_type'],
+                        # 'week_hours': work_time['week_hours'],
+                        # 'month_hours': work_time['month_hours'],
+                        # 'working_days': work_time['working_days'],
+                        # 'paid_day': work_time['paid_day'],
+                        # 'is_holiday_work': work_time['is_holiday_work'],
                         }
             if work.contractor_id in dict_contractor.keys():
                 work_place_dict = dict_contractor[work.contractor_id]['work_place_dict']
