@@ -3879,15 +3879,15 @@ def my_work_records(request):
             day_info = {
                 "year_month_day": '{}-{}'.format(dt, day_key),
                 "action": 110,
-                "dt_begin": '{}-{} {}'.format(dt, day_key, day['dt_in_verify']),
-                "dt_end": '{}-{} {}'.format(dt, day_key, day['dt_out_verify']),
+                "dt_begin": '{}'.format(day['dt_in_verify']),
+                "dt_end": '{}'.format(day['dt_out_verify']),
                 "overtime": day['overtime'],
                 "week": day['week'],
                 "break": day['break'],
-                "basic": day['basic'],
-                "night": day['night'],
-                "holiday": day['holiday'],
-                "ho": day['ho'],
+                "basic": int_none(day['basic']),
+                "night": int_none(day['night']),
+                "holiday": int_none(day['holiday']),
+                "ho": int_none(day['ho']),
             }
             working_result.append(day_info)
         del working['days']
