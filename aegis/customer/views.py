@@ -2560,6 +2560,11 @@ def update_work_v2(request):
             {'message': '근무시간에 휴게시간 구분이 범위를 넘었다.'}
             {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
     """
+    logSend('>>> {}'.format(request.path))
+    if "update_work_v2" in request.path:
+        is_update = True
+    else:
+        is_update = False
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2611,7 +2616,7 @@ def update_work_v2(request):
     if result is not None:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '\"근무 형태\"가 {}'.format(result['message'])})
 
-    if dt_begin < datetime.datetime.now():
+    if not is_update and dt_begin < datetime.datetime.now():
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜는 오늘 이후여야 합니다.'})
     if dt_end < dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
