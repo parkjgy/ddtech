@@ -2792,6 +2792,7 @@ def update_work_v2(request):
         update_work.contractor_id = contractor.id
         update_work.contractor_name = contractor.corp_name
         update_work.dt_begin = dt_begin
+        update_work.dt_end = dt_end
         update_work.staff_id = staff.id
         update_work.staff_name = staff.name
         update_work.staff_pNo = staff.pNo
