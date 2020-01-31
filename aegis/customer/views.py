@@ -3975,12 +3975,12 @@ def report_work_place(request):
                         'contractor_name': work.contractor_name,
                         'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
                         'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
-                        # 'time_type': work_time['time_type'],
-                        # 'week_hours': work_time['week_hours'],
-                        # 'month_hours': work_time['month_hours'],
-                        # 'working_days': work_time['working_days'],
-                        # 'paid_day': work_time['paid_day'],
-                        # 'is_holiday_work': work_time['is_holiday_work'],
+                        'time_type': work_time['time_type'] if 'time_type' in work_time else "",
+                        'week_hours': work_time['week_hours'] if 'week_hours' in work_time else "",
+                        'month_hours': work_time['month_hours'] if 'month_hours' in work_time else "",
+                        'working_days': work_time['working_days'] if 'working_days' in work_time else "",
+                        'paid_day': work_time['paid_day'] if 'paid_day' in work_time else "",
+                        'is_holiday_work': work_time['is_holiday_work'] if 'is_holiday_work' in work_time else "",
                         }
             arr_work.append(new_work)
         new_work_place['arr_work'] = arr_work
@@ -4080,12 +4080,12 @@ def report_contractor(request):
                         'contractor_name': work.contractor_name,
                         'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
                         'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
-                        # 'time_type': work_time['time_type'],
-                        # 'week_hours': work_time['week_hours'],
-                        # 'month_hours': work_time['month_hours'],
-                        # 'working_days': work_time['working_days'],
-                        # 'paid_day': work_time['paid_day'],
-                        # 'is_holiday_work': work_time['is_holiday_work'],
+                        'time_type': work_time['time_type'] if 'time_type' in work_time else "",
+                        'week_hours': work_time['week_hours'] if 'week_hours' in work_time else "",
+                        'month_hours': work_time['month_hours'] if 'month_hours' in work_time else "",
+                        'working_days': work_time['working_days'] if 'working_days' in work_time else "",
+                        'paid_day': work_time['paid_day'] if 'paid_day' in work_time else "",
+                        'is_holiday_work': work_time['is_holiday_work'] if 'is_holiday_work' in work_time else "",
                         }
             if work.contractor_id in dict_contractor.keys():
                 work_place_dict = dict_contractor[work.contractor_id]['work_place_dict']
@@ -4220,12 +4220,12 @@ def report_staff(request):
                             'contractor_name': work.contractor_name,
                             'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
                             'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
-                            'time_type': work_time['time_type'],
-                            'week_hours': work_time['week_hours'],
-                            'month_hours': work_time['month_hours'],
-                            'working_days': work_time['working_days'],
-                            'paid_day': work_time['paid_day'],
-                            'is_holiday_work': work_time['is_holiday_work'],
+                            'time_type': work_time['time_type'] if 'time_type' in work_time else "",
+                            'week_hours': work_time['week_hours'] if 'week_hours' in work_time else "",
+                            'month_hours': work_time['month_hours'] if 'month_hours' in work_time else "",
+                            'working_days': work_time['working_days'] if 'working_days' in work_time else "",
+                            'paid_day': work_time['paid_day'] if 'paid_day' in work_time else "",
+                            'is_holiday_work': work_time['is_holiday_work'] if 'is_holiday_work' in work_time else "",
                             }
                 arr_work.append(new_work)
             new_work_place['arr_work'] = arr_work
@@ -4255,12 +4255,12 @@ def report_staff(request):
                             'contractor_name': work.contractor_name,
                             'dt_begin': dt_str(work.dt_begin, "%Y-%m-%d"),
                             'dt_end': dt_str(work.dt_end, "%Y-%m-%d"),
-                            'time_type': work_time['time_type'],
-                            'week_hours': work_time['week_hours'],
-                            'month_hours': work_time['month_hours'],
-                            'working_days': work_time['working_days'],
-                            'paid_day': work_time['paid_day'],
-                            'is_holiday_work': work_time['is_holiday_work'],
+                            'time_type': work_time['time_type'] if 'time_type' in work_time else "",
+                            'week_hours': work_time['week_hours'] if 'week_hours' in work_time else "",
+                            'month_hours': work_time['month_hours'] if 'month_hours' in work_time else "",
+                            'working_days': work_time['working_days'] if 'working_days' in work_time else "",
+                            'paid_day': work_time['paid_day'] if 'paid_day' in work_time else "",
+                            'is_holiday_work': work_time['is_holiday_work'] if 'is_holiday_work' in work_time else "",
                             }
                 arr_work.append(new_work)
             new_work_place['arr_work'] = arr_work
