@@ -3603,7 +3603,7 @@ def work_report_for_customer(request):
             'overtime': zero_blank(pass_record.overtime),
             'overtime_staff_id': pass_record.overtime_staff_id,
             'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
-            
+
         }
         if pass_record.passer_id in passer_rec_dict.keys():
             passer_rec_dict[pass_record.passer_id].append(passer_record_dict)

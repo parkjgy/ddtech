@@ -129,13 +129,7 @@ class Passer(models.Model):
     cn = models.IntegerField(default = 0)           # 인증 번호 숫자 6자리
     dt_cn = models.DateTimeField(null=True, blank=True) # 인증 번호 유효시간
     user_agent = models.CharField(max_length = 512, default=None) # HTTP_USER_AGENT
-    is_camera_stop = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
     is_recruiting = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
-
-    rssi_a = models.IntegerField(default = 0)           # 외부(A 지점)에서의 rssi 값 11001
-    rssi_b = models.IntegerField(default = 0)           # 내부(B 지정)에서의 rssi 값 11002
-    dt_io = models.DateTimeField(null=True, blank=True) # 외부에서 내부로 변경된 시간
-    is_in = models.BooleanField(default=True)           # 마지막 내부/외부 상태
 
 
 class Pass(models.Model):
