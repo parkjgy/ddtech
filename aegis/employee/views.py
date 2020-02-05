@@ -6308,14 +6308,13 @@ def make_work_io(request):
         r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_verify_info)
         result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
 
-        if overtime > 0:
-            try:
-                pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day=dt_str(dt, "%Y-%m-%d"))
-            except Exception as e:
-                logSend('  > pass_history access error: {}'.format(str(e)))
-            if len(pass_record_list) > 1:
-                logSend('  > pass_history year_month_day(\'{}\') duplication'.format(dt_str(dt, "%Y-%m-%d")))
-            pass_record = pass_record_list[0]
+    if overtime > 0:
+        try:
+            pass_record_list = Pass_History.objects.filter(passer_id=passer.id, year_month_day__contains=dt_str(dt, "%Y-%m"))
+        except Exception as e:
+            logSend('  > pass_history access error: {}'.format(str(e)))
+        logSend('  > {}'.format([pass_record.__dict__['year_month_day'] for pass_record in pass_record_list]))
+        for pass_record in pass_record_list:
             pass_record.overtime = overtime
             pass_record.overtime_staff_id = 13  # customer_work.staff_id
             pass_record.save()
