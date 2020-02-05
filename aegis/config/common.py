@@ -124,7 +124,9 @@ def hash_SHA256(password):
 
 
 def min2str(min: int) -> str:
-    return '{:02}:{:02}'.format(min//60, min%60)
+    sign = '' if min > 0 else '-'
+    abs_min = abs(min)
+    return '{}{:02}:{:02}'.format(sign, abs_min//60, abs_min%60)
 
 
 def str2min(min: str) -> int:
