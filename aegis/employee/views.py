@@ -6320,3 +6320,70 @@ def make_work_io(request):
             pass_record.save()
 
     return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+def work_remover(request):
+    """
+    근로자 서버의 업무를 삭제한다.
+    - 근로자 서버의 업무 id 를 고객서버의 업무 id로 바꾼다.
+        http://0.0.0.0:8000/employee/work_remover
+    GET
+        pNo: 전화번호  # 삭제할 근로자의 전화번호
+    response
+        STATUS 416
+            {'message': '개발상태에서만 사용할 수 있습니다.'}
+        STATUS 200
+            {'message': '출입자가 이미 삭제 되었습니다.'}
+            {'message': '근로자가 이미 삭제 되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    # if not settings.DEBUG:
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '개발상태에서만 사용할 수 있습니다.'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    work_list = Work.objects.all()
+    work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
+
+    # employee_list = Employee.objects.all()
+    # for employee in employee_list:
+    #     works = employee.get_works()
+    #     for work in works:
+    #         print('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
+    #         work['id'] = work_dict[work['id']]
+    #     employee.set_works(works)
+    #     employee.save()
+
+    # employee_backup_list = Employee_Backup.objects.all()
+    # for employee in employee_backup_list:
+    #     print('  > name: {}, id: {} >> {}'.format(employee.name, employee.work_id, work_dict[employee.work_id]))
+    #     employee.work_id = work_dict[employee.work_id]
+    #     employee.save()
+
+    # noti_work_list = Notification_Work.objects.all()
+    # for noti_work in noti_work_list:
+    #     if len(noti_work.customer_work_id) is not 0:
+    #         print('  > {}: {} >> {}'.format(noti_work.employee_pNo, noti_work.work_id, work_dict[noti_work.work_id]))
+    #         noti_work.work_id = work_dict[noti_work.work_id]
+    #         noti_work.customer_work_id = ''
+    #         noti_work.save()
+    #
+    # pass_history_list = Pass_History.objects.all()
+    # for pass_history in pass_history_list:
+    #     if int(pass_history.work_id) in work_dict.keys():
+    #         print('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
+    #     else:
+    #         print('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
+    #     pass_history.work_id = work_dict[int(pass_history.work_id)]
+    #     pass_history.save()
+
+    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
+
