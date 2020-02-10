@@ -3033,6 +3033,73 @@ def list_work_v2(request):
 
 
 @cross_origin_read_allow
+def list_work_from_employee_v2(request):
+    """
+    ((근로자 서버)) 업무 id 에 의한 업무 요청
+    http://0.0.0.0:8000/customer/list_work_from_employee_v2?work_id_list=1
+    GET
+        work_id_list    = 업무 id
+    response
+        STATUS 200
+            {
+             	"works":
+             	[
+             		{
+             		    "id": 1,
+             		    "name": "\ube44\ucf58\uad50\uccb4",
+             		    "work_place_id": 1,
+             		    "work_place_name": "\ub300\ub355\ud14c\ud06c",
+             		    "type": "3\uad50\ub300",
+             		    "contractor_id": 1,
+             		    "contractor_name": "\ub300\ub355\ud14c\ud06c",
+             		    "dt_begin": "2019-01-21 00:00:00",
+             		    "dt_end": "2019-01-26 00:00:00",
+             		    "staff_id": 2,
+             		    "staff_name": "\uc774\uc694\uc149",
+             		    "staff_pNo": "01024505942",
+             		    "staff_email": "hello@ddtechi.com"
+             		},
+             		......
+             	]
+            }
+        STATUS 503
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    work_list = Work.objects.filter(id__in=rqst['work_id_list'])
+    arr_work = []
+    for work in work_list:
+        work_dict = {}
+        work_dict['time_info'] = work.get_time_info()
+        # 기존에 업무 시간 정보가 없으면 여기서 만들어 넣어야 한다.
+        # if len(work_dict) == 0:  # 근무정보가 없는 경우
+        work_dict['id'] = work.id
+        work_dict['name'] = work.name
+        work_dict['type'] = work.type
+        work_dict['work_name_type'] = '{} ({})'.format(work.name, work.type)
+        # work_dict['work_place_id'] = work.work_place_id
+        work_dict['work_place_name'] = work.work_place_name
+        # work_dict['contractor_id'] = work.contractor_id
+        # work_dict['contractor_name'] = work.contractor_name
+        work_dict['dt_begin'] = work.dt_begin.strftime('%Y/%m/%d')
+        work_dict['dt_end'] = work.dt_end.strftime('%Y/%m/%d')
+        # work_dict['staff_id'] = work.staff_id
+        work_dict['staff_name'] = work.staff_name
+        work_dict['staff_pNo'] = phone_format(work.staff_pNo)
+        work_dict['staff_email'] = work.staff_email
+        arr_work.append(work_dict)
+    return REG_200_SUCCESS.to_json_response({'work_list': arr_work})
+
+
+@cross_origin_read_allow
 @session_is_none_403
 def reg_employee(request):
     """
@@ -7198,3 +7265,29 @@ def tk_fix_up_employee(request):
                 employee.save()
     return REG_200_SUCCESS.to_json_response({'log': log})
 
+
+@cross_origin_read_allow
+def fix_work_dt_end(request):
+    """
+    업무의 종료 날짜 시간을 그날의 마지막이 되도록 수정한다.
+    http://0.0.0.0:8000/customer/fix_work_dt_end
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    work_list = Work.objects.all()
+    result = []
+    for work in work_list:
+        if dt_str(work.dt_end, "%H:%M:%S") == "00:00:00":
+            work.dt_end = work.dt_end + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+            print('  > work: {} - {}'.format(work.name, work.dt_end))
+            work.save()
+            result.append({'name': work.work_place_name + ':' + work.name + '(' + work.type + ')', 'dt_end': work.dt_end})
+    return REG_200_SUCCESS.to_json_response({'result': result})

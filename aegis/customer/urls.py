@@ -39,11 +39,13 @@ urlpatterns = [
     url(r'customer/list_work_from_work_place$', views.list_work_from_work_place, name='list_work_from_work_place'),
     url(r'customer/list_work$', views.list_work, name='list_work'),
 
+
     url(r'customer/reg_work_v2', views.reg_work_v2, name='reg_work_v2'),
     url(r'customer/update_work_v2', views.update_work_v2, name='update_work_v2'),
     url(r'customer/list_work_v2', views.list_work_v2, name='list_work_v2'),
     url(r'customer/list_work_from_work_place_v2', views.list_work_from_work_place_v2,
         name='list_work_from_work_place_v2'),
+    url(r'customer/list_work_from_employee_v2$', views.list_work_from_employee_v2, name='list_work_from_employee_v2'),
 
     url(r'customer/reg_employee$', views.reg_employee, name='reg_employee'),
     url(r'customer/employee_work_accept_for_employee$', views.employee_work_accept_for_employee, name='employee_work_accept_for_employee'),
@@ -100,6 +102,7 @@ urlpatterns = [
     url(r'customer/tk_complete_employees$', views.tk_complete_employees, name='tk_complete_employees'),
     url(r'customer/tk_complete_work_backup$', views.tk_complete_work_backup, name='tk_complete_work_backup'),
     url(r'customer/tk_fix_up_employee$', views.tk_fix_up_employee, name='tk_fix_up_employee'),
+    url(r'customer/fix_work_dt_end$', views.fix_work_dt_end, name='fix_work_dt_end'),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

@@ -6322,14 +6322,33 @@ def make_work_io(request):
     return REG_200_SUCCESS.to_json_response({'result': result})
 
 
+# @cross_origin_read_allow
+def work_list(id_list: list) -> list:
+    """
+    고객서버에서 업무 목록의 업무를 가져온다.
+    - 근로자 서버의 업무 id 를 고객서버의 업무 id로 바꾼다.
+        http://0.0.0.0:8000/employee/work_remover?work_id_list=1&work_id_list=2
+    GET
+        work_id_list: 업무 id lsit
+    response
+        {'work_list': [...]}
+    """
+    print('  > {}'.format(id_list))
+    if len(id_list) == 0:
+        return []
+    s = requests.session()
+    r = s.post(settings.CUSTOMER_URL + 'list_work_from_employee_v2', json={'work_id_list': id_list})
+    return r.json()
+
+
 @cross_origin_read_allow
 def work_remover(request):
     """
     근로자 서버의 업무를 삭제한다.
     - 근로자 서버의 업무 id 를 고객서버의 업무 id로 바꾼다.
-        http://0.0.0.0:8000/employee/work_remover
+        http://0.0.0.0:8000/employee/work_remover?work_id_list=1&work_id_list=2
     GET
-        pNo: 전화번호  # 삭제할 근로자의 전화번호
+        work_id_list: 업무 id lsit
     response
         STATUS 416
             {'message': '개발상태에서만 사용할 수 있습니다.'}
@@ -6350,8 +6369,18 @@ def work_remover(request):
     else:
         rqst = request.GET
 
-    work_list = Work.objects.all()
-    work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
+    # 업무 목록 요청 시험
+    #
+    # if request.method == 'GET':
+    #     work_id_list = rqst.getlist('work_id_list')
+    # else:
+    #     work_id_list = rqst['work_id_list']
+    # print('  > {}'.format(work_id_list))
+    # return REG_200_SUCCESS.to_json_response(work_list(work_id_list))
+
+
+    # work_list = Work.objects.all()
+    # work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
 
     # employee_list = Employee.objects.all()
     # for employee in employee_list:
