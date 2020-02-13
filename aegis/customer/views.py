@@ -1947,19 +1947,17 @@ def update_work(request):
     if is_update_dt_begin or is_update_dt_end or is_update_name or is_update_type or is_update_work_place or is_update_partner or is_update_staff:
         work.save()
 
-    update_employee_work_infor = {
-        'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
-        'work_place_name': work.work_place_name,
-        'work_name_type': '{} ({})'.format(work.name, work.type),
-        'begin': work.dt_begin.strftime('%Y/%m/%d'),
-        'end': work.dt_end.strftime('%Y/%m/%d'),
-        'staff_name': work.staff_name,
-        'staff_pNo': work.staff_pNo,
-        'update_employee_pNo_list': update_employee_pNo_list,
-    }
-    r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
-    logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
-    is_update_employee = True if r.status_code == 200 else False
+    is_update_employee = False
+    if len(update_employee_pNo_list) > 0:
+        update_employee_work_infor = {
+            'customer_work_id': work.id,
+            'dt_begin_employee': work.dt_begin.strftime('%Y/%m/%d'),
+            'dt_end_employee': work.dt_end.strftime('%Y/%m/%d'),
+            'update_employee_pNo_list': update_employee_pNo_list,
+        }
+        r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
+        logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+        is_update_employee = True if r.status_code == 200 else False
 
     return REG_200_SUCCESS.to_json_response({'is_update_type': is_update_type,
                                              'is_update_dt_begin': is_update_dt_begin,
@@ -2763,23 +2761,6 @@ def update_work_v2(request):
         )
         new_work.set_time_info(time_info)
         new_work.save()
-
-        new_employee_pNo_list = []
-        new_employee_work_infor = {
-            'customer_work_id': AES_ENCRYPT_BASE64(str(new_work.id)),
-            'work_place_name': new_work.work_place_name,
-            'work_name_type': '{} ({})'.format(new_work.name, new_work.type),
-            'begin': new_work.dt_begin.strftime('%Y/%m/%d'),
-            'end': new_work.dt_end.strftime('%Y/%m/%d'),
-            'staff_name': new_work.staff_name,
-            'staff_pNo': new_work.staff_pNo,
-            'update_employee_pNo_list': new_employee_pNo_list,
-            'time_info': time_info,
-        }
-        r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=new_employee_work_infor)
-        logSend({'url': r.url, 'POST': new_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
-        if r.status_code != 200:
-            return r
     else:  # 기존 업무를 업데이트 할 때
         try:
             update_work = Work.objects.get(id = work_id)
@@ -2819,21 +2800,17 @@ def update_work_v2(request):
             if is_update_employee:
                 employee.save()
 
-        update_employee_work_infor = {
-            'customer_work_id': AES_ENCRYPT_BASE64(str(update_work.id)),
-            'work_place_name': update_work.work_place_name,
-            'work_name_type': '{} ({})'.format(update_work.name, update_work.type),
-            'begin': update_work.dt_begin.strftime('%Y/%m/%d'),
-            'end': update_work.dt_end.strftime('%Y/%m/%d'),
-            'staff_name': update_work.staff_name,
-            'staff_pNo': update_work.staff_pNo,
-            'update_employee_pNo_list': update_employee_pNo_list,
-            'time_info': time_info,
-        }
-        r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
-        logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
-        if r.status_code != 200:
-            return r
+        if len(update_employee_pNo_list) > 0:
+            update_employee_work_infor = {
+                'customer_work_id': update_work.id,
+                'dt_begin_employee': update_work.dt_begin.strftime('%Y/%m/%d'),
+                'dt_end_employee': update_work.dt_end.strftime('%Y/%m/%d'),
+                'update_employee_pNo_list': update_employee_pNo_list,
+            }
+            r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=update_employee_work_infor)
+            logSend({'url': r.url, 'POST': update_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
+            if r.status_code != 200:
+                return r
 
         update_work.save()
 
@@ -3074,14 +3051,18 @@ def list_work_from_employee_v2(request):
     else:
         rqst = request.GET
 
-    work_list = Work.objects.filter(id__in=rqst['work_id_list'])
-    arr_work = []
+    if -1 in rqst['work_id_list']:
+        work_list = Work.objects.all()
+    else:
+        work_list = Work.objects.filter(id__in=rqst['work_id_list'])
+    all_work_dict = {}
+    # arr_work = []
     for work in work_list:
         work_dict = {}
         work_dict['time_info'] = work.get_time_info()
         # 기존에 업무 시간 정보가 없으면 여기서 만들어 넣어야 한다.
         # if len(work_dict) == 0:  # 근무정보가 없는 경우
-        work_dict['id'] = work.id
+        # work_dict['id'] = work.id
         work_dict['name'] = work.name
         work_dict['type'] = work.type
         work_dict['work_name_type'] = '{} ({})'.format(work.name, work.type)
@@ -3091,12 +3072,17 @@ def list_work_from_employee_v2(request):
         # work_dict['contractor_name'] = work.contractor_name
         work_dict['dt_begin'] = work.dt_begin.strftime('%Y/%m/%d')
         work_dict['dt_end'] = work.dt_end.strftime('%Y/%m/%d')
+        work_dict['dt_begin_full'] = work.dt_begin.strftime('%Y-%m-%d %H:%M:%S')
+        work_dict['dt_end_full'] = work.dt_end.strftime('%Y-%m-%d %H:%M:%S')
         # work_dict['staff_id'] = work.staff_id
         work_dict['staff_name'] = work.staff_name
         work_dict['staff_pNo'] = phone_format(work.staff_pNo)
         work_dict['staff_email'] = work.staff_email
-        arr_work.append(work_dict)
-    return REG_200_SUCCESS.to_json_response({'work_list': arr_work})
+        # arr_work.append(work_dict)
+        # del work_dict['id']
+        all_work_dict[work.id] = work_dict
+    # return REG_200_SUCCESS.to_json_response({'work_list': arr_work})
+    return REG_200_SUCCESS.to_json_response({'work_dict': all_work_dict})
 
 
 @cross_origin_read_allow
@@ -3233,7 +3219,7 @@ def reg_employee(request):
     #
     # 근로자 서버로 근로자의 업무 의사와 답변을 요청
     #
-    new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
+    new_employee_data = {"customer_work_id": work.id,
                          "work_place_name": work.work_place_name,
                          "work_name_type": work.name + ' (' + work.type + ')',
                          "dt_begin": dt_str(dt_begin, '%Y/%m/%d'),  # work.dt_begin.strftime('%Y/%m/%d'),
@@ -3583,7 +3569,7 @@ def update_employee(request):
         #
         employees_infor = {
             'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
-            'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+            'work_id': work.id,
             'dt_end': dt_end.strftime("%Y/%m/%d"),
         }
         r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
@@ -3641,7 +3627,7 @@ def update_employee(request):
         #
         # 근로자 서버로 근로자의 업무 의사와 답변을 요청
         #
-        new_employee_data = {"customer_work_id": AES_ENCRYPT_BASE64(str(work.id)),
+        new_employee_data = {"customer_work_id": work.id,
                              "work_place_name": work.work_place_name,
                              "work_name_type": work.name + ' (' + work.type + ')',
                              "dt_begin": work.dt_begin.strftime('%Y/%m/%d'),
@@ -5200,7 +5186,7 @@ def report_of_employee(request):
 
     parameters = {"employee_id": AES_ENCRYPT_BASE64(str(employee.employee_id)),
                   "dt": year_month,
-                  'work_id': AES_ENCRYPT_BASE64(str(work_id))
+                  'work_id': work_id
                   }
     s = requests.session()
     r = s.post(settings.EMPLOYEE_URL + 'my_work_histories_for_customer', json=parameters)
@@ -6222,7 +6208,7 @@ def staff_employee_working(request):
     #
     employee_info = {
         'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
-        'work_id': AES_ENCRYPT_BASE64(str(employee.work_id)),
+        'work_id': employee.work_id,
         'dt': year_month,
     }
     logSend(employee_info)
@@ -6336,7 +6322,7 @@ def staff_update_employee(request):
     if is_update_dt_begin or is_update_dt_end:
         employees_infor = {
             'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
-            'work_id': AES_ENCRYPT_BASE64(str(work.id)),
+            'work_id': work.id,
         }
         if is_update_dt_begin:
             employees_infor['dt_begin'] = dt_begin.strftime("%Y/%m/%d")
@@ -6758,7 +6744,7 @@ def push_from_employee(request):
     GET
         'name': '이순신'               # 근로자 이름
         'dt': '2019-09-20 08:30:00'  # 출퇴근 날짜 시간
-        'customer_work_id': *******  # 암호화된 업무 id
+        'work_id': 37                # 암호화된 업무 id (2020/02/13 암호화 안함)
         'is_in': True                # 출근인가?
     response
         STATUS 200
@@ -6778,12 +6764,12 @@ def push_from_employee(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['name', 'dt', 'customer_work_id_!', 'is_in'])
+    parameter_check = is_parameter_ok(rqst, ['name', 'dt', 'work_id', 'is_in'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     name = parameter_check['parameters']['name']
     dt = str_to_datetime(parameter_check['parameters']['dt'])
-    work_id = parameter_check['parameters']['customer_work_id']
+    work_id = parameter_check['parameters']['work_id']
     is_in = parameter_check['parameters']['is_in']
 
     # logSend('  - {} {} {} {}'.format(name, dt, work_id, is_in))
@@ -7142,37 +7128,6 @@ def tk_fix_up_employee_backup(request):
 
     if get_client_ip(request) not in settings.ALLOWED_HOSTS:
         return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
-
-    #
-    # customer work > update employee work
-    #
-    all_work_list = Work.objects.all()
-    work_list = []
-    for work in all_work_list:
-        # logSend('  > {}'.format(work.dt_end))
-        # logSend('  > {}'.format(str_to_datetime('2019-12-30')))
-        if work.dt_end > str_to_datetime('2019-12-31'):
-            target_work = '{}, {}, {}'.format(work.work_place_name, work.name, work.dt_end)
-            logSend('>>> {}'.format(target_work))
-            work_list.append(target_work)
-            new_employee_work_infor = {
-                'customer_work_id': AES_ENCRYPT_BASE64(str(work.id)),
-                'work_place_name': work.work_place_name,
-                'work_name_type': '{} ({})'.format(work.name, work.type),
-                'begin': work.dt_begin.strftime('%Y/%m/%d'),
-                'end': work.dt_end.strftime('%Y/%m/%d'),
-                'staff_name': work.staff_name,
-                'staff_pNo': work.staff_pNo,
-                'update_employee_pNo_list': [],
-                # 'time_info': time_info,
-            }
-            r = requests.post(settings.EMPLOYEE_URL + 'update_work_for_customer', json=new_employee_work_infor)
-            logSend({'url': r.url, 'POST': new_employee_work_infor, 'STATUS': r.status_code, 'R': r.json()})
-            if r.status_code != 200:
-                logSend('>>> {}'.format(r.json()))
-                return r
-
-    return REG_200_SUCCESS.to_json_response({'work_list': work_list})
 
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))

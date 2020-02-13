@@ -71,7 +71,6 @@ urlpatterns = [
     url(r'employee/tk_passer_work_backup', views.tk_passer_work_backup, name='tk_passer_work_backup'),
     url(r'employee/tk_match_test_for_customer', views.tk_match_test_for_customer, name='tk_match_test_for_customer'),
     url(r'employee/tk_in_out_null_list', views.tk_in_out_null_list, name='tk_in_out_null_list'),
-    url(r'employee/tk_check_customer_employee', views.tk_check_customer_employee, name='tk_check_customer_employee'),
     url(r'employee/tk_patch', views.tk_patch, name='tk_patch'),
 
     url(r'employee/apns_test', views.apns_test, name='apns_test'),
