@@ -7234,8 +7234,8 @@ def fix_work_dt_end(request):
             {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
     """
 
-    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
-        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+    # if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+    #     return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
     work_list = Work.objects.all()
     result = []
