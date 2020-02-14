@@ -6178,21 +6178,21 @@ def work_remover(request):
     for employee in employee_list:
         works = employee.get_works()
         for work in works:
-            print('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
+            logSend('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
             work['id'] = work_dict[work['id']]
         employee.set_works(works)
         employee.save()
 
     employee_backup_list = Employee_Backup.objects.all()
     for employee in employee_backup_list:
-        print('  > name: {}, id: {} >> {}'.format(employee.name, employee.work_id, work_dict[employee.work_id]))
+        logSend('  > name: {}, id: {} >> {}'.format(employee.name, employee.work_id, work_dict[employee.work_id]))
         employee.work_id = work_dict[employee.work_id]
         employee.save()
 
     noti_work_list = Notification_Work.objects.all()
     for noti_work in noti_work_list:
         if len(noti_work.customer_work_id) is not 0:
-            print('  > {}: {} >> {}'.format(noti_work.employee_pNo, noti_work.work_id, work_dict[noti_work.work_id]))
+            logSend('  > {}: {} >> {}'.format(noti_work.employee_pNo, noti_work.work_id, work_dict[noti_work.work_id]))
             noti_work.work_id = work_dict[noti_work.work_id]
             noti_work.customer_work_id = ''
             noti_work.save()
@@ -6200,9 +6200,9 @@ def work_remover(request):
     pass_history_list = Pass_History.objects.all()
     for pass_history in pass_history_list:
         if int(pass_history.work_id) in work_dict.keys():
-            print('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
+            logSend('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
         else:
-            print('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
+            logSend('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
         pass_history.work_id = work_dict[int(pass_history.work_id)]
         pass_history.save()
 
