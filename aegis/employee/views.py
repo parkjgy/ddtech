@@ -6174,13 +6174,15 @@ def work_remover(request):
 
     work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
 
+    result_dict = {}
     employee_list = Employee.objects.all()
     for employee in employee_list:
         works = employee.get_works()
         for work in works:
-            logSend('  > name: {}, id: {} >>'.format(employee.name, work['id']))
-            logSend('  > name: {}, id:    >> {}'.format(employee.name, work_dict[work['id']]))
-            # logSend('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
+            if work['id'] not in work_dict.keys():
+                result_dict['employee_{}'.format(employee.id)] = {'name': employee.name, 'work_id': work['id']}
+                continue
+            logSend('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
             work['id'] = work_dict[work['id']]
         employee.set_works(works)
         employee.save()
@@ -6211,5 +6213,5 @@ def work_remover(request):
     # for work in work_list:
     #     work.customer_work_id = ''
     #     work.save()
-    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
+    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'result_dict': result_dict})
 
