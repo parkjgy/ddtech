@@ -6157,51 +6157,51 @@ def work_remover(request):
 
     # 업무 목록 요청 시험
     #
-    if request.method == 'GET':
-        work_id_list = rqst.getlist('work_id_list')
-    else:
-        work_id_list = rqst['work_id_list']
-    print('  > {}'.format(work_id_list))
-    work_dict = get_work_dict(work_id_list)
-    print('  > {}'.format(work_dict))
-
-    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
-
-
-    # work_list = Work.objects.all()
-    # work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
-
-    # employee_list = Employee.objects.all()
-    # for employee in employee_list:
-    #     works = employee.get_works()
-    #     for work in works:
-    #         print('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
-    #         work['id'] = work_dict[work['id']]
-    #     employee.set_works(works)
-    #     employee.save()
-
-    # employee_backup_list = Employee_Backup.objects.all()
-    # for employee in employee_backup_list:
-    #     print('  > name: {}, id: {} >> {}'.format(employee.name, employee.work_id, work_dict[employee.work_id]))
-    #     employee.work_id = work_dict[employee.work_id]
-    #     employee.save()
-
-    # noti_work_list = Notification_Work.objects.all()
-    # for noti_work in noti_work_list:
-    #     if len(noti_work.customer_work_id) is not 0:
-    #         print('  > {}: {} >> {}'.format(noti_work.employee_pNo, noti_work.work_id, work_dict[noti_work.work_id]))
-    #         noti_work.work_id = work_dict[noti_work.work_id]
-    #         noti_work.customer_work_id = ''
-    #         noti_work.save()
+    # if request.method == 'GET':
+    #     work_id_list = rqst.getlist('work_id_list')
+    # else:
+    #     work_id_list = rqst['work_id_list']
+    # print('  > {}'.format(work_id_list))
+    # work_dict = get_work_dict(work_id_list)
+    # print('  > {}'.format(work_dict))
     #
-    # pass_history_list = Pass_History.objects.all()
-    # for pass_history in pass_history_list:
-    #     if int(pass_history.work_id) in work_dict.keys():
-    #         print('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
-    #     else:
-    #         print('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
-    #     pass_history.work_id = work_dict[int(pass_history.work_id)]
-    #     pass_history.save()
+    # return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
+
+
+    work_list = Work.objects.all()
+    work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
+
+    employee_list = Employee.objects.all()
+    for employee in employee_list:
+        works = employee.get_works()
+        for work in works:
+            print('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
+            work['id'] = work_dict[work['id']]
+        employee.set_works(works)
+        employee.save()
+
+    employee_backup_list = Employee_Backup.objects.all()
+    for employee in employee_backup_list:
+        print('  > name: {}, id: {} >> {}'.format(employee.name, employee.work_id, work_dict[employee.work_id]))
+        employee.work_id = work_dict[employee.work_id]
+        employee.save()
+
+    noti_work_list = Notification_Work.objects.all()
+    for noti_work in noti_work_list:
+        if len(noti_work.customer_work_id) is not 0:
+            print('  > {}: {} >> {}'.format(noti_work.employee_pNo, noti_work.work_id, work_dict[noti_work.work_id]))
+            noti_work.work_id = work_dict[noti_work.work_id]
+            noti_work.customer_work_id = ''
+            noti_work.save()
+
+    pass_history_list = Pass_History.objects.all()
+    for pass_history in pass_history_list:
+        if int(pass_history.work_id) in work_dict.keys():
+            print('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
+        else:
+            print('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
+        pass_history.work_id = work_dict[int(pass_history.work_id)]
+        pass_history.save()
 
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
 
