@@ -6181,8 +6181,9 @@ def work_remover(request):
         for work in works:
             if work['id'] not in work_dict.keys():
                 result_dict['employee_{}'.format(employee.id)] = {'name': employee.name, 'work_id': work['id']}
+                logSend('  > name: {}, id: {}'.format(employee.name, work['id']))
                 continue
-            logSend('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
+            # logSend('  > name: {}, id: {} >> {}'.format(employee.name, work['id'], work_dict[work['id']]))
             work['id'] = work_dict[work['id']]
         employee.set_works(works)
         employee.save()
@@ -6203,10 +6204,11 @@ def work_remover(request):
 
     pass_history_list = Pass_History.objects.all()
     for pass_history in pass_history_list:
-        if int(pass_history.work_id) in work_dict.keys():
-            logSend('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
-        else:
-            logSend('--- {}: {}'.format(pass_history.passer_id, pass_history.work_id))
+        if int(pass_history.work_id) not in work_dict.keys():
+            result_dict['pass_history_{}'.format(pass_history.id)] = {'passer_id': pass_history.passer_id, 'work_id': pass_history.work_id}
+            logSend('--- pass_history_id: {}, work_id: {}'.format(pass_history.passer_id, pass_history.work_id))
+            continue
+        # logSend('  > {}: {} >> {}'.format(pass_history.passer_id, pass_history.work_id, work_dict[int(pass_history.work_id)]))
         pass_history.work_id = work_dict[int(pass_history.work_id)]
         pass_history.save()
 
