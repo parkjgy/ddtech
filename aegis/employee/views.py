@@ -6169,6 +6169,9 @@ def work_remover(request):
 
 
     work_list = Work.objects.all()
+    if len(work_list[0].customer_work_id) == 0:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '이미 업무 변경이 끝났습니다.'.format(pNo)})
+
     work_dict = {work.id: int(AES_DECRYPT_BASE64(work.customer_work_id)) for work in work_list}
 
     employee_list = Employee.objects.all()
@@ -6203,5 +6206,8 @@ def work_remover(request):
         pass_history.work_id = work_dict[int(pass_history.work_id)]
         pass_history.save()
 
+    for work in work_list:
+        work.customer_work_id = ''
+        work.save()
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict})
 
