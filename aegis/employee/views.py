@@ -3343,8 +3343,8 @@ def my_work_histories_for_customer(request):
     # 이 근로자의 과거 근로 기록을 보여준다.
     # ? 이 근로자의 현재 업무 과거 기록만 보여줘야하지 않나? - work_id 이용 필요
     #
-    logSend('  customer_work_id: {}'.format(customer_work_id))
-    if customer_work_id is None or customer_work_id == 'i52bN-IdKYwB4fcddHRn-g':
+    logSend('  > work_id: {}'.format(work_id))
+    if work_id is None or int(work_id) == -1:
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     else:
