@@ -3380,7 +3380,7 @@ def employee_work_accept_for_employee(request):
         rqst = request.GET
 
     parameter_check = is_parameter_ok(rqst,
-                                      ['worker_id_!', 'work_id_!', 'employee_id_!', 'employee_name', 'employee_pNo',
+                                      ['worker_id_!', 'work_id', 'employee_id_!', 'employee_name', 'employee_pNo',
                                        'is_accept'])
     if not parameter_check['is_ok']:
         return status422(get_api(request),

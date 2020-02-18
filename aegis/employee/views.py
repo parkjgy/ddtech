@@ -793,9 +793,6 @@ def notification_accept(request):
             del employee_works.data[employee_works.index]
         employee.set_works(employee_works.data)
         employee.save()
-    # notification.delete()
-    notification.is_x = True
-    notification.save()
     #
     # to customer server
     # 근로자가 수락/거부했음
@@ -814,6 +811,10 @@ def notification_accept(request):
     if response_customer.status_code != 200:
         return ReqLibJsonResponse(response_customer)
 
+    # 정상적으로 처리되었을 때 알림을 완료한다.
+    # notification.delete()
+    notification.is_x = True
+    notification.save()
     logSend('  - is_accept: {}'.format(is_accept))
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
 
