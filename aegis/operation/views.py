@@ -181,6 +181,16 @@ def currentEnv(request):
     # else:
     #     rqst = request.GET
 
+    # envirenments = Environment.objects.filter().order_by('-dt')
+    # array_env = []
+    # for envirenment in envirenments:
+    #     new_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+    #                not key.startswith('_')}
+    #     array_env.append(new_env)
+    # current_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+    #                not key.startswith('_')}
+    # return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
+
     global env
     if env is None:
         env = Env()
@@ -200,7 +210,7 @@ def currentEnv(request):
                    not key.startswith('_')}
     # print('  > {}'.format(current_env))
 
-    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': {}})
+    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': [current_env]})
 
 
 @cross_origin_read_allow
