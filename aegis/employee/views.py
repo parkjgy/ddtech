@@ -740,7 +740,7 @@ def notification_accept(request):
         return status422(get_api(request), {'message': parameter['message']})
     passer_id = parameter['parameters']['passer_id']
     notification_id = parameter['parameters']['notification_id']
-    is_accept = bool(int(parameter['parameters']['is_accept']))
+    is_accept = int(parameter['parameters']['is_accept'])
     logSend('  is_accept = {}'.format(is_accept))
 
     passers = Passer.objects.filter(id=passer_id)
@@ -805,7 +805,6 @@ def notification_accept(request):
         'employee_pNo': notification.employee_pNo,
         'is_accept': is_accept
     }
-    logSend(request_data)
     response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
     logSend(response_customer.json())
     if response_customer.status_code != 200:
