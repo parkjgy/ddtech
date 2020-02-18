@@ -55,7 +55,8 @@ def cross_origin_read_allow(function):
                     header += '\n^  {}: {} {}'.format(key, rqst[key], plain_text)
                     # logHeader('^  {}: {} {}'.format(key, rqst[key], plain_text))
                     # logSend('^  {}: {} {}'.format(key, rqst[key], plain_text))
-                logHeader(header)
+                # logHeader(header)
+                logSend(header)
                 response = function(request, *args, **kwargs)
                 # logHeader('<<< {}'.format(get_api(request)))  # 함수 끝 표시
                 # logSend('<<< {}'.format(get_api(request)))  # 함수 끝 표시
@@ -63,7 +64,8 @@ def cross_origin_read_allow(function):
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
                 # logSend('ERROR > {}'.format(get_api(request)))
                 response = exception_handler(request, e)
-        # logSend('   response: status_code: {}, {}'.format(response.status_code, response.content))
+        # logSend('<<< {}: {}\n^ {}'.format(get_api(request), response.status_code, response.content))
+        logSend('<<< {}: {}'.format(get_api(request), response.status_code))
 
         if 'HTTP_ORIGIN' in request.META:
             response["Access-Control-Allow-Origin"] = request.META['HTTP_ORIGIN']

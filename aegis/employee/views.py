@@ -802,7 +802,7 @@ def notification_accept(request):
     #
     request_data = {
         'worker_id': AES_ENCRYPT_BASE64('thinking'),
-        'work_id': notification.customer_work_id,
+        'work_id': notification.work_id,
         'employee_id': AES_ENCRYPT_BASE64(str(passer.id)),  # employee.id,
         'employee_name': employee.name,
         'employee_pNo': notification.employee_pNo,
