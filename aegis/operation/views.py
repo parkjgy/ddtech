@@ -49,6 +49,9 @@ from config.error_handler import *
 import inspect
 
 
+env = None
+
+
 class Env(object):
     def __init__(self):
         self.is_running = False
@@ -122,8 +125,9 @@ class Env(object):
         return self
 
 
-env = Env()
-
+if env is None:
+    env = Env()
+    
 
 @cross_origin_read_allow
 def testEnv(request):
@@ -139,6 +143,9 @@ def testEnv(request):
         rqst = request.GET
 
     global env
+    if env is None:
+        env = Env()
+
     result = {key: dt_form(env.curEnv.__dict__[key]) for key in env.curEnv.__dict__.keys() if not key.startswith('_')}
 
     # result = {}
@@ -165,20 +172,29 @@ def currentEnv(request):
     response
         STATUS 200
     """
-    if request.method == 'POST':
-        rqst = json.loads(request.body.decode("utf-8"))
-    else:
-        rqst = request.GET
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        logError(get_api(request), ' 허가되지 않은 ip: {}'.format(get_client_ip(request)))
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
 
-    envirenments = Environment.objects.filter().order_by('-dt')
-    array_env = []
-    for envirenment in envirenments:
-        new_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+    # if request.method == 'POST':
+    #     rqst = json.loads(request.body.decode("utf-8"))
+    # else:
+    #     rqst = request.GET
+
+    if env is None:
+        env = Env()
+        # envirenments = Environment.objects.filter().order_by('-dt')
+        # array_env = []
+        # for envirenment in envirenments:
+        #     new_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+        #                not key.startswith('_')}
+        #     array_env.append(new_env)
+        # current_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
+        #                not key.startswith('_')}
+    current_env = {key: dt_form(env.__dict__[key]) for key in env.__dict__.keys() if
                    not key.startswith('_')}
-        array_env.append(new_env)
-    current_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
-                   not key.startswith('_')}
-    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
+    # return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
+    return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': {}})
 
 
 @cross_origin_read_allow
