@@ -125,10 +125,10 @@ class Env(object):
         return self
 
 
-if env is None:
-    env = Env()
-
-
+# if env is None:
+#     env = Env()
+#
+#
 @cross_origin_read_allow
 def testEnv(request):
     """
@@ -181,6 +181,7 @@ def currentEnv(request):
     # else:
     #     rqst = request.GET
 
+    global env
     if env is None:
         env = Env()
         # envirenments = Environment.objects.filter().order_by('-dt')
@@ -191,9 +192,14 @@ def currentEnv(request):
         #     array_env.append(new_env)
         # current_env = {key: dt_form(envirenment.__dict__[key]) for key in envirenment.__dict__.keys() if
         #                not key.startswith('_')}
-    current_env = {key: dt_form(env.__dict__[key]) for key in env.__dict__.keys() if
+    # print('  > {}'.format(env))
+    # print('  > {}'.format(env.__dict__.keys()))
+    cur_env_class = env.__dict__['curEnv']
+    # print('  > {}'.format(cur_env_class.__dict__.keys()))
+    current_env = {key: dt_form(cur_env_class.__dict__[key]) for key in cur_env_class.__dict__.keys() if
                    not key.startswith('_')}
-    # return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': array_env})
+    # print('  > {}'.format(current_env))
+
     return REG_200_SUCCESS.to_json_response({'current_env': current_env, 'env_list': {}})
 
 
