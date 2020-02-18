@@ -773,9 +773,14 @@ def notification_accept(request):
                     'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
                     'end': dt_str(notification.dt_end, "%Y/%m/%d"),
                     }
-        if employee_works.is_overlap(new_work):
-            is_accept = False
+        if employee_works.find(notification.work_id):
+            logSend('  > 이미 등록되어 있는 업무다. work_id: {}'.format(notification.work_id))
+        elif employee_works.is_overlap(new_work):
+            logSend('  > 업무 기간이 겹쳤다.(업무 부여할 때 겹침을 확인하는데 가능한가?')
+            # 다른 업무와 겹쳤을 때 (이게 가능한가?)
+            is_accept = 0
         else:
+            # 근로자에 업무를 추가해서 저장한다.
             employee_works.add(new_work)
             employee.set_works(employee_works.data)
             employee.save()
@@ -784,11 +789,11 @@ def notification_accept(request):
             if datetime.datetime.now() < str_to_dt(work['begin']):
                 count_work += 1
         logSend('  - 예약된 업무(시작 날짜가 오늘 이후인 업무): {}'.format(count_work))
-        logSend('  - works: {}'.format([work for work in employee_works.data]))
         logSend('  - name: ', employee.name)
+        logSend('  - works: {}'.format([work for work in employee_works.data]))
     else:
-        logSend('  - 거절: works 에 있으면 삭제')
         # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
+        logSend('  - 거절: works 에 있으면 삭제')
         if employee_works.find(notification.work_id):
             del employee_works.data[employee_works.index]
         employee.set_works(employee_works.data)
