@@ -64,33 +64,33 @@ class Notification_Work(models.Model):
     is_x = models.BooleanField(default=False)  # 삭제되었다. : 시스템 관리용
 
         
-class Work(models.Model):
-    """
-    고객 서버로 부터 받은 업무 내역
-    - 사용: Notification_Work, Employee
-    """
-    customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
+# class Work(models.Model):
+#     """
+#     고객 서버로 부터 받은 업무 내역
+#     - 사용: Notification_Work, Employee
+#     """
+#     customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
 
-    work_place_name = models.CharField(max_length=127) # 사업장 이름
-    work_name_type = models.CharField(max_length=255) # 업무 이름
-    begin = models.CharField(max_length=127) # 근무 시작 날짜
-    end = models.CharField(max_length=127) # 근무 종료 날짜
-    staff_name = models.CharField(max_length=127) # 담당자 이름
-    staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
+#     work_place_name = models.CharField(max_length=127) # 사업장 이름
+#     work_name_type = models.CharField(max_length=255) # 업무 이름
+#     begin = models.CharField(max_length=127) # 근무 시작 날짜
+#     end = models.CharField(max_length=127) # 근무 종료 날짜
+#     staff_name = models.CharField(max_length=127) # 담당자 이름
+#     staff_pNo = models.CharField(max_length = 19) # 담당자 전화번호
 
-    time_info = models.CharField(max_length=8191, default='{}')  # 급여형태, 소정근로시간, 소정근로일, 유급휴일, 무급휴일 계산방법, 근무시간(09:00~18:00 0 12:00~13:00)
+#     time_info = models.CharField(max_length=8191, default='{}')  # 급여형태, 소정근로시간, 소정근로일, 유급휴일, 무급휴일 계산방법, 근무시간(09:00~18:00 0 12:00~13:00)
 
-    def set_time_info(self, x):
-        self.time_info = json.dumps(x)
-        print(len(self.time_info))
+#     def set_time_info(self, x):
+#         self.time_info = json.dumps(x)
+#         print(len(self.time_info))
 
-    def get_time_info(self):
-        if self.time_info is None or len(self.time_info) == 0:
-            self.time_info = "{}"
-        return json.loads(self.time_info)
+#     def get_time_info(self):
+#         if self.time_info is None or len(self.time_info) == 0:
+#             self.time_info = "{}"
+#         return json.loads(self.time_info)
 
-    major = models.IntegerField(default=-1)
-    minor = models.IntegerField(default=-1)
+#     major = models.IntegerField(default=-1)
+#     minor = models.IntegerField(default=-1)
 
 
 class Passer(models.Model):
