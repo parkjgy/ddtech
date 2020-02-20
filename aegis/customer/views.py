@@ -2593,6 +2593,7 @@ def update_work_v2(request):
     work_type = parameter_check['parameters']['type']
     dt_begin = str_to_datetime(parameter_check['parameters']['dt_begin'])
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
+    dt_end = dt_end + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
     staff_id = parameter_check['parameters']['staff_id']
     partner_id = parameter_check['parameters']['partner_id']
     time_type = parameter_check['parameters']['time_type']
@@ -3055,6 +3056,7 @@ def list_work_from_employee_v2(request):
         work_list = Work.objects.all()
     else:
         work_list = Work.objects.filter(id__in=rqst['work_id_list'])
+    # logSend('  > work_list: {}'.format(work_list))
     all_work_dict = {}
     # arr_work = []
     for work in work_list:
@@ -7245,4 +7247,47 @@ def fix_work_dt_end(request):
             print('  > work: {} - {}'.format(work.name, work.dt_end))
             work.save()
             result.append({'name': work.work_place_name + ':' + work.name + '(' + work.type + ')', 'dt_end': work.dt_end})
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
+def temp_update_work_for_employee(request):
+    """
+    << 임시: 근로자 시험용 >> 업무 날짜 만 수정한다.
+    http://0.0.0.0:8000/customer/temp_update_work_for_employee?work_id=68&dt_begin=2020/02/20&dt_end=2020/02/29
+    response
+        STATUS 200
+        STATUS 403
+            {'message':'저리가!!!'}
+        STATUS 416
+            {'message': '백업할 날짜({})는 오늘({})전이어야 한다..format(dt_complete, dt_today)}
+    """
+
+    if get_client_ip(request) not in settings.ALLOWED_HOSTS:
+        return REG_403_FORBIDDEN.to_json_response({'message': '저리가!!!'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['work_id', 'dt_begin_@', 'dt_end_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    dt_begin = parameter_check['parameters']['dt_begin']
+    dt_end = parameter_check['parameters']['dt_end']
+
+    try:
+        work = Work.objects.get(id=work_id)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무: {} 없음'.format(work_id)})
+    result = 'work_id: {}'.format(work.id)
+    if 'dt_begin' in rqst:
+        work.dt_begin = dt_begin
+        result += ', dt_begin: {}'.format(work.dt_begin)
+    if 'dt_end' in rqst:
+        work.dt_end = dt_end
+        result += ', dt_end: {}'.format(work.dt_end)
+    work.save()
     return REG_200_SUCCESS.to_json_response({'result': result})

@@ -522,15 +522,15 @@ class Works(object):
             today = when
         logSend('  today: {}'.format(today))
         for self.index in range(len(self.data)):
-            # logSend('  work id: {}, begin: {}, end: {}'.format(self.data[self.index]['id'],
-            #                                                    str_to_dt(self.data[self.index]['begin']),
-            #                                                    str_to_dt(self.data[self.index]['end']) + datetime.timedelta(days=1)))
+            logSend('  work id: {}, begin: {}, end: {}'.format(self.data[self.index]['id'],
+                                                               str_to_dt(self.data[self.index]['begin']),
+                                                               str_to_dt(self.data[self.index]['end']) + datetime.timedelta(days=1)))
             if str_to_dt(self.data[self.index]['begin']) <= today < (str_to_dt(self.data[self.index]['end']) + datetime.timedelta(days=1)):
-                # logSend('  work id: {}, begin: {} <= today: {} < end: {}'.format(self.data[self.index]['id'],
-                #                                                                   self.data[self.index]['begin'],
-                #                                                                   today,
-                #                                                                   self.data[self.index]['end']))
-                # logSend('  업무: work_id: {}'.format(self.data[self.index]['id']))
+                logSend('  work id: {}, begin: {} <= today: {} < end: {}'.format(self.data[self.index]['id'],
+                                                                                  self.data[self.index]['begin'],
+                                                                                  today,
+                                                                                  self.data[self.index]['end']))
+                logSend('  업무: work_id: {}'.format(self.data[self.index]['id']))
                 return True
         return False
 

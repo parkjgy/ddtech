@@ -30,7 +30,6 @@ def cross_origin_read_allow(function):
                 header += '>>> {}'.format(get_api(request))
                 # logHeader('>>> {}'.format(get_api(request)))  # 함수 시작 표시
                 # logSend('>>> {}'.format(get_api(request)))  # 함수 시작 표시
-                logSend(header)
                 if request.method == 'POST':
                     if len(request.body) == 0:
                         rqst = {}

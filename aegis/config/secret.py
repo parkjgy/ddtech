@@ -60,36 +60,39 @@ def unpad(padded_data, block_size, style='pkcs7'):
 
 
 # encrypt ( str or bytes ) return bytes;
-def AES_ENCRYPT(msg) -> bytes:
+def AES_ENCRYPT(plainText) -> bytes:
     aes = AES.new(AESkey, AES.MODE_CBC, AESiv)
-    return aes.encrypt(pad(msg, 16))
+    return aes.encrypt(pad(plainText, 16))
 
 
 # encrypt ( str or bytes ) return base64:str;
-def AES_ENCRYPT_BASE64(msg) -> str:
-    return re.sub(r'(\s|\n)+', '', base64.urlsafe_b64encode(AES_ENCRYPT(msg)).decode(encoding='utf-8')).replace('=', '')
+def AES_ENCRYPT_BASE64(plainText) -> str:
+    return re.sub(r'(\s|\n)+', '', base64.urlsafe_b64encode(AES_ENCRYPT(plainText)).decode(encoding='utf-8')).replace('=', '')
 
 
 # decrypt ( bytes ) return bytes;
-def AES_DECRYPT(msg) -> bytes:
-    dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(msg)
+def AES_DECRYPT(cipherText) -> bytes:
+    dec = AES.new(AESkey, AES.MODE_CBC, AESiv).decrypt(cipherText)
     return unpad(dec, 16)
 
 
 # decrypt ( base64:str ) return bytes;
-def AES_DECRYPT_BASE64(msg: str) -> str:
+def AES_DECRYPT_BASE64(cipherText: str) -> str:
+    if len(cipherText) < 16:
+        logError('Error: AES_DECRYPT_BASE64: cipherText: {}'.format(str(cipherText)))
+        return '__error'
     try:
-        msg = re.sub(r'(\s|\n)+', '', msg)
-        msg += '=' * (-len(msg) % 4)
-        msg = base64.urlsafe_b64decode(bytes(msg, encoding='utf-8'))
-        return AES_DECRYPT(msg).decode(encoding='UTF-8')
+        cipherText = re.sub(r'(\s|\n)+', '', cipherText)
+        cipherText += '=' * (-len(cipherText) % 4)
+        cipherText = base64.urlsafe_b64decode(bytes(cipherText, encoding='utf-8'))
+        return AES_DECRYPT(cipherText).decode(encoding='UTF-8')
     except Exception as e:
-        logError('Error(AES_DECRYPT_BASE64):', str(e))
+        logError('Error: AES_DECRYPT_BASE64: cipherText: {} - {}'.format(str(cipherText), str(e)))
         return '__error'
 
 
 # decrypt ( base64:str ) return bytes;
-def AES_DECRYPT_BASE64Bytes(msg: str) -> bytes:
-    msg += '=' * (-len(msg) % 4)
-    msg = base64.urlsafe_b64decode(bytes(msg, encoding='utf-8'))
-    return AES_DECRYPT(msg)
+def AES_DECRYPT_BASE64Bytes(plainText: str) -> bytes:
+    plainText += '=' * (-len(plainText) % 4)
+    plainText = base64.urlsafe_b64decode(bytes(plainText, encoding='utf-8'))
+    return AES_DECRYPT(plainText)
