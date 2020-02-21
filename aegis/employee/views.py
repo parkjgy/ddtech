@@ -7,6 +7,7 @@ Copyright 2019. DaeDuckTech Corp. All rights reserved.
 import random
 import inspect
 import secrets  # uuid token 만들 때 사용
+import copy
 
 from config.log import logSend, logError, send_slack
 from config.common import ReqLibJsonResponse
@@ -5943,6 +5944,45 @@ def reset_passer(request):
 
 
 @cross_origin_read_allow
+def temp_test_post(request):
+    """
+    근로자 서버의 업무를 삭제한다.
+    - 근로자 서버의 업무 id 를 고객서버의 업무 id로 바꾼다.
+        http://0.0.0.0:8000/employee/temp_test_post
+    GET
+        work_id_list: 업무 id lsit
+    response
+        STATUS 416
+            {'message': '개발상태에서만 사용할 수 있습니다.'}
+        STATUS 200
+            {'message': '출입자가 이미 삭제 되었습니다.'}
+            {'message': '근로자가 이미 삭제 되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'io_pass_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    # if not settings.DEBUG:
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '개발상태에서만 사용할 수 있습니다.'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    result = []
+    s = requests.session()
+    parameter = {
+        'pNo': '01025573555',
+        'year_month': '2020-01'
+    }
+    r = s.post(settings.EMPLOYEE_URL + 'make_work_io', json=parameter)
+    result.append({'url': r.url, 'POST': parameter, 'STATUS': r.status_code, 'R': r.json()})
+    return REG_200_SUCCESS.to_json_response({'result': result})
+
+
+@cross_origin_read_allow
 def make_work_io(request):
     """
     시험용: 근로자를 새로 등록할 수 있도록 정보를 삭제한다.
@@ -6033,6 +6073,7 @@ def make_work_io(request):
         if str_to_dt(last_work['end']) < dt_end:
             # 업무 종료날짜가 생성하려는 종료날짜보다 먼저면 업무 종료날짜 수정
             update_work_parameter['dt_end'] = dt_str(dt_end, "%Y-%m-%d %H:%M:%S")
+        logSend('  > update_work_parameter: {}'.format(update_work_parameter))
         if len(update_work_parameter.keys()) > 0:
             # 고객: 업무 내용 수정
             update_work_parameter['work_id'] = last_work['id']
@@ -6053,6 +6094,9 @@ def make_work_io(request):
     else:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '해당 근로자({})에 배정된 업무가 없어서 근태를 만들 수 없다.'.format(pNo)})
 
+    logSend('  > dt_begin: {}, dt_end: {}'.format(dt_begin, dt_end))
+
+    # return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 수정 완료', 'result': result})
     dt = dt_begin.replace(hour=8)  # 출근시간 설정
     pass_reg_info = {
         'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
@@ -6099,7 +6143,8 @@ def make_work_io(request):
         dt = dt.replace(minute=31)
         pass_verify_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
         r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_verify_info)
-        result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+        parameter = copy.deepcopy(pass_verify_info)
+        result.append({'url': r.url, 'POST': parameter, 'STATUS': r.status_code, 'R': r.json()})
 
         # 비콘 인식으로 퇴근 처리
         pass_reg_info['is_in'] = 0
@@ -6121,7 +6166,8 @@ def make_work_io(request):
         dt = dt.replace(minute=35)
         pass_verify_info['beacons'][0]['dt_end'] = dt_str(dt, "%Y-%m-%d %H:%M:%S")
         r = s.post(settings.EMPLOYEE_URL + 'pass_verify', json=pass_verify_info)
-        result.append({'url': r.url, 'POST': pass_reg_info, 'STATUS': r.status_code, 'R': r.json()})
+        parameter = copy.deepcopy(pass_verify_info)
+        result.append({'url': r.url, 'POST': parameter, 'STATUS': r.status_code, 'R': r.json()})
 
     if overtime > 0:
         try:
