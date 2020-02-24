@@ -412,7 +412,8 @@ def reg_employee_for_customer(request):
         works = Works(employee.get_works())
         logSend('  1. 현재 업무: {} vs 새 업무: {}'.format(works.data, {'id': customer_work_id, 'begin': dt_begin, 'end': dt_end}))
         if is_update:
-            logSend(' {}, {}'.format(type(works.data['id']), type(customer_work_id)))
+            logSend(' type(works.data[id]): {}'.format(type(works.data['id'])))
+            logSend(' customer_work_id: {}'.format(type(customer_work_id)))
             if works.data['id'] == customer_work_id:
                 continue
         # 업무 중에 같은 업무가 있으면 삭제한다. (단, 업무 시작 날짜가 오늘 이후인 업무만)
