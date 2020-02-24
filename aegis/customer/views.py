@@ -3529,7 +3529,10 @@ def update_employee(request):
     dt_end = str_to_datetime(parameter_check['parameters']['dt_end'])
 
     work = Work.objects.get(id=work_id)
-    employee = Employee.objects.get(id=employee_id)
+    try:
+        employee = Employee.objects.get(id=employee_id)
+    except Exception as e:
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '해당 근로자가 없습니다.'})
     logSend('  employee: {}'.format(
         {key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')}))
 
