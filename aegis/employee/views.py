@@ -24,7 +24,7 @@ from .models import Beacon
 from .models import Beacon_Record
 from .models import Employee
 from .models import Notification_Work
-# from .models import Work
+from .models import Work
 from .models import Pass
 from .models import Passer
 from .models import Pass_History
