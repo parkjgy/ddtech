@@ -411,16 +411,15 @@ def reg_employee_for_customer(request):
     for employee in employee_list:
         works = Works(employee.get_works())
         logSend('  1. 현재 업무: {} vs 새 업무: {}'.format(works.data, {'id': customer_work_id, 'begin': dt_begin, 'end': dt_end}))
-        if is_update:
-            logSend(' customer_work_id: {}'.format(type(customer_work_id)))
-            logSend(' works.data[id]: {}'.format(works.data['id']))
-            logSend(' type(works.data[id]): {}'.format(type(works.data['id'])))
-            if works.data['id'] == customer_work_id:
-                continue
         # 업무 중에 같은 업무가 있으면 삭제한다. (단, 업무 시작 날짜가 오늘 이후인 업무만)
+        today = datetime.datetime.now()
         for work_dict in works.data:
-            if work_dict['id'] == customer_work_id and datetime.datetime.now() < str_to_dt(work_dict['begin']):
-                works.data.remove(work_dict)
+            if work_dict['id'] == customer_work_id:
+                if is_update:
+                    works.data.remove(work_dict)
+                    continue
+                if today < str_to_dt(work_dict['begin']):
+                    works.data.remove(work_dict)
         if works.is_overlap({'id': customer_work_id, 'begin': dt_begin, 'end': dt_end}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11  # 기간이 중복된 경우
