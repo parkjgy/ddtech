@@ -3287,6 +3287,7 @@ def reg_employee(request):
                     dt_end=work.dt_end,
                     work_id=work.id,
                     pNo=phone,
+                    dt_answer_deadline=dt_answer_deadline,
                 )
                 new_employee.save()
     logSend('  - count bad_phone_list: {}, ',
@@ -5710,7 +5711,7 @@ def staff_employees_at_day(request):
 # @session_is_none_403
 def staff_employees(request):
     """
-    업무가 시작되기 전인 업무의 근로자 참여 여부 요청
+    요청: 근로자 업무 참여 여부: 업무가 시작되기 전인 근로자
     - 출퇴근 정보 없음
     - 근로자의 응답이 중요 포인트 is_accept_work, name
 
@@ -5959,11 +5960,11 @@ def staff_employees_from_work(request):
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
             'dt_end': dt_null(employee.dt_end),
-            'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
-            'dt_end_beacon': dt_null(employee.dt_end_beacon),
-            'dt_begin_touch': dt_null(employee.dt_begin_touch),
-            'dt_end_touch': dt_null(employee.dt_end_touch),
-            'overtime': employee.overtime,
+            # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
+            # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
+            # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
+            # 'dt_end_touch': dt_null(employee.dt_end_touch),
+            # 'overtime': employee.overtime,
             'x': employee.x,
             'y': employee.y,
         }
@@ -6129,11 +6130,11 @@ def staff_change_time(request):
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
             'dt_end': dt_null(employee.dt_end),
-            'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
-            'dt_end_beacon': dt_null(employee.dt_end_beacon),
-            'dt_begin_touch': dt_null(employee.dt_begin_touch),
-            'dt_end_touch': dt_null(employee.dt_end_touch),
-            'overtime': employee.overtime,
+            # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
+            # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
+            # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
+            # 'dt_end_touch': dt_null(employee.dt_end_touch),
+            # 'overtime': employee.overtime,
             'x': employee.x,
             'y': employee.y,
         }
@@ -6426,22 +6427,22 @@ def staff_recognize_employee(request):
     if 'dt_arrive' in rqst and str_dt_arrive is not None:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
-        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
-        employee.dt_begin_touch = dt_arrive
         employees_infor['year_month_day'] = dt_arrive.strftime('%Y-%m-%d')
         employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
         employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
+        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
+        # employee.dt_begin_touch = dt_arrive
 
     if 'dt_leave' in rqst and str_dt_leave is not None:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
-        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
-        employee.dt_end_touch = dt_leave
         employees_infor['year_month_day'] = dt_leave.strftime('%Y-%m-%d')
         employees_infor['dt_out_verify'] = dt_leave.strftime('%H:%M')
         employees_infor['out_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
+        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
+        # employee.dt_end_touch = dt_leave
 
-    employee.save()
+    # employee.save()
     #
     # employee server 에서 적용시켜야 한다.
     #
@@ -6452,8 +6453,8 @@ def staff_recognize_employee(request):
     pass_records = r.json()['employees']
     fail_list = r.json()['fail_list']
 
-    result = {'update_dt_arrive': dt_null(employee.dt_begin_touch),
-              'update_dt_leave': dt_null(employee.dt_end_touch)
+    result = {'update_dt_arrive': dt_null(dt_arrive),
+              'update_dt_leave': dt_null(dt_leave)
               }
 
     return REG_200_SUCCESS.to_json_response(result)

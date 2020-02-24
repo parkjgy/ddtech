@@ -151,13 +151,14 @@ class Employee(models.Model):
     name = models.CharField(max_length=127, default='-----') # 근로자 이름
     pNo = models.CharField(max_length = 19)
 
-    dt_begin_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 출근시간
-    dt_end_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 퇴근시간
+    dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
+    # dt_begin_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 출근시간
+    # dt_end_beacon = models.DateTimeField(null=True, blank=True) # beacon 으로 확인된 퇴근시간
 
-    dt_begin_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 출근시간
-    dt_end_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 퇴근시간
+    # dt_begin_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 출근시간
+    # dt_end_touch = models.DateTimeField(null=True, blank=True) # touch 으로 확인된 퇴근시간
 
-    overtime = models.IntegerField(default=0)       # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    # overtime = models.IntegerField(default=0)       # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
