@@ -88,3 +88,19 @@ json_data = {
 
 r = requests.post('http://0.0.0.0:8000/employee/pass_verify', json=json_data)
 
+
+* db migration error 처리 방법
+    https://stackoverflow.com/questions/29888046/django-1-8-create-initial-migrations-for-existing-schema
+
+1. table django_migrations 의 모든 항목을 지운다. 
+    mysql> delete from django_migrations;
+2. 각 프로젝트의 폴더를 지운다.
+    $ rm -rf */migrations/
+3. 마이그레이션을 재설정한다.(reset migrations)
+    $ python manage.py migrate --fake
+4. 마이그레이션을 만든다.
+    $ python manage.py makemigrations
+5. 마이그레이션을 실행한다.
+    $ python manage.py migrate --fake-initial
+6. 마이그레이션 한다.
+    $ python manage.py migrate
