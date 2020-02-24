@@ -3640,7 +3640,7 @@ def update_employee(request):
                              "dt_answer_deadline": rqst['dt_answer_deadline'],
                              "dt_begin_employee": employee.dt_begin.strftime('%Y/%m/%d'),  # 개별 근로자의 업무 시작날짜
                              "dt_end_employee": employee.dt_end.strftime('%Y/%m/%d'),  # 개별 근로자의 업무 종료날짜
-                             "is_update": False,
+                             "is_update": "0",
                              "phones": [employee.pNo]
                              }
         # print(new_employee_data)
