@@ -3493,7 +3493,7 @@ def work_report_for_customer(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['work_id', 'employee_id_!_@', 'year_month'])
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'employee_id_!_@', 'year_month'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
@@ -3618,7 +3618,7 @@ def work_report_for_customer(request):
             del day['action']
             # del day['passer_id']
             del day['year_month_day']
-            del day['work_id']
+            # del day['work_id']
             del day['dt_in']
             del day['dt_in_em']
             del day['in_staff_id']
@@ -3892,6 +3892,7 @@ def my_work_records(request):
             day = days[day_key]
             day_info = {
                 "year_month_day": '{}-{}'.format(dt, day_key),
+                "work_id": day['work_id'],
                 "action": 110,
                 "dt_begin": '{}'.format(day['dt_in_verify']),
                 "dt_end": '{}'.format(day['dt_out_verify']),
