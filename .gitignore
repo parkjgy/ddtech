@@ -1,7 +1,9 @@
 *.pyc
 *~
 __pycache__
-migrations
+/aegis/employee/migrations
+/aegis/customer/migrations
+/aegis/operation/migrations
 /aegis/logs
 ddtenv
 #/static
