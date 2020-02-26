@@ -3936,6 +3936,145 @@ def get_dic_passer():
 
 
 @cross_origin_read_allow
+def my_work_records_v2(request):
+    """
+    근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    action 설명
+        총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
+        첫번째 자리 1 - 정상 출근, 2 - 지각 출근
+        두번째 자리 1 - 정상 퇴근, 2 - 조퇴, 3 - 30분 연장 근무, 4 - 1시간 연장 근무, 5 - 1:30 연장 근무
+    overtime 설명
+        연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    http://0.0.0.0:8000/employee/my_work_histories?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2018-12
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'
+        dt = '2018-01'
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+            {'message': '근태내역이 없습니다.', "working": [], "work_infor': [] }
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "working": [
+                {
+                  "year_month_day": "2020-01-01",
+                  "action": 110,
+                  "dt_begin": "2020-01-01 08:29",
+                  "dt_end": "2020-01-01 17:33",
+                  "overtime": "",
+                  "week": "수",
+                  "break": "01:00",
+                  "basic": "",
+                  "night": "",
+                  "holiday": "",
+                  "ho": ""
+                },
+                ......
+                {
+                  "year_month_day": "2020-01-27",
+                  "action": 110,
+                  "dt_begin": "2020-01-27 08:29",
+                  "dt_end": "2020-01-27 17:33",
+                  "overtime": "",
+                  "week": "월",
+                  "break": "01:00",
+                  "basic": "",
+                  "night": "",
+                  "holiday": "",
+                  "ho": ""
+                }
+              ],
+              "work_infor": [
+                {
+                  "name": "박종기",
+                  "break_sum": "19:05",
+                  "basic_sum": 209,
+                  "night_sum": 0,
+                  "overtime_sum": 8,
+                  "holiday_sum": 0,
+                  "ho_sum": 0
+                }
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message': 'passer_id 근로자가 서버에 없다.'}
+            {'message': 'passer_id 의  근로자 정보가 서버에 없다.'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id', 'dt'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    #
+    # 근로자 서버로 근로자의 월 근로 내역을 요청
+    #
+    employee_info = {
+        'employee_id': passer_id,
+        'work_id': AES_ENCRYPT_BASE64('-1'),
+        'year_month': dt,
+    }
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
+
+    working_result = []
+    work_infor = []
+    arr_working = response_employee.json()['arr_working']
+    for working in arr_working:
+        days = working['days']
+        for day_key in days.keys():
+            day = days[day_key]
+            day_info = {
+                "year_month_day": '{}-{}'.format(dt, day_key),
+                "work_id": day['work_id'],
+                "action": 110,
+                "dt_begin": '{}'.format(day['dt_in_verify']),
+                "dt_end": '{}'.format(day['dt_out_verify']),
+                "overtime": day['overtime'],
+                "week": day['week'],
+                "break": day['break'],
+                "basic": int_none(day['basic']),
+                "night": int_none(day['night']),
+                "holiday": int_none(day['holiday']),
+                "ho": int_none(day['ho']),
+            }
+            working_result.append(day_info)
+        del working['days']
+        work_infor.append(working)
+
+    return REG_200_SUCCESS.to_json_response({'working': working_result, 'work_infor': work_infor})
+
+
+def get_dic_passer():
+    employees = Employee.objects.filter().values('id', 'name')
+    dic_employee = {}
+    for employee in employees:
+        dic_employee[employee['id']] = employee['name']
+    del employees
+    """
+    dic_employee = {1:"박종기", 2:"곽명석"}
+    """
+    passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
+    dic_passer = {}
+    for passer in passers:
+        employee_id = passer['employee_id']
+        passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
+        dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
+    logSend(dic_passer, '\n', dic_passer[1]['name'])
+    del passers
+    del dic_employee
+    """
+    dic_passer = {1:{"name":"박종기", "pNo":"01025573555"}, 2:{"name:"곽명석", "pNo": "01054214410"}}
+    """
+    return dic_passer
+
+
+@cross_origin_read_allow
 def alert_recruiting(request):
     """
     채용 알림 : 근로자에게 채용 내용을 알림
