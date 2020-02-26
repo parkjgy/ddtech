@@ -6349,7 +6349,7 @@ def staff_employee_working_v2(request):
             day = days[day_key]
             day_dict = {
                 "year_month_day": '{}-{}'.format(year_month, day_key),
-                "work_id": day['work_id'],
+                "work_id": AES_ENCRYPT_BASE64(str(day['work_id'])),
                 "action": 110,
                 "dt_begin": '{}'.format(day['dt_in_verify']),
                 "dt_end": '{}'.format(day['dt_out_verify']),
@@ -6364,7 +6364,7 @@ def staff_employee_working_v2(request):
             work_day_dict[day_key] = day_dict
         logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
         del working['days']
-        work_dict[day['work_id']] = working
+        work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
 
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
 
