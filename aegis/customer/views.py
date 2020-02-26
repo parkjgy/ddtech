@@ -17,7 +17,7 @@ from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
 from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api, str_minute
 # secret import
-from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime
+from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime, int_none
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
 from config.decorator import cross_origin_read_allow, session_is_none_403
 
@@ -3052,7 +3052,7 @@ def list_work_from_employee_v2(request):
     else:
         rqst = request.GET
 
-    if -1 in rqst['work_id_list']:
+    if '-1' in rqst['work_id_list']:
         work_list = Work.objects.all()
     else:
         work_list = Work.objects.filter(id__in=rqst['work_id_list'])
@@ -3084,6 +3084,7 @@ def list_work_from_employee_v2(request):
         # del work_dict['id']
         all_work_dict[work.id] = work_dict
     # return REG_200_SUCCESS.to_json_response({'work_list': arr_work})
+    logSend('  > work_dict: {}'.format(all_work_dict))
     return REG_200_SUCCESS.to_json_response({'work_dict': all_work_dict})
 
 
@@ -6223,6 +6224,149 @@ def staff_employee_working(request):
     result = response_employee.json()
 
     return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def staff_employee_working_v2(request):
+    """
+    [관리자용 앱]:  업무에 투입된 근로자의 한달 근로 내역 요청
+    - 담당자(현장 소장, 관리자), 업무, 필요한 근로 내역 연월
+    http://0.0.0.0:8000/customer/staff_employee_working?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=i52bN-IdKYwB4fcddHRn-g&year_month=2019-04
+    POST
+        staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id
+        employee_id : 근로자 id
+        year_month : 2019-04   # 근로내역 연월
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+            {'message': '근태내역이 없습니다.', "work_dict": {}, "work_day_dict': {} }
+            {
+                "message": "정상적으로 처리되었습니다.",
+                "work_dict": {
+                    "68": {
+                        "name": "박종기",
+                        "break_sum": "18:05",
+                        "basic_sum": 209,
+                        "night_sum": 0,
+                        "overtime_sum": 8,
+                        "holiday_sum": 0,
+                        "ho_sum": 0
+                    }
+                },
+                "work_day_dict": {
+                    "03": {
+                        "year_month_day": "2020-02-03",
+                        "work_id": "68",
+                        "action": 110,
+                        "dt_begin": "08:29",
+                        "dt_end": "17:33",
+                        "overtime": "",
+                        "week": "월",
+                        "break": "01:00",
+                        "basic": 0,
+                        "night": 0,
+                        "holiday": 0,
+                        "ho": 0
+                    },
+                    ......
+                    "26": {
+                        "year_month_day": "2020-02-26",
+                        "work_id": "68",
+                        "action": 110,
+                        "dt_begin": "08:29",
+                        "dt_end": "17:33",
+                        "overtime": "",
+                        "week": "수",
+                        "break": "01:00",
+                        "basic": 0,
+                        "night": 0,
+                        "holiday": 0,
+                        "ho": 0
+                    }
+                }
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+            {'message':'ClientError: parameter \'id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'employee_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)}
+            {'message':'ServerError: Employee 에 id={} 이(가) 없거나 중복됨'.format(employee_id)}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'employee_id_!', 'year_month'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    staff_id = parameter_check['parameters']['staff_id']
+    work_id = parameter_check['parameters']['work_id']
+    employee_id = parameter_check['parameters']['employee_id']
+    year_month = parameter_check['parameters']['year_month']
+
+    app_users = Staff.objects.filter(id=staff_id)
+    if len(app_users) != 1:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)})
+    employees = Employee.objects.filter(id=employee_id, work_id=work_id)
+    if len(employees) != 1:
+        return status422(get_api(request), {'message': 'ServerError: Employee 에 '
+                                                       'employee_id: {}, '
+                                                       'work_id: {} 이(가) 없거나 중복됨'.format(employee_id, work_id)})
+    employee = employees[0]
+
+    #
+    # 근로자 서버로 근로자의 월 근로 내역을 요청
+    #
+    employee_info = {
+        'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+        'work_id': rqst['work_id'],
+        'year_month': year_month,
+    }
+    logSend(employee_info)
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
+    # #
+    # # 근로자 서버로 근로자의 월 근로 내역을 요청
+    # #
+    # employee_info = {
+    #     'employee_id': passer_id,
+    #     'work_id': AES_ENCRYPT_BASE64('-1'),
+    #     'year_month': dt,
+    # }
+    # response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
+
+    work_day_dict = {}
+    work_dict = {}
+    arr_working = response_employee.json()['arr_working']
+    for working in arr_working:
+        days = working['days']
+        for day_key in days.keys():
+            day = days[day_key]
+            day_dict = {
+                "year_month_day": '{}-{}'.format(year_month, day_key),
+                "work_id": day['work_id'],
+                "action": 110,
+                "dt_begin": '{}'.format(day['dt_in_verify']),
+                "dt_end": '{}'.format(day['dt_out_verify']),
+                "overtime": day['overtime'],
+                "week": day['week'],
+                "break": day['break'],
+                "basic": int_none(day['basic']),
+                "night": int_none(day['night']),
+                "holiday": int_none(day['holiday']),
+                "ho": int_none(day['ho']),
+            }
+            work_day_dict[day_key] = day_dict
+        logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
+        del working['days']
+        work_dict[day['work_id']] = working
+
+    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
 
 
 @cross_origin_read_allow

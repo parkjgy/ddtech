@@ -3511,7 +3511,8 @@ def work_report_for_customer(request):
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
     else:
-        work_dict = get_work_dict(work_id)
+        work_dict = get_work_dict([work_id])
+        logSend('  > work_dict: {}'.format(work_dict))
         if len(work_dict.keys()) == 0:
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '업무가 없어요.({})'.format(e)})
         work = work_dict[work_id]
@@ -3952,49 +3953,51 @@ def my_work_records_v2(request):
     response
         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
         STATUS 200
-            {'message': '근태내역이 없습니다.', "working": [], "work_infor': [] }
+            {'message': '근태내역이 없습니다.', "work_dict": {}, "work_day_dict': {} }
             {
-              "message": "정상적으로 처리되었습니다.",
-              "working": [
-                {
-                  "year_month_day": "2020-01-01",
-                  "action": 110,
-                  "dt_begin": "2020-01-01 08:29",
-                  "dt_end": "2020-01-01 17:33",
-                  "overtime": "",
-                  "week": "수",
-                  "break": "01:00",
-                  "basic": "",
-                  "night": "",
-                  "holiday": "",
-                  "ho": ""
+                "message": "정상적으로 처리되었습니다.",
+                "work_dict": {
+                    "68": {
+                        "name": "박종기",
+                        "break_sum": "18:05",
+                        "basic_sum": 209,
+                        "night_sum": 0,
+                        "overtime_sum": 8,
+                        "holiday_sum": 0,
+                        "ho_sum": 0
+                    }
                 },
-                ......
-                {
-                  "year_month_day": "2020-01-27",
-                  "action": 110,
-                  "dt_begin": "2020-01-27 08:29",
-                  "dt_end": "2020-01-27 17:33",
-                  "overtime": "",
-                  "week": "월",
-                  "break": "01:00",
-                  "basic": "",
-                  "night": "",
-                  "holiday": "",
-                  "ho": ""
+                "work_day_dict": {
+                    "03": {
+                        "year_month_day": "2020-02-03",
+                        "work_id": "68",
+                        "action": 110,
+                        "dt_begin": "08:29",
+                        "dt_end": "17:33",
+                        "overtime": "",
+                        "week": "월",
+                        "break": "01:00",
+                        "basic": 0,
+                        "night": 0,
+                        "holiday": 0,
+                        "ho": 0
+                    },
+                    ......
+                    "26": {
+                        "year_month_day": "2020-02-26",
+                        "work_id": "68",
+                        "action": 110,
+                        "dt_begin": "08:29",
+                        "dt_end": "17:33",
+                        "overtime": "",
+                        "week": "수",
+                        "break": "01:00",
+                        "basic": 0,
+                        "night": 0,
+                        "holiday": 0,
+                        "ho": 0
+                    }
                 }
-              ],
-              "work_infor": [
-                {
-                  "name": "박종기",
-                  "break_sum": "19:05",
-                  "basic_sum": 209,
-                  "night_sum": 0,
-                  "overtime_sum": 8,
-                  "holiday_sum": 0,
-                  "ho_sum": 0
-                }
-              ]
             }
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
@@ -4022,14 +4025,14 @@ def my_work_records_v2(request):
     }
     response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
 
-    working_result = []
-    work_infor = []
+    work_day_dict = {}
+    work_dict = {}
     arr_working = response_employee.json()['arr_working']
     for working in arr_working:
         days = working['days']
         for day_key in days.keys():
             day = days[day_key]
-            day_info = {
+            day_dict = {
                 "year_month_day": '{}-{}'.format(dt, day_key),
                 "work_id": day['work_id'],
                 "action": 110,
@@ -4043,11 +4046,12 @@ def my_work_records_v2(request):
                 "holiday": int_none(day['holiday']),
                 "ho": int_none(day['ho']),
             }
-            working_result.append(day_info)
+            work_day_dict[day_key] = day_dict
+        logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
         del working['days']
-        work_infor.append(working)
+        work_dict[day['work_id']] = working
 
-    return REG_200_SUCCESS.to_json_response({'working': working_result, 'work_infor': work_infor})
+    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
 
 
 def get_dic_passer():
@@ -4111,10 +4115,10 @@ def alert_recruiting(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     work_id = parameter_check['parameters']['work_id']
 
-    work_dict = get_work_dict(work_id)
+    work_dict = get_work_dict([work_id])
     if len(work_dict.keys()) == 0:
         return status422(get_api(request), {'message': '해당 업무(customer_work_id: {}) 없음. {}'.format(work_id, str(e))})
-    work = work_dict(work_id)
+    work = work_dict([work_id])
     # try:
     #     work = Work.objects.get(customer_work_id=work_id)
     # except Exception as e:
@@ -5961,8 +5965,7 @@ def get_work_dict(id_list: list) -> dict:
     logSend('>>> get_work_dict\n^ work_id_list: {}'.format(id_list))
     if len(id_list) == 0:
         return {}
-    s = requests.session()
-    r = s.post(settings.CUSTOMER_URL + 'list_work_from_employee_v2', json={'work_id_list': id_list})
+    r = requests.post(settings.CUSTOMER_URL + 'list_work_from_employee_v2', json={'work_id_list': id_list})
     logSend('\nv work_dict: {}\nv {} {}\n<<< get_work_dict'.format(r.json()['work_dict'].keys(), r.status_code, r.json()['message']))
     if r.status_code != 200:
         return {}
