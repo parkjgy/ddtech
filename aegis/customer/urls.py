@@ -78,6 +78,7 @@ urlpatterns = [
     url(r'customer/staff_background$', views.staff_background, name='staff_background'),
 
     url(r'customer/staff_change_time$', views.staff_change_time, name='staff_change_time'),
+    url(r'customer/staff_change_work_v2$', views.staff_change_work_v2, name='staff_change_work_v2'),
     url(r'customer/staff_employee_working$', views.staff_employee_working, name='staff_employee_working'),
     url(r'customer/staff_employee_working_v2$', views.staff_employee_working_v2, name='staff_employee_working_v2'),
 
