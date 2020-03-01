@@ -19,8 +19,12 @@ urlpatterns = [
     url(r'employee/list_my_work$', views.list_my_work, name='list_my_work'),
     url(r'employee/reg_employee_for_customer$', views.reg_employee_for_customer, name='reg_employee_for_customer'),
     url(r'employee/update_work_for_customer$', views.update_work_for_customer, name='update_work_for_customer'),
+
     url(r'employee/notification_list$', views.notification_list, name='notification_list'),
     url(r'employee/notification_accept$', views.notification_accept, name='notification_accept'),
+
+    url(r'employee/notification_list_v2$', views.notification_list_v2, name='notification_list_v2'),
+    url(r'employee/notification_accept_v2$', views.notification_accept_v2, name='notification_accept_v2'),
 
     url(r'employee/passer_list$', views.passer_list, name='passer_list'),
 

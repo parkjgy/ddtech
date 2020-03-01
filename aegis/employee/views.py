@@ -673,13 +673,11 @@ def notification_list(request):
         return status422(get_api(request), {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     passer_id = parameter_check['parameters']['passer_id']
 
-    passers = Passer.objects.filter(id=passer_id)
-    if len(passers) == 0:
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
         logError('  employee_passer 에 passer_id:{} 없음.'.format(passer_id))
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
-    passer = passers[0]
-    # passer.user_agent = request.META['HTTP_USER_AGENT']
-    # passer.save()
 
     dt_today = datetime.datetime.now()
     logSend(passer.pNo)
@@ -704,6 +702,94 @@ def notification_list(request):
             'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y-%m-%d %H:%M"),
             'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
             'end': dt_str(notification.dt_end, "%Y/%m/%d"),
+        }
+        arr_notification.append(view_notification)
+    return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
+
+
+@cross_origin_read_allow
+def notification_list_v2(request):
+    """
+    foreground request 새로운 업무 알림: 앱이 foreground 상태가 될 때 가져와서 선택할 수 있도록 표시한다.
+    http://dev.ddtechi.com:8055/employee/notification_list_v2?passer_id=qgf6YHf1z2Fx80DR8o_Lvg
+    GET
+        passer_id='서버로 받아 저장해둔 출입자 id'  # 암호화된 값임
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "notifications": [
+                {
+                  "id": "qgf6YHf1z2Fx80DR8o_Lvg==",
+                  "work_place_name": "효성1공장",
+                  "work_name_type": "경비(주)간",
+                  "begin": "2019/03/04",
+                  "end": "2019/03/31",
+                  "dt_answer_deadline": "2019-03-03 19:00:00",
+                  "staff_name": "이수용",
+                  "staff_pNo": "01099993333"
+                }
+              ]
+            }
+
+            효성 용연 1공장
+            생산(주간)
+            2019/03/04 ~ 2019/03/31
+            응답 시한: 2019-03-03 19:00:00
+            - 담당: 이수용 [전화] [문자]
+
+            work_place_name  효성 용연 1공장
+            work_name (type)  생산(주간)
+            begin ~ end
+            응답 시한: dt_answer_deadline
+            - 담당: staff_name [staff_phone_no] [staff_phone_no]
+        STATUS 422
+            {'message': 'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!'])
+    if not parameter_check['is_ok']:
+        return status422(get_api(request), {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+    passer_id = parameter_check['parameters']['passer_id']
+
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        logError('  employee_passer 에 passer_id:{} 없음.'.format(passer_id))
+        return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
+
+    dt_today = datetime.datetime.now()
+    logSend(passer.pNo)
+    # notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
+    notification_list = Notification_Work.objects.filter(is_x=0, employee_pNo=passer.pNo)
+    logSend('  notification: {}'.format([x.dt_begin for x in notification_list]))
+    arr_notification = []
+    work_dict = get_work_dict([notification.work_id for notification in notification_list])
+    notification_type_dict = {-30: '새업무', -20: '출퇴근 수정', -3: '유급휴무', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
+    for notification in notification_list:
+        # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
+        # 2019/05/17 임시 기능 정지 - 업무 시작 후 업무 참여요청 보낼 필요 발생
+        # if notification.dt_answer_deadline < datetime.datetime.now():
+        #     notification.delete()
+        #     continue
+        work = work_dict[str(notification.work_id)]
+        view_notification = {
+            'id': AES_ENCRYPT_BASE64(str(notification.id)),
+            'work_place_name': work['work_place_name'],
+            'work_name_type': work['work_name_type'],
+            'staff_name': work['staff_name'],
+            'staff_pNo': work['staff_pNo'],
+            'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y-%m-%d %H:%M"),
+            'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
+            'end': dt_str(notification.dt_end, "%Y/%m/%d"),
+            'notification_type': notification.notification_type,
+            'notification_type_str': notification_type_dict[notification.notification_type] if notification.notification_type <= 0 else "연장근무",
+            'comment': notification.comment,
         }
         arr_notification.append(view_notification)
     return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
@@ -824,6 +910,145 @@ def notification_accept(request):
     # notification.delete()
     notification.is_x = True
     notification.save()
+    logSend('  - is_accept: {}'.format(is_accept))
+    return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
+
+
+@cross_origin_read_allow
+def notification_accept_v2(request):
+    """
+    새로운 업무에 대한 응답
+    http://dev.ddtechi.com:8055/employee/notification_accept_v2?passer_id=qgf6YHf1z2Fx80DR8o_Lvg&notification_id=qgf6YHf1z2Fx80DR8o_Lvg&is_accept=0
+    POST : json
+        {
+            'passer_id' : '서버로 받아 저장해둔 출입자 id',  # 암호화된 값임
+            'notification_id': 'cipher id',
+            'is_accept': 0       # 1 : 업무 수락, 0 : 업무 거절
+        }
+    response
+        STATUS 200
+        STATUS 416
+            {'message': '업무 3개가 꽉 찾습니다.'}
+        STATUS 542
+            {'message':'업무 요청이 취소되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'notification_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_accept\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'notification_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 출입자({}) 가 없어요'.format(passer_id)}
+            {'message':'ServerError: Notification_Work 알림({}) 가 없어요'.format(notification_id)}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter = is_parameter_ok(rqst, ['passer_id_!', 'notification_id_!', 'is_accept'])
+    if not parameter['is_ok']:
+        return status422(get_api(request), {'message': parameter['message']})
+    passer_id = parameter['parameters']['passer_id']
+    notification_id = parameter['parameters']['notification_id']
+    is_accept = int(parameter['parameters']['is_accept'])
+    logSend('  is_accept = {}'.format(is_accept))
+
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        return status422(get_api(request), {'message': '출입자({}) 가 없어요'.format(passer_id)})
+
+    try:
+        notification = Notification_Work.objects.get(is_x=False, id=notification_id)
+    except Exception as e:
+        return status422(get_api(request), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
+
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except Exception as e:
+        return status422(get_api(request), {'message': 'passer({}) 의 근로자 정보가 없어요.'.format(passer.employee_id)})
+    employee_works = Works(employee.get_works())
+    logSend('  - employee works: {}'.format([work for work in employee_works.data]))
+    #
+    # 근로자 정보에 업무를 등록 - 수락했을 경우만
+    #
+    if is_accept == 1:
+        # 수락했을 경우
+        if notification.notification_type == -30:
+            logSend('  - 수락: works: {}'.format([work for work in employee_works.data]))
+            new_work = {'id': notification.work_id,
+                        'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
+                        'end': dt_str(notification.dt_end, "%Y/%m/%d"),
+                        }
+            if employee_works.find(notification.work_id):
+                logSend('  > 이미 등록되어 있는 업무다. work_id: {}'.format(notification.work_id))
+            elif employee_works.is_overlap(new_work):
+                logSend('  > 업무 기간이 겹쳤다.(업무 부여할 때 겹침을 확인하는데 가능한가?')
+                # 다른 업무와 겹쳤을 때 (이게 가능한가?)
+                is_accept = 0
+            else:
+                # 근로자에 업무를 추가해서 저장한다.
+                employee_works.add(new_work)
+                employee.set_works(employee_works.data)
+                employee.save()
+            count_work = 0
+            for work in employee_works.data:
+                if datetime.datetime.now() < str_to_dt(work['begin']):
+                    count_work += 1
+            logSend('  - 예약된 업무(시작 날짜가 오늘 이후인 업무): {}'.format(count_work))
+            logSend('  - name: ', employee.name)
+            logSend('  - works: {}'.format([work for work in employee_works.data]))
+        else:
+            #
+            # pass_history 에 확인 했음을 저장해야 한다.
+            #
+            if notification.pass_record_id is not -1:
+                try:
+                    pass_record = Pass_History.objects.get(id=notification.pass_record_id)
+                except Exception as e:
+                    return status422(get_api(request),
+                                     {'message': 'pass_record({}) 의 근태 정보가 없어요.'.format(notification.pass_record_id)})
+                pass_record.dt_accept = datetime.datetime.now()
+                pass_record.save()
+
+            notification.is_x = 1  # 필요없다. 삭제
+            notification.save()
+    else:
+        # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
+        if notification.notification_type == -30:
+            logSend('  - 거절: works 에 있으면 삭제')
+            if employee_works.find(notification.work_id):
+                del employee_works.data[employee_works.index]
+            employee.set_works(employee_works.data)
+            employee.save()
+        else:
+            #
+            # pass_history 에
+            #
+            notification.is_x = 1  # 필요없다. 삭제
+            notification.save()
+    if notification.notification_type == -30:
+        #
+        # to customer server
+        # 근로자가 수락/거부했음
+        #
+        request_data = {
+            'worker_id': AES_ENCRYPT_BASE64('thinking'),
+            'work_id': notification.work_id,
+            'employee_id': AES_ENCRYPT_BASE64(str(passer.id)),  # employee.id,
+            'employee_name': employee.name,
+            'employee_pNo': notification.employee_pNo,
+            'is_accept': is_accept
+        }
+        response_customer = requests.post(settings.CUSTOMER_URL + 'employee_work_accept_for_employee', json=request_data)
+        logSend(response_customer.json())
+        if response_customer.status_code != 200:
+            return ReqLibJsonResponse(response_customer)
+
+        # 정상적으로 처리되었을 때 알림을 완료한다.
+        # notification.delete()
+        notification.is_x = True
+        notification.save()
     logSend('  - is_accept: {}'.format(is_accept))
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
 
@@ -3177,7 +3402,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 employee_ids.append(plain)
     logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
-    # logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
+    passer_dict = {passer.id: passer for passer in passer_list}
+    logSend('  passer_dict: {}'.format(passer_dict))
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
@@ -3234,9 +3460,35 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if int_work_id == -1:
             int_work_id = int(pass_history.work_id)
             work = get_work_dict([int_work_id])
+            logSend('  > work: {}'.format(work))
         elif int_work_id != int(pass_history.work_id):
             int_work_id = int(pass_history.work_id)
             work = get_work_dict([int_work_id])
+            logSend('  > work: {}'.format(work))
+        else:
+            int_work_id = int_work_id
+            work = get_work_dict([int_work_id])
+            logSend('  > work: {}'.format(work))
+        work_dict = work[list(work.keys())[0]]
+        work_dict['id'] = list(work.keys())[0]
+        # logSend('  > work_dict: {}'.format(work_dict))
+
+        new_notification = Notification_Work(
+            work_id=work_dict['id'],
+            # customer_work_id='',
+            employee_id=pass_history.passer_id,
+            employee_pNo=passer_dict[pass_history.passer_id].__dict__['pNo'],
+            # dt_answer_deadline=dt_answer_deadline,
+            # dt_begin=str_to_dt(dt_begin_employee),
+            # dt_end=str_to_dt(dt_end_employee),
+            # 이하 시스템 관리용
+            work_place_name=work_dict['work_place_name'],
+            work_name_type=work_dict['work_name_type'],
+            # is_x=False,  # default
+            # dt_reg=datetime.datetime.now(),  # default
+            comment=comment if comment is not None else "",
+            pass_record_id=pass_history.id,
+        )
 
         # 연장 근무 처리
         if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
@@ -3257,6 +3509,9 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             if is_ok:
                 pass_history.overtime = overtime
                 pass_history.overtime_staff_id = int(plain)
+            new_notification.notification_type = overtime
+            if overtime > 0:
+                new_notification.comment = '연장근무 {}:{} 이 부여되었습니다.'.format(overtime // 2, overtime % 2 * 30)
 
         # 출근시간 수정 처리
         if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
@@ -3278,6 +3533,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                     [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
                      not key.startswith('_')]))
                 update_pass_history(pass_history, work)
+            new_notification.notification_type = -20
+            new_notification.comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_in_verify)
 
         # 퇴근시간 수정 처리
         if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
@@ -3300,11 +3557,33 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                     [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
                      not key.startswith('_')]))
                 update_pass_history(pass_history, work)
+            new_notification.notification_type = -20
+            new_notification.comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_out_verify)
 
         if len(fail_list) > 0:
             return status422(get_api(request), {'message': 'fail', 'fail_list': fail_list})
 
         pass_history.save()
+
+        new_notification.save()
+        logSend('  > notification: {}'.format(new_notification))
+        push_list = []
+        passer = passer_dict[pass_history.passer_id]
+        push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+        logSend(push_list)
+        if len(push_list) > 0:
+            push_contents = {
+                'target_list': push_list,
+                'func': 'user',
+                'isSound': True,
+                'badge': 1,
+                'contents': {'title': '업무 알림',
+                             'subtitle': new_notification.comment,
+                             'body': {'action': 'NewWork',
+                                      'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                             }
+            }
+            send_push(push_contents)
 
         # *** 출퇴근 시간이 바뀌면 pass_verify 로 변경해야하는데...
         # 문제 없을까?

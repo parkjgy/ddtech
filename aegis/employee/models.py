@@ -52,8 +52,8 @@ class Notification_Work(models.Model):
     """
     work_id = models.IntegerField()  # employee server work id
     customer_work_id = models.CharField(max_length = 127, default='') # 암호화된 Customer 의 Work id 
-    employee_id = models.IntegerField(default=-1)   # 해당 근로자 id
-    employee_pNo = models.CharField(max_length = 19)    # 해당 근로자 전화번호
+    employee_id = models.IntegerField(default=-1)           # 해당 근로자 id
+    employee_pNo = models.CharField(max_length = 19)        # 해당 근로자 전화번호
     dt_answer_deadline = models.DateTimeField(null=True, blank=True) # 업무 수락 / 거부 한계시간
     dt_begin = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 시작 날짜
     dt_end = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 종료 날짜
@@ -62,6 +62,11 @@ class Notification_Work(models.Model):
     work_place_name = models.CharField(max_length=127)  # 사업장 이름 : 시스템 관리용
     work_name_type = models.CharField(max_length=255)  # 업무 이름 : 시스템 관리용
     is_x = models.BooleanField(default=False)  # 삭제되었다. : 시스템 관리용
+
+    notification_type = models.IntegerField(default=-30)        # 알림 종류: -30: 새업무 알림, -20: 출퇴근알림, -3: 유급휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+    comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
+    pass_record_id = models.IntegerField(default=-1)            # 변경한 근태정보의 id
+
 
         
 class Work(models.Model):
@@ -115,6 +120,8 @@ class Passer(models.Model):
     user_agent = models.CharField(max_length = 512, default=None) # HTTP_USER_AGENT
     is_recruiting = models.BooleanField(default=False)     # 카메라 사용 금지 toggle
 
+    notification_count = models.IntegerField(default=0)     # 미응답 알림 갯수
+
 
 class Pass(models.Model):
     """
@@ -161,8 +168,11 @@ class Pass_History(models.Model):
 
     # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
 
+    dt_accept = models.DateTimeField(null=True, blank=True)     # 변경된 근태정보에 대한 확인이 이루어진 시간
+
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
+
 
 
 class Beacon(models.Model):
