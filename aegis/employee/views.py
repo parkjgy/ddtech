@@ -4143,6 +4143,7 @@ def work_report_for_customer(request):
     #         print('   {} {} {} {}'.format(passer_day['year_month_day'], passer_day['dt_in_verify'], passer_day['dt_out_verify'], passer_dict[passer_day['passer_id']]['name']))
     arr_working = []
     for passer_id in passer_rec_dict.keys():
+        logSend('  > passer_rec_dict: {}'.format(passer_rec_dict[passer_id]))
         working = {'name': passer_dict[passer_id]['name'],
                    'days': {}}
         sum_break = 5
@@ -4181,6 +4182,11 @@ def work_report_for_customer(request):
 
             # day_work = {day_key: day}
             working['days'][day_key] = day
+            #
+            # 시간제이면 이번주를 개근했는지 확인해서 주휴수당 시간을 추가해야한다.
+            #   - 유급휴일이 수동지정이면 이전 유급휴일부터 다음 유급휴일 사이에 개근했는지 확인해야한다.
+            #   - 소정근로일이 월/수/금 이면 월수금을 개근했는지 확인해야한다.
+            #
         working['break_sum'] = min2str(sum_break)
         working['basic_sum'] = sum_basic
         working['night_sum'] = sum_night

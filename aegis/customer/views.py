@@ -6406,7 +6406,7 @@ def staff_employee_working_v2(request):
     """
     [관리자용 앱]:  업무에 투입된 근로자의 한달 근로 내역 요청
     - 담당자(현장 소장, 관리자), 업무, 필요한 근로 내역 연월
-    http://0.0.0.0:8000/customer/staff_employee_working?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=i52bN-IdKYwB4fcddHRn-g&year_month=2019-04
+    http://0.0.0.0:8000/customer/staff_employee_working_v2?id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=i52bN-IdKYwB4fcddHRn-g&year_month=2019-04
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
