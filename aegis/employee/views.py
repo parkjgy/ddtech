@@ -5026,13 +5026,13 @@ def tk_employee(request):
 
     passer_dict_list = []
     passer_list = []
-    logSend('   >> 1')
+    # logSend('   >> 1')
     if 'pNo' in rqst and len(rqst['pNo']) > 9:
         pNo = no_only_phone_no(rqst['pNo'])
         passer_list = Passer.objects.filter(pNo=pNo)
         if len(passer_list) == 0:
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '{} not found'.format(phone_format(pNo))})
-    logSend('   >> 2')
+    # logSend('   >> 2')
     if 'name' in rqst and len(rqst['name']) > 1:
         name = rqst['name']
         logSend('   > {}'.format(name))
@@ -5041,7 +5041,7 @@ def tk_employee(request):
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response(
                 {'message': '{} not found'.format(phone_format(name))})
         passer_list = Passer.objects.filter(employee_id__in=[employee.id for employee in employee_list])
-    logSend('   >> 3')
+    # logSend('   >> 3')
     for passer in passer_list:
         passer_dict = {
             'id': passer.id,
@@ -5055,17 +5055,13 @@ def tk_employee(request):
             passer_dict['working_time'] = employee.working_time
             passer_dict['rest_time'] = employee.rest_time
             employee_works = Works(employee.get_works())
-            print('  > employee_works: {}'.format(employee_works.data))
-            print('  > employee_works_id_list: {}'.format([employee_work['id'] for employee_work in employee_works.data]))
             work_dict = get_work_dict([employee_work['id'] for employee_work in employee_works.data])
-            logSend('  > work_dict: {}'.format(work_dict))
             works = []
             for employee_work in employee_works.data:
                 work = work_dict[str(employee_work['id'])]
                 work['begin'] = employee_work['begin']
                 work['end'] = employee_work['end']
                 work['id'] = str(employee_work['id'])
-                logSend(' >> work: {}'.format(work))
                 works.append(work)
             passer_dict['works'] = works
             pass_history_list = Pass_History.objects.filter(passer_id=passer.id).values('id', 'year_month_day', 'passer_id', 'work_id', 'dt_in',
