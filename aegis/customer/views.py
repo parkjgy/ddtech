@@ -4020,7 +4020,7 @@ def report_work_place(request):
                           'order': work_place.order_name,
                           'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                           }
-        if is_all:
+        if int(is_all) == 1:
             work_list = Work.objects.filter(work_place_id=work_place.id)
         else:
             work_list = Work.objects.filter(work_place_id=work_place.id, dt_end__gt=datetime.datetime.now())
@@ -4248,7 +4248,7 @@ def report_staff(request):
     print(staff_id)
     work_place_list = Work_Place.objects.filter(contractor_id=worker.co_id, manager_id=staff_id)
     if len(work_place_list) == 0:
-        if is_all:
+        if int(is_all) == 1:
             work_list = Work.objects.filter(staff_id=staff_id)
         else:
             work_list = Work.objects.filter(staff_id=staff_id, dt_end__gt=datetime.datetime.now())
@@ -4465,7 +4465,7 @@ def report_employee(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     is_all = parameter_check['parameters']['is_all']
     # print(new_employee)
-    if is_all:
+    if int(is_all) == 1:
         work_list = Work.objects.filter(id__in=new_employee['work_id_list'])
     else:
         work_list = Work.objects.filter(staff_id=staff_id, dt_end__gt=datetime.datetime.now())
