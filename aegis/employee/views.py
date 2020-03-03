@@ -3148,13 +3148,13 @@ def pass_record_of_employees_in_day_for_customer(request):
                 employee_ids.append(plain)
     logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
-    # logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
+    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
-    # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
+    logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):
         logError(get_api(request), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
     employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
-    # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
+    logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
     employee_ids = []
     for employee_info in employee_info_list:
         for passer in passer_list:
@@ -4087,7 +4087,12 @@ def work_report_for_customer(request):
                                                            year_month_day__contains=year_month).order_by('year_month_day')
     if len(pass_record_list) == 0:
         return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+    work_id_list = [pass_record.work_id for pass_record in pass_record_list]
+    work_dict = get_work_dict(work_id_list)
+    logSend('  > work_dict: {}'.format(work_dict))
+    #
     # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
+    #
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     passer_rec_dict = {}
     for pass_record in pass_record_list:
@@ -4107,16 +4112,16 @@ def work_report_for_customer(request):
             'overtime': zero_blank(pass_record.overtime),
             'overtime_staff_id': pass_record.overtime_staff_id,
             'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
-
         }
-        if pass_record.passer_id in passer_rec_dict.keys():
+        if pass_record.passer_id in passer_rec_dict.keys():  # 출입자 id 의 근로자가 있으면 근로내역을 추가한다.
             passer_rec_dict[pass_record.passer_id].append(passer_record_dict)
             # print('   + {} {}'.format(passer_record_dict['year_month_day'], passer_record_dict['passer_id']))
         else:
             passer_rec_dict[pass_record.passer_id] = [passer_record_dict]
             # print('   n {} {}'.format(passer_record_dict['year_month_day'], passer_record_dict['passer_id']))
     # 근로자 정보: 이름 전화번호
-    passer_id_list = passer_rec_dict.keys()
+    passer_id_list = list(passer_rec_dict.keys())
+    logSend('  > passer_id_list: {}'.format(passer_id_list))
     passer_list = Passer.objects.filter(id__in=passer_id_list)
     employee_id_list = [passer.employee_id for passer in passer_list]
     employee_list = Employee.objects.filter(id__in=employee_id_list)
@@ -4572,6 +4577,7 @@ def my_work_records_v2(request):
     work_day_dict = {}
     work_dict = {}
     arr_working = response_employee.json()['arr_working']
+    work_id = -1
     for working in arr_working:
         days = working['days']
         for day_key in days.keys():
@@ -4591,9 +4597,18 @@ def my_work_records_v2(request):
                 "ho": int_none(day['ho']),
             }
             work_day_dict[day_key] = day_dict
-        logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
-        del working['days']
-        work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
+            if work_id == -1:
+                work_id = day['work_id']
+            else:
+                if work_id != day['work_id']:
+                    encrypted_work_id = AES_ENCRYPT_BASE64(str(day['work_id']))
+                    work_dict[encrypted_work_id] = copy.deepcopy(working)
+                    del work_dict[encrypted_work_id]['days']
+                    work_id = day['work_id']
+                    logSend('  > working: {}({}) - {}'.format(day['work_id'], encrypted_work_id, work_dict[encrypted_work_id]))
+        # logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
+        # del working['days']
+        # work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
 
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
 
