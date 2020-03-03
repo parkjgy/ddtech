@@ -4449,15 +4449,15 @@ def report_employee(request):
         return REG_200_SUCCESS.to_json_response({'message': '해당 근로자를 찾을 수 없습니다.'})
 
     employee = r.json()['passers'][0]
-    # print('  >> {}'.format(employee))
+    print('  >> {}'.format(employee))
 
     new_employee = {
         'id': AES_ENCRYPT_BASE64(str(employee['id'])),
         'pNo': employee['pNo'],
         'name': employee['name'],
-        'work_id_list': [work['customer_work_id'] for work in employee['works']]
+        'work_id_list': [work['id'] for work in employee['works']]
     }
-    # print(' >> {}'.format(new_employee))
+    print(' >> {}'.format(new_employee))
     if len(new_employee['work_id_list']) == 0:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근로한 업무가 없습니다.'})
     parameter_check = is_parameter_ok(rqst, ['is_all'])
