@@ -4059,7 +4059,7 @@ def report_contractor(request):
     http://0.0.0.0:8000/customer/report_contractor?is_all=1
     GET
         year_month: 2019-12     # 대상 년 월
-
+        is_all: 0               # 0: 종료된 업무 제외, 1: 종료된 업무도 표시
     response
         STATUS 200
             {
@@ -4126,7 +4126,7 @@ def report_contractor(request):
                           'order': work_place.order_name,
                           'manager': '{} ({})'.format(work_place.manager_name, phone_format(work_place.manager_pNo))
                           }
-        if is_all:
+        if int(is_all) == 1:
             work_list = Work.objects.filter(work_place_id=work_place.id)
         else:
             work_list = Work.objects.filter(work_place_id=work_place.id, dt_end__gt=datetime.datetime.now())
