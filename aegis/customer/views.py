@@ -2271,6 +2271,16 @@ def reg_work_v2(request):
             {'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'}
             {'message': '근무시간에 휴게시간 구분이 범위를 넘었다.'}
             {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
+
+            {'message': '(시급제, 월급제)에 [소정근로일](working_days)이 없어요.'}
+            {'message': '(시급제, 월급제)에 [유급휴일](paid_day)이 없어요.'}
+            {'message': '(시급제, 월급제)에 [무급휴일규정](is_holiday_work)이 없어요.'}
+            {'message': '[유급휴일]이 0 ~ 6 사이의 값이 아닙니다.'}
+            {'message': '[유급휴일]이 [소정근로일]이면 안됩니다.'}
+            {'message': '(교대제)에 [유급휴일](paid_day)이 없어요.'}
+            {'message': '(교대제)에 [무급휴일규정](is_holiday_work)이 없어요.'}
+            {'message': '[유급휴일]이 -1 ~ 6 사이의 값이 아닙니다.'}
+            {'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))}
     """
 
     return update_work_v2(request)
@@ -2369,6 +2379,16 @@ def update_work_v2(request):
             {'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'}
             {'message': '근무시간에 휴게시간 구분이 범위를 넘었다.'}
             {'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'}
+
+            {'message': '(시급제, 월급제)에 [소정근로일](working_days)이 없어요.'}
+            {'message': '(시급제, 월급제)에 [유급휴일](paid_day)이 없어요.'}
+            {'message': '(시급제, 월급제)에 [무급휴일규정](is_holiday_work)이 없어요.'}
+            {'message': '[유급휴일]이 0 ~ 6 사이의 값이 아닙니다.'}
+            {'message': '[유급휴일]이 [소정근로일]이면 안됩니다.'}
+            {'message': '(교대제)에 [유급휴일](paid_day)이 없어요.'}
+            {'message': '(교대제)에 [무급휴일규정](is_holiday_work)이 없어요.'}
+            {'message': '[유급휴일]이 -1 ~ 6 사이의 값이 아닙니다.'}
+            {'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))}
     """
     logSend('>>> {}'.format(request.path))
     if "update_work_v2" in request.path:
