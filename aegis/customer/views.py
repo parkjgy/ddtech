@@ -922,7 +922,7 @@ def reg_staff(request):
             {'message': '등록권한이 없습니다.'}
         STATUS 422
             {'message': '빨간 별이 있는 항목이 비었습니다.'}
-            {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 8자 이상이어야 합니다.'}
+            {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 6자 이상이어야 합니다.'}
             {'message': '이름은 최소 2자 이상이어야 합니다.'}
             {'message': '전화번호는 국번까지 9자 이상이어야 합니다.'}
             {'message': '이메일 양식이 틀렸습니다.'}
@@ -947,7 +947,7 @@ def reg_staff(request):
     email = parameter['parameters']['email']
 
     if len(login_id) < 6 or not login_id.isidentifier():
-        return status422(get_api(request), {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 8자 이상이어야 합니다.'})
+        return status422(get_api(request), {'message': '아이디는 영문자, 숫자, 밑줄만 허용되고 6자 이상이어야 합니다.'})
     if len(name) < 2:
         return status422(get_api(request), {'message': '이름은 최소 2자 이상이어야 합니다.'})
     if len(pNo) < 9:
@@ -1186,8 +1186,8 @@ def update_staff(request):
     	    {'message': '처리 중에 다시 요청할 수 없습니다.(5초)'}
     	STATUS 531
     		{'message': '비밀번호가 틀립니다.'}
-            {'message': '비밀번호는 8자 이상으로 만들어야 합니다.'}
-            {'message': '영문, 숫자, 특수문자가 모두 포합되어야 합니다.'}
+            {'message': '비밀번호는 6자 이상으로 만들어야 합니다.'}
+            {'message': '영문, 숫자가 모두 포합되어야 합니다.'}
     	STATUS 542
     	    {'message':'아이디는 5자 이상으로 만들어야 합니다.'}
     	    {'message':'아이디가 중복됩니다.'}
@@ -1236,29 +1236,30 @@ def update_staff(request):
     # 새로운 id 중복 여부 확인
     if 'new_login_id' in parameter:
         new_login_id = parameter['new_login_id']  # 기존 비밀번호
-        if len(new_login_id) < 5:  # id 글자수 5자 이상으로 제한
+        if len(new_login_id) < 6:  # id 글자수 6자 이상으로 제한
 
-            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디는 5자 이상으로 만들어야 합니다.'})
+            return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '아이디는 6자 이상으로 만들어야 합니다.'})
         duplicate_staffs = Staff.objects.filter(login_id=new_login_id)
         if len(duplicate_staffs) > 0:
             return REG_542_DUPLICATE_PHONE_NO_OR_ID.to_json_response({'message': '다른 사람이 사용중인 아이디 입니다.'})
         parameter['login_id'] = new_login_id
         del parameter['new_login_id']
 
-    # 새로운 pw 8자 이상, alphabet, number, 특수문자 포함여부 확인
+    # 새로운 pw 6자 이상, alphabet, number, 특수문자 포함여부 확인
     if 'login_pw' in parameter:
         login_pw = parameter['login_pw']
-        if len(login_pw) < 8:  # id 글자수 8자 이상으로 제한
+        if len(login_pw) < 6:  # id 글자수 6자 이상으로 제한
 
             return REG_531_PASSWORD_IS_INCORRECT.to_json_response({'message': '비밀번호는 8자 이상으로 만들어야 합니다.'})
         #
         # alphabet, number, 특수문자 포함여부 확인
         #
         if not (any(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' for c in login_pw) and
-                any(c in '0123456789' for c in login_pw) and
-                any(c in '-_!@#$%^&*(){}[]/?' for c in login_pw)):
+                any(c in '0123456789' for c in login_pw)):
+                #  and any(c in '-_!@#$%^&*(){}[]/?' for c in login_pw)):  # 2020/03/05 특수문자 필수 입력 기능 해제
             return REG_531_PASSWORD_IS_INCORRECT.to_json_response(
-                {'message': '영문, 숫자, 특수문자(-_!@#$%^&*(){}[]/?)가 모두 포합되어야 합니다.'})
+                # {'message': '영문, 숫자, 특수문자(-_!@#$%^&*(){}[]/?)가 모두 포합되어야 합니다.'})  # 2020/03/05 특수문자 필수 입력 기능 해제
+                {'message': '영문, 숫자가 모두 포합되어야 합니다.'})
         parameter['login_pw'] = hash_SHA256(login_pw)
 
     logSend(parameter)
