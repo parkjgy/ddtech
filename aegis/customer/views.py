@@ -2205,8 +2205,8 @@ def reg_work_v2(request):
             'time_type':        0,          # 급여형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
             'week_hours':       40,         # 시간/주 (소정근로시간)
             'month_hours':      209,        # 시간/월 (소정근로시간)
-            'hours_per_day':    8,          # 일간 근로시간 (소정근로시간)
-            'days_per_week':    5,          # 주당 근로일 (소정근로시간)
+            'working_days':     [1, 2, 4, 5] # 0:일, 1: 월, 2: 화, ... 6: 통)
+            'paid_day':         -1,         # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
             'paid_day':         -1,         # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
             'is_holiday_work': 1,           # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
             'work_time_list':               # 근무시간
@@ -2301,9 +2301,8 @@ def update_work_v2(request):
             'time_type':        0,          # 급여형태 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
             'week_hours':       40,         # 시간/주 (소정근로시간)
             'month_hours':      209,        # 시간/월 (소정근로시간)
-            'hours_per_day':    8,          # 일간 근로시간 (소정근로시간)
-            'days_per_week':    5,          # 주당 근로일 (소정근로시간)
-            'paid_day':         -1,         # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
+            'working_days':     [1, 2, 4, 5] # << [월, 화, 목, 금] 0:일, 1: 월, 2: 화, ... 6: 통)
+            'paid_day':         0,          # << 일요일이 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
             'is_holiday_work': 1,           # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
             'work_time_list':               # 근무시간
                 [
@@ -2397,8 +2396,8 @@ def update_work_v2(request):
     logSend('  > is_reg: {}'.format("YES" if work_id == -1 else "NO"))
 
     parameter_check = is_parameter_ok(rqst, ['name', 'work_place_id_!', 'type', 'dt_begin', 'dt_end', 'staff_id_!',
-                                             'partner_id_!_@', 'time_type', 'week_hours', 'month_hours', 'hours_per_day',
-                                             'days_per_week', 'paid_day', 'is_holiday_work', 'work_time_list'])
+                                             'partner_id_!_@', 'time_type', 'week_hours', 'month_hours', 'working_days_@',
+                                             'paid_day_@', 'is_holiday_work_@', 'work_time_list'])
     if not parameter_check['is_ok']:
         logSend(get_api(request), {'message': '{}'.format([msg for msg in parameter_check['results']])})
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '필수 항목(빨간 별)이 비었습니다.'})
@@ -2413,8 +2412,7 @@ def update_work_v2(request):
     time_type = parameter_check['parameters']['time_type']
     week_hours = parameter_check['parameters']['week_hours']
     month_hours = parameter_check['parameters']['month_hours']
-    hours_per_day = parameter_check['parameters']['hours_per_day']
-    days_per_week = parameter_check['parameters']['days_per_week']
+    working_days = parameter_check['parameters']['working_days']
     paid_day = parameter_check['parameters']['paid_day']
     is_holiday_work = parameter_check['parameters']['is_holiday_work']
     work_time_list = parameter_check['parameters']['work_time_list']
@@ -2437,21 +2435,29 @@ def update_work_v2(request):
 
     #'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
     if not (0 <= int(time_type) <= 3):
-        logSend(get_api(request), '급여형태: {} 가 범위 초과(0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직)'.format(int(time_type)))
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))})
-    # 'week_hours': 40,  # 시간/주 (소정근로시간)
-    # 'month_hours': 209,  # 시간/월 (소정근로시간)
-    total_hours_per_week = int(hours_per_day) * int(days_per_week) * 1.2
-    if total_hours_per_week > 52:
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
-            {'message': '주소정근로시간({}): 이 52시간을 초과했습니다.'.format(total_hours_per_week)})
-
-    # 'paid_day': -1,  # 유급휴일 (-1: 수동지정, 0: 일, 1: 월, … 6: 토) 주휴일
-    int_paid_day = int(paid_day)
-    if not (-1 <= int_paid_day <= 6):
-        logSend(get_api(request), '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day))
-        return REG_422_UNPROCESSABLE_ENTITY.to_json_response(
-            {'message': '유급휴일: {} 가 범위 초과(-1: 수동지정, 0: 일, 1: 월, ... 6: 토)'.format(paid_day)})
+    if int(time_type) in [0, 1]:
+        # 시급제, 월급제일 경우 working_days, paid_day, is_holiday_work 필수
+        # paid_day 는 working_days 에 있는 값을 사용할 수 없다.
+        if 'working_days' not in rqst:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '(시급제, 월급제)에 [소정근로일](working_days)이 없어요.'})
+        if 'paid_day' not in rqst:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '(시급제, 월급제)에 [유급휴일](paid_day)이 없어요.'})
+        if 'is_holiday_work' not in rqst:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '(시급제, 월급제)에 [무급휴일규정](is_holiday_work)이 없어요.'})
+        if not (0 <= int(paid_day) <= 6):
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '[유급휴일]이 0 ~ 6 사이의 값이 아닙니다.'})
+        if int(paid_day) in working_days:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '[유급휴일]이 [소정근로일]이면 안됩니다.'})
+    elif int(time_type) == 2:
+        if 'paid_day' not in rqst:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '(교대제)에 [유급휴일](paid_day)이 없어요.'})
+        if 'is_holiday_work' not in rqst:
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '(교대제)에 [무급휴일규정](is_holiday_work)이 없어요.'})
+        if not (-1 <= int(paid_day) <= 6):
+            return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '[유급휴일]이 -1 ~ 6 사이의 값이 아닙니다.'})
+    elif int(time_type) != 3:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))})
     # 'is_holiday_work': 1,  # 무급휴일을 휴일근무로 시간계산 하나? 1: 휴무일(휴일 근무), 0: 휴일(연장 근무)
     # {
     #     't_begin': '09:00',  # 근무 시작 시간
@@ -2521,14 +2527,18 @@ def update_work_v2(request):
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'})
     time_info = {
         'time_type': time_type,
-        'week_hours': week_hours,
-        'month_hours': month_hours,
-        'hours_per_day': hours_per_day,
-        'days_per_week': days_per_week,
-        'paid_day': int_paid_day,
-        'is_holiday_work': is_holiday_work,
         'work_time_list': work_time_list,
     }
+    if 'week_hours' in rqst:
+        time_info['week_hours'] = week_hours
+    if 'month_hours' in rqst:
+        time_info['month_hours'] = month_hours
+    if 'working_days' in rqst:
+        time_info['working_days'] = working_days
+    if 'paid_day' in rqst:
+        time_info['paid_day'] = int(paid_day)
+    if 'is_holiday_work' in rqst:
+        time_info['is_holiday_work'] = is_holiday_work
 
     try:
         work_place = Work_Place.objects.get(id=work_place_id)
