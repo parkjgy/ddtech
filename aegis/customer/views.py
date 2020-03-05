@@ -3333,6 +3333,7 @@ def update_employee(request):
             'dt_end':2019-03-31,        # 근로자 한명의 업무 종료일을 변경한다. (업무 인원 전체는 업무에서 변경한다.)
             'is_active':'YES',          # YES: 현재 업무 중, NO: 아직 업무 시작되지 않음
             'message':'업무 종료일이 변경되었거나 업무에 대한 응답이 없어 업무에서 뺐을 때 사유 전달'
+            'the_zone_code': '201107002'  # 더존 사원 코드
         }
         업무 시작 전 수정일 때: employee_id, phone_no, dt_begin, dt_end
         업무 시작 후 수정일 때: employee_id, dt_end, is_active, message
@@ -3513,6 +3514,10 @@ def update_employee(request):
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근로자의 다른 업무와 기간이 겹칩니다.'})
         employee.employee_id = sms_result[employee.pNo]
 
+    if 'the_zone_code' in rqst:
+        only_number = no_only_phone_no(rqst['the_zone_code'])
+        if len(only_number) > 0:
+            employee.the_zone_code = only_number
     # 2019/06/17 고객웹 > 근로자 > 수정: 답변을 초기화 할 때 사용
     employee.is_accept_work = None
     employee.save()

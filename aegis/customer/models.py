@@ -163,6 +163,8 @@ class Employee(models.Model):
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
 
+    the_zone_code = models.CharField(max_length=20, default='') # 더존 사원 코드
+
 
 class Employee_Backup(models.Model):    
     """업무가 끝난 근로자 backup"""
