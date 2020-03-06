@@ -3411,7 +3411,6 @@ def update_employee(request):
             # to employee server : message,
             #
             logSend('message: {} (아직 처리하지 않는다.)'.format(rqst['message']))
-        employee.save()
         logSend('  employee: {}'.format(
             {key: employee.__dict__[key] for key in employee.__dict__.keys() if not key.startswith('_')}))
         #
@@ -3424,6 +3423,12 @@ def update_employee(request):
         }
         r = requests.post(settings.EMPLOYEE_URL + 'change_work_period_for_customer', json=employees_infor)
         # {'url': r.url, 'POST': employees_infor, 'STATUS': r.status_code, 'R': r.json()}
+        if 'the_zone_code' in rqst:
+            only_number = no_only_phone_no(rqst['the_zone_code'])
+            if len(only_number) > 0:
+                employee.the_zone_code = only_number
+                logSend('  > the_zone_code: {}'.format(only_number))
+        employee.save()
 
         return REG_200_SUCCESS.to_json_response()
     #
@@ -3513,11 +3518,6 @@ def update_employee(request):
 
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근로자의 다른 업무와 기간이 겹칩니다.'})
         employee.employee_id = sms_result[employee.pNo]
-
-    if 'the_zone_code' in rqst:
-        only_number = no_only_phone_no(rqst['the_zone_code'])
-        if len(only_number) > 0:
-            employee.the_zone_code = only_number
     # 2019/06/17 고객웹 > 근로자 > 수정: 답변을 초기화 할 때 사용
     employee.is_accept_work = None
     employee.save()
@@ -3684,6 +3684,7 @@ def list_employee(request):
         work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
         response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
         employee_list = response.json()['employees']
+        logSend('  > employoee_list: {}'.format(employee_list))
         for employee in employee_list:
             logSend(' - employee: {}'.format([employee[item] for item in employee.keys()]))
             if str_to_datetime(employee['dt_begin']) < (dt_today + timedelta(days=1)):
@@ -3704,6 +3705,7 @@ def list_employee(request):
                     'dt_end_beacon': "" if employee['dt_end_beacon'] is None else employee['dt_end_beacon'][11:16],
                     'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
                     'state': state_dict[employee['overtime']],
+                    'the_zone_code': "" if employee['the_zone_code'] is None else employee['the_zone_code'],
                     'is_not_begin': False,
                 }
             else:
@@ -3714,6 +3716,7 @@ def list_employee(request):
                     'dt_begin': employee['dt_begin'],
                     'dt_end': employee['dt_end'],
                     'state': employee['is_accept_work'],
+                    'the_zone_code': "" if employee['the_zone_code'] is None else employee['the_zone_code'],
                     'is_not_begin': True,
                 }
             employees.append(employee_web)
@@ -5431,6 +5434,7 @@ def staff_employees_at_day(request):
               "overtime": 0,
               "x": null,
               "y": null,
+              "the_zone_code": "202001002",
               "action": 110
             },
             ...... # 다른 근로자 정보
@@ -5528,6 +5532,7 @@ def staff_employees_at_day(request):
             # 'overtime': pass_record['overtime'],
             # 'x': pass_record['x'],
             # 'y': pass_record['y'],
+            'the_zone_code': employee.the_zone_code
         }
         try:
             pass_record = pass_record_dic[employee.employee_id]
