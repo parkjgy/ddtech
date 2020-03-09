@@ -163,7 +163,7 @@ class Pass_History(models.Model):
     dt_out_verify = models.DateTimeField(null=True, blank=True) # 관리자가 수정한 시간 포함 최종 퇴근 시간
     out_staff_id = models.IntegerField(default=-1)              # 퇴근 시간을 수정한 현장 관리자 id
 
-    overtime = models.IntegerField(default=0)                   # 연장 근무 -2: 휴무, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    overtime = models.IntegerField(default=0)                   # 연장 근무 -3: 유급휴일, -2: 연차휴무, -1: 조기퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     overtime_staff_id = models.IntegerField(default=-1)         # 연장 근무 현장 관리자 id (기본: -1 (현장 소장이 dt_in_verify, dt_out_verify 를 수정하지 않았을 때))
 
     # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
