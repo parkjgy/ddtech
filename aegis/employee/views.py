@@ -4048,6 +4048,13 @@ def work_report_for_customer(request):
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '해당 근로자가 없어요.({})'.format(e)})
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
+        work_id_dict = {}
+        for pass_record in pass_record_list:
+            if pass_record.work_id not in work_id_dict.keys():
+                work_id_dict[pass_record.work_id] = id
+        # work_id_dict = {pass_record.work_id:id for pass_record in pass_record_list if pass_record.work_id not in work_id_dict.keys()}
+        work_dict = get_work_dict(list(work_id_dict.keys()))
+        logSend('  > work_dict: {}'.format(work_dict))
     else:
         work_dict = get_work_dict([work_id])
         logSend('  > work_dict: {}'.format(work_dict))
@@ -4087,9 +4094,6 @@ def work_report_for_customer(request):
                                                            year_month_day__contains=year_month).order_by('year_month_day')
     if len(pass_record_list) == 0:
         return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
-    work_id_list = [pass_record.work_id for pass_record in pass_record_list]
-    work_dict = get_work_dict(work_id_list)
-    logSend('  > work_dict: {}'.format(work_dict))
     #
     # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
     #

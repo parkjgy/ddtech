@@ -6357,15 +6357,6 @@ def staff_employee_working_v2(request):
     }
     logSend(employee_info)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
-    # #
-    # # 근로자 서버로 근로자의 월 근로 내역을 요청
-    # #
-    # employee_info = {
-    #     'employee_id': passer_id,
-    #     'work_id': AES_ENCRYPT_BASE64('-1'),
-    #     'year_month': dt,
-    # }
-    # response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
 
     work_day_dict = {}
     work_dict = {}
