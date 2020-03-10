@@ -2552,7 +2552,9 @@ def reg_from_certification_no_2(request):
                         # logSend('... {}'.format(current_work.get_time_info()))
                         # result['time_info'] = current_work.get_time_info()
                         work_dict = get_work_dict([work['id']])
-                        current_work = work_dict[work['id']]
+                        logSend('  > work_dict: {}'.format(work_dict))
+                        logSend('  > work: {}'.format(work))
+                        current_work = work_dict[str(work['id'])]
                         logSend('... {}'.format(current_work['time_info']))
                         result['time_info'] = current_work['time_info']
 
