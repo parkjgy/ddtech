@@ -4525,18 +4525,17 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
             passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 인정했다.
 
     # logSend('  > overtime: {}'.format(pass_record.overtime))
-    if pass_record.overtime == -3:
-        # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        passer_record_dict['remarks'] = "유급휴가"
-        passer_record_dict['overtime'] = str(overtime)
-    elif pass_record.overtime == -2:
-        # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        passer_record_dict['remarks'] = "연차휴무"
-        passer_record_dict['overtime'] = str(overtime)
-    elif pass_record.overtime == -1:
-        # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        passer_record_dict['remarks'] = "조기퇴근"
-        passer_record_dict['overtime'] = str(overtime)
+    if pass_record.overtime < 0:
+        passer_record_dict['overtime'] = str(pass_record.overtime)
+        if pass_record.overtime == -3:
+            # logSend('  >> overtime: {}'.format(pass_record.overtime))
+            passer_record_dict['remarks'] = "유급휴가"
+        elif pass_record.overtime == -2:
+            # logSend('  >> overtime: {}'.format(pass_record.overtime))
+            passer_record_dict['remarks'] = "연차휴무"
+        elif pass_record.overtime == -1:
+            # logSend('  >> overtime: {}'.format(pass_record.overtime))
+            passer_record_dict['remarks'] = "조기퇴근"
     elif pass_record.dt_in_verify is not None:
         # 휴게시간 계산
         dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
