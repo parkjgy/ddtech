@@ -4528,12 +4528,15 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if pass_record.overtime == -3:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "유급휴가"
+        passer_record_dict['overtime'] = str(overtime)
     elif pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "연차휴무"
+        passer_record_dict['overtime'] = str(overtime)
     elif pass_record.overtime == -1:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "조기퇴근"
+        passer_record_dict['overtime'] = str(overtime)
     elif pass_record.dt_in_verify is not None:
         # 휴게시간 계산
         dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
@@ -4672,8 +4675,8 @@ def my_work_records_v2(request):
                         "week": "월",
                         "action": 110,
                         "work_id": "PinmZxCWGvvrcnj20cRanw",
-                        "dt_begin": "08:29",
-                        "dt_end": "01:33",
+                        "begin": "08:29",
+                        "end": "01:33",
                         "break": "1.0",
                         "basic": "17.0",
                         "night": "3.5",
@@ -4688,8 +4691,8 @@ def my_work_records_v2(request):
                         "week": "화",
                         "action": 110,
                         "work_id": "s61RI2f20hKjO3ZEuUQySw",
-                        "dt_begin": "08:29",
-                        "dt_end": "17:33",
+                        "begin": "08:29",
+                        "end": "17:33",
                         "break": "1.0",
                         "basic": "9.0",
                         "night": "",
@@ -4758,8 +4761,8 @@ def my_work_records_v2(request):
             'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
             'action': pass_record.action,
             'work_id': AES_ENCRYPT_BASE64(str(pass_record.work_id)),
-            'dt_begin': dt_str(pass_record.dt_in_verify, "%H:%M"),
-            'dt_end': dt_str(pass_record.dt_out_verify, "%H:%M"),
+            'begin': dt_str(pass_record.dt_in_verify, "%H:%M"),
+            'end': dt_str(pass_record.dt_out_verify, "%H:%M"),
             'break': '',    # 휴게시간
             'basic': '',    # 기본근로
             'night': '',    # 야간근로
