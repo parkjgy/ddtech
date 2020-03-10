@@ -4559,7 +4559,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         # basic_sum += basic  # 기본근로시간 합계
         passer_record_dict['basic'] = str(basic)
         # 연장근로시간
-        overtime = pass_record.overtime
+        overtime = pass_record.overtime / 2
         # overtime_sum += overtime  # 연장근로시간 합계
         passer_record_dict['overtime'] = str(overtime)
         # 야간근로시간 22:00 ~ 06:00
@@ -4595,7 +4595,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
                 ho = overtime
                 # ho_sum += ho
                 passer_record_dict['ho'] = str(ho)
-    return # passer_record_dict
+    return
 
 
 @cross_origin_read_allow
@@ -4619,90 +4619,92 @@ def my_work_records_v2(request):
             {
                 "message": "정상적으로 처리되었습니다.",
                 "work_dict": {
-                    "PinmZxCWGvvrcnj20cRanw": {
+                    "ErKSUq7CYPAJMLzKN4Q5VA": {
                         "time_info": {
                             "time_type": 1,
-                            "work_time_list": [
-                                {
-                                    "t_begin": "08:30",
-                                    "t_end": "17:30",
-                                    "break_time_type": 0,
-                                    "break_time_list": [
-                                        {
-                                            "bt_begin": "11:30",
-                                            "bt_end": "12:30"
-                                        }
-                                    ],
-                                    "break_time_total": null,
-                                    "break_hours": 1.0
-                                }
-                            ],
-                            "week_hours": "48",
-                            "month_hours": "209",
+                            "week_hours": "20",
+                            "month_hours": null,
                             "working_days": [
                                 1,
                                 2,
+                                3,
                                 4,
                                 5
                             ],
                             "paid_day": 0,
-                            "is_holiday_work": 0
+                            "is_holiday_work": 1,
+                            "work_time_list": [
+                                {
+                                    "t_begin": "08:30",
+                                    "t_end": "17:30",
+                                    "break_time_type": 1,
+                                    "break_time_list": null,
+                                    "break_time_total": "01:00",
+                                    "break_hours": 1.0
+                                }
+                            ]
                         },
-                        "name": "기획",
+                        "name": "운영",
                         "type": "주간",
-                        "work_name_type": "기획 (주간)",
+                        "work_name_type": "운영 (주간)",
                         "work_place_name": "서울지사",
-                        "dt_begin": "2019/12/01",
-                        "dt_end": "2020/03/31",
-                        "dt_begin_full": "2019-12-01 00:00:00",
-                        "dt_end_full": "2020-03-31 23:59:59",
+                        "dt_begin": "2020/02/01",
+                        "dt_end": "2020/02/29",
+                        "dt_begin_full": "2020-02-01 00:00:00",
+                        "dt_end_full": "2020-02-29 23:59:59",
                         "staff_name": "박종기",
                         "staff_pNo": "010-2557-3555",
                         "staff_email": "id@mail.com",
-                        "break_sum": 11.0,
-                        "basic_sum": 111.0,
-                        "night_sum": 3.5,
-                        "overtime_sum": 24,
-                        "holiday_sum": 19.0,
-                        "ho_sum": 2
+                        "e_begin": "2020/01/21",
+                        "e_end": "2020/02/05",
+                        "break_sum": 3.0,
+                        "basic_sum": 27.0,
+                        "night_sum": 0,
+                        "overtime_sum": 0.0,
+                        "holiday_sum": 0,
+                        "ho_sum": 0,
+                        "work_days": 3,
+                        "paid_holidays": 0,
+                        "monthly_holidays": 0
                     },
                     ......
                 },
                 "work_day_dict": {
-                    "02": {
-                        "year_month_day": "2019-12-02",
+                    "03": {
+                        "year_month_day": "2020-02-03",
                         "week": "월",
                         "action": 110,
-                        "work_id": "PinmZxCWGvvrcnj20cRanw",
-                        "begin": "08:29",
-                        "end": "01:33",
-                        "break": "1.0",
-                        "basic": "17.0",
-                        "night": "3.5",
-                        "overtime": "16",
-                        "holiday": "",
-                        "ho": "",
-                        "remarks": ""
-                    },
-                    ......
-                    "31": {
-                        "year_month_day": "2019-12-31",
-                        "week": "화",
-                        "action": 110,
-                        "work_id": "s61RI2f20hKjO3ZEuUQySw",
+                        "work_id": "ErKSUq7CYPAJMLzKN4Q5VA",
                         "begin": "08:29",
                         "end": "17:33",
                         "break": "1.0",
                         "basic": "9.0",
                         "night": "",
-                        "overtime": "0",
+                        "overtime": "0.0",
                         "holiday": "",
                         "ho": "",
-                        "remarks": ""
+                        "remarks": "",
+                        "is_accept": "1"
+                    },
+                    ......
+                    "29": {
+                        "year_month_day": "2020-02-29",
+                        "week": "토",
+                        "action": 0,
+                        "work_id": "PinmZxCWGvvrcnj20cRanw",
+                        "begin": "",
+                        "end": "",
+                        "break": "",
+                        "basic": "",
+                        "night": "",
+                        "overtime": "",
+                        "holiday": "",
+                        "ho": "",
+                        "remarks": "",
+                        "is_accept": "1"
                     }
                 }
             }
-
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
             {'message':'ClientError: parameter \'dt\' 가 없어요'}
@@ -4724,7 +4726,7 @@ def my_work_records_v2(request):
     except Exception as e:
         return status422(get_api(request), {'message': 'passer_id: {} 없음. {}'.format(passer_id, str(e))})
     try:
-        employee = Passer.objects.get(id=passer.employee_id)
+        employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'employee_id{} 없음. {}'.format(passer.employee_id, str(e))})
     pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
@@ -4738,6 +4740,7 @@ def my_work_records_v2(request):
             work_id_dict[pass_record.work_id] = id
     work_dict = get_work_dict(list(work_id_dict.keys()))
     logSend('  > work_dict: {}'.format(work_dict.keys()))
+    employee_works = Works(employee.get_works())
     set_break_time_of_work_time_info(work_dict)
     #
     # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
@@ -4752,7 +4755,11 @@ def my_work_records_v2(request):
     overtime_sum = 0    # 연장근로시간 합계
     holiday_sum = 0     # 유급휴일근로시간 합계
     ho_sum = 0          # 휴일/연장근로시간 합계
-    break_time = 0
+
+    work_days = 0           # 근무일수
+    paid_holidays = 0       # 유급휴일
+    monthly_holidays = 0    # 연차휴무
+
     for pass_record in pass_record_list:
         # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
         passer_record_dict = {
@@ -4778,7 +4785,13 @@ def my_work_records_v2(request):
             encryted_work_id = AES_ENCRYPT_BASE64(str(current_work_id))
             work_month_sum_dict[encryted_work_id] = copy.deepcopy(work_dict[current_work_id])
             # work_time_list = work_month_sum_dict[current_work_id]['work_time_list']
-
+            current_employee_work = employee_works.find_work_include_date(current_work_id, str_to_datetime(pass_record.year_month_day))
+            if current_employee_work is None:
+                work_month_sum_dict[encryted_work_id]['e_begin'] = work_month_sum_dict[encryted_work_id]['dt_begin']
+                work_month_sum_dict[encryted_work_id]['e_end'] = work_month_sum_dict[encryted_work_id]['dt_end']
+            else:
+                work_month_sum_dict[encryted_work_id]['e_begin'] = current_employee_work['begin']
+                work_month_sum_dict[encryted_work_id]['e_end'] = current_employee_work['end']
             if work_dict[current_work_id]['time_info']['time_type'] == 0:
                 # 시간제: 유급휴일을 기준으로 이전 유급휴일까지 개근했으면 주휴근로시간을 추가해야한다.
                 dt = str_to_datetime(year_month)
@@ -4798,9 +4811,20 @@ def my_work_records_v2(request):
             work_month_sum_dict[encryted_work_id]['holiday_sum'] = holiday_sum
             work_month_sum_dict[encryted_work_id]['ho_sum'] = ho_sum
 
+            work_month_sum_dict[encryted_work_id]['work_days'] = work_days
+            work_month_sum_dict[encryted_work_id]['paid_holidays'] = paid_holidays
+            work_month_sum_dict[encryted_work_id]['monthly_holidays'] = monthly_holidays
+
             current_work_id = pass_record.work_id
             encryted_work_id = AES_ENCRYPT_BASE64(str(current_work_id))
             work_month_sum_dict[encryted_work_id] = copy.deepcopy(work_dict[current_work_id])
+            current_employee_work = employee_works.find_work_include_date(current_work_id, str_to_datetime(pass_record.year_month_day))
+            if current_employee_work is None:
+                work_month_sum_dict[encryted_work_id]['e_begin'] = work_month_sum_dict[encryted_work_id]['dt_begin']
+                work_month_sum_dict[encryted_work_id]['e_end'] = work_month_sum_dict[encryted_work_id]['dt_end']
+            else:
+                work_month_sum_dict[encryted_work_id]['e_begin'] = current_employee_work['begin']
+                work_month_sum_dict[encryted_work_id]['e_end'] = current_employee_work['end']
             break_sum = 0  # 휴게시간 합계
             basic_sum = 0  # 기본근로시간 합계
             night_sum = 0  # 야간근로시간 합계
@@ -4808,15 +4832,26 @@ def my_work_records_v2(request):
             holiday_sum = 0  # 유급휴일근로시간 합계
             ho_sum = 0  # 휴일/연장근로시간 합계
 
-        # passer_record_dict = process_pass_record(passer_record_dict, pass_record, work_dict, current_work_id)
+            work_days = 0  # 근무일수
+            paid_holidays = 0  # 유급휴일
+            monthly_holidays = 0  # 연차휴무
+
         process_pass_record(passer_record_dict, pass_record, work_dict, current_work_id)
         logSend('  > {}'.format(passer_record_dict))
-        if len(passer_record_dict['break']) > 0:
-            break_sum += float(passer_record_dict['break'])
         if len(passer_record_dict['basic']) > 0:
             basic_sum += float(passer_record_dict['basic'])
+            work_days += 1
+        if len(passer_record_dict['break']) > 0:
+            break_sum += float(passer_record_dict['break'])
         if len(passer_record_dict['overtime']) > 0:
-            overtime_sum += float(passer_record_dict['overtime'])
+            if pass_record.overtime < 0:
+                if pass_record.overtime == -2:
+                    monthly_holidays += 1
+                elif pass_record.overtime == -3:
+                    paid_holidays += 1
+            else:
+                # overtime_sum += pass_record.overtime / 2
+                overtime_sum += float(passer_record_dict['overtime'])
         if len(passer_record_dict['night']) > 0:
             night_sum += float(passer_record_dict['night'])
         if len(passer_record_dict['holiday']) > 0:
@@ -4906,6 +4941,10 @@ def my_work_records_v2(request):
     work_month_sum_dict[encryted_work_id]['overtime_sum'] = overtime_sum
     work_month_sum_dict[encryted_work_id]['holiday_sum'] = holiday_sum
     work_month_sum_dict[encryted_work_id]['ho_sum'] = ho_sum
+
+    work_month_sum_dict[encryted_work_id]['work_days'] = work_days
+    work_month_sum_dict[encryted_work_id]['paid_holidays'] = paid_holidays
+    work_month_sum_dict[encryted_work_id]['monthly_holidays'] = monthly_holidays
 
     return REG_200_SUCCESS.to_json_response({'work_dict': work_month_sum_dict, 'work_day_dict': passer_rec_dict})
     # 근로자 정보: 이름 전화번호
