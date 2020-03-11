@@ -2013,7 +2013,7 @@ def certification_no_to_sms(request):
         'sender': settings.SMS_SENDER_PN,
         'receiver': passer.pNo,
         'msg_type': 'SMS',
-        'msg': '이지체크 [' + str(certificateNo) + ']\n'
+        'msg': '[' + str(certificateNo) + '] 이지체크 \n'
         '인증번호 입니다.'
     }
     if settings.IS_TEST:
