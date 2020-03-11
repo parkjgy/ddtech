@@ -2018,7 +2018,7 @@ def certification_no_to_sms(request):
     }
     if settings.IS_TEST:
         rData['testmode_yn'] = 'Y'
-        return REG_200_SUCCESS.to_json_response(rData)
+        return REG_200_SUCCESS.to_json_response({'dt_next': dt_null(passer.dt_cn)})
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
     # print(rSMS.status_code)
@@ -2133,7 +2133,7 @@ def reg_from_certification_no(request):
             logSend('*** apple 심사용 전화번호')
         else:
             cn = cn.replace(' ', '')
-            logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
+            logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST: {}'.format(passer.cn, cn, settings.IS_TEST))
             if not settings.IS_TEST and passer.cn != int(cn):
                 # if passer.cn != int(cn):
                 return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()
@@ -2499,7 +2499,7 @@ def reg_from_certification_no_2(request):
             logSend('*** apple 심사용 전화번호')
         else:
             cn = cn.replace(' ', '')
-            logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST'.format(passer.cn, cn, settings.IS_TEST))
+            logSend('  인증번호: {} vs 근로자 입력 인증번호: {}, settings.IS_TEST: {}'.format(passer.cn, cn, settings.IS_TEST))
             if not settings.IS_TEST and str(passer.cn) != cn:
                 # if passer.cn != int(cn):
                 return REG_550_CERTIFICATION_NO_IS_INCORRECT.to_json_response()

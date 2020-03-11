@@ -28,7 +28,8 @@ EMPLOYEE_URL = 'http://127.0.0.1:8000/employee/'
 
 SMS_SENDER_PN = '1899-3832'
 
-IS_TEST = True
+# IS_TEST = True     # 인증번호: 201903 (sms 서버에 문자를 발송을 할 수 없을 때 사용한다.)
+IS_TEST = False
 IS_SERVICE = False
 
 # APNs 인증서 경로
