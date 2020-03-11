@@ -293,22 +293,25 @@ def list_my_work(request):
     logSend('   --- employee works: {}'.format(employee.get_works()))
     employee_works = employee.get_works()
     before15day = datetime.datetime.now() - timedelta(days=15)
+    # before15day = datetime.datetime.now() - timedelta(days=100)
     # logSend(before15day)
-    work_id_list = [employee_work['id'] for employee_work in employee_works if before15day < str_to_dt(employee_work['end'])]
-    # logSend(work_id_list)
+    lately_work_list = [employee_work for employee_work in employee_works if before15day < str_to_dt(employee_work['end'])]
+    lately_work_dict = {employee_work['id']: 'id' for employee_work in employee_works if before15day < str_to_dt(employee_work['end'])}
+    # logSend('  > lately_work_dict: {}'.format(lately_work_dict))
+    work_id_list = list(lately_work_dict.keys())
     work_dict = get_work_dict(work_id_list)
+    # logSend('  > work_dict: {}'.format(work_dict.keys()))
     if len(work_dict.keys()) == 0:
         return REG_200_SUCCESS.to_json_response({'works': []})
-    employee_work_list = []
-    for work_key in work_dict.keys():
-        work = work_dict[work_key]
-        for employee_work in employee_works:  # 근로자 마다 업무 기간이 다르기 때문에 업무의 근로기간을 쓰지 않는다.
-            if int(work_key) == employee_work['id']:
-                work['begin'] = employee_work['begin']
-                work['end'] = employee_work['end']
-                employee_work_list.append(work)
-                continue
-    return REG_200_SUCCESS.to_json_response({'works': employee_work_list})
+    work_list = []
+    for lately_work in lately_work_list:
+        # logSend('  > id: {}, work_dict: {}'.format(lately_work['id'], 11))
+        # logSend('  >> work_dict: {}'.format(work_dict['68']))
+        work_infor = copy.deepcopy(work_dict[str(lately_work['id'])])
+        work_infor['begin'] = lately_work['begin']
+        work_infor['end'] = lately_work['end']
+        work_list.append(work_infor)
+    return REG_200_SUCCESS.to_json_response({'works': work_list})
 
 
 @cross_origin_read_allow
