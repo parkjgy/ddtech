@@ -4777,7 +4777,7 @@ def my_work_records_v2(request):
             'ho': '',       # 휴일/연장
             'remarks': '',  #
             'is_accept': '1',  # 관리자에 의해 근태가 변경되지 않았다. (출/퇴근시간, 유급휴일, 연차휴가, 조기퇴근, 연장근무)
-            'dt_accept': pass_record.dt_accept,
+            'dt_accept': dt_null(pass_record.dt_accept),
         }
         if current_work_id == '':
             # 아직 업무가 정해지지 않았으면
