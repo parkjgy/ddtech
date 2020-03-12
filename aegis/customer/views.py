@@ -6592,19 +6592,19 @@ def staff_recognize_employee(request):
     if 'dt_arrive' in rqst and str_dt_arrive is not None:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
+        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
         employees_infor['year_month_day'] = dt_arrive.strftime('%Y-%m-%d')
         employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
         employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
-        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
         # employee.dt_begin_touch = dt_arrive
 
     if 'dt_leave' in rqst and str_dt_leave is not None:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
+        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
         employees_infor['year_month_day'] = dt_leave.strftime('%Y-%m-%d')
         employees_infor['dt_out_verify'] = dt_leave.strftime('%H:%M')
         employees_infor['out_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
-        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
         # employee.dt_end_touch = dt_leave
 
     # employee.save()
@@ -6615,14 +6615,10 @@ def staff_recognize_employee(request):
     if len(r.json()['fail_list']):
         logError(get_api(request),
                  ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
-    pass_records = r.json()['employees']
-    fail_list = r.json()['fail_list']
+    # pass_records = r.json()['employees']
+    # fail_list = r.json()['fail_list']
 
-    result = {'update_dt_arrive': dt_null(dt_arrive),
-              'update_dt_leave': dt_null(dt_leave)
-              }
-
-    return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response()
 
 
 @cross_origin_read_allow
