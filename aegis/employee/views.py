@@ -723,14 +723,18 @@ def notification_list_v2(request):
               "message": "정상적으로 처리되었습니다.",
               "notifications": [
                 {
-                  "id": "qgf6YHf1z2Fx80DR8o_Lvg==",
-                  "work_place_name": "효성1공장",
-                  "work_name_type": "경비(주)간",
-                  "begin": "2019/03/04",
-                  "end": "2019/03/31",
-                  "dt_answer_deadline": "2019-03-03 19:00:00",
-                  "staff_name": "이수용",
-                  "staff_pNo": "01099993333"
+                    "id": "yTKazFfuKEJ_fGBbPU84Ag",             # 알림 id (사용 X)
+                    "work_place_name": "서울지사",                  # 사업장
+                    "work_name_type": "기획 (주간)",                # 업무(형태)
+                    "staff_name": "박종기",                        # 담당 관리자
+                    "staff_pNo": "010-2557-3555",               # 담당 관리자 전화번호
+                    "dt_answer_deadline": "2020-03-26 01:32",   # 결정 시한 이 시간이 지나면 보내지 않음 (???)
+                    "begin": "2020/03/23",                      # 사용 X
+                    "end": "2019/12/05",                        # 사용 X
+                    "notification_type": -20,                   # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+                    "notification_type_str": "출근시간 수정",         # 알렴 설명
+                    "comment": "출근 시간이 2020-03-23 08:25:00 으로 수정되었습니다.", # 전달 사항
+                    "dt_io": "2020-03-23 08:25"                     # 출퇴근시간 변경일 때 변경될 시간
                 }
               ]
             }
@@ -773,7 +777,7 @@ def notification_list_v2(request):
     logSend('  notification: {}'.format([x.dt_begin for x in notification_list]))
     arr_notification = []
     work_dict = get_work_dict([notification.work_id for notification in notification_list])
-    notification_type_dict = {-30: '새업무', -20: '출퇴근 수정', -3: '유급휴무', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
+    notification_type_dict = {-30: '새업무', -21: '퇴근시간 수정', -20: '출근시간 수정', -4: '유급휴일 해제', -3: '유급휴일 지정', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
     for notification in notification_list:
         # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
         # 2019/05/17 임시 기능 정지 - 업무 시작 후 업무 참여요청 보낼 필요 발생
@@ -793,6 +797,7 @@ def notification_list_v2(request):
             'notification_type': notification.notification_type,
             'notification_type_str': notification_type_dict[notification.notification_type] if notification.notification_type <= 0 else "연장근무",
             'comment': notification.comment,
+            'dt_io': dt_str(notification.dt_inout, "%Y-%m-%d %H:%M"),
         }
         arr_notification.append(view_notification)
     return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
@@ -1005,15 +1010,54 @@ def notification_accept_v2(request):
             #
             # pass_history 에 확인 했음을 저장해야 한다.
             #
-            if notification.pass_record_id is not -1:
-                try:
-                    pass_record = Pass_History.objects.get(id=notification.pass_record_id)
-                except Exception as e:
-                    return status422(get_api(request),
-                                     {'message': 'pass_record({}) 의 근태 정보가 없어요.'.format(notification.pass_record_id)})
-                pass_record.dt_accept = datetime.datetime.now()
+            year_month_day = dt_str(notification.dt_inout, "%Y-%m-%d")
+            pass_record_list = Pass_History.objects.filter(work_id=notification.work_id, passer_id=notification.employee_id, year_month_day=year_month_day)
+            if len(pass_record_list) == 0:
+                pass_record = Pass_History(
+                    passer_id=notification.employee_id,
+                    work_id=notification.work_id,
+                    year_month_day=year_month_day,
+                    action=0,
+                    # x=x,
+                    # y=y,
+                )
+                work_dict = get_work_dict([notification.work_id])
+                work = work_dict[list(work_dict.keys())[0]]
+                work['id'] = list(work_dict.keys())[0]
+                update_pass_history(pass_record, work)
                 pass_record.save()
+            else:
+                pass_record = pass_record_list[0]
 
+            pass_record.dt_accept = datetime.datetime.now()
+            if notification.notification_type == -21:  # 퇴근시간 수정
+                pass_record.dt_out_verify = notification.dt_inout
+                pass_record.out_staff_id = notification.staff_id
+            elif notification.notification_type == -20:  # 출근시간 수정
+                pass_record.dt_in_verify = notification.dt_inout
+                pass_record.in_staff_id = notification.staff_id
+            elif notification.notification_type == -4:  # 유급휴일 해제
+                pass_record.is_paid_holiday = 0
+                pass_record.paid_holiday_staff_id = notification.staff_id
+            elif notification.notification_type == -3:  # 유급휴일 부여
+                pass_record.is_paid_holiday = 1
+                pass_record.paid_holiday_staff_id = notification.staff_id
+            # elif notification.notification_type == -2:  # 연차휴무 부여
+            # elif notification.notification_type == -1:  # 조기퇴근 부여
+            # elif notification.notification_type == 0:  # 연차휴무, 조기퇴근, 연장근로 취소
+            else:  # 연장근로 부여
+                pass_record.overtime = notification.notification_type
+                pass_record.overtime_staff_id = notification.staff_id
+            pass_record.save()
+            # if notification.pass_record_id is not -1:
+            #     try:
+            #         pass_record = Pass_History.objects.get(id=notification.pass_record_id)
+            #     except Exception as e:
+            #         return status422(get_api(request),
+            #                          {'message': 'pass_record({}) 의 근태 정보가 없어요.'.format(notification.pass_record_id)})
+            #     pass_record.dt_accept = datetime.datetime.now()
+            #     pass_record.save()
+            #
             notification.is_x = 1  # 필요없다. 삭제
             notification.save()
     else:
@@ -3423,8 +3467,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     notification_type = 0
     staff_id = -1
     comment = ''
-    dt_in_verify = str_to_datetime("2019-12-05")
-    dt_out_verify = str_to_datetime("2019-12-05")
+    dt_inout = str_to_datetime("2019-12-05")
     # 연장 근무 처리
     if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
         overtime = int(rqst['overtime'])
@@ -3434,6 +3477,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             is_ok = False
             fail_list.append(' overtime_staff_id: 비정상')
         notification_type = overtime
+        dt_inout = str_to_datetime(year_month_day)
         staff_id = overtime_staff_id
         if overtime == -4:
             comment = '유급휴일이 해제됩니다.'
@@ -3454,7 +3498,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             is_ok = False
             fail_list.append(' in_staff_id: 비정상')
         try:
-            dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
+            dt_inout = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
                                                       '%Y-%m-%d %H:%M:%S')
         except Exception as e:
             is_ok = False
@@ -3462,7 +3506,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if is_ok:
             notification_type = -20
             staff_id = int(in_staff_id)
-            comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_in_verify)
+            comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_inout)
 
     # 퇴근시간 수정 처리
     if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
@@ -3472,7 +3516,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             is_ok = False
             fail_list.append(' out_staff_id: 비정상')
         try:
-            dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
+            dt_inout = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
                                                        '%Y-%m-%d %H:%M:%S')
         except Exception as e:
             is_ok = False
@@ -3480,7 +3524,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if is_ok:
             notification_type = -21
             staff_id = int(out_staff_id)
-            comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_out_verify)
+            comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_inout)
 
     today = datetime.datetime.now()
     push_list = []
@@ -3491,8 +3535,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             employee_id=passer_id,
             employee_pNo=passer.pNo,
             dt_answer_deadline=today + datetime.timedelta(days=2),
-            dt_begin=dt_in_verify,
-            dt_end=dt_out_verify,
+            # dt_begin=dt_in_verify,    # 사용안함
+            # dt_end=dt_out_verify,     # 사용안함
             dt_reg=today,
             work_place_name=work_dict['work_place_name'],
             work_name_type=work_dict['work_name_type'],
@@ -3500,6 +3544,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             notification_type=notification_type,      # -20 출퇴근시간 변경
             comment=comment,
             staff_id=staff_id,
+            dt_inout=dt_inout,
         )
         new_notification.save()
         logSend('  > notification: {}'.format(new_notification))
@@ -3522,219 +3567,219 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
               }
     return REG_200_SUCCESS.to_json_response(result)
 
-    employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
-    # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
-    if len(passer_list) != len(employee_info_id_list):
-        logError(get_api(request), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
-    employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
-    # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
-    employee_ids = []
-    for employee_info in employee_info_list:
-        for passer in passer_list:
-            if passer.employee_id == employee_info.id:
-                employee_ids.append(passer.id)
-    logSend('  new employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
-    logSend('  pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
-    if int(work_id) == -1:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
-    else:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
-                                                     work_id=work_id)
-    if len(pass_histories) == 0:
-        logError(get_api(request),
-                 ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
-        # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
-    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
-    logSend('  pass_histories passer_ids {}'.format(exist_ids))
-    for employee_id in employee_ids:
-        if int(employee_id) not in exist_ids:
-            if int(employee_id) < 0:
-                # 필요없음 위 id 해독부분에서 -1 을 걸러냄
-                logError(get_api(request), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
-            else:
-                # 출퇴근 기록이 없으면 새로 만든다.
-                logSend('   --- new pass_history passer_id {}'.format(employee_id))
-                new_pass_history = Pass_History(
-                    passer_id=int(employee_id),
-                    year_month_day=year_month_day,
-                    action=0,
-                    work_id=work_id,
-                )
-                logError(get_api(request), ' 강제로 만든 pass_history: {}'.format(
-                    [{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if
-                     not key.startswith('_')]))
-                new_pass_history.save()
-    if int(work_id) == -1:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
-    else:
-        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
-                                                     work_id=work_id)
-
-    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
-    logSend('--- pass_histories passer_ids {}'.format(exist_ids))
-    fail_list = []
-    int_work_id = int(work_id)
-    for pass_history in pass_histories:
-        if int_work_id == -1:
-            int_work_id = int(pass_history.work_id)
-            work = get_work_dict([int_work_id])
-            logSend('  > work: {}'.format(work))
-        elif int_work_id != int(pass_history.work_id):
-            int_work_id = int(pass_history.work_id)
-            work = get_work_dict([int_work_id])
-            logSend('  > work: {}'.format(work))
-        else:
-            int_work_id = int_work_id
-            work = get_work_dict([int_work_id])
-            logSend('  > work: {}'.format(work))
-        work_dict = work[list(work.keys())[0]]
-        work_dict['id'] = list(work.keys())[0]
-        # logSend('  > work_dict: {}'.format(work_dict))
-
-        new_notification = Notification_Work(
-            work_id=work_dict['id'],
-            # customer_work_id='',
-            employee_id=pass_history.passer_id,
-            employee_pNo=passer_dict[pass_history.passer_id].__dict__['pNo'],
-            # dt_answer_deadline=dt_answer_deadline,
-            # dt_begin=str_to_dt(dt_begin_employee),
-            # dt_end=str_to_dt(dt_end_employee),
-            # 이하 시스템 관리용
-            work_place_name=work_dict['work_place_name'],
-            work_name_type=work_dict['work_name_type'],
-            # is_x=False,  # default
-            # dt_reg=datetime.datetime.now(),  # default
-            comment=comment if comment is not None else "",
-            pass_record_id=pass_history.id,
-        )
-
-        # 연장 근무 처리
-        if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
-            overtime = int(rqst['overtime'])
-            plain = AES_DECRYPT_BASE64(rqst['overtime_staff_id'])
-            is_ok = True
-            if plain == '__error':
-                is_ok = False
-                fail_list.append(' overtime_staff_id: 비정상')
-            #
-            # 2020/02/28
-            # 업무정보(time_info)에 유급휴일(주휴일 paid_day)이 -1 이면 메뉴에 "유급휴일"이 표시되야 한다.
-            # 호출하는 쪽에서 검사하기 때문에 여기서는 검사하지 않는다.
-            #
-            if overtime < -3 or 18 < overtime:
-                is_ok = False
-                fail_list.append(' overtime: 범위 초과')
-            if is_ok:
-                pass_history.overtime = overtime
-                pass_history.overtime_staff_id = int(plain)
-            new_notification.notification_type = overtime
-            if overtime > 0:
-                new_notification.comment = '연장근무 {}:{} 이 부여되었습니다.'.format(overtime // 2, overtime % 2 * 30)
-
-        # 출근시간 수정 처리
-        if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
-            plain = AES_DECRYPT_BASE64(rqst['in_staff_id'])
-            is_ok = True
-            if plain == '__error':
-                is_ok = False
-                fail_list.append(' in_staff_id: 비정상')
-            try:
-                dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
-                                                          '%Y-%m-%d %H:%M:%S')
-            except Exception as e:
-                is_ok = False
-                fail_list.append(' dt_in_verify: 날짜 변경 Error ({})'.format(e))
-            if is_ok:
-                pass_history.dt_in_verify = dt_in_verify
-                pass_history.in_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format(
-                    [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
-                     not key.startswith('_')]))
-                update_pass_history(pass_history, work)
-            new_notification.notification_type = -20
-            new_notification.comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_in_verify)
-
-        # 퇴근시간 수정 처리
-        if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
-            plain = AES_DECRYPT_BASE64(rqst['out_staff_id'])
-            is_ok = True
-            if plain == '__error':
-                is_ok = False
-                fail_list.append(' out_staff_id: 비정상')
-            try:
-                dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
-                                                           '%Y-%m-%d %H:%M:%S')
-            except Exception as e:
-                is_ok = False
-                fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
-            if is_ok:
-                pass_history.action = 0
-                pass_history.dt_out_verify = dt_out_verify
-                pass_history.out_staff_id = int(plain)
-                logSend('--- pass_history: {}'.format(
-                    [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
-                     not key.startswith('_')]))
-                update_pass_history(pass_history, work)
-            new_notification.notification_type = -20
-            new_notification.comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_out_verify)
-
-        if len(fail_list) > 0:
-            return status422(get_api(request), {'message': 'fail', 'fail_list': fail_list})
-
-        pass_history.save()
-
-        new_notification.save()
-        logSend('  > notification: {}'.format(new_notification))
-        push_list = []
-        passer = passer_dict[pass_history.passer_id]
-        push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
-        logSend(push_list)
-        if len(push_list) > 0:
-            push_contents = {
-                'target_list': push_list,
-                'func': 'user',
-                'isSound': True,
-                'badge': 1,
-                'contents': {'title': '업무 알림',
-                             'subtitle': new_notification.comment,
-                             'body': {'action': 'NewWork',
-                                      'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                             }
-            }
-            send_push(push_contents)
-
-        # *** 출퇴근 시간이 바뀌면 pass_verify 로 변경해야하는데...
-        # 문제 없을까?
-        # action 처리가 안된다.
-
-    list_pass_history = []
-    for pass_history in pass_histories:
-        pass_history_dict = {
-            'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
-            'year_month_day': pass_history.year_month_day,
-            'action': pass_history.action,
-            'work_id': pass_history.work_id,
-            'dt_in': pass_history.dt_in,
-            'dt_in_verify': pass_history.dt_in_verify,
-            'in_staff_id': pass_history.in_staff_id,
-            'dt_out': pass_history.dt_out,
-            'dt_out_verify': pass_history.dt_out_verify,
-            'out_staff_id': pass_history.out_staff_id,
-            'overtime': pass_history.overtime,
-            'overtime_staff_id': pass_history.overtime_staff_id,
-            'x': pass_history.x,
-            'y': pass_history.y,
-        }
-        # for key in pass_history.__dict__.keys():
-        #     logSend(key, ' ', pass_history.__dict__[key])
-        #     json_pass_history[key] = pass_history.__dict__[key]
-        # list_pass_history.append(json_pass_history)
-        list_pass_history.append(pass_history_dict)
-    # logSend(list_pass_history)
-    result = {'employees': list_pass_history,
-              'fail_list': fail_list,
-              }
-    return REG_200_SUCCESS.to_json_response(result)
+    # employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
+    # # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
+    # if len(passer_list) != len(employee_info_id_list):
+    #     logError(get_api(request), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
+    # employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
+    # # logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
+    # employee_ids = []
+    # for employee_info in employee_info_list:
+    #     for passer in passer_list:
+    #         if passer.employee_id == employee_info.id:
+    #             employee_ids.append(passer.id)
+    # logSend('  new employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
+    # logSend('  pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
+    # if int(work_id) == -1:
+    #     pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    # else:
+    #     pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+    #                                                  work_id=work_id)
+    # if len(pass_histories) == 0:
+    #     logError(get_api(request),
+    #              ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+    #     # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
+    # exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    # logSend('  pass_histories passer_ids {}'.format(exist_ids))
+    # for employee_id in employee_ids:
+    #     if int(employee_id) not in exist_ids:
+    #         if int(employee_id) < 0:
+    #             # 필요없음 위 id 해독부분에서 -1 을 걸러냄
+    #             logError(get_api(request), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
+    #         else:
+    #             # 출퇴근 기록이 없으면 새로 만든다.
+    #             logSend('   --- new pass_history passer_id {}'.format(employee_id))
+    #             new_pass_history = Pass_History(
+    #                 passer_id=int(employee_id),
+    #                 year_month_day=year_month_day,
+    #                 action=0,
+    #                 work_id=work_id,
+    #             )
+    #             logError(get_api(request), ' 강제로 만든 pass_history: {}'.format(
+    #                 [{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if
+    #                  not key.startswith('_')]))
+    #             new_pass_history.save()
+    # if int(work_id) == -1:
+    #     pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    # else:
+    #     pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+    #                                                  work_id=work_id)
+    #
+    # exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    # logSend('--- pass_histories passer_ids {}'.format(exist_ids))
+    # fail_list = []
+    # int_work_id = int(work_id)
+    # for pass_history in pass_histories:
+    #     if int_work_id == -1:
+    #         int_work_id = int(pass_history.work_id)
+    #         work = get_work_dict([int_work_id])
+    #         logSend('  > work: {}'.format(work))
+    #     elif int_work_id != int(pass_history.work_id):
+    #         int_work_id = int(pass_history.work_id)
+    #         work = get_work_dict([int_work_id])
+    #         logSend('  > work: {}'.format(work))
+    #     else:
+    #         int_work_id = int_work_id
+    #         work = get_work_dict([int_work_id])
+    #         logSend('  > work: {}'.format(work))
+    #     work_dict = work[list(work.keys())[0]]
+    #     work_dict['id'] = list(work.keys())[0]
+    #     # logSend('  > work_dict: {}'.format(work_dict))
+    #
+    #     new_notification = Notification_Work(
+    #         work_id=work_dict['id'],
+    #         # customer_work_id='',
+    #         employee_id=pass_history.passer_id,
+    #         employee_pNo=passer_dict[pass_history.passer_id].__dict__['pNo'],
+    #         # dt_answer_deadline=dt_answer_deadline,
+    #         # dt_begin=str_to_dt(dt_begin_employee),
+    #         # dt_end=str_to_dt(dt_end_employee),
+    #         # 이하 시스템 관리용
+    #         work_place_name=work_dict['work_place_name'],
+    #         work_name_type=work_dict['work_name_type'],
+    #         # is_x=False,  # default
+    #         # dt_reg=datetime.datetime.now(),  # default
+    #         comment=comment if comment is not None else "",
+    #         pass_record_id=pass_history.id,
+    #     )
+    #
+    #     # 연장 근무 처리
+    #     if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
+    #         overtime = int(rqst['overtime'])
+    #         plain = AES_DECRYPT_BASE64(rqst['overtime_staff_id'])
+    #         is_ok = True
+    #         if plain == '__error':
+    #             is_ok = False
+    #             fail_list.append(' overtime_staff_id: 비정상')
+    #         #
+    #         # 2020/02/28
+    #         # 업무정보(time_info)에 유급휴일(주휴일 paid_day)이 -1 이면 메뉴에 "유급휴일"이 표시되야 한다.
+    #         # 호출하는 쪽에서 검사하기 때문에 여기서는 검사하지 않는다.
+    #         #
+    #         if overtime < -3 or 18 < overtime:
+    #             is_ok = False
+    #             fail_list.append(' overtime: 범위 초과')
+    #         if is_ok:
+    #             pass_history.overtime = overtime
+    #             pass_history.overtime_staff_id = int(plain)
+    #         new_notification.notification_type = overtime
+    #         if overtime > 0:
+    #             new_notification.comment = '연장근무 {}:{} 이 부여되었습니다.'.format(overtime // 2, overtime % 2 * 30)
+    #
+    #     # 출근시간 수정 처리
+    #     if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
+    #         plain = AES_DECRYPT_BASE64(rqst['in_staff_id'])
+    #         is_ok = True
+    #         if plain == '__error':
+    #             is_ok = False
+    #             fail_list.append(' in_staff_id: 비정상')
+    #         try:
+    #             dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
+    #                                                       '%Y-%m-%d %H:%M:%S')
+    #         except Exception as e:
+    #             is_ok = False
+    #             fail_list.append(' dt_in_verify: 날짜 변경 Error ({})'.format(e))
+    #         if is_ok:
+    #             pass_history.dt_in_verify = dt_in_verify
+    #             pass_history.in_staff_id = int(plain)
+    #             logSend('--- pass_history: {}'.format(
+    #                 [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
+    #                  not key.startswith('_')]))
+    #             update_pass_history(pass_history, work)
+    #         new_notification.notification_type = -20
+    #         new_notification.comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_in_verify)
+    #
+    #     # 퇴근시간 수정 처리
+    #     if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
+    #         plain = AES_DECRYPT_BASE64(rqst['out_staff_id'])
+    #         is_ok = True
+    #         if plain == '__error':
+    #             is_ok = False
+    #             fail_list.append(' out_staff_id: 비정상')
+    #         try:
+    #             dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
+    #                                                        '%Y-%m-%d %H:%M:%S')
+    #         except Exception as e:
+    #             is_ok = False
+    #             fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
+    #         if is_ok:
+    #             pass_history.action = 0
+    #             pass_history.dt_out_verify = dt_out_verify
+    #             pass_history.out_staff_id = int(plain)
+    #             logSend('--- pass_history: {}'.format(
+    #                 [{key: pass_history.__dict__[key]} for key in pass_history.__dict__.keys() if
+    #                  not key.startswith('_')]))
+    #             update_pass_history(pass_history, work)
+    #         new_notification.notification_type = -20
+    #         new_notification.comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_out_verify)
+    #
+    #     if len(fail_list) > 0:
+    #         return status422(get_api(request), {'message': 'fail', 'fail_list': fail_list})
+    #
+    #     pass_history.save()
+    #
+    #     new_notification.save()
+    #     logSend('  > notification: {}'.format(new_notification))
+    #     push_list = []
+    #     passer = passer_dict[pass_history.passer_id]
+    #     push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+    #     logSend(push_list)
+    #     if len(push_list) > 0:
+    #         push_contents = {
+    #             'target_list': push_list,
+    #             'func': 'user',
+    #             'isSound': True,
+    #             'badge': 1,
+    #             'contents': {'title': '업무 알림',
+    #                          'subtitle': new_notification.comment,
+    #                          'body': {'action': 'NewWork',
+    #                                   'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    #                          }
+    #         }
+    #         send_push(push_contents)
+    #
+    #     # *** 출퇴근 시간이 바뀌면 pass_verify 로 변경해야하는데...
+    #     # 문제 없을까?
+    #     # action 처리가 안된다.
+    #
+    # list_pass_history = []
+    # for pass_history in pass_histories:
+    #     pass_history_dict = {
+    #         'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
+    #         'year_month_day': pass_history.year_month_day,
+    #         'action': pass_history.action,
+    #         'work_id': pass_history.work_id,
+    #         'dt_in': pass_history.dt_in,
+    #         'dt_in_verify': pass_history.dt_in_verify,
+    #         'in_staff_id': pass_history.in_staff_id,
+    #         'dt_out': pass_history.dt_out,
+    #         'dt_out_verify': pass_history.dt_out_verify,
+    #         'out_staff_id': pass_history.out_staff_id,
+    #         'overtime': pass_history.overtime,
+    #         'overtime_staff_id': pass_history.overtime_staff_id,
+    #         'x': pass_history.x,
+    #         'y': pass_history.y,
+    #     }
+    #     # for key in pass_history.__dict__.keys():
+    #     #     logSend(key, ' ', pass_history.__dict__[key])
+    #     #     json_pass_history[key] = pass_history.__dict__[key]
+    #     # list_pass_history.append(json_pass_history)
+    #     list_pass_history.append(pass_history_dict)
+    # # logSend(list_pass_history)
+    # result = {'employees': list_pass_history,
+    #           'fail_list': fail_list,
+    #           }
+    # return REG_200_SUCCESS.to_json_response(result)
 
 
 def update_pass_history(pass_history: dict, work: dict):
