@@ -6005,19 +6005,19 @@ def staff_change_time(request):
 @cross_origin_read_allow
 def staff_change_work_v2(request):
     """
-    [관리자용 앱]: 업무에 투입 중인 근로자 중에서 일부를 선택해서 근무시간(30분 연장, ...)을 변경할 때 호출
+    [관리자용 앱]: 업무 중인 근로자의 (근태정보 변경)을 실행한다.
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
-    - 오늘이 아니면 고칠 수 없음 - 오늘이 아니면 호출하지 말것.
+    - 오늘부터 3일간 만 사용할 수 있다.
     https://api-dev.aegisfac.com/customer/staff_change_work_v2?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
     http://0.0.0.0:8000/customer/staff_change_work_v2?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
-    overtime 설명 (2019-07-21)
-        연장 근무( -2: 연차, -1: 업무 끝나면 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    overtime 설명 (2020-03-23)
+        연장 근무( -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차 휴무, -1: 조기 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id      # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id           # 암호화된 id
         year_month_day: 2019-05-09 # 처리할 날짜
-        overtime_type: 0           # -3: 유급휴일, -2: 연차휴무, -1: 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+        overtime_type: 0           # -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
         employee_ids: [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
         comment: 연차휴무, 조기퇴근, 유급휴가 일 때 사유  # 유급휴일(주휴일)도 사유가 필요한가? 근로자 앱으로 push
     response
@@ -6056,7 +6056,6 @@ def staff_change_work_v2(request):
             {'message':'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)}
             {'message':'ServerError: Work 에 id={} 이(가) 없거나 중복됨'.format(work_id)}
     """
-
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
     else:
@@ -6091,8 +6090,8 @@ def staff_change_work_v2(request):
     #
     time_info = work.get_time_info()
     logSend('  > paid_day: {}'.format(time_info['paid_day']))
-    paid_day = -3 if time_info['paid_day'] == -1 else -2
-    if overtime_type < paid_day or 18 < overtime_type:
+    # paid_day = -3 if time_info['paid_day'] == -1 else -2
+    if overtime_type < -4 or 18 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
         return status422(get_api(request),
                          {'message': 'ClientError: parameter \'overtime_type\' 값이 범위({} ~ 18)를 넘었습니다.'.format(paid_day)})
@@ -6150,31 +6149,34 @@ def staff_change_work_v2(request):
     #
     # 근로자 서버의 근로자 처리했으니까 이제 고객 서버 처리하자.
     #
-    arr_employee = []
-    for employee in employees:
-        employee.overtime = overtime_type
-        employee.save()
-        employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
-            'name': employee.name,
-            'phone': phone_format(employee.pNo),
-            'dt_begin': dt_null(employee.dt_begin),
-            'dt_end': dt_null(employee.dt_end),
-            # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
-            # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
-            # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
-            # 'dt_end_touch': dt_null(employee.dt_end_touch),
-            # 'overtime': employee.overtime,
-            'x': employee.x,
-            'y': employee.y,
-        }
-        arr_employee.append(employee_dic)
-    result = {'employees': arr_employee,
-              'fail_list': fail_list
-              }
-
-    return REG_200_SUCCESS.to_json_response(result)
+    # 2020-03-23: 근로자가 확인하기 전까지 적용시키지 않기 때문에 저장하지 않는다.
+    # 관리자가 근로자 정보를 가져올 때 근로자 서버에서 확인 여부를 가져와 표시한다.
+    #
+    # arr_employee = []
+    # for employee in employees:
+    #     employee.overtime = overtime_type
+    #     employee.save()
+    #     employee_dic = {
+    #         'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+    #         'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+    #         'name': employee.name,
+    #         'phone': phone_format(employee.pNo),
+    #         'dt_begin': dt_null(employee.dt_begin),
+    #         'dt_end': dt_null(employee.dt_end),
+    #         # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
+    #         # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
+    #         # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
+    #         # 'dt_end_touch': dt_null(employee.dt_end_touch),
+    #         # 'overtime': employee.overtime,
+    #         'x': employee.x,
+    #         'y': employee.y,
+    #     }
+    #     arr_employee.append(employee_dic)
+    # result = {'employees': arr_employee,
+    #           'fail_list': fail_list
+    #           }
+    # return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response({'fail_list': fail_list})
 
 
 @cross_origin_read_allow

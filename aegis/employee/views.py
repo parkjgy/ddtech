@@ -3314,7 +3314,7 @@ def pass_record_of_employees_in_day_for_customer(request):
 @cross_origin_read_allow
 def pass_record_of_employees_in_day_for_customer_v2(request):
     """
-    << 고객 서버용 >> 복수 근로자의 날짜별 출퇴근 기록 요청
+    << 고객 서버용 >> 복수 근로자의 출퇴근 시간 수정, 유급 휴일 지정/해제, 연차 휴무, 조기 퇴근, 연장근로 부여/수정
     - work 의 시작 날짜 이전을 요청하면 안된다. - work 의 시작 날짜를 검사하지 않는다.
     - 출퇴근 기록이 없으면 출퇴근 기록을 새로 만든다.
     - 수정한 시간 오류 검사 X : 출근 시간보다 퇴근 시간이 느리다, ...
@@ -3391,7 +3391,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     employees = parameter_check['parameters']['employees']
     year_month_day = parameter_check['parameters']['year_month_day']
     work_id = parameter_check['parameters']['work_id']
-    comment = parameter_check['parameters']['comment']
+    send_comment = parameter_check['parameters']['comment']
 
     employee_ids = []
     for employee in employees:
@@ -3408,7 +3408,120 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
     passer_list = Passer.objects.filter(id__in=employee_ids)
     passer_dict = {passer.id: passer for passer in passer_list}
-    logSend('  passer_dict: {}'.format(passer_dict))
+    #
+    # 근로자 id가 빠지지 않았는지 확인하는 기능이 필요하면 여기 넣는다.
+    #
+
+    # 지정된 근로자에게 알림(notification_work) 을 만들고 보낸다.
+    # 업무 로딩
+    work = get_work_dict([int(work_id)])
+    logSend('  > work: {}'.format(work))
+    work_dict = work[list(work.keys())[0]]
+    work_dict['id'] = list(work.keys())[0]  # work_dic 에 'id'가 없어서 넣어준다.
+    logSend('  > work_dict: {}'.format(work_dict))
+    fail_list = []
+    notification_type = 0
+    staff_id = -1
+    comment = ''
+    dt_in_verify = str_to_datetime("2019-12-05")
+    dt_out_verify = str_to_datetime("2019-12-05")
+    # 연장 근무 처리
+    if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
+        overtime = int(rqst['overtime'])
+        overtime_staff_id = AES_DECRYPT_BASE64(rqst['overtime_staff_id'])
+        is_ok = True
+        if overtime_staff_id == '__error':
+            is_ok = False
+            fail_list.append(' overtime_staff_id: 비정상')
+        notification_type = overtime
+        staff_id = overtime_staff_id
+        if overtime == -4:
+            comment = '유급휴일이 해제됩니다.'
+        elif overtime == -3:
+            comment = '유급휴일로 지정됩니다.\n{}'.format(send_comment)
+        elif overtime == -2:
+            comment = '연차휴무로 등록됩니다.\n{}'.format(send_comment)
+        elif overtime == -1:
+            comment = '조기퇴근으로 등록됩니다.\n{}'.format(send_comment)
+        else:
+            comment = '연장근로 {}:{} 시간이 추가됩니다.'.format(overtime // 2, overtime % 2 * 30)
+
+    # 출근시간 수정 처리
+    if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
+        in_staff_id = AES_DECRYPT_BASE64(rqst['in_staff_id'])
+        is_ok = True
+        if in_staff_id == '__error':
+            is_ok = False
+            fail_list.append(' in_staff_id: 비정상')
+        try:
+            dt_in_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
+                                                      '%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            is_ok = False
+            fail_list.append(' dt_in_verify: 날짜 변경 Error ({})'.format(e))
+        if is_ok:
+            notification_type = -20
+            staff_id = int(in_staff_id)
+            comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_in_verify)
+
+    # 퇴근시간 수정 처리
+    if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
+        out_staff_id = AES_DECRYPT_BASE64(rqst['out_staff_id'])
+        is_ok = True
+        if out_staff_id == '__error':
+            is_ok = False
+            fail_list.append(' out_staff_id: 비정상')
+        try:
+            dt_out_verify = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
+                                                       '%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            is_ok = False
+            fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
+        if is_ok:
+            notification_type = -21
+            staff_id = int(out_staff_id)
+            comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_out_verify)
+
+    today = datetime.datetime.now()
+    push_list = []
+    for passer_id in passer_dict.keys():
+        passer = passer_dict[passer_id]
+        new_notification = Notification_Work(
+            work_id=work_id,
+            employee_id=passer_id,
+            employee_pNo=passer.pNo,
+            dt_answer_deadline=today + datetime.timedelta(days=2),
+            dt_begin=dt_in_verify,
+            dt_end=dt_out_verify,
+            dt_reg=today,
+            work_place_name=work_dict['work_place_name'],
+            work_name_type=work_dict['work_name_type'],
+            is_x=0,  # 사용확인 용?
+            notification_type=notification_type,      # -20 출퇴근시간 변경
+            comment=comment,
+            staff_id=staff_id,
+        )
+        new_notification.save()
+        logSend('  > notification: {}'.format(new_notification))
+        push_list.append({'id': passer.id, 'token': passer.push_token, 'pType': passer.pType})
+    logSend(push_list)
+    if len(push_list) > 0:
+        push_contents = {
+            'target_list': push_list,
+            'func': 'user',
+            'isSound': True,
+            'badge': 1,
+            'contents': {'title': '업무 알림',
+                         'subtitle': new_notification.comment,
+                         'body': {'action': 'ChangeWork',
+                                  'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                         }
+        }
+        send_push(push_contents)
+    result = {'fail_list': fail_list,
+              }
+    return REG_200_SUCCESS.to_json_response(result)
+
     employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
     # logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
     if len(passer_list) != len(employee_info_id_list):

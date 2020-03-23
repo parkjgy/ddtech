@@ -63,9 +63,9 @@ class Notification_Work(models.Model):
     work_name_type = models.CharField(max_length=255)  # 업무 이름 : 시스템 관리용
     is_x = models.BooleanField(default=False)  # 삭제되었다. : 시스템 관리용
 
-    notification_type = models.IntegerField(default=-30)        # 알림 종류: -30: 새업무 알림, -20: 출퇴근알림, -3: 유급휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+    notification_type = models.IntegerField(default=-30)        # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
     comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
-    pass_record_id = models.IntegerField(default=-1)            # 변경한 근태정보의 id
+    staff_id = models.IntegerField(default=-1)                  # 알림을 보내는 관리자 id
 
 
         
