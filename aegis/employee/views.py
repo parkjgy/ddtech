@@ -3436,6 +3436,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     year_month_day = parameter_check['parameters']['year_month_day']
     work_id = parameter_check['parameters']['work_id']
     send_comment = parameter_check['parameters']['comment']
+    if send_comment == None:
+        send_comment = ""
 
     employee_ids = []
     for employee in employees:
@@ -3465,6 +3467,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     logSend('  > work_dict: {}'.format(work_dict))
     fail_list = []
     notification_type = 0
+    push_title = ''
     staff_id = -1
     comment = ''
     dt_inout = str_to_datetime("2019-12-05")
@@ -3480,15 +3483,23 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         dt_inout = str_to_datetime(year_month_day)
         staff_id = overtime_staff_id
         if overtime == -4:
-            comment = '유급휴일이 해제됩니다.'
+            push_title = '{} 유급휴일을 철회합니다.'.format(year_month_day)
+            comment = send_comment
         elif overtime == -3:
-            comment = '유급휴일로 지정됩니다.\n{}'.format(send_comment)
+            push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
+            comment = send_comment
         elif overtime == -2:
-            comment = '연차휴무로 등록됩니다.\n{}'.format(send_comment)
+            push_title = '{} 연차휴가를 부여합니다.'.format(year_month_day)
+            comment = send_comment
         elif overtime == -1:
-            comment = '조기퇴근으로 등록됩니다.\n{}'.format(send_comment)
+            push_title = '{} 조기퇴근을 부여합니다.'.format(year_month_day)
+            comment = send_comment
+        elif overtime == 0:
+            push_title = '{} 휴가, 조퇴, 연장이 철회됩니다.'.format(year_month_day)
+            comment = '연차휴가, 조기퇴근, 연장근무'
         else:
-            comment = '연장근로 {}:{} 시간이 추가됩니다.'.format(overtime // 2, overtime % 2 * 30)
+            push_title = '{} 연장근로를 부여합니다.'.format(year_month_day)
+            comment = '{0:02d} 시간 {1:02d} 분'.format(overtime // 2, (overtime % 2) * 30)
 
     # 출근시간 수정 처리
     if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
@@ -3506,7 +3517,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if is_ok:
             notification_type = -20
             staff_id = int(in_staff_id)
-            comment = '출근 시간이 {} 으로 수정되었습니다.'.format(dt_inout)
+            push_title = '{} 출근시간을 조정합니다.'.format(year_month_day)
+            comment = '{}'.format(rqst['dt_in_verify'])
 
     # 퇴근시간 수정 처리
     if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
@@ -3524,7 +3536,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if is_ok:
             notification_type = -21
             staff_id = int(out_staff_id)
-            comment = '퇴근 시간이 {} 으로 수정되었습니다.'.format(dt_inout)
+            push_title = '{} 퇴근시간을 조정합니다.'.format(year_month_day)
+            comment = '{}'.format(rqst['dt_out_verify'])
 
     today = datetime.datetime.now()
     push_list = []
@@ -3541,7 +3554,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             work_place_name=work_dict['work_place_name'],
             work_name_type=work_dict['work_name_type'],
             is_x=0,  # 사용확인 용?
-            notification_type=notification_type,      # -20 출퇴근시간 변경
+            notification_type=notification_type,  # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
             comment=comment,
             staff_id=staff_id,
             dt_inout=dt_inout,
@@ -3556,8 +3569,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             'func': 'user',
             'isSound': True,
             'badge': 1,
-            'contents': {'title': '업무 알림',
-                         'subtitle': new_notification.comment,
+            'contents': {'title': push_title,
+                         'subtitle': comment,
                          'body': {'action': 'ChangeWork',
                                   'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                          }
