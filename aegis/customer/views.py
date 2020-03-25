@@ -6017,7 +6017,8 @@ def staff_change_work_v2(request):
         staff_id : 현장관리자 id      # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id           # 암호화된 id
         year_month_day: 2019-05-09 # 처리할 날짜
-        overtime_type: 0           # -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
+        overtime_type: 0           # -5: 소정근로일로 지정 -4: 무급휴일로 지정, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기 퇴근,
+                                   # 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, ..., 18: 9시간 연장 근무
         employee_ids: [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
         comment: 연차휴무, 조기퇴근, 유급휴가 일 때 사유  # 유급휴일(주휴일)도 사유가 필요한가? 근로자 앱으로 push
     response
@@ -6091,7 +6092,7 @@ def staff_change_work_v2(request):
     time_info = work.get_time_info()
     logSend('  > paid_day: {}'.format(time_info['paid_day']))
     # paid_day = -3 if time_info['paid_day'] == -1 else -2
-    if overtime_type < -4 or 18 < overtime_type:
+    if overtime_type < -5 or 18 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
         return status422(get_api(request),
                          {'message': 'ClientError: parameter \'overtime_type\' 값이 범위({} ~ 18)를 넘었습니다.'.format(paid_day)})
@@ -6527,14 +6528,15 @@ def staff_recognize_employee(request):
     [관리자용 앱]:  근로자의 출퇴근 시간이 잘못되었을 때 현장 소장이 출퇴근 시간을 인정하고 변경하는 기능
     - 담당자(현장 소장, 관리자), 근로자, 출근시간, 퇴근 시간
     - 출근시간과 퇴근시간은 "yyyy-mm-dd hh:mm:ss" 양식으로 보낸다.
+    - dt_arrive 와 dt_leave 는 둘중 하나만 온다.
     - 값을 넣은 것만 변경한다.
     http://0.0.0.0:8000/customer/staff_recognize_employee?staff_id=qgf6YHf1z2Fx80DR8o_Lvg&employee_id=iZ_rkELjhh18ZZauMq2vQw&dt_arrive=2019-03-01 08:30:00&dt_end=2019-03-01 17:30:00
     POST
         staff_id : 현장관리자 id  # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id
         employee_id : 근로자 id
-        dt_arrive : 2019-04-01 08:30:00   # 도착 시간 - 출근 시간
-        dt_leave : 2019-04-01 17:30:00    # 떠난 시간 - 퇴근 시간
+        dt_arrive : 2019-04-01 08:30:00   # 도착 시간 - 출근 시간 (단, 출근시간을 없앨 때는 2019-04-01 25:00:00 을 넣어보낸다.)
+        dt_leave : 2019-04-01 17:30:00    # 떠난 시간 - 퇴근 시간 (단, 퇴근시간을 없앨 때는 2019-04-01 25:00:00 을 넣어보낸다.)
     response
         STATUS 200
         STATUS 541
@@ -6594,18 +6596,16 @@ def staff_recognize_employee(request):
     if 'dt_arrive' in rqst and str_dt_arrive is not None:
         if len(str_dt_arrive.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_arrive\' 양식을 확인해주세요.'})
-        dt_arrive = datetime.datetime.strptime(str_dt_arrive, "%Y-%m-%d %H:%M:%S")
-        employees_infor['year_month_day'] = dt_arrive.strftime('%Y-%m-%d')
-        employees_infor['dt_in_verify'] = dt_arrive.strftime('%H:%M')
+        employees_infor['year_month_day'] = str_dt_arrive[0:10]
+        employees_infor['dt_in_verify'] = str_dt_arrive[11:19]
         employees_infor['in_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
         # employee.dt_begin_touch = dt_arrive
 
     if 'dt_leave' in rqst and str_dt_leave is not None:
         if len(str_dt_leave.split(' ')) == 0:
             return status422(get_api(request), {'message': 'ClientError: parameter \'dt_leave\' 양식을 확인해주세요.'})
-        dt_leave = datetime.datetime.strptime(str_dt_leave, "%Y-%m-%d %H:%M:%S")
-        employees_infor['year_month_day'] = dt_leave.strftime('%Y-%m-%d')
-        employees_infor['dt_out_verify'] = dt_leave.strftime('%H:%M')
+        employees_infor['year_month_day'] = str_dt_leave[0:10]
+        employees_infor['dt_out_verify'] = str_dt_leave[11:19]
         employees_infor['out_staff_id'] = AES_ENCRYPT_BASE64(staff_id)
         # employee.dt_end_touch = dt_leave
 

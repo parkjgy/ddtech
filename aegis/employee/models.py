@@ -58,10 +58,10 @@ class Notification_Work(models.Model):
     dt_begin = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 시작 날짜
     dt_end = models.DateTimeField(null=True, blank=True)  # 해당 근로자의 업무 종료 날짜
 
-    dt_reg = models.DateTimeField(auto_now_add=True)  # 등록이 요청된 날짜 : 시스템 관리용
+    dt_reg = models.DateTimeField(auto_now_add=True)    # 등록이 요청된 날짜 : 시스템 관리용
     work_place_name = models.CharField(max_length=127)  # 사업장 이름 : 시스템 관리용
-    work_name_type = models.CharField(max_length=255)  # 업무 이름 : 시스템 관리용
-    is_x = models.BooleanField(default=False)  # 삭제되었다. : 시스템 관리용
+    work_name_type = models.CharField(max_length=255)   # 업무 이름 : 시스템 관리용
+    is_x = models.IntegerField(default=False)           # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
 
     notification_type = models.IntegerField(default=-30)        # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
     comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
@@ -170,7 +170,7 @@ class Pass_History(models.Model):
 
     dt_accept = models.DateTimeField(null=True, blank=True)     # 변경된 근태정보에 대한 확인이 이루어진 시간
 
-    is_paid_holiday = models.BooleanField(default=False)        # 유급휴일 여부: 유급휴일일 때는 유급휴일 시간에 넣어야 한다.
+    is_not_paid_holiday = models.IntegerField(default=False)    # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
     paid_holiday_staff_id = models.IntegerField(default=-1)     # 유급휴일을 부여한 현장 관리자 id
 
     x = models.FloatField(null=True, default=None) # 위도 latitude

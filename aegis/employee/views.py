@@ -774,16 +774,22 @@ def notification_list_v2(request):
     logSend(passer.pNo)
     # notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
     notification_list = Notification_Work.objects.filter(is_x=0, employee_pNo=passer.pNo)
-    logSend('  notification: {}'.format([x.dt_begin for x in notification_list]))
+    # logSend('  notification: {}'.format([x.work_id for x in notification_list]))
+    notification_work_id_dict = {notification.work_id: notification.id for notification in notification_list}
+    # logSend('  notification work_id list: {}'.format(list(notification_work_id_dict.keys())))
     arr_notification = []
-    work_dict = get_work_dict([notification.work_id for notification in notification_list])
-    notification_type_dict = {-30: '새업무', -21: '퇴근시간 수정', -20: '출근시간 수정', -4: '유급휴일 해제', -3: '유급휴일 지정', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
+    work_dict = get_work_dict(list(notification_work_id_dict.keys()))
+    notification_type_dict = {-30: '새업무', -23: '퇴근 취소', -22: '출근 취소', -21: '퇴근시간 수정', -20: '출근시간 수정', -5: '소정근로일 부여', -4: '무급휴일 부여', -3: '유급휴일 부여', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
     for notification in notification_list:
         # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
         # 2019/05/17 임시 기능 정지 - 업무 시작 후 업무 참여요청 보낼 필요 발생
         # if notification.dt_answer_deadline < datetime.datetime.now():
         #     notification.delete()
         #     continue
+        if notification.dt_answer_deadline < datetime.datetime.now():
+            notification.is_x = 3
+            notification.save()
+            continue
         work = work_dict[str(notification.work_id)]
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
@@ -983,6 +989,9 @@ def notification_accept_v2(request):
     if is_accept == 1:
         # 수락했을 경우
         if notification.notification_type == -30:
+            #
+            # (업무 요청)에 대한 처리
+            #
             logSend('  - 수락: works: {}'.format([work for work in employee_works.data]))
             new_work = {'id': notification.work_id,
                         'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
@@ -1008,8 +1017,13 @@ def notification_accept_v2(request):
             logSend('  - works: {}'.format([work for work in employee_works.data]))
         else:
             #
-            # pass_history 에 확인 했음을 저장해야 한다.
+            # (근태정보 변경)에 대한 처리
             #
+            if notification.dt_answer_deadline < datetime.datetime.now():
+                notification.is_x = 3  # 확인 시간을 초과했다.
+                notification.save()
+                return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
+
             year_month_day = dt_str(notification.dt_inout, "%Y-%m-%d")
             pass_record_list = Pass_History.objects.filter(work_id=notification.work_id, passer_id=notification.employee_id, year_month_day=year_month_day)
             if len(pass_record_list) == 0:
@@ -1036,11 +1050,20 @@ def notification_accept_v2(request):
             elif notification.notification_type == -20:  # 출근시간 수정
                 pass_record.dt_in_verify = notification.dt_inout
                 pass_record.in_staff_id = notification.staff_id
-            elif notification.notification_type == -4:  # 유급휴일 해제
-                pass_record.is_paid_holiday = 0
+            elif notification.notification_type == -22:  # 출근시간 삭제
+                pass_record.dt_in_verify = None
+                pass_record.in_staff_id = notification.staff_id
+            elif notification.notification_type == -23:  #퇴근시간 삭제
+                pass_record.dt_out_verify = None
+                pass_record.in_staff_id = notification.staff_id
+            elif notification.notification_type == -5:  # 소정근로일 부여
+                pass_record.is_not_paid_holiday = 2
+                pass_record.paid_holiday_staff_id = notification.staff_id
+            elif notification.notification_type == -4:  # 무급휴일 부여
+                pass_record.is_not_paid_holiday = 1
                 pass_record.paid_holiday_staff_id = notification.staff_id
             elif notification.notification_type == -3:  # 유급휴일 부여
-                pass_record.is_paid_holiday = 1
+                pass_record.is_not_paid_holiday = 0
                 pass_record.paid_holiday_staff_id = notification.staff_id
             # elif notification.notification_type == -2:  # 연차휴무 부여
             # elif notification.notification_type == -1:  # 조기퇴근 부여
@@ -1058,7 +1081,7 @@ def notification_accept_v2(request):
             #     pass_record.dt_accept = datetime.datetime.now()
             #     pass_record.save()
             #
-            notification.is_x = 1  # 필요없다. 삭제
+            notification.is_x = 1  # 처리완료 (삭제와 같은 효과)
             notification.save()
     else:
         # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
@@ -1072,7 +1095,7 @@ def notification_accept_v2(request):
             #
             # pass_history 에
             #
-            notification.is_x = 1  # 필요없다. 삭제
+            notification.is_x = 2  # 관리자의 근태 정보 변경을 거절했다.
             notification.save()
     if notification.notification_type == -30:
         #
@@ -1094,7 +1117,7 @@ def notification_accept_v2(request):
 
         # 정상적으로 처리되었을 때 알림을 완료한다.
         # notification.delete()
-        notification.is_x = True
+        notification.is_x = 1
         notification.save()
     logSend('  - is_accept: {}'.format(is_accept))
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})
@@ -3482,8 +3505,11 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         notification_type = overtime
         dt_inout = str_to_datetime(year_month_day)
         staff_id = overtime_staff_id
-        if overtime == -4:
-            push_title = '{} 유급휴일을 철회합니다.'.format(year_month_day)
+        if overtime == -5:
+            push_title = '{} 소정근로일로 부여합니다.'.format(year_month_day)
+            comment = send_comment
+        elif overtime == -4:
+            push_title = '{} 무급휴일로 부여합니다.'.format(year_month_day)
             comment = send_comment
         elif overtime == -3:
             push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
@@ -3508,17 +3534,18 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if in_staff_id == '__error':
             is_ok = False
             fail_list.append(' in_staff_id: 비정상')
-        try:
-            dt_inout = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_in_verify']),
-                                                      '%Y-%m-%d %H:%M:%S')
-        except Exception as e:
-            is_ok = False
-            fail_list.append(' dt_in_verify: 날짜 변경 Error ({})'.format(e))
-        if is_ok:
-            notification_type = -20
+        else:
             staff_id = int(in_staff_id)
-            push_title = '{} 출근시간을 조정합니다.'.format(year_month_day)
-            comment = '{}'.format(rqst['dt_in_verify'])
+            if rqst['dt_in_verify'][0:2] == '25':
+                notification_type = -22
+                push_title = '{} 출근시간을 삭제합니다.'.format(year_month_day)
+                comment = '출근이 취소됩니다.'
+                dt_inout = str_to_datetime(year_month_day)
+            else:
+                notification_type = -20
+                push_title = '{} 출근시간을 조정합니다.'.format(year_month_day)
+                comment = '{}'.format(rqst['dt_in_verify'])
+                dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_in_verify']))
 
     # 퇴근시간 수정 처리
     if ('dt_out_verify' in rqst.keys()) and ('out_staff_id' in rqst.keys()):
@@ -3527,17 +3554,18 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if out_staff_id == '__error':
             is_ok = False
             fail_list.append(' out_staff_id: 비정상')
-        try:
-            dt_inout = datetime.datetime.strptime('{} {}:00'.format(year_month_day, rqst['dt_out_verify']),
-                                                       '%Y-%m-%d %H:%M:%S')
-        except Exception as e:
-            is_ok = False
-            fail_list.append(' dt_out_verify: 날짜 변경 Error ({})'.format(e))
-        if is_ok:
-            notification_type = -21
+        else:
             staff_id = int(out_staff_id)
-            push_title = '{} 퇴근시간을 조정합니다.'.format(year_month_day)
-            comment = '{}'.format(rqst['dt_out_verify'])
+            if rqst['dt_out_verify'][0:2] == '25':
+                notification_type = -23
+                push_title = '{} 퇴근시간을 삭제합니다.'.format(year_month_day)
+                comment = '퇴근이 취소됩니다.'
+                dt_inout = str_to_datetime(year_month_day)
+            else:
+                notification_type = -21
+                push_title = '{} 퇴근시간을 조정합니다.'.format(year_month_day)
+                comment = '{}'.format(rqst['dt_out_verify'])
+                dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_out_verify']))
 
     today = datetime.datetime.now()
     push_list = []
