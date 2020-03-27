@@ -3348,6 +3348,10 @@ def pass_record_of_employees_in_day_for_customer(request):
         # 문제 없을까?
         # action 처리가 안된다.
 
+    #
+    # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
+    # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
+    #
     list_pass_history = []
     for pass_history in pass_histories:
         pass_history_dict = {
@@ -3365,6 +3369,189 @@ def pass_record_of_employees_in_day_for_customer(request):
             'overtime_staff_id': pass_history.overtime_staff_id,
             'x': pass_history.x,
             'y': pass_history.y,
+            # 'day_type': pass_history.is_not_paid_holiday,
+            # 'day_type_staff_id': pass_history.paid_holiday_staff_id,
+            # 'day_type_description': '소정근로일',
+        }
+        # for key in pass_history.__dict__.keys():
+        #     logSend(key, ' ', pass_history.__dict__[key])
+        #     json_pass_history[key] = pass_history.__dict__[key]
+        # list_pass_history.append(json_pass_history)
+        list_pass_history.append(pass_history_dict)
+    # logSend(list_pass_history)
+    result = {'employees': list_pass_history,
+              'fail_list': fail_list,
+              }
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+def work_record_in_day_for_customer(request):
+    """
+    << 고객 서버용 >> 복수 근로자의 하루 근무 기록
+    - work 의 시작 날짜 이전을 요청하면 안된다. - work 의 시작 날짜를 검사하지 않는다.
+    - 출퇴근 기록이 없으면 출퇴근 기록을 새로 만든다.
+    - 수정한 시간 오류 검사 X : 출근 시간보다 퇴근 시간이 느리다,
+    - 휴일 여부(소정근로일/무급휴일/유급휴일) 추가 pass_record_of_employees_in_day_for_customer 를 대
+    http://0.0.0.0:8000/employee/work_record_in_day_for_customer?employees=&dt=2019-05-06
+    POST : json
+        {
+            employees: [ employee_id, employee_id, ...],  # 배열: 대상 근로자 (암호화된 값)
+            year_month_day: 2018-12-28,                   # 대상 날짜
+            work_id: work_id,                             # 업무 id (암호화된 값): 암호를 풀어서 -1 이면 업무 특정짓지 않는다.
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
+            'year_month_day': pass_history.year_month_day,
+            'action': pass_history.action,
+            'work_id': pass_history.work_id,
+            'dt_in': pass_history.dt_in,
+            'dt_in_verify': pass_history.dt_in_verify,
+            'in_staff_id': pass_history.in_staff_id,
+            'dt_out': pass_history.dt_out,
+            'dt_out_verify': pass_history.dt_out_verify,
+            'out_staff_id': pass_history.out_staff_id,
+            'overtime': pass_history.overtime,
+            'overtime_staff_id': pass_history.overtime_staff_id,
+            'x': pass_history.x,
+            'y': pass_history.y,
+
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'employees\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(get_api(request), ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+
+        logError(get_api(request), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    #
+    # 서버 대 서버 통신으로 상대방 서버가 등록된 서버인지 확인 기능 추가가 필요하다.
+    #
+    # if 'employees' not in rqst:
+    #     return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: parameter \'employees\' 가 없어요'})
+    # employees = rqst['employees']
+    # parameter_check = is_parameter_ok(rqst, ['year_month_day', 'work_id'])
+    parameter_check = is_parameter_ok(rqst, ['employees', 'year_month_day', 'work_id_!'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    employees = parameter_check['parameters']['employees']
+    year_month_day = parameter_check['parameters']['year_month_day']
+    work_id = parameter_check['parameters']['work_id']
+
+    employee_ids = []
+    for employee in employees:
+        # key 에 '_id' 가 포함되어 있으면 >> 암호화 된 값이면
+        plain = AES_DECRYPT_BASE64(employee)
+        if plain == '__error':
+            logError(get_api(request), ' 근로자 id ({}) Error 복호화 실패: 처리대상에서 제외'.format(employee))
+            # 2019-05-22 여러명을 처리할 때 한명 때문에 에러처리하면 안되기 때문에...
+            # return status422(get_api(request), {'message': 'employees 에 있는 employee_id={} 가 해독되지 않는다.'.format(employee)})
+        else:
+            if int(plain) > 0:
+                # 거절 수락하지 않은 근로자 제외 (employee_id == -1)
+                employee_ids.append(plain)
+    logSend('  고객에서 요청한 employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
+    passer_list = Passer.objects.filter(id__in=employee_ids)
+    logSend('  근로자 passer_ids: {}'.format([passer.id for passer in passer_list]))
+    employee_info_id_list = [passer.employee_id for passer in passer_list if passer.employee_id > 0]
+    logSend('  근로자 employee_ids: {}'.format([employee_info_id for employee_info_id in employee_info_id_list]))
+    if len(passer_list) != len(employee_info_id_list):
+        logError(get_api(request), ' 출입자 인원(# passer)과 근로자 인원(# employee)이 틀리다 work_id: {}'.format(work_id))
+    employee_info_list = Employee.objects.filter(id__in=employee_info_id_list).order_by('work_start')
+    logSend('  근로자 table read employee_ids: {}'.format([employee_info.id for employee_info in employee_info_list]))
+    employee_ids = []
+    for employee_info in employee_info_list:
+        for passer in passer_list:
+            if passer.employee_id == employee_info.id:
+                employee_ids.append(passer.id)
+    logSend('  new employee_ids: {}'.format([employee_id for employee_id in employee_ids]))
+    logSend('  pass_histories : employee_ids : {} work_id {}'.format(employee_ids, work_id))
+    if int(work_id) == -1:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    else:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+                                                     work_id=work_id)
+    if len(pass_histories) == 0:
+        logError(get_api(request),
+                 ' passer_ids={}, year_month_day = {} 에 해당하는 출퇴근 기록이 없다.'.format(employee_ids, year_month_day))
+        # return REG_200_SUCCESS.to_json_response({'message': '조건에 맞는 근로자가 없다.'})
+    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    logSend('  pass_histories passer_ids {}'.format(exist_ids))
+    for employee_id in employee_ids:
+        if int(employee_id) not in exist_ids:
+            if int(employee_id) < 0:
+                # 필요없음 위 id 해독부분에서 -1 을 걸러냄
+                logError(get_api(request), ' *** 나오면 안된다. employee_id: {}'.format(employee_id))
+            else:
+                # 출퇴근 기록이 없으면 새로 만든다.
+                logSend('   --- new pass_history passer_id {}'.format(employee_id))
+                new_pass_history = Pass_History(
+                    passer_id=int(employee_id),
+                    year_month_day=year_month_day,
+                    action=0,
+                    work_id=work_id,
+                )
+                logError(get_api(request), ' 강제로 만든 pass_history: {}'.format(
+                    [{key: new_pass_history.__dict__[key]} for key in new_pass_history.__dict__.keys() if
+                     not key.startswith('_')]))
+                new_pass_history.save()
+    if int(work_id) == -1:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids)
+    else:
+        pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+                                                     work_id=work_id)
+
+    exist_ids = [pass_history.passer_id for pass_history in pass_histories]
+    logSend('--- pass_histories passer_ids {}'.format(exist_ids))
+    fail_list = []
+    int_work_id = int(work_id)
+    for pass_history in pass_histories:
+        if int_work_id == -1:
+            int_work_id = int(pass_history.work_id)
+            work = get_work_dict([int_work_id])
+        elif int_work_id != int(pass_history.work_id):
+            int_work_id = int(pass_history.work_id)
+            work = get_work_dict([int_work_id])
+    #
+    # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
+    # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
+    #
+    list_pass_history = []
+    for pass_history in pass_histories:
+        pass_history_dict = {
+            'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
+            'year_month_day': pass_history.year_month_day,
+            'action': pass_history.action,
+            'work_id': pass_history.work_id,
+            'dt_in': pass_history.dt_in,
+            'dt_in_verify': pass_history.dt_in_verify,
+            'in_staff_id': pass_history.in_staff_id,
+            'dt_out': pass_history.dt_out,
+            'dt_out_verify': pass_history.dt_out_verify,
+            'out_staff_id': pass_history.out_staff_id,
+            'overtime': pass_history.overtime,
+            'overtime_staff_id': pass_history.overtime_staff_id,
+            'x': pass_history.x,
+            'y': pass_history.y,
+            # 'day_type': pass_history.is_not_paid_holiday,
+            # 'day_type_staff_id': pass_history.paid_holiday_staff_id,
+            # 'day_type_description': '소정근로일',
         }
         # for key in pass_history.__dict__.keys():
         #     logSend(key, ' ', pass_history.__dict__[key])
@@ -3567,6 +3754,10 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 comment = '{}'.format(rqst['dt_out_verify'])
                 dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_out_verify']))
 
+    #
+    # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
+    # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
+    #
     today = datetime.datetime.now()
     push_list = []
     for passer_id in passer_dict.keys():

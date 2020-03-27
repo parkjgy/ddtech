@@ -55,6 +55,7 @@ urlpatterns = [
 
     url(r'employee/my_work_list$', views.my_work_list, name='my_work_list'),
     url(r'employee/pass_record_of_employees_in_day_for_customer$', views.pass_record_of_employees_in_day_for_customer, name='pass_record_of_employees_in_day_for_customer'),
+    url(r'employee/work_record_in_day_for_customer$', views.work_record_in_day_for_customer, name='work_record_in_day_for_customer'),
     url(r'employee/pass_record_of_employees_in_day_for_customer_v2$', views.pass_record_of_employees_in_day_for_customer_v2, name='pass_record_of_employees_in_day_for_customer_v2'),    url(r'employee/change_work_period_for_customer$', views.change_work_period_for_customer, name='change_work_period_for_customer'),
     # url(r'employee/employee_day_working_from_customer$', views.employee_day_working_from_customer, name='employee_day_working_from_customer'),
     url(r'employee/my_work_histories$', views.my_work_histories, name='my_work_histories'),

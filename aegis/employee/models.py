@@ -170,7 +170,7 @@ class Pass_History(models.Model):
 
     dt_accept = models.DateTimeField(null=True, blank=True)     # 변경된 근태정보에 대한 확인이 이루어진 시간
 
-    is_not_paid_holiday = models.IntegerField(default=False)    # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
+    is_not_paid_holiday = models.IntegerField(default=2)    # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
     paid_holiday_staff_id = models.IntegerField(default=-1)     # 유급휴일을 부여한 현장 관리자 id
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
