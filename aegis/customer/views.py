@@ -3529,7 +3529,7 @@ def update_employee(request):
 @session_is_none_403
 def list_employee(request):
     """
-    근로자 목록
+    << 웹 >> 근로자 목록
       - 업무에 투입된별 근로자 리스트
       - 업무 시작날짜 전이면 업무 수락 여부만 보낸다. (날짜가 무시된다.)
       - 날짜가 없으면 오늘 날짜로 처리한다. (날짜가 없어도 에러처리하지 않는다.)
@@ -3558,76 +3558,27 @@ def list_employee(request):
                   "state": "답변 X",
                   "is_not_begin": "1"
                 },
-                {
-                  "id": "gDoPqy_Pea6imtYYzWrEXQ==",
-                  "name": "양만춘",
-                  "pNo": "010-1111-2222",
-                  "dt_begin": "2019-03-08 19:09:30",
-                  "dt_end": "2019-03-14 00:00:00",
-                  "state": "거절",
-                  "is_not_begin": "1"
-                },
-                {
-                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
-                  "name": "강감찬",
-                  "pNo": "010-4444-5555",
-                  "dt_begin": "2019-03-08 19:09:30",
-                  "dt_end": "2019-03-14 00:00:00",
-                  "state": "수락",
-                  "is_not_begin": "1"
-                },
-                {
-                  "id": "PTs37nITB5mJAWFwUQKixQ==",
-                  "name": "-----",
-                  "pNo": "010-33-3344",
-                  "dt_begin": "2019-03-10 13:15:29",
-                  "dt_end": "2019-03-14 00:00:00",
-                  "state": "잘못된 전화번호",
-                  "is_not_begin": "1"
-                }
+                ......
                 # 업무 시작 후 응답 - 출입 시간 표시
                 {
-                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==",
-                  "name": "강감찬",
-                  "pNo": "010-4444-5555",
-                  "dt_begin_beacon": "08:20",
-                  "dt_begin_touch": "08:31",
-                  "dt_end_beacon": "17:48",
-                  "dt_end_touch": "17:38",
-                  "state": "",
-                  "is_not_begin": "0"
+                    "id": "45E0n8g8QqeppqJBYkXRHA",
+                    "name": "박종기",
+                    "pNo": "010-2557-3555",
+                    "dt_begin": "2020-02-06 00:00:00",
+                    "dt_end": "2020-03-31 00:00:00",
+                    "dt_begin_beacon": "",
+                    "dt_begin_touch": "17:35",
+                    "dt_end_beacon": "",
+                    "dt_end_touch": "17:35",
+                    "state": "연(월)차",
+                    "the_zone_code": "202011003",       # 더존 연동 코드
+                    "notification": -1,                 # -1: 알림 없음, 0: 근로자가 확인하지 않은 알림 있음 (이름: 파랑), 2: 근로자가 거절한 알림 임음 (이름 빨강)
+                    "week": "화",                        # 요일
+                    "day_type": 2,                      # 이날의 근무 형태 0: 유급휴일, 1: 무급휴일, 2: 소정근무일
+                    "day_type_description": "소정근무일",  # 근무 형태 설명
+                    "is_not_begin": false
                 },
-                {
-                  "id": "voGxXzbAurv_GvSDv1nciw==",
-                  "name": "안중근",
-                  "pNo": "010-3333-4444",
-                  "dt_begin_beacon": "",
-                  "dt_begin_touch": "08:31",
-                  "dt_end_beacon": "",
-                  "dt_end_touch": "17:31",
-                  "state": "SMS",
-                  "is_not_begin": "0"
-                },
-                {
-                  "id": "ox9fRbgDQ-PxgCiqoDLYhQ==", # 업무가 시작되었지만 아직 업무에 투입되지 않은 근로자 처리
-                  "name": "강감찬",
-                  "pNo": "010-4444-5555",
-                  "dt_begin": "2019-03-08 19:09:30",
-                  "dt_end": "2019-03-14 00:00:00",
-                  "state": "수락",
-                  "is_not_begin": "1"
-                },
-                {
-                  "id": "dMNzyCm2k_hGaqkDrFojAA==",
-                  "name": "이순신",
-                  "pNo": "010-1111-3333",
-                  "dt_begin_beacon": "08:16",
-                  "dt_begin_touch": "08:27",
-                  "dt_end_beacon": "17:50",
-                  "dt_end_touch": "17:33",
-                  "state": "",
-                  "is_not_begin": "0"
-                }
+                ......
               ]
             }
         STATUS 503
@@ -3682,7 +3633,7 @@ def list_employee(request):
     if work.dt_begin <= dt_today:
         # 업무가 시작되었다.
         work_info['year_month_day'] = dt_today.strftime("%Y-%m-%d")
-        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day', json=work_info)
+        response = s.post(settings.CUSTOMER_URL + 'staff_employees_at_day_v2', json=work_info)
         employee_list = response.json()['employees']
         logSend('  > employoee_list: {}'.format(employee_list))
         for employee in employee_list:
@@ -3706,6 +3657,12 @@ def list_employee(request):
                     'dt_end_touch': "" if employee['dt_end_touch'] is None else employee['dt_end_touch'][11:16],
                     'state': state_dict[employee['overtime']],
                     'the_zone_code': "" if employee['the_zone_code'] is None else employee['the_zone_code'],
+
+                    'notification': employee['notification'],
+                    'week': employee['week'],
+                    'day_type': employee['day_type'],
+                    'day_type_description': employee['day_type_description'],
+
                     'is_not_begin': False,
                 }
             else:
@@ -5565,6 +5522,179 @@ def staff_employees_at_day(request):
 
 @cross_origin_read_allow
 # @session_is_none_403
+def staff_employees_at_day_v2(request):
+    """
+    출근이 시작된 업무의 날짜별 근로자의 출퇴근 시간 요청
+    - 출퇴근 정보 있음
+    - 중요 포인트: 출퇴근 시간, 연장근무 여부(연장 근무가 1 이상이면 이름을 파란색으로 표시)
+    http://0.0.0.0:8000/customer/staff_employees_at_day_v2?staff_id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=ryWQkNtiHgkUaY_SZ1o2uA&year_month_day=2019-04-23
+    POST
+        staff_id : 앱 사용자의 식별 id
+        work_id : 업무 id
+        year_month_day : 2019-04-08   # 근무 내역을 알고 싶은 날짜
+    response
+        STATUS 200
+            {
+                "message": "정상적으로 처리되었습니다.",
+                "year_month_day": "2020-02-20",
+                "employees": [
+                    {
+                        "is_accept_work": "수락",
+                        "employee_id": "45E0n8g8QqeppqJBYkXRHA",
+                        "name": "박종기",
+                        "phone": "010-2557-3555",
+                        "dt_begin": "2020-02-06 00:00:00",
+                        "dt_end": "2020-03-31 00:00:00",
+                        "the_zone_code": "202011003",
+                        "notification": 2,                      # 0: 근로자가 확인하지 않은 알림 있음 (이름: 파랑), 2: 근로자가 거절한 알림 임음 (이름 빨강)
+                        "week": "목",                            # 요일
+                        "day_type": 2,                          # 이날의 근무 형태 0: 유급휴일, 1: 무급휴일, 2: 소정근무일
+                        "day_type_description": "소정근무일",      # 근무 형태 설명
+                        "dt_begin_beacon": "2020-02-20 08:32:00",
+                        "dt_end_beacon": "2020-02-20 17:32:00",
+                        "dt_begin_touch": "2020-02-20 08:29:00",
+                        "dt_end_touch": "2020-02-20 17:33:00",
+                        "overtime": 0,
+                        "x": null,
+                        "y": null
+                    },
+                    ......
+                ],
+                "fail_list": {
+                    "fail_employee_passer_id_list": [
+                        262
+                    ]
+                }
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'}
+            {'message': 'ServerError: 업무가 등록되어 있지 않거나 중복되었다.'}
+            {'message': '아직 업무가 아직 시직되지 않았습니다. >> staff_employee'}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month_day'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    staff_id = parameter_check['parameters']['staff_id']
+    work_id = parameter_check['parameters']['work_id']
+    year_month_day = parameter_check['parameters']['year_month_day']
+
+    staffs = Work.objects.filter(id=staff_id)
+    if len(staffs) == 0:
+        logError(get_api(request), ' ServerError: Staff 에 staff_id={} 이(가) 없거나 중복됨'.format(staff_id))
+        return status422(get_api(request), {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
+
+    works = Work.objects.filter(id=work_id)
+    if len(works) == 0:
+        logError(get_api(request), ' ServerError: Work 에 work_id={} 이(가) 없거나 중복됨'.format(work_id))
+        return status422(get_api(request), {'message': 'ServerError: 업무가 등록되어 있지 않거나 중복되었다.'})
+    work = works[0]
+
+    is_work_begin = True if work.dt_begin < datetime.datetime.now() else False
+    logSend(work.dt_begin, ' ', datetime.datetime.now(), ' ', is_work_begin)
+    if not is_work_begin:
+        return status422(get_api(request), {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
+
+    dt_target_day = str_to_datetime(year_month_day)
+    employee_list = Employee.objects.filter(work_id=work.id)
+    employee_ids = []
+    for employee in employee_list:
+        if employee.dt_begin < datetime.datetime.now():
+            # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭제
+            if employee.is_accept_work is None or not employee.is_accept_work:
+                employee.delete()
+                continue
+            if employee.dt_end < dt_target_day:
+                logError(
+                    ' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
+                continue
+        employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
+    # employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
+    employees_infor = {'employees': employee_ids,
+                       'year_month_day': year_month_day,
+                       'work_id': AES_ENCRYPT_BASE64(work_id),
+                       # 'work_id': AES_ENCRYPT_BASE64('-1'),
+                       }
+    r = requests.post(settings.EMPLOYEE_URL + 'work_record_in_day_for_customer', json=employees_infor)
+    if len(r.json()['fail_list']):
+        logError(get_api(request),
+                 ' work_record_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
+    pass_records = r.json()['employees']
+    fail_list = r.json()['fail_list']
+    pass_record_dic = {}
+    for pass_record in pass_records:
+        employee_id = int(AES_DECRYPT_BASE64(pass_record['passer_id']))
+        pass_record_dic[employee_id] = pass_record
+    logSend('  - pass record: {}'.format(pass_record_dic))
+    arr_employee = []
+    for employee in employee_list:
+        logSend('  - employee employee_id: {}'.format(employee.employee_id))
+        if employee.dt_end < dt_target_day:
+            logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
+            continue
+        employee_dic = {
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'name': employee.name,
+            'phone': phone_format(employee.pNo),
+            'dt_begin': dt_null(employee.dt_begin),
+            'dt_end': dt_null(employee.dt_end),
+            # 'dt_begin_beacon': pass_record['dt_in'],
+            # 'dt_end_beacon': pass_record['dt_out'],
+            # 'dt_begin_touch': pass_record['dt_in_verify'],
+            # 'dt_end_touch': pass_record['dt_out_verify'],
+            # 'overtime': pass_record['overtime'],
+            # 'x': pass_record['x'],
+            # 'y': pass_record['y'],
+            'the_zone_code': employee.the_zone_code,
+            'notification': pass_record['notification'],
+            'week': pass_record['week'],
+            'day_type': pass_record['day_type'],
+            'day_type_description': pass_record['day_type_description'],
+        }
+        try:
+            pass_record = pass_record_dic[employee.employee_id]
+            employee_dic['dt_begin_beacon'] = pass_record['dt_in']
+            employee_dic['dt_end_beacon'] = pass_record['dt_out']
+            employee_dic['dt_begin_touch'] = pass_record['dt_in_verify']
+            employee_dic['dt_end_touch'] = pass_record['dt_out_verify']
+            employee_dic['overtime'] = pass_record['overtime']
+            employee_dic['x'] = pass_record['x']
+            employee_dic['y'] = pass_record['y']
+        except Exception as e:
+            logError(get_api(request),
+                     ' pass_record_dic[employee.employee_id] - employee_id: {} ({})'.format(employee.employee_id, e))
+            employee_dic['dt_begin_beacon'] = None
+            employee_dic['dt_end_beacon'] = None
+            employee_dic['dt_begin_touch'] = None
+            employee_dic['dt_end_touch'] = None
+            employee_dic['overtime'] = 0
+            employee_dic['x'] = None
+            employee_dic['y'] = None
+
+        arr_employee.append(employee_dic)
+    result = {'year_month_day': year_month_day,
+              'employees': arr_employee,
+              'fail_list': fail_list,
+              }
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
+# @session_is_none_403
 def staff_employees(request):
     """
     요청: 근로자 업무 참여 여부: 업무가 시작되기 전인 근로자
@@ -6143,7 +6273,7 @@ def staff_change_work_v2(request):
     logSend('  > {}'.format(r.json()))
     if len(r.json()['fail_list']):
         logError(get_api(request),
-                 ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
+                 ' pass_record_of_employees_in_day_for_customer_v2 FAIL LIST {}'.format(r.json()['fail_list']))
     # 그럴리는 없지만 근로자 서버 처리 후 근로자 명단과 고객서버 근로자 명단을 비교처리해야하는데 로그만 남기는 걸로...
     # pass_records = r.json()['employees']
     fail_list = r.json()['fail_list']
@@ -6360,6 +6490,8 @@ def staff_employee_working_v2(request):
     }
     logSend(employee_info)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
+    if response_employee.status_code != 200:
+        return ReqLibJsonResponse(response_employee)
 
     work_day_dict = {}
     work_dict = {}
@@ -6616,7 +6748,7 @@ def staff_recognize_employee(request):
     r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer_v2', json=employees_infor)
     if len(r.json()['fail_list']):
         logError(get_api(request),
-                 ' pass_record_of_employees_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
+                 ' pass_record_of_employees_in_day_for_customer_v2 FAIL LIST {}'.format(r.json()['fail_list']))
     # pass_records = r.json()['employees']
     # fail_list = r.json()['fail_list']
 

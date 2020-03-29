@@ -72,6 +72,7 @@ urlpatterns = [
     url(r'customer/staff_update_me', views.staff_update_me, name='staff_update_me'),
 
     url(r'customer/staff_employees_at_day$', views.staff_employees_at_day, name='staff_employees_at_day'),
+    url(r'customer/staff_employees_at_day_v2$', views.staff_employees_at_day_v2, name='staff_employees_at_day_v2'),
     url(r'customer/staff_employees$', views.staff_employees, name='staff_employees'),
 
     # url(r'customer/staff_bg$', views.staff_bg, name='staff_bg'),
