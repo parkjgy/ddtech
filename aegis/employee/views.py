@@ -4694,6 +4694,15 @@ def my_work_records(request):
 
 
 def get_dic_passer():
+    """
+    use:
+        def beacon_status(request):
+    return:
+        dic_passer = {
+                        1: {"name":"박종기", "pNo":"01025573555"},
+                        2: {"name:"곽명석", "pNo": "01054214410"}
+                    }
+    """
     employees = Employee.objects.filter().values('id', 'name')
     dic_employee = {}
     for employee in employees:
@@ -4743,91 +4752,171 @@ def set_break_time_of_work_time_info(work_dict: dict):
     return
 
 
-def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict, current_work_id: int):
-    if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1):
-        if pass_record.dt_accept is None:
-            passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
-        else:
-            passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 인정했다.
+def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: datetime, overtime: int) ->dict:
+    """
+    출근이나 퇴근시간으로
+    업무에서 설정한 출퇴근 시간 리스트에서
+    근무시간의 기준이되는 출퇴근시간을 찾고
+    기본근로시간, 휴게시간을 계산해 넣는다.
+    :param work_time_list: 출퇴근시간리스트
+    :param time_in: 출근시간
+    :param time_out: 퇴근시간
+    :param overtime: 연장근로시간 1 > 30분, 2 > 60분, ... (0 이하 무시)
+    :return: {'in': "08:30", 'out': "17:30", 'work': "08:00", 'break': "01:00"}
+    """
+    min_overtime = (0 if overtime < 0 else overtime) * 30
+    if dt_in_verify is not None:
+        min_in = str2min(dt_str(dt_in_verify, "%H:%M"))  # 시간과 분으로 분으로 환산: 1:30 > 90
+        time_gap = 1440  # 24시간 * 60분 : 비교 최고치
+        find_work_time = {}
+        for work_time in work_time_list:
+            min_begin = str2min(work_time['t_begin'])  # 출근시간
+            if abs(min_begin - min_in) < time_gap:  # 출근 시간 목록의 시간과 출근시간의 차이가 가장 적은 시간을 찾
+                time_gap = abs(min_begin - min_in)
+                find_work_time = work_time
+        # logSend('>>> find_work_time: {}'.format(find_work_time))
+        if dt_out_verify is None:
+            # 퇴근시간이 없으면 기준 근로시간에 연장근로시간을 더해서 넣는다.
+            dt_out_verify = str_to_datetime(dt_str(dt_in_verify, "%Y-%m-%d ") + find_work_time['t_end']) + datetime.timedelta(minutes=min_overtime)
+        if dt_out_verify < dt_in_verify:
+            dt_out_verify = dt_out_verify + datetime.timedelta(days=1)
+    else:
+        basic_dt_out_verify = dt_out_verify - datetime.timedelta(minutes=overtime*30)  # 연장근로를 뺀 퇴근시간
+        min_out = str2min(dt_str(basic_dt_out_verify, "%H:%M"))  # 시간과 분으로 분으로 환산: 1:30 > 90
+        time_gap = 1440  # 24시간 * 60분 : 비교 최고치
+        find_work_time = {}
+        for work_time in work_time_list:
+            min_end = str2min(work_time['t_end'])  # 출근시간
+            if abs(min_end - min_out) < time_gap:  # 출근 시간 목록의 시간과 출근시간의 차이가 가장 적은 시간을 찾
+                time_gap = abs(min_end - min_out)
+                find_work_time = work_time
+        # logSend('>>> find_work_time: {}'.format(find_work_time))
+        # 앞에서 검사했기 때문에 무조건 만든다.
+        dt_in_verify = str_to_datetime(dt_str(dt_out_verify, "%Y-%m-%d ") + find_work_time['t_begin'])
+        if dt_out_verify < dt_in_verify:
+            dt_in_verify = dt_in_verify - datetime.timedelta(days=1)
+    min_begin = str2min(find_work_time['t_begin'])
+    min_end = str2min(find_work_time['t_end'])
+    min_work = min_end - min_begin
+    if min_end < min_begin:
+        min_work = min_end + (1440 - min_begin)
+    # min_work += min_overtime
+    result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
+              'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
+              'work_minutes': min_work,
+              'break_hours': find_work_time['break_hours']
+              }
+    return result
 
+
+def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict, current_work_id: int):
+    # 근로자에게 알림이 있을 때 처리 - 2020/03/31 확인하기 전까지 알림 내용이 적용되지 않기 때문에 쓸모가 없어졌다.
+    # if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1) or (pass_record.paid_holiday_staff_id != -1):
+    #     # 근로자에게 가 알림을 확인 했으면
+    #     if pass_record.dt_accept is None:
+    #         passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
+    #     else:
+    #         passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 확인했다.
+
+    # 연장근로 처리
+    #   - 출퇴근 시간과 상관없이 처리한다.
+    #   - 조기퇴근은 출퇴근 시간과 상관있다.
+    # -2: 연차휴무, -1: 조기퇴근, 0: 정상근무, 1~18: 연장근무(1: 30분, 2: 1시간, ..., 17: 8시간 30분, 18: 9시간)
     # logSend('  > overtime: {}'.format(pass_record.overtime))
-    if pass_record.overtime < 0:
-        passer_record_dict['overtime'] = str(pass_record.overtime)
-        if pass_record.overtime == -3:
-            # logSend('  >> overtime: {}'.format(pass_record.overtime))
-            passer_record_dict['remarks'] = "유급휴가"
-        elif pass_record.overtime == -2:
-            # logSend('  >> overtime: {}'.format(pass_record.overtime))
-            passer_record_dict['remarks'] = "연차휴무"
-        elif pass_record.overtime == -1:
-            # logSend('  >> overtime: {}'.format(pass_record.overtime))
-            passer_record_dict['remarks'] = "조기퇴근"
-    elif pass_record.dt_in_verify is not None:
-        # 휴게시간 계산
-        dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
-        break_time_list = work_dict[current_work_id]['time_info']['work_time_list']
-        time_gap = 1440
-        break_hours = 0
-        for break_time in break_time_list:
-            begin_time = str2min(break_time['t_begin'])
-            if abs(begin_time - dt_in) < time_gap:
-                time_gap = abs(begin_time - dt_in)
-                break_hours = break_time['break_hours']
-        # break_sum += break_hours
-        passer_record_dict['break'] = str(break_hours)
-        #
-        # 기본근로시간 계산 - 퇴근시간을 안넣으면 에러난다.
-        #
-        # logSend('  >> {} - {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-        dt_basic = pass_record.dt_out_verify - pass_record.dt_in_verify
-        basic = int(dt_basic.seconds / 360) / 10
-        # logSend('  > dt_basic: {} - {}'.format(dt_basic, basic))
-        # basic_sum += basic  # 기본근로시간 합계
-        passer_record_dict['basic'] = str(basic)
-        # 연장근로시간
-        overtime = pass_record.overtime / 2
-        # overtime_sum += overtime  # 연장근로시간 합계
-        passer_record_dict['overtime'] = str(overtime)
-        # 야간근로시간 22:00 ~ 06:00
-        # if work_dict[current_work_id]['time_info']['time_type'] != 3:
-        #     # 감시단속직은 야간근로시간 없다.
-        # logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-        dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
-        dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
-        # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
-        if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or (
-                pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
-            if dt_night_begin < pass_record.dt_in_verify:
-                dt_night_begin = pass_record.dt_in_verify
-            if pass_record.dt_out_verify < dt_night_end:
-                dt_night_end = pass_record.dt_out_verify
-            dt_night = dt_night_end - dt_night_begin
-            night = int(dt_night.seconds / 360) / 10
-            # night_sum += night
-            passer_record_dict['night'] = str(night)
-        # 유급휴일근로시간
-        week_index = str_to_datetime(pass_record.year_month_day).weekday()
-        # logSend('  > week: {} - {}'.format(week_index, week_comment[week_index]))
-        # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
-        if (week_index + 1) % 6 not in work_dict[current_work_id]['time_info']['working_days']:
-            logSend(' >> 휴일근로')
-            holiday = basic
-            # holiday_sum += holiday
-            passer_record_dict['holiday'] = str(holiday)
-            # 휴일/연장근로시간
-            if work_dict[current_work_id]['time_info']['paid_day'] == (week_index + 1) % 6 or \
-                    work_dict[current_work_id]['time_info']['is_holiday_work'] == 0:
-                logSend(' >> 휴일/연장근로')
-                ho = overtime
-                # ho_sum += ho
-                passer_record_dict['ho'] = str(ho)
+    passer_record_dict['overtime'] = str(pass_record.overtime)
+    if pass_record.overtime == -2:
+        # logSend('  >> overtime: {}'.format(pass_record.overtime))
+        passer_record_dict['remarks'] = "연차휴무"
+        return  # 근무가 없기 때문에 더 처리할 일이 없다.
+    elif pass_record.overtime == -1:
+        # logSend('  >> overtime: {}'.format(pass_record.overtime))
+        passer_record_dict['remarks'] = "조기퇴근"
+    elif pass_record.overtime == 0:
+        # logSend('  >> overtime: {}'.format(pass_record.overtime))
+        passer_record_dict['remarks'] = "정상근무"
+    else:
+        passer_record_dict['remarks'] = '연장근무: {0:02d}:{1:02d}'.format((pass_record.overtime // 2), (pass_record.overtime % 2) * 30)
+    #
+    # 출퇴근 기록이 없음: 무급휴일이나 유급휴일이겠네.
+    #
+    if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
+        return
+
+    # 출퇴근 시간중에 하나라도 있으면 - 어찌되었건 출근했다.
+    # work_time_list = work_dict[current_work_id]['time_info']['work_time_list']  # 출퇴근 시간 리스트
+    # dt_in = pass_record.dt_in_verify
+    # dt_out = pass_record.dt_out_verify
+    # if dt_in is None:  # 출근시간이 없으면 퇴근시간을 기준으로 근접한 출퇴근 시간의 출근시간을 출근시간으로 설정한다.
+    #     # 출퇴근시간목록(work_time_list) 에서 퇴근시간(dt_out)으로 업무에 설정된 출퇴근시간을 찾는다.
+    #
+    #     dt_in = 08:00
+    # if dt_out is None:  # 퇴근시간이 없으면 출근시간을 기준으로 근접한 출퇴근 시간의 퇴근시간을 퇴근시간으로 설정한다.
+    #     dt_out = 17:00
+    # 휴게시간 계산
+    dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
+    break_time_list = work_dict[current_work_id]['time_info']['work_time_list']
+    time_gap = 1440  # 24시간 * 60분
+    break_hours = 0
+    for break_time in break_time_list:
+        begin_time = str2min(break_time['t_begin'])
+        if abs(begin_time - dt_in) < time_gap:
+            time_gap = abs(begin_time - dt_in)
+            break_hours = break_time['break_hours']
+    # break_sum += break_hours
+    passer_record_dict['break'] = str(break_hours)
+    #
+    # 기본근로시간 계산 - 퇴근시간을 안넣으면 에러난다.
+    #
+    logSend('  >> {} - {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
+    dt_basic = pass_record.dt_out_verify - pass_record.dt_in_verify
+    basic = int(dt_basic.seconds / 360) / 10
+    logSend('  > dt_basic: {} - {}'.format(dt_basic, basic))
+    # basic_sum += basic  # 기본근로시간 합계
+    passer_record_dict['basic'] = str(basic)
+    # 연장근로시간
+    overtime = pass_record.overtime / 2
+    # overtime_sum += overtime  # 연장근로시간 합계
+    passer_record_dict['overtime'] = str(overtime)
+    # 야간근로시간 22:00 ~ 06:00
+    # if work_dict[current_work_id]['time_info']['time_type'] != 3:
+    #     # 감시단속직은 야간근로시간 없다.
+    # logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
+    dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
+    dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
+    # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
+    if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or (
+            pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
+        if dt_night_begin < pass_record.dt_in_verify:
+            dt_night_begin = pass_record.dt_in_verify
+        if pass_record.dt_out_verify < dt_night_end:
+            dt_night_end = pass_record.dt_out_verify
+        dt_night = dt_night_end - dt_night_begin
+        night = int(dt_night.seconds / 360) / 10
+        # night_sum += night
+        passer_record_dict['night'] = str(night)
+    # 유급휴일근로시간
+    week_index = str_to_datetime(pass_record.year_month_day).weekday()
+    # logSend('  > week: {} - {}'.format(week_index, week_comment[week_index]))
+    # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
+    if (week_index + 1) % 6 not in work_dict[current_work_id]['time_info']['working_days']:
+        logSend(' >> 휴일근로')
+        holiday = basic
+        # holiday_sum += holiday
+        passer_record_dict['holiday'] = str(holiday)
+        # 휴일/연장근로시간
+        if work_dict[current_work_id]['time_info']['paid_day'] == (week_index + 1) % 6 or \
+                work_dict[current_work_id]['time_info']['is_holiday_work'] == 0:
+            logSend(' >> 휴일/연장근로')
+            ho = overtime
+            # ho_sum += ho
+            passer_record_dict['ho'] = str(ho)
     return
 
 
 @cross_origin_read_allow
 def my_work_records_v2(request):
     """
-    근로 내용 : 근로자의 근로 내역을 월 기준으로 1년까지 요청함, 캘린더나 목록이 스크롤 될 때 6개월정도 남으면 추가 요청해서 표시할 것
+    근로 내용 : 근로자의 월별 근로 내역 응답
     action 설명
         총 3자리로 구성 첫자리는 출근, 2번째는 퇴근, 3번째는 외출 횟수
         첫번째 자리 1 - 정상 출근, 2 - 지각 출근
@@ -4850,13 +4939,7 @@ def my_work_records_v2(request):
                             "time_type": 1,
                             "week_hours": "20",
                             "month_hours": null,
-                            "working_days": [
-                                1,
-                                2,
-                                3,
-                                4,
-                                5
-                            ],
+                            "working_days": [1, 2, 3, 4, 5],
                             "paid_day": 0,
                             "is_holiday_work": 1,
                             "work_time_list": [
@@ -4969,7 +5052,7 @@ def my_work_records_v2(request):
     employee_works = Works(employee.get_works())
     set_break_time_of_work_time_info(work_dict)
     #
-    # 근로자의 근로내역 생성: 근로자 id 를 키로하는 dictionary
+    # 근로자의 근로내역 생성: 근로자 id 를 key 로하는 dictionary
     #
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     passer_rec_dict = {}
@@ -5065,6 +5148,7 @@ def my_work_records_v2(request):
 
         process_pass_record(passer_record_dict, pass_record, work_dict, current_work_id)
         logSend('  > {}'.format(passer_record_dict))
+        # 월 합산 계산
         if len(passer_record_dict['basic']) > 0:
             basic_sum += float(passer_record_dict['basic'])
             work_days += 1
@@ -5085,80 +5169,6 @@ def my_work_records_v2(request):
             holiday_sum += float(passer_record_dict['holiday'])
         if len(passer_record_dict['ho']) > 0:
             ho_sum += float(passer_record_dict['ho'])
-
-        # if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1):
-        #     if pass_record.dt_accept is None:
-        #         passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
-        #     else:
-        #         passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 인정했다.
-        #
-        # # logSend('  > overtime: {}'.format(pass_record.overtime))
-        # if pass_record.overtime == -3:
-        #     # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        #     passer_record_dict['remarks'] = "유급휴가"
-        # elif pass_record.overtime == -2:
-        #     # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        #     passer_record_dict['remarks'] = "연차휴무"
-        # elif pass_record.overtime == -1:
-        #     # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        #     passer_record_dict['remarks'] = "조기퇴근"
-        # elif pass_record.dt_in_verify is not None:
-        #     # 휴게시간 계산
-        #     dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
-        #     break_time_list = work_dict[current_work_id]['time_info']['work_time_list']
-        #     time_gap = 1440
-        #     break_hours = 0
-        #     for break_time in break_time_list:
-        #         begin_time = str2min(break_time['t_begin'])
-        #         if abs(begin_time - dt_in) < time_gap:
-        #             time_gap = abs(begin_time - dt_in)
-        #             break_hours = break_time['break_hours']
-        #     break_sum += break_hours
-        #     passer_record_dict['break'] = str(break_hours)
-        #     #
-        #     # 기본근로시간 계산 - 퇴근시간을 안넣으면 에러난다.
-        #     #
-        #     # logSend('  >> {} - {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-        #     dt_basic = pass_record.dt_out_verify - pass_record.dt_in_verify
-        #     basic = int(dt_basic.seconds / 360) / 10
-        #     # logSend('  > dt_basic: {} - {}'.format(dt_basic, basic))
-        #     basic_sum += basic		  # 기본근로시간 합계
-        #     passer_record_dict['basic'] = str(basic)
-        #     # 연장근로시간
-        #     overtime = pass_record.overtime
-        #     overtime_sum += overtime		  # 연장근로시간 합계
-        #     passer_record_dict['overtime'] = str(overtime)
-        #     # 야간근로시간 22:00 ~ 06:00
-        #     # if work_dict[current_work_id]['time_info']['time_type'] != 3:
-        #     #     # 감시단속직은 야간근로시간 없다.
-        #     # logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-        #     dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
-        #     dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
-        #     # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
-        #     if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or (pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
-        #         if dt_night_begin < pass_record.dt_in_verify:
-        #             dt_night_begin = pass_record.dt_in_verify
-        #         if pass_record.dt_out_verify < dt_night_end:
-        #             dt_night_end = pass_record.dt_out_verify
-        #         dt_night = dt_night_end - dt_night_begin
-        #         night = int(dt_night.seconds / 360) / 10
-        #         night_sum +=night
-        #         passer_record_dict['night'] = str(night)
-        #     # 유급휴일근로시간
-        #     week_index = str_to_datetime(pass_record.year_month_day).weekday()
-        #     logSend('  > week: {} - {}'.format(week_index, week_comment[week_index]))
-        #     # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
-        #     if (week_index + 1) % 6 not in work_dict[current_work_id]['time_info']['working_days']:
-        #         logSend(' >> 휴일근로')
-        #         holiday = basic
-        #         holiday_sum += holiday
-        #         passer_record_dict['holiday'] = str(holiday)
-        #         # 휴일/연장근로시간
-        #         if work_dict[current_work_id]['time_info']['paid_day'] == (week_index + 1) % 6 or work_dict[current_work_id]['time_info']['is_holiday_work'] == 0:
-        #             logSend(' >> 휴일/연장근로')
-        #             ho = overtime
-        #             ho_sum += ho
-        #             passer_record_dict['ho'] = str(ho)
 
         passer_rec_dict[pass_record.year_month_day[8:10]] = passer_record_dict
 
@@ -5291,30 +5301,6 @@ def my_work_records_v2(request):
         # work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
 
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
-
-
-def get_dic_passer():
-    employees = Employee.objects.filter().values('id', 'name')
-    dic_employee = {}
-    for employee in employees:
-        dic_employee[employee['id']] = employee['name']
-    del employees
-    """
-    dic_employee = {1:"박종기", 2:"곽명석"}
-    """
-    passers = Passer.objects.filter().values('id', 'pNo', 'employee_id')
-    dic_passer = {}
-    for passer in passers:
-        employee_id = passer['employee_id']
-        passer['name'] = '...' if employee_id < 0 else dic_employee[employee_id]
-        dic_passer[passer['id']] = {'name': passer['name'], 'pNo': passer['pNo']}
-    logSend(dic_passer, '\n', dic_passer[1]['name'])
-    del passers
-    del dic_employee
-    """
-    dic_passer = {1:{"name":"박종기", "pNo":"01025573555"}, 2:{"name:"곽명석", "pNo": "01054214410"}}
-    """
-    return dic_passer
 
 
 @cross_origin_read_allow
