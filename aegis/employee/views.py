@@ -4843,40 +4843,25 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         return
 
     # 출퇴근 시간중에 하나라도 있으면 - 어찌되었건 출근했다.
-    # work_time_list = work_dict[current_work_id]['time_info']['work_time_list']  # 출퇴근 시간 리스트
-    # dt_in = pass_record.dt_in_verify
-    # dt_out = pass_record.dt_out_verify
-    # if dt_in is None:  # 출근시간이 없으면 퇴근시간을 기준으로 근접한 출퇴근 시간의 출근시간을 출근시간으로 설정한다.
-    #     # 출퇴근시간목록(work_time_list) 에서 퇴근시간(dt_out)으로 업무에 설정된 출퇴근시간을 찾는다.
-    #
-    #     dt_in = 08:00
-    # if dt_out is None:  # 퇴근시간이 없으면 출근시간을 기준으로 근접한 출퇴근 시간의 퇴근시간을 퇴근시간으로 설정한다.
-    #     dt_out = 17:00
-    # 휴게시간 계산
-    dt_in = str2min(dt_str(pass_record.dt_in_verify, "%H:%M"))
-    break_time_list = work_dict[current_work_id]['time_info']['work_time_list']
-    time_gap = 1440  # 24시간 * 60분
-    break_hours = 0
-    for break_time in break_time_list:
-        begin_time = str2min(break_time['t_begin'])
-        if abs(begin_time - dt_in) < time_gap:
-            time_gap = abs(begin_time - dt_in)
-            break_hours = break_time['break_hours']
-    # break_sum += break_hours
-    passer_record_dict['break'] = str(break_hours)
-    #
-    # 기본근로시간 계산 - 퇴근시간을 안넣으면 에러난다.
-    #
-    logSend('  >> {} - {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-    dt_basic = pass_record.dt_out_verify - pass_record.dt_in_verify
-    basic = int(dt_basic.seconds / 360) / 10
-    logSend('  > dt_basic: {} - {}'.format(dt_basic, basic))
-    # basic_sum += basic  # 기본근로시간 합계
-    passer_record_dict['basic'] = str(basic)
+    work_time_list = work_dict[current_work_id]['time_info']['work_time_list']
+    r = get_work_time(work_time_list, pass_record.dt_in_verify, pass_record.dt_out_verify, pass_record.overtime)
+    # result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
+    #           'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
+    #           'work_minutes': min_work,
+    #           'break_hours': find_work_time['break_hours']
+    #           }
+    logSend('  > work_time: {}'.format(r))
+    # 휴게시간
+    passer_record_dict['break'] = str(r['break_hours'])
+    # 기본근로시간
+    basic_minutes = r['work_minutes']
+    basic_hours = basic_minutes / 60
+    logSend('  > basic minutes: {}, hours: {}'.format(basic_minutes, basic_hours))
+    passer_record_dict['basic'] = str(basic_hours)
     # 연장근로시간
-    overtime = pass_record.overtime / 2
-    # overtime_sum += overtime  # 연장근로시간 합계
-    passer_record_dict['overtime'] = str(overtime)
+    if pass_record.overtime > 0:
+        overtime = pass_record.overtime / 2
+        passer_record_dict['overtime'] = str(overtime)
     # 야간근로시간 22:00 ~ 06:00
     # if work_dict[current_work_id]['time_info']['time_type'] != 3:
     #     # 감시단속직은 야간근로시간 없다.
@@ -4884,8 +4869,8 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
     dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
     # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
-    if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or (
-            pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
+    if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or \
+            (pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
         if dt_night_begin < pass_record.dt_in_verify:
             dt_night_begin = pass_record.dt_in_verify
         if pass_record.dt_out_verify < dt_night_end:
@@ -4900,7 +4885,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
     if (week_index + 1) % 6 not in work_dict[current_work_id]['time_info']['working_days']:
         logSend(' >> 휴일근로')
-        holiday = basic
+        holiday = basic_hours
         # holiday_sum += holiday
         passer_record_dict['holiday'] = str(holiday)
         # 휴일/연장근로시간
