@@ -5633,6 +5633,7 @@ def staff_employees_at_day_v2(request):
                  ' work_record_in_day_for_customer FAIL LIST {}'.format(r.json()['fail_list']))
     pass_records = r.json()['employees']
     fail_list = r.json()['fail_list']
+    logSend('  > fail_list: {}'.format(fail_list))
     pass_record_dic = {}
     for pass_record in pass_records:
         employee_id = int(AES_DECRYPT_BASE64(pass_record['passer_id']))
@@ -5641,6 +5642,9 @@ def staff_employees_at_day_v2(request):
     arr_employee = []
     for employee in employee_list:
         logSend('  - employee employee_id: {}'.format(employee.employee_id))
+        if employee.employee_id not in pass_record_dic.keys():
+            logSend('  > 근로자 서버에서 지정한 근로자 근로내역이 없다.: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
+            continue
         if employee.dt_end < dt_target_day:
             logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
             continue
@@ -5659,13 +5663,14 @@ def staff_employees_at_day_v2(request):
             # 'x': pass_record['x'],
             # 'y': pass_record['y'],
             'the_zone_code': employee.the_zone_code,
-            'notification': pass_record['notification'],
-            'week': pass_record['week'],
-            'day_type': pass_record['day_type'],
-            'day_type_description': pass_record['day_type_description'],
         }
         try:
             pass_record = pass_record_dic[employee.employee_id]
+            employee_dic['notification'] = pass_record['notification']
+            employee_dic['week'] = pass_record['week']
+            employee_dic['day_type'] = pass_record['day_type']
+            employee_dic['day_type_description'] = pass_record['day_type_description']
+
             employee_dic['dt_begin_beacon'] = pass_record['dt_in']
             employee_dic['dt_end_beacon'] = pass_record['dt_out']
             employee_dic['dt_begin_touch'] = pass_record['dt_in_verify']
@@ -5674,8 +5679,13 @@ def staff_employees_at_day_v2(request):
             employee_dic['x'] = pass_record['x']
             employee_dic['y'] = pass_record['y']
         except Exception as e:
-            logSend(get_api(request),
+            logError(get_api(request),
                      ' pass_record_dic[employee.employee_id] - employee_id: {} ({})'.format(employee.employee_id, e))
+            employee_dic['notification'] = None
+            employee_dic['week'] = None
+            employee_dic['day_type'] = None
+            employee_dic['day_type_description'] = None
+
             employee_dic['dt_begin_beacon'] = None
             employee_dic['dt_end_beacon'] = None
             employee_dic['dt_begin_touch'] = None
@@ -5689,7 +5699,6 @@ def staff_employees_at_day_v2(request):
               'employees': arr_employee,
               'fail_list': fail_list,
               }
-    logSend('  > result: {}'.format(result))
     return REG_200_SUCCESS.to_json_response(result)
 
 
