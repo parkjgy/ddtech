@@ -5689,7 +5689,7 @@ def staff_employees_at_day_v2(request):
               'employees': arr_employee,
               'fail_list': fail_list,
               }
-
+    logSend('  > result: {}'.format(result))
     return REG_200_SUCCESS.to_json_response(result)
 
 
@@ -6525,7 +6525,7 @@ def staff_employee_working_v2(request):
 @cross_origin_read_allow
 def staff_update_employee(request):
     """
-    [관리자용 앱]:  업무에 투입된 근로자의 근무 기간, 연장 근무 변경 요청
+    [관리자용 앱]: 업무에 투입된 근로자의 근무 기간, 연장 근무 변경 요청
     - 담당자(현장 소장, 관리자), 근로자, 근무 기간, 당일의 연장 근무
     - 근로자의 근무 기간은 업무의 기간을 벗아나지 못한다.
     - 값을 넣은 것만 변경한다.
@@ -6538,6 +6538,7 @@ def staff_update_employee(request):
         employee_id : 근로자 id
         dt_begin : 2019-04-01   # 근로 시작 날짜
         dt_end : 2019-04-13     # 근로 종료 날짜
+        2020-04-02 아래 overtime_type 은 없어져야 함
         overtime_type : 0       # -1: 업무 완료 조기 퇴근, 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, 3: 1:30 연장 근무, 4: 2시간 연장 근무, 5: 2:30 연장 근무, 6: 3시간 연장 근무
     response
         STATUS 200
@@ -6649,7 +6650,7 @@ def staff_update_employee(request):
     #
     result['update_dt_begin'] = employee.dt_begin.strftime("%Y-%m-%d %H:%M:%S")
     result['update_dt_end'] = employee.dt_end.strftime("%Y-%m-%d %H:%M:%S")
-    result['update_overtime'] = employee.overtime
+    result['update_overtime'] = employee.overtime_type
 
     return REG_200_SUCCESS.to_json_response(result)
 

@@ -4851,6 +4851,8 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     #           'break_hours': find_work_time['break_hours']
     #           }
     logSend('  > work_time: {}'.format(r))
+    pass_record.dt_in_verify = str_to_datetime(r['dt_in'])
+    pass_record.dt_out_verify = str_to_datetime(r['dt_out'])
     # 휴게시간
     passer_record_dict['break'] = str(r['break_hours'])
     # 기본근로시간
@@ -4865,7 +4867,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     # 야간근로시간 22:00 ~ 06:00
     # if work_dict[current_work_id]['time_info']['time_type'] != 3:
     #     # 감시단속직은 야간근로시간 없다.
-    # logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
+    logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
     dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
     dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
     # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
@@ -4892,7 +4894,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         if work_dict[current_work_id]['time_info']['paid_day'] == (week_index + 1) % 6 or \
                 work_dict[current_work_id]['time_info']['is_holiday_work'] == 0:
             logSend(' >> 휴일/연장근로')
-            ho = overtime
+            ho = pass_record.overtime
             # ho_sum += ho
             passer_record_dict['ho'] = str(ho)
     return
