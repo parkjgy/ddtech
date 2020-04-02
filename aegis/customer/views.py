@@ -6478,57 +6478,58 @@ def staff_employee_working_v2(request):
     employee_id = parameter_check['parameters']['employee_id']
     year_month = parameter_check['parameters']['year_month']
 
-    app_users = Staff.objects.filter(id=staff_id)
-    if len(app_users) != 1:
+    try:
+        staff = Staff.objects.get(id=staff_id)
+    except Exception as e:
         return status422(get_api(request),
                          {'message': 'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)})
-    employees = Employee.objects.filter(id=employee_id, work_id=work_id)
-    if len(employees) != 1:
+    try:
+        employee = Employee.objects.get(id=employee_id, work_id=work_id)
+    except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: Employee 에 '
                                                        'employee_id: {}, '
                                                        'work_id: {} 이(가) 없거나 중복됨'.format(employee_id, work_id)})
-    employee = employees[0]
-
     #
     # 근로자 서버로 근로자의 월 근로 내역을 요청
     #
     employee_info = {
-        'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+        'passer_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
         'work_id': rqst['work_id'],
-        'year_month': year_month,
+        'dt': year_month,
     }
-    logSend(employee_info)
-    response_employee = requests.post(settings.EMPLOYEE_URL + 'work_report_for_customer', json=employee_info)
-    if response_employee.status_code != 200:
-        return ReqLibJsonResponse(response_employee)
+    response_employee = requests.post(settings.EMPLOYEE_URL + 'my_work_records_v2', json=employee_info)
+    return ReqLibJsonResponse(response_employee)
 
-    work_day_dict = {}
-    work_dict = {}
-    arr_working = response_employee.json()['arr_working']
-    for working in arr_working:
-        days = working['days']
-        for day_key in days.keys():
-            day = days[day_key]
-            day_dict = {
-                "year_month_day": '{}-{}'.format(year_month, day_key),
-                "work_id": AES_ENCRYPT_BASE64(str(day['work_id'])),
-                "action": 110,
-                "dt_begin": '{}'.format(day['dt_in_verify']),
-                "dt_end": '{}'.format(day['dt_out_verify']),
-                "overtime": day['overtime'],
-                "week": day['week'],
-                "break": day['break'],
-                "basic": int_none(day['basic']),
-                "night": int_none(day['night']),
-                "holiday": int_none(day['holiday']),
-                "ho": int_none(day['ho']),
-            }
-            work_day_dict[day_key] = day_dict
-        logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
-        del working['days']
-        work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
-
-    return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
+    # if response_employee.status_code != 200:
+    #     return ReqLibJsonResponse(response_employee)
+    #
+    # work_day_dict = {}
+    # work_dict = {}
+    # arr_working = response_employee.json()['arr_working']
+    # for working in arr_working:
+    #     days = working['days']
+    #     for day_key in days.keys():
+    #         day = days[day_key]
+    #         day_dict = {
+    #             "year_month_day": '{}-{}'.format(year_month, day_key),
+    #             "work_id": AES_ENCRYPT_BASE64(str(day['work_id'])),
+    #             "action": 110,
+    #             "dt_begin": '{}'.format(day['dt_in_verify']),
+    #             "dt_end": '{}'.format(day['dt_out_verify']),
+    #             "overtime": day['overtime'],
+    #             "week": day['week'],
+    #             "break": day['break'],
+    #             "basic": int_none(day['basic']),
+    #             "night": int_none(day['night']),
+    #             "holiday": int_none(day['holiday']),
+    #             "ho": int_none(day['ho']),
+    #         }
+    #         work_day_dict[day_key] = day_dict
+    #     logSend('  > day: {} - work_id: {}'.format(day_key, day['work_id']))
+    #     del working['days']
+    #     work_dict[AES_ENCRYPT_BASE64(str(day['work_id']))] = working
+    #
+    # return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'work_day_dict': work_day_dict})
 
 
 @cross_origin_read_allow

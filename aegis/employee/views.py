@@ -4914,6 +4914,7 @@ def my_work_records_v2(request):
     GET
         passer_id='서버로 받아 저장해둔 출입자 id'
         dt = '2018-01'
+        work_id = '암호화된 업무 id'  # optional: only use /customer/staff_employee_working_v2
     response
         STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
         STATUS 200
@@ -5012,31 +5013,51 @@ def my_work_records_v2(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt'])
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'work_id_!_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     year_month = parameter_check['parameters']['dt']
+    work_id = parameter_check['parameters']['work_id']
+    print('   > work_id: {}'.format(work_id))
+
+    # 출입자(근로자) 정보 가져오기
     try:
         passer = Passer.objects.get(id=passer_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'passer_id: {} 없음. {}'.format(passer_id, str(e))})
+    # 출입자(근로자)의 근로 정보 가져오기
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'employee_id{} 없음. {}'.format(passer.employee_id, str(e))})
-    pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
-                                                   year_month_day__contains=year_month).order_by('year_month_day')
-    if len(pass_record_list) == 0:
-        return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
-
-    work_id_dict = {}
-    for pass_record in pass_record_list:
-        if pass_record.work_id not in work_id_dict.keys():
-            work_id_dict[pass_record.work_id] = id
-    work_dict = get_work_dict(list(work_id_dict.keys()))
-    logSend('  > work_dict: {}'.format(work_dict.keys()))
-    employee_works = Works(employee.get_works())
+    if work_id is not None:
+        # /customer/staff_employee_working_v2 에서 사용할 때는 work_id 가 있다.
+        # 월 근로내역에서 업무 찾기 (중복 업무 거르기)
+        work_dict = get_work_dict([work_id])
+        logSend('  > work_dict: {}'.format(work_dict.keys()))
+        employee_works = Works(employee.get_works())
+        # 출입자(근로자)의 월 근로 내역 가져오기
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id, work_id=work_id,
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
+        if len(pass_record_list) == 0:
+            return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+    else:
+        # 근로자가 한달 내에 여러개의 업무를 가지고 있을 때 처리
+        # 출입자(근로자)의 월 근로 내역 가져오기
+        pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
+                                                       year_month_day__contains=year_month).order_by('year_month_day')
+        if len(pass_record_list) == 0:
+            return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+        # 월 근로내역에서 업무 찾기 (중복 업무 거르기)
+        work_id_dict = {}
+        for pass_record in pass_record_list:
+            if pass_record.work_id not in work_id_dict.keys():
+                work_id_dict[pass_record.work_id] = id
+        work_dict = get_work_dict(list(work_id_dict.keys()))
+        logSend('  > work_dict: {}'.format(work_dict.keys()))
+        employee_works = Works(employee.get_works())
+    # 업무내역에서 복잡한 휴게시간 미리 계산하기
     set_break_time_of_work_time_info(work_dict)
     #
     # 근로자의 근로내역 생성: 근로자 id 를 key 로하는 dictionary
