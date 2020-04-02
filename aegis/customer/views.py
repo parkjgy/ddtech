@@ -5674,7 +5674,7 @@ def staff_employees_at_day_v2(request):
             employee_dic['x'] = pass_record['x']
             employee_dic['y'] = pass_record['y']
         except Exception as e:
-            logError(get_api(request),
+            logSend(get_api(request),
                      ' pass_record_dic[employee.employee_id] - employee_id: {} ({})'.format(employee.employee_id, e))
             employee_dic['dt_begin_beacon'] = None
             employee_dic['dt_end_beacon'] = None
