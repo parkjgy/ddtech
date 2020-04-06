@@ -5650,7 +5650,7 @@ def staff_employees_at_day_v2(request):
             continue
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
