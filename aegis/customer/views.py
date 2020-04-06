@@ -6484,7 +6484,7 @@ def staff_employee_working_v2(request):
         return status422(get_api(request),
                          {'message': 'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)})
     try:
-        employee = Employee.objects.get(id=employee_id, work_id=work_id)
+        employee = Employee.objects.get(employee_id=employee_id, work_id=work_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: Employee 에 '
                                                        'employee_id: {}, '
