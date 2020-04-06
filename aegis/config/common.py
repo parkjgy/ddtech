@@ -548,3 +548,15 @@ class Works(object):
                     # logSend('   >> find: {}'.format(element))
                     return element
         return None
+
+    def find_work_by_date(self, when):
+        """
+        어떤 날짜에 업무가 있는지 찾는다.
+        """
+        # logSend('  find id: {}, data: {}'.format(work_id, self.data))
+        for element in self.data:
+            # logSend('  element: {}'.format(element))
+            if str_to_dt(element['begin']) <= when < (str_to_dt(element['end']) + datetime.timedelta(days=1)):
+                # logSend('   >> find: {}'.format(element))
+                return element
+        return None
