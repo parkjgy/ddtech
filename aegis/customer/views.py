@@ -3667,7 +3667,7 @@ def list_employee(request):
                 }
             else:
                 employee_web = {
-                    'id': employee['employee_id'],
+                    'id': employee['id'],
                     'name': employee['name'],
                     'pNo': employee['phone'],
                     'dt_begin': employee['dt_begin'],
@@ -3686,7 +3686,7 @@ def list_employee(request):
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
-                'id': employee['employee_id'],
+                'id': employee['id'],
                 'name': employee['name'],
                 'pNo': employee['phone'],
                 'dt_begin': employee['dt_begin'],
