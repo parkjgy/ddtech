@@ -3645,7 +3645,7 @@ def list_employee(request):
                               11: '연장 5시간 30분', 12: '연장 6시간', 13: '연장 6시간 30분', 14: '연장 7시간',
                               15: '연장 7시간 30분', 16: '연장 8시간', 17: '연장 8시간 30분', 18: '연장 9시간'}
                 employee_web = {
-                    'id': employee['id'],
+                    'id': employee['employee_id'],
                     'name': employee['name'],
                     'pNo': employee['phone'],
                     'dt_begin': employee['dt_begin'],
@@ -3667,7 +3667,7 @@ def list_employee(request):
                 }
             else:
                 employee_web = {
-                    'id': employee['id'],
+                    'id': employee['employee_id'],
                     'name': employee['name'],
                     'pNo': employee['phone'],
                     'dt_begin': employee['dt_begin'],
@@ -3686,7 +3686,7 @@ def list_employee(request):
         employee_list = response.json()['employees']
         for employee in employee_list:
             employee_web = {
-                'id': employee['id'],
+                'id': employee['employee_id'],
                 'name': employee['name'],
                 'pNo': employee['phone'],
                 'dt_begin': employee['dt_begin'],
@@ -5650,7 +5650,7 @@ def staff_employees_at_day_v2(request):
             continue
         employee_dic = {
             'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
