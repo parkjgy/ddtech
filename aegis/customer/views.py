@@ -3645,7 +3645,7 @@ def list_employee(request):
                               11: '연장 5시간 30분', 12: '연장 6시간', 13: '연장 6시간 30분', 14: '연장 7시간',
                               15: '연장 7시간 30분', 16: '연장 8시간', 17: '연장 8시간 30분', 18: '연장 9시간'}
                 employee_web = {
-                    'id': employee['employee_id'],
+                    'id': employee['id'],
                     'name': employee['name'],
                     'pNo': employee['phone'],
                     'dt_begin': employee['dt_begin'],
@@ -6484,7 +6484,7 @@ def staff_employee_working_v2(request):
         return status422(get_api(request),
                          {'message': 'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)})
     try:
-        employee = Employee.objects.get(employee_id=employee_id, work_id=work_id)
+        employee = Employee.objects.get(id=employee_id, work_id=work_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: Employee 에 '
                                                        'employee_id: {}, '
