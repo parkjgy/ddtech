@@ -126,7 +126,7 @@ class Work(models.Model):
 
     def set_time_info(self, x):
         self.time_info = json.dumps(x)
-        print(len(self.time_info))
+        # print(len(self.time_info))
 
     def get_time_info(self):
         if self.time_info is None or len(self.time_info) == 0:

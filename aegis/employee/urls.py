@@ -63,7 +63,7 @@ urlpatterns = [
     url(r'employee/my_work_records$', views.my_work_histories, name='my_work_histories'),  # 상용 서버에서 사용하기 때문에 임시 방편 2020/01/31 18:20
     url(r'employee/my_work_histories_for_customer$', views.my_work_histories_for_customer, name='my_work_histories_for_customer'),
     url(r'employee/work_report_for_customer$', views.work_report_for_customer, name='work_report_for_customer'),
-    url(r'employee/alert_recruiting', views.alert_recruiting, name='alert_recruiting'),
+    url(r'employee/alert_recruiting$', views.alert_recruiting, name='alert_recruiting'),
 
     url(r'employee/my_work_records_v2$', views.my_work_records_v2, name='my_work_records_v2'),
 
@@ -72,28 +72,28 @@ urlpatterns = [
     url(r'employee/beacon_status$', views.beacon_status, name='beacon_status'),
     url(r'employee/tk_employee$', views.tk_employee, name='tk_employee'),
     url(r'employee/tk_pass$', views.tk_pass, name='tk_pass'),
-    url(r'employee/tk_passer_list', views.tk_passer_list, name='tk_passer_list'),
-    url(r'employee/tk_list_reg_stop', views.tk_list_reg_stop, name='tk_list_reg_stop'),
-    url(r'employee/tk_update_rest_time', views.tk_update_rest_time, name='tk_update_rest_time'),
-    url(r'employee/tk_passer_work_backup', views.tk_passer_work_backup, name='tk_passer_work_backup'),
-    url(r'employee/tk_match_test_for_customer', views.tk_match_test_for_customer, name='tk_match_test_for_customer'),
-    url(r'employee/tk_in_out_null_list', views.tk_in_out_null_list, name='tk_in_out_null_list'),
-    url(r'employee/tk_patch', views.tk_patch, name='tk_patch'),
+    url(r'employee/tk_passer_list$', views.tk_passer_list, name='tk_passer_list'),
+    url(r'employee/tk_list_reg_stop$', views.tk_list_reg_stop, name='tk_list_reg_stop'),
+    url(r'employee/tk_update_rest_time$', views.tk_update_rest_time, name='tk_update_rest_time'),
+    url(r'employee/tk_passer_work_backup$', views.tk_passer_work_backup, name='tk_passer_work_backup'),
+    url(r'employee/tk_match_test_for_customer$', views.tk_match_test_for_customer, name='tk_match_test_for_customer'),
+    url(r'employee/tk_in_out_null_list$', views.tk_in_out_null_list, name='tk_in_out_null_list'),
+    url(r'employee/tk_patch$', views.tk_patch, name='tk_patch'),
 
-    url(r'employee/apns_test', views.apns_test, name='apns_test'),
-    url(r'employee/test_beacon_list', views.test_beacon_list, name='test_beacon_list'),
-    url(r'employee/get_test_beacon_list', views.get_test_beacon_list, name='get_test_beacon_list'),
-    url(r'employee/del_test_beacon_list', views.del_test_beacon_list, name='del_test_beacon_list'),
+    url(r'employee/apns_test$', views.apns_test, name='apns_test'),
+    url(r'employee/test_beacon_list$', views.test_beacon_list, name='test_beacon_list'),
+    url(r'employee/get_test_beacon_list$', views.get_test_beacon_list, name='get_test_beacon_list'),
+    url(r'employee/del_test_beacon_list$', views.del_test_beacon_list, name='del_test_beacon_list'),
 
-    url(r'employee/list_employee', views.list_employee, name='list_employee'),
-    url(r'employee/update_camera', views.update_camera, name='update_camera'),
+    url(r'employee/list_employee$', views.list_employee, name='list_employee'),
+    url(r'employee/update_camera$', views.update_camera, name='update_camera'),
 
-    url(r'employee/push_work', views.push_work, name='push_work'),
+    url(r'employee/push_work$', views.push_work, name='push_work'),
 
-    # url(r'employee/get_works', views.get_works, name='get_works'),
-    url(r'employee/reset_passer', views.reset_passer, name='reset_passer'),
-    url(r'employee/temp_test_post', views.temp_test_post, name='temp_test_post'),
-    url(r'employee/make_work_io', views.make_work_io, name='make_work_io'),
+    # url(r'employee/get_works$', views.get_works, name='get_works'),
+    url(r'employee/reset_passer$', views.reset_passer, name='reset_passer'),
+    url(r'employee/temp_test_post$', views.temp_test_post, name='temp_test_post'),
+    url(r'employee/make_work_io$', views.make_work_io, name='make_work_io'),
     url(r'employee/work_remover$', views.work_remover, name='work_remover'),
 
 ]
