@@ -5249,32 +5249,36 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 # 유급 휴일이거나 유급휴일이 지났으면
                 # 소정근로에 결근이 없었는지 확인하고
                 # 소정근로시간을 추가하고 week_dict 를 초기화한다.
+                logSend('  >> week_dict: {}'.format(week_dict))
                 is_all_week = True
                 for week_index in month_work_dict[work_id]['time_info']['working_days']:
+                    # 업무의 소정근로일에
                     if week_index not in week_dict.keys():
+                        # 근무를 하지 않았으면
                         is_all_week = False
                         break
                 if is_all_week:  # 소정근로시간을 채웠다.
                     all_work_week += int(month_work_dict[work_id]['time_info']['week_hours']) * .2  # 주 소정근로시간
+                    logSend('  > 주 소정근로시간: {}'.format(all_work_week))
                 dt_paid_day = dt_paid_day + datetime.timedelta(days=7)
                 week_dict = {}
-            else:
-                is_working = False
-                if day_dict['overtime'] == 0:
-                    # 연장근무가 0 이면 근무가 없을 수도 있다.
-                    if (day_dict['dt_in_verify'] is not None) or (day_dict['dt_out_verify'] is not None):
-                        # 출퇴근중 하나가 있으면 근무가 있었다.
-                        is_working = True
-                else:
-                    # 연장근무가 0이 아니면 월차, 조기퇴근, 연장근무를 했으니까 근무한 것이다.
+            # logSend(' >> day_dict: {} {}'.format(day_dict['year_month_day'], day_dict['week']))
+            is_working = False
+            if day_dict['overtime'] == 0:
+                # 연장근무가 0 이면 근무가 없을 수도 있다.
+                if (day_dict['dt_in_verify'] is not None) or (day_dict['dt_out_verify'] is not None):
+                    # 출퇴근중 하나가 있으면 근무가 있었다.
                     is_working = True
-                if is_working:
-                    week_dict[(str_to_datetime(day_dict['year_month_day']).weekday() + 1) % 7] = {
-                        'week': week_comment[str_to_datetime(day_dict['year_month_day']).weekday()],
-                        'is_working_day': day_dict['is_not_paid_holiday'],
-                        'is_working': is_working,
-                    }
-                logSend('  >> week_dict: {}'.format(week_dict))
+            else:
+                # 연장근무가 0이 아니면 월차, 조기퇴근, 연장근무를 했으니까 근무한 것이다.
+                is_working = True
+            if is_working:
+                week_dict[(str_to_datetime(day_dict['year_month_day']).weekday() + 1) % 7] = {
+                    'week': week_comment[str_to_datetime(day_dict['year_month_day']).weekday()],
+                    'is_working_day': day_dict['is_not_paid_holiday'],
+                    'is_working': is_working,
+                }
+            # logSend('  >> week_dict: {}'.format(week_dict))
 
         if len(day_dict['basic']) > 0:
             basic_sum += float(day_dict['basic'])
