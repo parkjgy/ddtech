@@ -6147,16 +6147,14 @@ def staff_change_work_v2(request):
     [관리자용 앱]: 업무 중인 근로자의 (근태정보 변경)을 실행한다.
     - 담당자(현장 소장, 관리자), 업무, 변경 형태
     - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
-    - 오늘부터 3일간 만 사용할 수 있다.
-    https://api-dev.aegisfac.com/customer/staff_change_work_v2?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=_LdMng5jDTwK-LMNlj22Vw&overtime_type=-1
-    http://0.0.0.0:8000/customer/staff_change_work_v2?id=qgf6YHf1z2Fx80DR8o_Lvg&work_id=ryWQkNtiHgkUaY_SZ1o2uA&overtime_type=-1&employee_ids=qgf6YHf1z2Fx80DR8o_Lvg
+    - 오늘부터 3일 전까지만 수정할 수 있다.
     overtime 설명 (2020-03-23)
         연장 근무( -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차 휴무, -1: 조기 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     POST
         staff_id : 현장관리자 id      # foreground 에서 받은 암호화된 식별 id
         work_id : 업무 id           # 암호화된 id
         year_month_day: 2019-05-09 # 처리할 날짜
-        overtime_type: 0           # -5: 소정근로일로 지정 -4: 무급휴일로 지정, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기 퇴근,
+        overtime_type: 0           # -3: 반차휴무, -2: 연차휴무, -1: 조기 퇴근,
                                    # 0: 표준 근무, 1: 30분 연장 근무, 2: 1시간 연장 근무, ..., 18: 9시간 연장 근무
         employee_ids: [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
         comment: 연차휴무, 조기퇴근, 유급휴가 일 때 사유  # 유급휴일(주휴일)도 사유가 필요한가? 근로자 앱으로 push
@@ -6190,7 +6188,7 @@ def staff_change_work_v2(request):
             {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
             {'message':'ClientError: parameter \'overtime_type\' 가 없어요'}
             {'message':'ClientError: parameter \'employee_ids\' 가 없어요'}
-            {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-1 ~ 6)를 넘었습니다.'}
+            {'message':'ClientError: parameter \'overtime_type\' 값이 범위(-3 ~ 18)를 넘었습니다.'}
             {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
             {'message':'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)}
@@ -6230,11 +6228,10 @@ def staff_change_work_v2(request):
     #
     time_info = work.get_time_info()
     logSend('  > paid_day: {}'.format(time_info['paid_day']))
-    # paid_day = -3 if time_info['paid_day'] == -1 else -2
-    if overtime_type < -5 or 18 < overtime_type:
+    if overtime_type < -3 or 18 < overtime_type:
         # 초과 근무 형태가 범위를 벗어난 경우
         return status422(get_api(request),
-                         {'message': 'ClientError: parameter \'overtime_type\' 값이 범위({} ~ 18)를 넘었습니다.'.format(paid_day)})
+                         {'message': 'ClientError: parameter \'overtime_type\' 값이 범위(-3 ~ 18)를 넘었습니다.'.format(paid_day)})
     if request.method == 'GET':
         employee_ids = rqst.getlist('employee_ids')
 
@@ -6316,6 +6313,141 @@ def staff_change_work_v2(request):
     #           'fail_list': fail_list
     #           }
     # return REG_200_SUCCESS.to_json_response(result)
+    return REG_200_SUCCESS.to_json_response({'fail_list': fail_list})
+
+
+@cross_origin_read_allow
+def staff_change_day_type(request):
+    """
+    [관리자용 앱]: 특정일의 휴일, 주휴일, 소정근무일을 변경한다.
+    - 근로자 명단에서 체크하고 체크한 근로자 만 근무 변경
+    - 오늘부터 3일 전까지만 수정할 수 있다.
+    overtime 설명 (2020-03-23)
+        연장 근무( -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차 휴무, -1: 조기 퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    POST
+        staff_id : 현장관리자 id      # foreground 에서 받은 암호화된 식별 id
+        work_id : 업무 id           # 암호화된 id
+        year_month_day: 2019-05-09 # 처리할 날짜
+        day_type: 0                 # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+        employee_ids: [ 근로자_id_1, 근로자_id_2, 근로자_id_3, 근로자_id_4, 근로자_id_5, ...]
+        comment: 근로자에게 전달할 짧은 내용의 글
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "employees": [
+                {
+                  "is_accept_work": true,
+                  "employee_id": "i52bN-IdKYwB4fcddHRn-g",
+                  "name": "근로자",
+                  "phone": "010-3333-4444",1
+                  "dt_begin": "2019-03-10 14:46:04",
+                  "dt_end": "2019-05-09 00:00:00",
+                  "dt_begin_beacon": "2019-04-14 08:20:00",
+                  "dt_end_beacon": "2019-04-14 18:20:00",
+                  "dt_begin_touch": "2019-04-14 08:35:00",
+                  "dt_end_touch": "2019-04-14 18:25:00",
+                  "overtime": "30",
+                  "x": 35.5362,
+                  "y": 129.444,
+                  "overtime_type": -1
+                },
+                ......
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month_day\' 가 없어요'}
+            {'message':'ClientError: parameter \'day_type\' 가 없어요'}
+            {'message':'ClientError: parameter \'employee_ids\' 가 없어요'}
+            {'message':'ClientError: parameter \'day_type\' 값이 범위(0 ~ 3)를 넘었습니다.'}
+            {'message':'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Staff 에 id={} 이(가) 없거나 중복됨'.format(staff_id)}
+            {'message':'ServerError: Work 에 id={} 이(가) 없거나 중복됨'.format(work_id)}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst,
+                                      ['staff_id_!', 'work_id_!', 'year_month_day', 'day_type', 'employee_ids', 'comment_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+
+    staff_id = parameter_check['parameters']['staff_id']
+    work_id = parameter_check['parameters']['work_id']
+    year_month_day = parameter_check['parameters']['year_month_day']
+    day_type = int(parameter_check['parameters']['day_type'])
+    employee_ids = parameter_check['parameters']['employee_ids']
+    comment = parameter_check['parameters']['comment']
+
+    try:
+        app_user = Staff.objects.get(id=staff_id)
+    except Exception as e:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Staff 에 id={} 이(가) 없음'.format(staff_id)})
+    try:
+        work = Work.objects.get(id=work_id)
+    except Exception as e:
+        return status422(get_api(request), {'message': 'ServerError: Work 에 id={} 이(가) 없음'.format(work_id)})
+    if work.staff_id != app_user.id:
+        # 업무 담당자와 요청자가 틀린 경우 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.
+        logSend('   ! 업무 담당자와 요청자가 틀림 - 사업장 담당자 일 수 도 있기 때문에 error 가 아니다.')
+    #
+    # 2020/02/28 업무정보(time_info)에 유급휴일(주휴일 paid_day)이 -1 이면 메뉴에 "유급휴일"이 표시되야 한다.
+    #
+    time_info = work.get_time_info()
+    logSend('  > paid_day: {}'.format(time_info['paid_day']))
+    if day_type < 0 or 3 < day_type:
+        # 초과 근무 형태가 범위를 벗어난 경우
+        return status422(get_api(request),
+                         {'message': 'ClientError: parameter \'overtime_type\' 값이 범위(0 ~ 3)를 넘었습니다.'.format(paid_day)})
+    if request.method == 'GET':
+        employee_ids = rqst.getlist('employee_ids')
+
+    # logSend(employee_ids)
+    if len(employee_ids) == 0:
+        # 연장근무 저장할 근로자 목록이 없다.
+        logError(get_api(request), ' 근로자 연장 근무요청을 했는데 선택된 근로자({})가 없다?'.format(employee_ids))
+
+        return REG_200_SUCCESS.to_json_response()
+    # 암호화된 employee id 복호화
+    employee_id_list = []
+    for employee_id in employee_ids:
+        if type(employee_id) == dict:
+            employee_id_list.append(AES_DECRYPT_BASE64(employee_id['employee_id']))
+        else:
+            employee_id_list.append(int(AES_DECRYPT_BASE64(employee_id)))
+    # logSend(employee_id_list)
+    if len(employee_id_list) == 0:
+        # 연장근무 저장할 근로자 목록이 없다.
+        logError(get_api(request),
+                 ' 근로자 연장 근무요청을 했는데 선택된 근로자({})가 없다? (암호화된 근로자 리스트에도 없다.)'.format(employee_id_list))
+
+        return REG_200_SUCCESS.to_json_response()
+
+    # 고객 서버의 employee 에서 요청된 근로자 선정
+    employees = Employee.objects.filter(work_id=work.id, id__in=employee_id_list)
+    #
+    # 근로자 서버에 처리 요청
+    #
+    employee_passer_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employees]
+    employees_infor = {'employees': employee_passer_ids,
+                       'year_month_day': year_month_day,
+                       'work_id': AES_ENCRYPT_BASE64(work_id),
+                       'day_type': day_type,
+                       'day_type_staff_id': AES_ENCRYPT_BASE64(staff_id),
+                       'comment': comment,
+                       }
+    r = requests.post(settings.EMPLOYEE_URL + 'pass_record_of_employees_in_day_for_customer_v2', json=employees_infor)
+    logSend('  > {}'.format(r.json()))
+    if len(r.json()['fail_list']):
+        logError(get_api(request),
+                 ' pass_record_of_employees_in_day_for_customer_v2 FAIL LIST {}'.format(r.json()['fail_list']))
+    fail_list = r.json()['fail_list']
     return REG_200_SUCCESS.to_json_response({'fail_list': fail_list})
 
 

@@ -1057,14 +1057,14 @@ def notification_accept_v2(request):
                 pass_record.dt_out_verify = None
                 pass_record.in_staff_id = notification.staff_id
             elif notification.notification_type == -5:  # 소정근로일 부여
-                pass_record.is_not_paid_holiday = 2
-                pass_record.paid_holiday_staff_id = notification.staff_id
+                pass_record.day_type = 2
+                pass_record.day_type_staff_id = notification.staff_id
             elif notification.notification_type == -4:  # 무급휴일 부여
-                pass_record.is_not_paid_holiday = 1
-                pass_record.paid_holiday_staff_id = notification.staff_id
+                pass_record.day_type = 1
+                pass_record.day_type_staff_id = notification.staff_id
             elif notification.notification_type == -3:  # 유급휴일 부여
-                pass_record.is_not_paid_holiday = 0
-                pass_record.paid_holiday_staff_id = notification.staff_id
+                pass_record.day_type = 0
+                pass_record.day_type_staff_id = notification.staff_id
             # elif notification.notification_type == -2:  # 연차휴무 부여
             # elif notification.notification_type == -1:  # 조기퇴근 부여
             # elif notification.notification_type == 0:  # 연차휴무, 조기퇴근, 연장근로 취소
@@ -3369,9 +3369,9 @@ def pass_record_of_employees_in_day_for_customer(request):
             'overtime_staff_id': pass_history.overtime_staff_id,
             'x': pass_history.x,
             'y': pass_history.y,
-            # 'day_type': pass_history.is_not_paid_holiday,
-            # 'day_type_staff_id': pass_history.paid_holiday_staff_id,
-            # 'day_type_description': '소정근로일',
+            'day_type': pass_history.day_type,
+            'day_type_staff_id': pass_history.day_type_staff_id,
+            'day_type_description': '소정근로일',
         }
         # for key in pass_history.__dict__.keys():
         #     logSend(key, ' ', pass_history.__dict__[key])
@@ -3582,8 +3582,8 @@ def work_record_in_day_for_customer(request):
         day_type = 1
     for pass_history in pass_histories:
         if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
-            # pass_history.is_not_paid_holiday  # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
-            day_type = pass_history.is_not_paid_holiday
+            # pass_history.day_type  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            day_type = pass_history.day_type
         pass_history_dict = {
             'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
             'year_month_day': pass_history.year_month_day,
@@ -3625,19 +3625,22 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             employees: [ employee_id, employee_id, ...],  # 배열: 대상 근로자 (암호화된 값)
             year_month_day: 2018-12-28,                   # 대상 날짜
             work_id: work_id,                             # 업무 id (암호화된 값): 암호를 풀어서 -1 이면 업무 특정짓지 않는다.
-
             #
             # 아래항은 옵션임 - 값이 없으면 처리하지 않음
             #
-            overtime: 0,                    # -3: 유급휴일, -2: 연차휴무, -1: 조기퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
-            overtime_staff_id: staff_id,    # 처리 직원 id (암호화된 값)
+            overtime: 0                     # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0: 정상 근무, 1~6: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 )
+            overtime_staff_id: staff_id     # 처리 직원 id (암호화된 값)
             comment: 막내 운동회               # 유급휴일, 연차휴무, 조기퇴근 의 사유
 
-            dt_in_verify: 08:00,            # 수정된 출근시간 (24 시간제)
-            in_staff_id: staff_id,          # 출근 시간 수정 직원 id (암호화됨)
+            dt_in_verify: 08:00             # 수정된 출근시간 (24 시간제)
+            in_staff_id: staff_id           # 출근 시간 수정 직원 id (암호화됨)
 
-            dt_out_verify: 17:00,            # 수정된 퇴근시간 (24 시간제)
-            out_staff_id: staff_id,          # 퇴근 시간 수정 직원 id (암호화됨)
+            dt_out_verify: 17:00             # 수정된 퇴근시간 (24 시간제)
+            out_staff_id: staff_id           # 퇴근 시간 수정 직원 id (암호화됨)
+
+            day_type: 0                     # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            day_type_staff_id: staff_id     # 근무일 구분을 변경한 직원 id (암호화됨)
+            comment: 투표                    # 근무일 구분을 변경한 사유
         }
     response
         STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
@@ -3728,6 +3731,31 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     staff_id = -1
     comment = ''
     dt_inout = str_to_datetime("2019-12-05")
+    # 근무일 변 처리
+    if ('day_type' in rqst.keys()) and ('day_type_staff_id' in rqst.keys()):
+        day_type = int(rqst['day_type'])
+        day_type_staff_id = AES_DECRYPT_BASE64(rqst['day_type_staff_id'])
+        is_ok = True
+        if day_type_staff_id == '__error':
+            is_ok = False
+            fail_list.append(' overtime_staff_id: 비정상')
+        else:
+            notification_type = (day_type + 10) * -1
+            dt_inout = str_to_datetime(year_month_day)
+            staff_id = day_type_staff_id
+            # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            if day_type == 0:
+                push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            elif day_type == 1:
+                push_title = '{} 주휴일(연장근로)로 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            elif day_type == 2:
+                push_title = '{} 소정근로일로 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            else:
+                push_title = '{} 휴일(휴일근로)로 부여합니다.'.format(year_month_day)
+                comment = send_comment
     # 연장 근무 처리
     if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
         overtime = int(rqst['overtime'])
@@ -3736,30 +3764,25 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         if overtime_staff_id == '__error':
             is_ok = False
             fail_list.append(' overtime_staff_id: 비정상')
-        notification_type = overtime
-        dt_inout = str_to_datetime(year_month_day)
-        staff_id = overtime_staff_id
-        if overtime == -5:
-            push_title = '{} 소정근로일로 부여합니다.'.format(year_month_day)
-            comment = send_comment
-        elif overtime == -4:
-            push_title = '{} 무급휴일로 부여합니다.'.format(year_month_day)
-            comment = send_comment
-        elif overtime == -3:
-            push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
-            comment = send_comment
-        elif overtime == -2:
-            push_title = '{} 연차휴가를 부여합니다.'.format(year_month_day)
-            comment = send_comment
-        elif overtime == -1:
-            push_title = '{} 조기퇴근을 부여합니다.'.format(year_month_day)
-            comment = send_comment
-        elif overtime == 0:
-            push_title = '{} 휴가, 조퇴, 연장이 철회됩니다.'.format(year_month_day)
-            comment = '연차휴가, 조기퇴근, 연장근무'
         else:
-            push_title = '{} 연장근로를 부여합니다.'.format(year_month_day)
-            comment = '{0:02d} 시간 {1:02d} 분'.format(overtime // 2, (overtime % 2) * 30)
+            notification_type = overtime
+            dt_inout = str_to_datetime(year_month_day)
+            staff_id = overtime_staff_id
+            if overtime == -3:
+                push_title = '{} 반차휴가로 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            elif overtime == -2:
+                push_title = '{} 연차휴가를 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            elif overtime == -1:
+                push_title = '{} 조기퇴근을 부여합니다.'.format(year_month_day)
+                comment = send_comment
+            elif overtime == 0:
+                push_title = '{} 휴가, 조퇴, 연장이 철회됩니다.'.format(year_month_day)
+                comment = '연차휴가, 조기퇴근, 연장근무'
+            else:
+                push_title = '{} 연장근로를 부여합니다.'.format(year_month_day)
+                comment = '{0:02d} 시간 {1:02d} 분'.format(overtime // 2, (overtime % 2) * 30)
 
     # 출근시간 수정 처리
     if ('dt_in_verify' in rqst.keys()) and ('in_staff_id' in rqst.keys()):
@@ -3820,7 +3843,11 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             work_place_name=work_dict['work_place_name'],
             work_name_type=work_dict['work_name_type'],
             is_x=0,  # 사용확인 용?
-            notification_type=notification_type,  # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+            notification_type=notification_type,  # 알림 종류: -30: 새업무 알림,
+            # -21: 퇴근시간 수정, -20: 출근시간 수정,
+            # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
+            # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
             comment=comment,
             staff_id=staff_id,
             dt_inout=dt_inout,
@@ -4812,7 +4839,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
 def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict):
     current_work_id = pass_record.work_id
     # 근로자에게 알림이 있을 때 처리 - 2020/03/31 확인하기 전까지 알림 내용이 적용되지 않기 때문에 쓸모가 없어졌다.
-    # if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1) or (pass_record.paid_holiday_staff_id != -1):
+    # if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1) or (pass_record.day_type_staff_id != -1):
     #     # 근로자에게 가 알림을 확인 했으면
     #     if pass_record.dt_accept is None:
     #         passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
@@ -4961,6 +4988,7 @@ def my_work_records_v2(request):
                         "overtime_sum": 0.0,
                         "holiday_sum": 0,
                         "ho_sum": 0,
+                        "all_work_week": 4.0,    # 주휴시간 = 주 소정근로시간의 20% (표시: 기본근로시간에 +)
                         "work_days": 3,
                         "paid_holidays": 0,
                         "monthly_holidays": 0
@@ -5084,14 +5112,13 @@ def my_work_records_v2(request):
             'remarks': '',  #
             'is_accept': '1',  # 관리자에 의해 근태가 변경되지 않았다. (출/퇴근시간, 유급휴일, 연차휴가, 조기퇴근, 연장근무)
             'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
-            'day_type': pass_record.is_not_paid_holiday,  # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
+            'day_type': pass_record.day_type,  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
             'passer_id': passer.id,
-            'is_not_paid_holiday': pass_record.is_not_paid_holiday,
         }
 
         process_pass_record(passer_record_dict, pass_record, work_dict)
         logSend('  > {}'.format(passer_record_dict))
-        passer_rec_dict[pass_record.year_month_day[8:10]] = passer_record_dict
+        passer_rec_dict[pass_record.year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
     month_work_dict = process_month_pass_record(passer_rec_dict, work_dict, employee_works)
 
     return REG_200_SUCCESS.to_json_response({'work_dict': month_work_dict, 'work_day_dict': passer_rec_dict})
@@ -5127,7 +5154,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         dt_paid_day = ''
         for day in passer_rec_dict.keys():
             day_dict = passer_rec_dict[day]
-            if day_dict['is_not_paid_holiday'] == '0':  # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
+            if day_dict['day_type'] == '0':  # 0: 유급휴일, 1: 휴무일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
                 dt_paid_day = str_to_datetime(day_dict['year_month_day'])
                 break
         # 첫번째 유급휴일 날
@@ -5167,7 +5194,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if is_working:
                 week_dict[(str_to_datetime(pass_record.year_month_day).weekday() + 1) % 7] = {
                     'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
-                    'is_working_day': pass_record.is_not_paid_holiday,
+                    'day_type': pass_record.day_type,
                     'is_working': is_working,
                 }
         logSend('  >> week_dict: {}'.format(week_dict))
@@ -5275,7 +5302,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if is_working:
                 week_dict[(str_to_datetime(day_dict['year_month_day']).weekday() + 1) % 7] = {
                     'week': week_comment[str_to_datetime(day_dict['year_month_day']).weekday()],
-                    'is_working_day': day_dict['is_not_paid_holiday'],
+                    'day_type': day_dict['day_type'],
                     'is_working': is_working,
                 }
             # logSend('  >> week_dict: {}'.format(week_dict))

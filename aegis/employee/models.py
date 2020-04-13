@@ -63,7 +63,11 @@ class Notification_Work(models.Model):
     work_name_type = models.CharField(max_length=255)   # 업무 이름 : 시스템 관리용
     is_x = models.IntegerField(default=False)           # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
 
-    notification_type = models.IntegerField(default=-30)        # 알림 종류: -30: 새업무 알림, -21: 퇴근시간 수정, -20: 출근시간 수정, -4: 유급휴일 해제, -3: 유급휴일 지정, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+    notification_type = models.IntegerField(default=-30)        
+    # -21: 퇴근시간 수정, -20: 출근시간 수정,
+    # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+    # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
+    # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
     comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
     staff_id = models.IntegerField(default=-1)                  # 알림을 보내는 관리자 id
     dt_inout = models.DateTimeField(null=True, blank=True)      # 변경된 출퇴근시간이 저장된다.
@@ -163,15 +167,15 @@ class Pass_History(models.Model):
     dt_out_verify = models.DateTimeField(null=True, blank=True) # 관리자가 수정한 시간 포함 최종 퇴근 시간
     out_staff_id = models.IntegerField(default=-1)              # 퇴근 시간을 수정한 현장 관리자 id
 
-    overtime = models.IntegerField(default=0)                   # 연장 근무 -3: 유급휴일, -2: 연차휴무, -1: 조기퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
+    overtime = models.IntegerField(default=0)                   # 연장 근무 -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0: 정상 근무, 1~18: 연장 근무 시간( 1:30분, 2:1시간, 3:1:30, 4:2:00, 5:2:30, 6:3:00 7: 3:30, 8: 4:00, 9: 4:30, 10: 5:00, 11: 5:30, 12: 6:00, 13: 6:30, 14: 7:00, 15: 7:30, 16: 8:00, 17: 8:30, 18: 9:00)
     overtime_staff_id = models.IntegerField(default=-1)         # 연장 근무 현장 관리자 id (기본: -1 (현장 소장이 dt_in_verify, dt_out_verify 를 수정하지 않았을 때))
 
     # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
 
     dt_accept = models.DateTimeField(null=True, blank=True)     # 변경된 근태정보에 대한 확인이 이루어진 시간
 
-    is_not_paid_holiday = models.IntegerField(default=2)        # 0: 유급휴일, 1 무급휴일, 2: 소정근로일
-    paid_holiday_staff_id = models.IntegerField(default=-1)     # 유급휴일을 부여한 현장 관리자 id
+    day_type = models.IntegerField(default=2)               # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+    day_type_staff_id = models.IntegerField(default=-1)     # 유급휴일을 부여한 현장 관리자 id
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
     y = models.FloatField(null=True, default=None) # 경도 longitude
