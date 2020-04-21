@@ -4792,7 +4792,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
     :return: {'in': "08:30", 'out': "17:30", 'work': "08:00", 'break': "01:00"}
     """
     min_overtime = (0 if overtime < 0 else overtime) * 30
-    if dt_in_verify is not None:
+    if dt_in_verify is not None:  # 출근시간이 있는 경우
         min_in = str2min(dt_str(dt_in_verify, "%H:%M"))  # 시간과 분으로 분으로 환산: 1:30 > 90
         time_gap = 1440  # 24시간 * 60분 : 비교 최고치
         find_work_time = {}
@@ -4807,7 +4807,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
             dt_out_verify = str_to_datetime(dt_str(dt_in_verify, "%Y-%m-%d ") + find_work_time['t_end']) + datetime.timedelta(minutes=min_overtime)
         if dt_out_verify < dt_in_verify:
             dt_out_verify = dt_out_verify + datetime.timedelta(days=1)
-    else:
+    else:  # 출근시간이 없는 경우 출근시간을 환산 처리해준다.
         basic_dt_out_verify = dt_out_verify - datetime.timedelta(minutes=overtime*30)  # 연장근로를 뺀 퇴근시간
         min_out = str2min(dt_str(basic_dt_out_verify, "%H:%M"))  # 시간과 분으로 분으로 환산: 1:30 > 90
         time_gap = 1440  # 24시간 * 60분 : 비교 최고치
@@ -4827,6 +4827,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
     min_work = min_end - min_begin
     if min_end < min_begin:
         min_work = min_end + (1440 - min_begin)
+    min_work -= find_work_time['break_hours'] * 60
     # min_work += min_overtime
     result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
               'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
