@@ -3080,7 +3080,7 @@ def reg_employee(request):
                          }
     # logSend(new_employee_data)
     response_employee = requests.post(settings.EMPLOYEE_URL + 'reg_employee_for_customer', json=new_employee_data)
-    # logSend(response_employee)
+    # logSend('   >> result: {}'.format(response_employee.json()['result']))
     if response_employee.status_code != 200:
         return ReqLibJsonResponse(response_employee)
 
@@ -3122,6 +3122,7 @@ def reg_employee(request):
                         find_employee.dt_end = work.dt_end
                         find_employee.save()
             else:
+                # logSend('  >> 새로운 근로자 등록 : employee_id: {}'.format(sms_result[phone]))
                 new_employee = Employee(
                     employee_id=sms_result[phone],
                     is_accept_work=None,  # 아직 근로자가 결정하지 않았다.
