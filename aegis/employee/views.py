@@ -542,7 +542,7 @@ def reg_employee_for_customer(request):
         new_notification = Notification_Work(
             work_id=customer_work_id,
             customer_work_id='',
-            employee_id=phones_state[phone_no],
+            employee_id=passer.id,  # phones_state[phone_no],
             employee_pNo=phone_no,
             dt_answer_deadline=dt_answer_deadline,
             dt_begin=str_to_dt(dt_begin_employee),
@@ -552,6 +552,11 @@ def reg_employee_for_customer(request):
             work_name_type=work_name_type,
             # is_x=False,  # default
             # dt_reg=datetime.datetime.now(),  # default
+            notification_type=-31,  # 알림 종류: -30: 새업무 알림,
+            # -21: 퇴근시간 수정, -20: 출근시간 수정,
+            # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
+            # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
         )
         new_notification.save()
     if len(push_list) > 0:
