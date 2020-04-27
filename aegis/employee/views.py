@@ -552,7 +552,7 @@ def reg_employee_for_customer(request):
             work_name_type=work_name_type,
             # is_x=False,  # default
             # dt_reg=datetime.datetime.now(),  # default
-            notification_type=-31,  # 알림 종류: -30: 새업무 알림,
+            notification_type=-30,  # 알림 종류: -30: 새업무 알림,
             # -21: 퇴근시간 수정, -20: 출근시간 수정,
             # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
             # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
