@@ -423,7 +423,7 @@ def reg_employee_for_customer(request):
                     continue
                 if today < str_to_dt(work_dict['begin']):
                     works.data.remove(work_dict)
-        if works.is_overlap({'id': customer_work_id, 'begin': dt_begin, 'end': dt_end}):
+        if works.is_overlap({'id': customer_work_id, 'begin': dt_begin_employee, 'end': dt_end_employee}):
             # 중복되는 업무가 있다.
             employee_status[employee.id] = -11  # 기간이 중복된 경우
         # 업무 요청 갯수 제한 확인

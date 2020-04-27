@@ -3033,14 +3033,14 @@ def reg_employee(request):
     #
     # 답변시한 검사
     #
-    if dt_begin < datetime.datetime.now():
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+    # if dt_begin < datetime.datetime.now():
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
 
     if dt_begin < dt_answer_deadline:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
 
-    if dt_answer_deadline < datetime.datetime.now():
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
+    # if dt_answer_deadline < datetime.datetime.now():
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
 
     if dt_begin < work.dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
@@ -3449,14 +3449,14 @@ def update_employee(request):
                                                                                                               work.dt_end,
                                                                                                               dt_end,
                                                                                                               dt_answer_deadline))
-    if dt_begin < datetime.datetime.now():
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+    # if dt_begin < datetime.datetime.now():
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
 
     if dt_begin < dt_answer_deadline:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
 
-    if dt_answer_deadline < datetime.datetime.now():
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
+    # if dt_answer_deadline < datetime.datetime.now():
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
 
     if dt_begin < work.dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
