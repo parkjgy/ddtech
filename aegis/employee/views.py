@@ -3437,7 +3437,7 @@ def work_record_in_day_for_customer(request):
                     "fail_passer_id_list": [
                         "639"
                     ],
-                    "fail_employee_passer_id_list": [
+                    "no_working_passer_id_list": [
                         636
                     ]
                 }
@@ -3505,60 +3505,40 @@ def work_record_in_day_for_customer(request):
                 employee_ids.append(plain)
     if len(fail_employee_id_list) > 0:
         fail_dict['fail_employee_id_list'] = fail_employee_id_list
-    logSend('  > employee_ids(문제있는 id 제외): {} fail: {}'.format(employee_ids, fail_employee_id_list))
+    logSend('  > employee_ids: {} fail(복호화되지 않는 id): {}'.format(employee_ids, fail_employee_id_list))
     passer_list = Passer.objects.filter(id__in=employee_ids)
     passer_dict = {passer.id: passer for passer in passer_list}
-    fail_passer_id_list = copy.deepcopy(employee_ids)
-    logSend('  > fail_passer_id_list: {}'.format(fail_passer_id_list))
+    fail_passer_id_list = copy.deepcopy(employee_ids)  # 근로자를 넣고 Passer 에서 가져온 id 와 비교해서 문제있으면
+    logSend('  > 검사 대상 passer_id_list: {}'.format(fail_passer_id_list))
     for passer in passer_list:
         if str(passer.id) in fail_passer_id_list:
             fail_passer_id_list.remove(str(passer.id))
     if len(fail_passer_id_list) > 0:
         fail_dict['fail_passer_id_list'] = fail_passer_id_list
-    logSend('  > passer_ids: {}, fail_passer_id_list: {}'.format(list(passer_dict.keys()), fail_passer_id_list))
-    employee_id_list = [passer.employee_id for passer in passer_list]
-    employee_list = Employee.objects.filter(id__in=employee_id_list)
-    employee_dict = {employee.id: employee for employee in employee_list}
-    fail_employee_passer_id_list = list(passer_dict.keys())
-    good_passer_id_list = []
-    for passer_id in passer_dict.keys():
-        passer = passer_dict[passer_id]
-        if passer.employee_id in employee_dict.keys():  # passer 의 employee 가 있으면
-            employee = employee_dict[passer.employee_id]
-            works = Works(employee.get_works())
-            if works.find_work_include_date(work['id'], str_to_datetime(year_month_day)) != None:  # 날짜에 업무를 하고 있는지 확인
-                fail_employee_passer_id_list.remove(passer_id)
-                good_passer_id_list.append(passer_id)
-        logSend('  >> passer_id: {}, fail_employee_passer_id_list: {}'.format(passer_id, fail_employee_passer_id_list))
-    logSend('  > fail_employee_passer_id_list: {}'.format(fail_employee_passer_id_list))
-    if len(fail_employee_passer_id_list) > 0:
-        fail_dict['fail_employee_passer_id_list'] = fail_employee_passer_id_list
-    logSend('  > fail: {}, good_passer_id_list: {}'.format(fail_dict, good_passer_id_list))
-
-    pass_record_list = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=good_passer_id_list,
-                                                 work_id=work_id)
-    no_pass_record_passer_id_list = copy.deepcopy(good_passer_id_list)  # 근로기록에 passer 가 없은 경우 만들기 위해 찾는다.
-    for pass_record in pass_record_list:
-        if pass_record.passer_id in no_pass_record_passer_id_list:
-            no_pass_record_passer_id_list.remove(pass_record.passer_id)
-    if len(no_pass_record_passer_id_list) > 0:
-        fail_dict['no_pass_record_passer_id_list'] = no_pass_record_passer_id_list  # 근로기록 없는 근로자
-    logSend('  > fail: {}, good_passer_id_list: {}'.format(fail_dict, good_passer_id_list))
-    for passer_id in no_pass_record_passer_id_list:
-        new_pass_record = Pass_History(
-            passer_id=int(passer_id),
-            year_month_day=year_month_day,
-            action=0,
-            work_id=work_id,
-        )
-        new_pass_record.save()
-    pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
-                                                 work_id=work_id)
+    logSend('  > (정상 출입자) passer_ids: {}, (등록되지 않은 출입자)fail_passer_id_list: {}'.format(list(passer_dict.keys()), fail_passer_id_list))
+    # employee_id_list = [passer.employee_id for passer in passer_list]
+    # employee_list = Employee.objects.filter(id__in=employee_id_list)
+    # employee_dict = {employee.id: employee for employee in employee_list}
+    # no_working_passer_id_list = list(passer_dict.keys())
+    # working_passer_id_list = []
+    # for passer_id in passer_dict.keys():
+    #     passer = passer_dict[passer_id]
+    #     if passer.employee_id in employee_dict.keys():  # passer 의 employee 가 있으면
+    #         employee = employee_dict[passer.employee_id]
+    #         works = Works(employee.get_works())
+    #         if works.find_work_include_date(work['id'], str_to_datetime(year_month_day)) != None:  # 날짜에 업무를 하고 있는지 확인
+    #             no_working_passer_id_list.remove(passer_id)
+    #             working_passer_id_list.append(passer_id)
+    # logSend('  > (업무가 없거나 시작되지 않은) passer_id_list: {}'.format(no_working_passer_id_list))
+    # if len(no_working_passer_id_list) > 0:
+    #     fail_dict['no_working_passer_id_list'] = no_working_passer_id_list
+    # logSend('  > fail: {}, working_passer_id_list: {}'.format(fail_dict, working_passer_id_list))
+    working_passer_id_list = list(passer_dict.keys())
     #
     # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
     # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
     #   근로자 변경 알림은 거절(2)이 미확인(0)보다 우선하여 표시한다. - 이름에 미확인(0)은 파랑색, 거절(2)은 빨강색
-    notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=good_passer_id_list, is_x__in=[0, 2])
+    notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=working_passer_id_list, is_x__in=[0, 2])
     # is_x__in=[0, 2, 3]  # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
     notification_passer_key_dict = {}
     for notification in notification_list:
@@ -3570,6 +3550,26 @@ def work_record_in_day_for_customer(request):
             # notification_passer_key_dict[notification.employee_id] = [notification.is_x]
             notification_passer_key_dict[notification.employee_id] = notification.is_x
     logSend('  > notification_passer_key_dict: {}'.format(notification_passer_key_dict))
+
+    pass_record_list = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=working_passer_id_list,
+                                                   work_id=work_id)
+    no_pass_record_passer_id_list = copy.deepcopy(working_passer_id_list)  # 근로기록에 passer 가 없은 경우 만들기 위해 찾는다.
+    for pass_record in pass_record_list:
+        if pass_record.passer_id in no_pass_record_passer_id_list:
+            no_pass_record_passer_id_list.remove(pass_record.passer_id)
+    if len(no_pass_record_passer_id_list) > 0:
+        fail_dict['no_pass_record_passer_id_list'] = no_pass_record_passer_id_list  # 근로기록 없는 근로자
+    logSend('  > fail: {}, working_passer_id_list: {}'.format(fail_dict, working_passer_id_list))
+    for passer_id in no_pass_record_passer_id_list:
+        new_pass_record = Pass_History(
+            passer_id=int(passer_id),
+            year_month_day=year_month_day,
+            action=0,
+            work_id=work_id,
+        )
+        new_pass_record.save()
+    pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
+                                                 work_id=work_id)
     list_pass_history = []
     week_comments = ["일", "월", "화", "수", "목", "금", "토"]
     week_index = str_to_datetime(year_month_day).weekday()

@@ -5642,7 +5642,7 @@ def staff_employees_at_day_v2(request):
     logSend('  - pass record: {}'.format(pass_record_dic))
     arr_employee = []
     for employee in employee_list:
-        logSend('  - employee employee_id: {}'.format(employee.employee_id))
+        logSend('  - employee employee_id: {}, is_accept_work: {}'.format(employee.employee_id, employee.is_accept_work))
         if employee.employee_id not in pass_record_dic.keys():
             logSend('  > 근로자 서버에서 지정한 근로자 근로내역이 없다.: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
             continue
