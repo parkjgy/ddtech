@@ -791,10 +791,12 @@ def notification_list_v2(request):
         # if notification.dt_answer_deadline < datetime.datetime.now():
         #     notification.delete()
         #     continue
-        if notification.dt_answer_deadline < datetime.datetime.now():
-            notification.is_x = 3
-            notification.save()
-            continue
+
+        # 시험을 위해 임시로 기능 정지 2020/04/28
+        # if notification.dt_answer_deadline < datetime.datetime.now():
+        #     notification.is_x = 3
+        #     notification.save()
+        #     continue
         work = work_dict[str(notification.work_id)]
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
