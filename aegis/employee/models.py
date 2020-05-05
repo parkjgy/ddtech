@@ -173,8 +173,8 @@ class Pass_History(models.Model):
     # rest_time = models.CharField(max_length = 20, default='')          # 휴계시간 0:30, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00
 
     dt_accept = models.DateTimeField(null=True, blank=True)     # 변경된 근태정보에 대한 확인이 이루어진 시간
-
-    day_type = models.IntegerField(default=2)               # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+                                                            
+    day_type = models.IntegerField(default=2)               # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무)무급휴무일, 2: 소정근로일, 3: 휴일(휴일/연장 근무)무급휴일
     day_type_staff_id = models.IntegerField(default=-1)     # 유급휴일을 부여한 현장 관리자 id
 
     x = models.FloatField(null=True, default=None) # 위도 latitude
