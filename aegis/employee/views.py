@@ -4864,7 +4864,10 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     passer_record_dict['overtime'] = str(pass_record.overtime)
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        passer_record_dict['remarks'] = "연차휴무"
+        if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
+            passer_record_dict['remarks'] = "연차휴가"
+        else:
+            passer_record_dict['remarks'] = "연차휴가(반차)"
         return  # 근무가 없기 때문에 더 처리할 일이 없다.
     elif pass_record.overtime == -1:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
