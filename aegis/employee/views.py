@@ -4806,13 +4806,15 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
             'dt_out': "2020-05-13 13:00:00",
             'work_minutes': 480,
             'break_hours': 0,
+            'work_time': {'t_begin': '15:00', 't_end': '23:00', 'break_time_type': 2, 'break_time_list': None, 'break_time_total': None, 'break_hours': 0.0}
             }
     """
     if dt_in_verify is None or dt_out_verify is None:
-        result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
-                  'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
+        result = {'dt_in': dt_in_verify,
+                  'dt_out': dt_out_verify,
                   'work_minutes': 0,
-                  'break_hours': 0
+                  'break_hours': 0,
+                  'work_time': None
                   }
         return result
 
@@ -4836,6 +4838,9 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
             index_work_time = i
             mins_gap = new_gap
     find_work_time = work_time_list[index_work_time]
+    # logSend('   > find_work_time: {}'.format(find_work_time))
+    dt_in = str_to_datetime(dt_str(dt_in_verify, "%Y-%m-%d ") + find_work_time['t_begin'])
+    dt_out = str_to_datetime(dt_str(dt_out_verify, "%Y-%m-%d ") + find_work_time['t_end']) + timedelta(minutes=mins_overtime)
     mins_begin = str2min(find_work_time['t_begin'])
     mins_end = str2min(find_work_time['t_end'])
     mins_work = mins_end - mins_begin
@@ -4843,10 +4848,11 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
         mins_work = mins_end + (1440 - mins_begin)
     mins_work -= find_work_time['break_hours'] * 60
     # mins_work += mins_overtime
-    result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
-              'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
+    result = {'dt_in': dt_in,
+              'dt_out': dt_out,
               'work_minutes': mins_work,
-              'break_hours': find_work_time['break_hours']
+              'break_hours': find_work_time['break_hours'],
+              'work_time': find_work_time
               }
     return result
 
@@ -4902,6 +4908,8 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if r['work_minutes'] == 0:
         return
     # 휴게시간
+    dt_in = r['dt_in']
+    dt_out = r['dt_out']
     passer_record_dict['break'] = str(r['break_hours'])
     # 기본근로시간
     basic_minutes = r['work_minutes']
@@ -4915,16 +4923,15 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     # 야간근로시간 22:00 ~ 06:00
     # if work_dict[current_work_id]['time_info']['time_type'] != 3:
     #     # 감시단속직은 야간근로시간 없다.
-    logSend('  > time: {} ~ {}'.format(pass_record.dt_in_verify, pass_record.dt_out_verify))
-    dt_night_begin = str_to_datetime(dt_str(pass_record.dt_in_verify, "%Y-%m-%d 22:00:00"))
+    logSend('  > time: {} ~ {}'.format(dt_in, dt_out))
+    dt_night_begin = str_to_datetime(dt_str(dt_in, "%Y-%m-%d 22:00:00"))
     dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
-    # logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
-    if (pass_record.dt_in_verify < dt_night_begin < pass_record.dt_out_verify) or \
-            (pass_record.dt_in_verify < dt_night_end < pass_record.dt_out_verify):
-        if dt_night_begin < pass_record.dt_in_verify:
-            dt_night_begin = pass_record.dt_in_verify
-        if pass_record.dt_out_verify < dt_night_end:
-            dt_night_end = pass_record.dt_out_verify
+    logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
+    if (dt_in < dt_night_begin < dt_out) or (dt_in < dt_night_end < dt_out):
+        if dt_night_begin < dt_in:
+            dt_night_begin = dt_in
+        if dt_out < dt_night_end:
+            dt_night_end = dt_out
         dt_night = dt_night_end - dt_night_begin
         night = int(dt_night.seconds / 360) / 10
         # night_sum += night
