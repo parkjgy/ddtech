@@ -133,6 +133,13 @@ def str2min(min: str) -> int:
     return int(min[0:2]) * 60 + int(min[3:5])
 
 
+def time_gap(min1: int, min2: int) -> int:
+    gap = abs(min1 - min2)
+    if gap > 720:
+        gap = 1440 - gap
+    return gap
+
+
 def int_none(int_str: str) -> int:
     if int_str is None or len(int_str) == 0:
         return 0

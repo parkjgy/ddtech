@@ -3120,6 +3120,7 @@ def reg_employee(request):
                         find_employee.is_active = 0
                         find_employee.dt_begin = dt_begin
                         find_employee.dt_end = work.dt_end
+                        find_employee.dt_answer_deadline = dt_answer_deadline
                         find_employee.save()
             else:
                 # logSend('  >> 새로운 근로자 등록 : employee_id: {}'.format(sms_result[phone]))
@@ -3253,13 +3254,13 @@ def employee_work_accept_for_employee(request):
 
     employee = employees[0]
     if employee.dt_begin < datetime.datetime.now() and not is_accept:
-        employee.delete()
+        employee.is_accept_work = 2  # 답변시한 지남
     else:
-        employee.employee_id = employee_id
-        employee.name = employee_name
         employee.is_accept_work = is_accept
-        employee.dt_accept = datetime.datetime.now()
-        employee.save()
+    employee.employee_id = employee_id
+    employee.name = employee_name
+    employee.dt_accept = datetime.datetime.now()
+    employee.save()
 
     return REG_200_SUCCESS.to_json_response()
 
@@ -5445,12 +5446,13 @@ def staff_employees_at_day(request):
     for employee in employee_list:
         if employee.dt_begin < datetime.datetime.now():
             # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭제
-            if employee.is_accept_work is None or not employee.is_accept_work:
-                employee.delete()
+            if not (employee.is_accept_work == 1):
+                # 업무를 수락하지 않은 근로자 제외
                 continue
             if employee.dt_end < dt_target_day:
-                logError(
-                    ' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
+                # 업무 종료된 근로자 표시에서 제외
+                # logError(
+                #     ' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
                 continue
         employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
     # employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
@@ -5477,7 +5479,7 @@ def staff_employees_at_day(request):
             logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
             continue
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
@@ -5540,7 +5542,7 @@ def staff_employees_at_day_v2(request):
                 "year_month_day": "2020-02-20",
                 "employees": [
                     {
-                        "is_accept_work": "수락",
+                  "is_accept_work": '수락',  # '응답 X', '거절', '답변시한'
                         "employee_id": "45E0n8g8QqeppqJBYkXRHA",
                         "name": "박종기",
                         "phone": "010-2557-3555",
@@ -5615,8 +5617,8 @@ def staff_employees_at_day_v2(request):
     for employee in employee_list:
         if employee.dt_begin < datetime.datetime.now():
             # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭제
-            if employee.is_accept_work is None or not employee.is_accept_work:
-                employee.delete()
+            if not (employee.is_accept_work == 1):  # 수락하지 않은: None, 0, 2
+                # 업무를 수락하지 않은 근로자를 표시하지 않게 한다.
                 continue
             if employee.dt_end < dt_target_day:
                 logError(
@@ -5651,8 +5653,7 @@ def staff_employees_at_day_v2(request):
             logError(' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
             continue
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
             'dt_begin': dt_null(employee.dt_begin),
@@ -5722,7 +5723,7 @@ def staff_employees(request):
               "message": "정상적으로 처리되었습니다.",
               "employees": [
                 {
-                  "is_accept_work": "응답 X",
+                  "is_accept_work": '응답 X',  # '수락', '거절', '답변시한'
                   "employee_id": "iZ_rkELjhh18ZZauMq2vQw",
                   "name": "-----",
                   "phone": "010-4871-8362",
@@ -5775,7 +5776,7 @@ def staff_employees(request):
     arr_employee = []
     for employee in employees:
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
@@ -5789,10 +5790,6 @@ def staff_employees(request):
             'x': employee.x,
             'y': employee.y,
         }
-        # 가상 데이터 생성
-        # employee_dic = virtual_employee(isWorkStart, employee_dic)
-        # employee_dic = employee_day_working_from_employee(employee_dic, year_month_day)
-        # employee['is_accept_work'] = '응답 X' if employee.is_accept_work == None else '수락' if employee.is_accept_work == True else '거절'
         arr_employee.append(employee_dic)
     result = {'employees': arr_employee}
 
@@ -5886,7 +5883,7 @@ def staff_employees_from_work(request):
               "dt_work": "2019-04-12"
               "emplyees": [
                 {
-                  "is_accept_work": true,
+                  "is_accept_work": '응답 X',  # '수락', '거절', '답변시한'
                   "employee_id": "i52bN-IdKYwB4fcddHRn-g",
                   "name": "근로자",
                   "phone": "010-3333-4444",
@@ -5951,7 +5948,7 @@ def staff_employees_from_work(request):
     arr_employee = []
     for employee in employees:
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
@@ -5999,7 +5996,7 @@ def staff_change_time(request):
               "message": "정상적으로 처리되었습니다.",
               "employees": [
                 {
-                  "is_accept_work": true,
+                  "is_accept_work": '응답 X',  # '수락', '거절', '답변시한'
                   "employee_id": "i52bN-IdKYwB4fcddHRn-g",
                   "name": "근로자",
                   "phone": "010-3333-4444",1
@@ -6121,7 +6118,7 @@ def staff_change_time(request):
         employee.overtime = overtime_type
         employee.save()
         employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work is True else '거절',
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
             'employee_id': AES_ENCRYPT_BASE64(str(employee.employee_id)),
             'name': employee.name,
             'phone': phone_format(employee.pNo),
