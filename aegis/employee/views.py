@@ -1428,6 +1428,228 @@ def is_in_verify(beacons):
 
 
 @cross_origin_read_allow
+def pass_beacon(request):
+    """
+    출입등록 : 앱에서 인식된 비콘 값을 서버로 보낸다.
+        - 인식은 앱이 포그라운드가 되어있는 시간동안에 인식된 값이다.
+        - 앱이 포그라운드가 되면 그전 비콘 값을 지우고 새로 수집한다.
+        - 수집 대상은 비콘 처음 인식시간, 처음 인식한 신호 강도, 마지막 인식시간, 처음과 마지막 인식시간 동안 수집된 갯
+        http://0.0.0.0:8000/employee/pass_beacon?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
+    POST : json
+        {
+            'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
+            'dt' : '2018-01-21 08:25:30',
+            'is_in' : 1,        # 0: out, 1 : in
+            'major' : 11001,    # 11 (지역) 001(사업장)
+            'beacons' : [
+                 {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
+                 {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
+                 {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
+            ]
+            'x': 37.6135,       # latitude (optional),
+            'y': 126.8350,      # longitude (optional),
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_in\' 가 없어요'}
+            {'message':'ClientError: parameter \'major\' 가 없어요'}
+            {'message':'ClientError: parameter \'beacons\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+            {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+        logError(get_api(request), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'major', 'beacons', 'x_@', 'y_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    dt_touch = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    is_in = int(parameter_check['parameters']['is_in'])
+    major = parameter_check['parameters']['major']
+    if request.method == 'POST':
+        beacons = rqst['beacons']
+    else:
+        today = dt_str(datetime.datetime.now(), "%Y-%m-%d")
+        beacons = [
+            {'minor': 11001, 'dt_begin': '{} 08:25:30'.format(today), 'rssi': -70, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
+            {'minor': 11002, 'dt_begin': '{} 08:25:31'.format(today), 'rssi': -60, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
+            {'minor': 11003, 'dt_begin': '{} 08:25:32'.format(today), 'rssi': -50, 'dt_end': '{} 08:30:01'.format(today), 'count': 660},
+        ]
+    x = parameter_check['parameters']['x']
+    y = parameter_check['parameters']['y']
+    logSend(beacons)
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        logError(get_api(request), ' ServerError: passer_id={} 이(가) 없거나 중복됨'.format(passer_id))
+        return REG_200_SUCCESS.to_json_response({'message': '출입자로 등록되지 않았다.'})
+
+    for i in range(len(beacons)):
+        # 비콘 이상 유무 확인을 위해 비콘 날짜, 인식한 근로자 앱 저장
+        beacon_list = Beacon.objects.filter(major=major, minor=beacons[i]['minor'])
+        logSend('  {} {}: {}'.format(major, beacons[i]['minor'], {x.id: dt_null(x.dt_last) for x in beacon_list}))
+        if len(beacon_list) > 0:
+            beacon_list.delete()
+            beacon = Beacon(
+                # uuid='12345678-0000-0000-0000-123456789012',
+                uuid='3c06aa91-984b-be81-d8ea-82af46f4cda4',
+                # 1234567890123456789012345678901234567890
+                major=major,
+                minor=beacons[i]['minor'],
+                dt_last=dt,
+                last_passer_id=passer_id,
+            )
+            beacon.save()
+            # beacon = beacon_list[0]
+            # beacon.dt_last = dt
+            # beacon.last_passer_id = passer_id
+            # beacon.save()
+        else:
+            logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+            beacon = Beacon(
+                uuid='3c06aa91-984b-be81-d8ea-82af46f4cda4',
+                # 1234567890123456789012345678901234567890
+                major=major,
+                minor=beacons[i]['minor'],
+                dt_last=dt,
+                last_passer_id=passer_id,
+            )
+            beacon.save()
+        # 근로자 앱에서 인식된 비콘 값을 모두 저장 - 아직 용도 없음.
+        new_beacon_record = Beacon_Record(
+            passer_id=passer_id,
+            major=major,
+            minor=beacons[i]['minor'],
+            dt_begin=beacons[i]['dt_begin'],
+            rssi=beacons[i]['rssi'],
+            x=x,
+            y=y,
+        )
+        if 'dt_end' in beacons[i]:
+            new_beacon_record.dt_end = beacons[i]['dt_end']
+        if 'count' in beacons[i]:
+            new_beacon_record.count = beacons[i]['count']
+        new_beacon_record.save()
+
+    # 통과 기록 저장
+    new_pass = Pass(
+        passer_id=passer_id,
+        is_in=is_in,
+        is_beacon=True,
+        dt=dt,
+        x=x,
+        y=y,
+    )
+    new_pass.save()
+    #
+    # Pass_History update
+    #
+    if passer.employee_id == -2:
+        # 전화번호로 출입만 관리되는 출입자
+        pass_history = Pass_History(
+            passer_id=passer_id,
+            work_id=-1,
+            year_month_day=dt[0:10],    # 2020-05-18 19:00:00 >> dt[0:10] >> 2020-05-18
+            x=x,
+            y=y,
+        )
+        if is_in == 1:
+            pass_history.dt_in_em = pass_history.dt_in_verify = str_to_datetime(dt)
+        else:
+            pass_history.dt_out_em = pass_history.dt_out_verify = str_to_datetime(dt)
+        pass_history.save()
+        return REG_200_SUCCESS.to_json_response()
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)  # employee_id < 0 인 경우도 잘 처리될까?
+    except Exception as e:
+        # db 에 근로자 정보가 없으면 - 출입자 중에 근로자 정보가 없는 경우, 등록하지 않은 경우, 피쳐폰인 경우
+        return REG_200_SUCCESS.to_json_response({'message': '근로자 정보가 없다.'})
+    employee_works = Works(employee.get_works())
+    if len(employee_works.data) == 0:
+        # 근로자 정보에 업무가 없다.
+        return REG_200_SUCCESS.to_json_response({'message': '근로자에게 배정된 업무가 없다.'})
+    if not employee_works.is_active(dt_touch):
+        # 현재 하고 있는 없무가 없다.
+        return REG_200_SUCCESS.to_json_response({'message': '근로자가 현재 출퇴근하는 업무가 없다.'})
+    logSend('  > index: {}, id: {}, begin: {}, end: {}'.format(employee_works.index, employee_works.data[employee_works.index]['id'], employee_works.data[employee_works.index]['begin'], employee_works.data[employee_works.index]['end']))
+    employee_work = employee_works.data[employee_works.index]
+    work_dict = get_work_dict([employee_work['id']])
+    # logSend('  > {} - {}'.format(employee_work['id'], work_dict))
+    work = work_dict[list(work_dict.keys())[0]]
+    work['id'] = list(work_dict.keys())[0]
+    logSend('  > work id: {}, {}({}) - {}'.format(work['id'], work['name'], work['type'], work['work_place_name']))
+    year_month_day = dt[0:10]
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work['id'], year_month_day=year_month_day)
+    if not is_in:
+        # out 일 경우
+        if len(pass_histories) == 0:
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            yesterday = dt_beacon - datetime.timedelta(days=1)
+            yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
+                                                         year_month_day=yesterday_year_month_day)
+            if len(pass_histories) == 0:
+                # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
+                logError(get_api(request),
+                         ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+                return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
+            else:
+                pass_history = pass_histories[0]
+        else:
+            pass_history = pass_histories[0]
+
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        if dt_in is None:
+            # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
+            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
+        elif (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
+            # 출근시간 이후 12 시간이 지났으면 무시한다.
+            logError(get_api(request),
+                     ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in,
+                                                                                                   dt_beacon))
+            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 beacon out 을 무시한다.'})
+
+        pass_history.dt_out = dt_beacon
+    else:
+        # in 일 경우
+        if len(pass_histories) == 0:
+            # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                work_id=work_id,
+                year_month_day=year_month_day,
+                action=0,
+                x=x,
+                y=y,
+            )
+        else:
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_in is None:
+            pass_history.dt_in = dt_beacon
+    pass_history.save()
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
 def pass_verify(request):
     """
     출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
@@ -1632,6 +1854,228 @@ def pass_verify(request):
     return REG_200_SUCCESS.to_json_response()
 
 
+@cross_origin_read_allow
+def pass_touch(request):
+    """
+    출입확인 : 앱 사용자가 출근(퇴근) 버튼이 활성화 되었을 때 터치하면 서버로 전송
+    http://0.0.0.0:8000/employee/pass_touch?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-06 17:30:00&is_in=0
+    POST : json
+        {
+            'passer_id' : '암호화된 출입자 id',
+            'dt' : '2018-12-28 12:53:36',
+            'is_in' : 1, # 0: out, 1 : in
+            'beacons' : [
+                 {'major': 11001, 'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
+                 {'major': 11001, 'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
+                 {'major': 11001, 'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
+            ]
+            'x': latitude (optional)
+            'y': longitude (optional)
+        }
+    response
+        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+        STATUS 416
+            {'message': '출근처리할 업무가 없습니다.'}  # 출근 버튼을 깜박이고 출퇴근 버튼을 모두 disable 하는 방안을 모색 중...
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'dt\' 가 없어요'}
+            {'message':'ClientError: parameter \'is_in\' 가 없어요'}
+            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)}
+            {'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)}
+            {'message':'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+    log Error
+        logError(get_api(request), ' passer id: {} 중복되었다.'.format(passer_id))
+        logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
+        logError(get_api(request), ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch)
+        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        logError(get_api(request), ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in, dt_touch))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['passer_id_!', 'dt', 'is_in', 'x_@', 'y_@', 'beacons_@'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    passer_id = parameter_check['parameters']['passer_id']
+    dt = parameter_check['parameters']['dt']
+    dt_touch = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    is_in = int(parameter_check['parameters']['is_in'])
+    beacons = parameter_check['parameters']['beacons']
+    x = parameter_check['parameters']['x']
+    y = parameter_check['parameters']['y']
+    # logSend(' x: {}, y:{}'.format(x, y))
+    try:
+        passer = Passer.objects.get(id=passer_id)
+    except Exception as e:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Passer 에 passer_id={} 이(가) 없다'.format(passer_id)})
+    try:
+        employee = Employee.objects.get(id=passer.employee_id)
+    except Exception as e:
+        return status422(get_api(request),
+                         {'message': 'ServerError: Employee 에 employee_id={} 이(가) 없다'.format(passer.employee_id)})
+    employee_works = Works(employee.get_works())
+    logSend('  > employee_works: {}'.format(employee_works.data))
+    if not employee_works.is_active(dt_touch):
+        message = '출근처리할 업무가 없습니다.\npasser.id: {}\nemployee.name: {}\nworks: {}'.format(passer.id, employee.name, employee_works)
+        send_slack(' <상용> employee/pass_touch \npasser.id: {}\nemployee.name: {}\nworks: {}'.format(passer.id, employee.name, employee_works),
+                   message, channel='#server_bug')
+        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '출근처리할 업무가 없습니다.'})
+    work_id = employee_works.data[employee_works.index]['id']
+    work_dict = get_work_dict([work_id])
+    work = work_dict[str(work_id)]
+    # logSend('  >> work: {}'.format(work))
+    work['id'] = work_id
+    #
+    # 1. 기존에 인식했던 비콘이면 통과 (passer.beacons)
+    # 2. 새로운 비콘이면 비콘 위치 > 업무 출근 위치 > 업무 출근 위치와 30m 이내이면 출근인정 > 인정된 비콘 저장 (passer.beacons)
+    #
+
+    #
+    # Pass_History update
+    #
+    year_month_day = dt_touch.strftime("%Y-%m-%d")
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+    if not is_in:
+        # out touch 일 경우
+        time_gap = 1440
+        mins_touch = str2min(dt[11:16])
+        # logSend('   >>> time_info: {}'.format(work['time_info']))
+        work_time_list = work['time_info']['work_time_list']
+        for work_time in work_time_list:
+            if str2min(work_time['t_begin']) >= str2min(work_time['t_end']):
+                # 퇴근시간이 더 빠르면 전날 출근해서 다음날 퇴근하는 케이스다.
+                work_time['is_next_day'] = True
+            else:
+                work_time['is_next_day'] = False
+            work_time['gap_out'] = abs(mins_touch - str2min(work_time['t_end']))
+            if time_gap > work_time['gap_out']:
+                time_gap = work_time['gap_out']
+                current_work_time = work_time
+        # logSend('  >>> work_time_list: {}'.format(work_time_list))
+        logSend('  >>> current_work_time: {}'.format(current_work_time))
+        # ? 연장근무나 시간 수정이 되었을 때
+        # ? 문제가 발생할 수 있다.
+        yesterday = dt_touch - datetime.timedelta(days=1)
+        yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+        yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id,
+                                                               year_month_day=yesterday_year_month_day)
+        if len(pass_histories) == 0:
+            # in (츨근 처리를 하지 않았다.)
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            if len(yesterday_pass_histories) == 0:
+                # out 인데 어제, 오늘 in 기록이 없다?
+                # 1. 어제 출근해서 오늘 퇴근하는 근무시간이 없으면 현재시간으로 퇴근시간을 처리한다.
+                # 2. 연장근무 시간을 차감한 퇴근시간과 유사한 근무시간을 찾는다.
+                logError(get_api(request),
+                         ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                if current_work_time['is_next_day']:
+                    logSend('  > 어제 출근 오늘 퇴근 근무시간: 출근이 없어서 만든다.')
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=yesterday_year_month_day,
+                        action=0,
+                        work_id=work_id,
+                        x=x,
+                        y=y,
+                    )
+                else:
+                    logSend('  > 오늘 출근 오늘 퇴근 근무시간: 출근이 없어서 만든다.')
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=year_month_day,
+                        action=0,
+                        work_id=work_id,
+                        x=x,
+                        y=y,
+                    )
+            elif current_work_time['is_next_day']:
+                # 어제 출근이 있는 경우
+                logSend('  > 어제 출근에 오늘 퇴근 근무시간: 어제 근무시간에 퇴근을 넣는다.')
+                pass_history = yesterday_pass_histories[0]
+            else:
+                logSend('  > 오늘 출근에 오늘 퇴근 근무시간: 오늘 근무시간을 만든다.(출근 시간 누락)')
+                # 오늘 pass_history 가 없어서 새로 만든다.
+                pass_history = Pass_History(
+                    passer_id=passer_id,
+                    year_month_day=year_month_day,
+                    action=0,
+                    work_id=work_id,
+                    x=x,
+                    y=y,
+                )
+        elif current_work_time['is_next_day']:
+            logSend('  > 어제 출근에 오늘 퇴근 근무시간: 오늘 출근이 있어도 어제에 넣는다.')
+            pass_history = yesterday_pass_histories[0]
+        else:
+            logSend('  > 오늘 출근에 오늘 퇴근 근무시간: 오늘 근무시간에 퇴근을 넣는다.')
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_out_verify is None:
+            pass_history.dt_out_verify = dt_touch
+            pass_history.dt_out_em = dt_touch
+        # dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        # if dt_in is None:
+        #     # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
+        #     logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        # elif (dt_in + datetime.timedelta(hours=12)
+        #       + datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5)) < dt_touch:
+        #     # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
+        #     logError(get_api(request),
+        #              ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
+        #                                                                                               dt_touch))
+    else:
+        # in touch 일 경우 (출근 버튼이 눌렸을 때)
+        if len(pass_histories) == 0:
+            # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                year_month_day=year_month_day,
+                action=0,
+                work_id=work_id,
+                x=x,
+                y=y,
+            )
+        else:
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_in_verify is None:
+            pass_history.dt_in_verify = dt_touch
+            pass_history.dt_in_em = dt_touch
+        # elif :  # 앱 실행 후 처음이 [출근]이라 [퇴근]눌러야 할 경우 [출근]을 눌러서 [츨근]을 덮어 써야하는 상황
+        # 첫날 데이터가 퇴근 인 상황에서 출근으로 처리하면 퇴근이 안되는 현상
+
+    # push to staff
+    push_staff(employee.name, dt_touch, work_id, is_in)
+    #
+    # 정상, 지각, 조퇴 처리
+    #
+    update_pass_history(pass_history, work)
+
+    pass_history.save()
+
+    logSend(' x: {}, y:{}'.format(x, y))
+    # 통과 기록 저장
+    new_pass = Pass(
+        passer_id=passer_id,
+        is_in=is_in,
+        is_beacon=False,
+        dt=dt,
+        x=x,
+        y=y,
+    )
+    new_pass.save()
+
+    return REG_200_SUCCESS.to_json_response()
+
+
 def push_staff(name, dt, work_id, is_in):
     # logSend('  {} {} {} {}'.format(name, dt, customer_work_id, is_in))
     push_info = {
@@ -1650,6 +2094,289 @@ def push_staff(name, dt, work_id, is_in):
 
 @cross_origin_read_allow
 def pass_sms(request):
+    """
+    문자로 출근/퇴근, 업무 수락/거절: 스마트폰이 아닌 사용자가 문자로 출근(퇴근), 업무 수락/거절을 서버로 전송
+      - 수락/거절은 복수의 수락/거절에 모두 답하는 문제를 안고 있다.
+      - 수락/거절하게 되먼 수락/거절한 업무가 여러개라도 모두 sms 로 보낸다. (업무, 담당자, 담당자 전화번호, 기간)
+      - 수락은 이름이 안들어 오면 에러처리한다. (2019/05/22 거절에 이름 확인 기능 삭제)
+    http://0.0.0.0:8000/employee/pass_sms?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
+    POST : json
+        {
+            'phone_no': '문자 보낸 사람 전화번호',
+            'dt': '2018-12-28 12:53:36',
+            'sms': '출근했어요' # '퇴근했어요', '지금 외출 나갑니다', '먼저 퇴근합니다', '외출했다가 왔습니다', '오늘 조금 지각했습니다'
+                new message: '수락 이름', '거절 이름'
+        }
+    response
+        STATUS 200
+        STATUS 422
+            {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)}
+            {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)}
+            {'message': '근무할 업무가 없다.'.format()}
+    error log
+        logError(get_api(request), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        logError(get_api(request), ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    phone_no = no_only_phone_no(rqst['phone_no'])  # 전화번호가 없을 가능성이 없다.
+    dt = rqst['dt']
+    dt_touch = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    sms = rqst['sms']
+    logSend('---parameter: phone_no: {}, dt: {}, sms: {}'.format(phone_no, dt, sms))
+
+    sms = sms.replace('승락', '수락').replace('거부', '거절')
+    if ('수락 ' in sms) or ('거절' in sms):
+        # notification_work 에서 전화번호로 passer_id(notification_work 의 employee_id) 를 얻는다.
+        notification_work_list = Notification_Work.objects.filter(is_x=False, employee_pNo=phone_no)
+        # 하~~~ 피처폰인데 업무 요청 여러개가 들어오면 처리할 방법이 없네... > 에이 모르겠다 몽땅 보내!!!
+        # 수락한 내용을 SMS 로 보내줘야할까? (문자를 무한사용? 답답하네...)
+        is_accept = True if '수락 ' in sms else False
+        if is_accept:
+            extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '수락'))]
+            if len(extract_sms) > 1:
+                logError(get_api(request), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+            name = ''.join(extract_sms)
+            logSend('  name = {}'.format(name))
+            if len(name) < 2:
+                # 이름이 2자가 안되면 SMS 로 이름이 안들어왔다고 보내야 하나? (휴~~~)
+                logError(get_api(request), ' 이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+                sms_data = {
+                    'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+                    'user_id': 'yuadocjon22',
+                    'sender': settings.SMS_SENDER_PN,
+                    'receiver': phone_no,
+                    'msg_type': 'SMS',
+                    'msg': '이지체크\n'
+                           '수락 문자를 보내실 때는 꼭 이름을 같이 넣어주세요.\n'
+                           '예시 \"수락 홍길동\"',
+                }
+                rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
+                logSend('SMS result', rSMS.json())
+                return status422(get_api(request),
+                                 {'message': '이름이 너무 짧다. pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+        else:
+            extract_sms = [element for element in sms.split(' ') if not ((len(element) == 2) and (element == '거절'))]
+            if len(extract_sms) > 1:
+                logError(get_api(request), ' sms 수락 문자에 이름({})이 여러개?'.format(extract_sms))
+            name = ''.join(extract_sms)
+            logSend('  name = {}'.format(name))
+            if len(name) == 0:
+                name = '-----'
+        sms_data = {
+            'key': 'bl68wp14jv7y1yliq4p2a2a21d7tguky',
+            'user_id': 'yuadocjon22',
+            'sender': settings.SMS_SENDER_PN,
+            'receiver': phone_no,
+            'msg_type': 'SMS',
+        }
+        logSend('  name: \'{}\''.format(name))
+        for notification_work in notification_work_list:
+            # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
+            if notification_work.dt_answer_deadline < datetime.datetime.now():
+                notification.is_x = True
+                notification.save()
+                # notification_work.delete()  # 2019/09/10 삭제하지 않고 유지
+                continue
+
+            # 근로자를 강제로 새로 등록한다. (으~~~ 괜히 SMS 기능 넣었나?)
+            passer_list = Passer.objects.filter(pNo=phone_no)
+            if len(passer_list) == 0:
+                # 이 전화번호를 사용하는 근로자가 없다. > 근로자, 출입자 모두 만든다.
+                employee = Employee(
+                    name=name,
+                )
+                employee.save()
+                logSend('---1 name: {}, phone: {} employee id {}'.format(name, phone_no, employee.id))
+                passer = Passer(
+                    pNo=phone_no,
+                    pType=30,  # 30: 피쳐폰, 10: 아이폰, 20: 안드로이드폰
+                    employee_id=employee.id,
+                )
+                passer.save()
+                logSend('---2 name: {}, phone: {}'.format(name, phone_no))
+            else:
+                # 출입자(passer) 는 있다.
+                if len(passer_list) > 1:
+                    logError(get_api(request), ' 전화번호({})가 중복되었다.'.format(phone_no))
+                passer = passer_list[0]
+                employee_list = Employee.objects.filter(id=passer.employee_id)
+                if len(employee_list) == 0:
+                    # 그런데 출입자와 연결된 근로자가 없다. > 근로자만 새로 만들어 연결한다.
+                    logSend('---3 name: {}, phone: {}'.format(name, phone_no))
+                    logError(get_api(request),
+                             ' passer: {} 의 employee: {} 없어서 새로 만든다.'.format(passer.id, passer.employee_id))
+                    employee = Employee(
+                        name=name,
+                    )
+                    employee.save()
+                    passer.employee_id = employee.id
+                    passer.save()
+                else:
+                    # 출입자, 근로자 다 있고 연결도 되어있다.
+                    logSend('---4 name: {}, phone: {}'.format(name, phone_no))
+                    if len(employee_list) > 1:
+                        logError(get_api(request), ' employee({})가 중복되었다.'.format(passer.employee_id))
+                    employee = employee_list[0]
+                    # employee.name = name
+                    # employee.save()
+
+            accept_infor = {
+                'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
+                'notification_id': AES_ENCRYPT_BASE64(str(notification_work.id)),
+                'is_accept': '1' if is_accept else '0',
+            }
+            r = requests.post(settings.EMPLOYEE_URL + 'notification_accept', json=accept_infor)
+            logSend({'url': r.url, 'POST': accept_infor, 'STATUS': r.status_code, 'R': r.json()})
+            is_accept = r.json()['is_accept']
+
+            if r.status_code == 416:
+                return ReqLibJsonResponse(r)
+
+            if r.status_code == 200 and is_accept:
+                work_dict = get_work_dict([notification_work.work_id])
+                work = work_dict[str(notification_work.work_id)]
+                # work = Work.objects.get(id=notification_work.work_id)
+                # sms_data['msg'] = '수락됐어요\n{}-{}\n{} ~ {}\n{} {}'.format(work.work_place_name,
+                #                                                         work.work_name_type,
+                #                                                         work.begin,
+                #                                                         work.end,
+                #                                                         work.staff_name,
+                #                                                         phone_format(work.staff_pNo))
+                sms_data['msg'] = '수락됐어요\n{}-{}\n{} ~ {}\n{} {}'.format(work['work_place_name'],
+                                                                        work['work_name_type'],
+                                                                        work['dt_begin'],
+                                                                        work['dt_end'],
+                                                                        work['staff_name'],
+                                                                        work['staff_pNo'])
+                rSMS = requests.post('https://apis.aligo.in/send/', data=sms_data)
+                logSend('SMS result', rSMS.json())
+        return REG_200_SUCCESS.to_json_response()
+
+    elif '출근' in sms:
+        is_in = True
+    elif '퇴근' in sms:
+        is_in = False
+    else:
+        logError(get_api(request), ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
+        return status422(get_api(request),
+                         {'message': '수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms)})
+
+    passers = Passer.objects.filter(pNo=phone_no)
+    if len(passers) == 0:
+        logError(get_api(request), ' 전화번호({})가 근로자로 등록되지 않았다.'.format(phone_format(phone_no)))
+        return REG_541_NOT_REGISTERED.to_json_response()
+    passer = passers[0]
+    passer_id = passer.id
+    dt_sms = str_to_datetime(dt)
+    logSend(' {}  {}  {}  {}'.format(phone_no, passer.id, dt, is_in))
+    employees = Employee.objects.filter(id=passer.employee_id)
+    if len(employees) == 0:
+        logError(get_api(request),
+                 ' Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.id, passer.employee_id))
+        return status422(get_api(request),
+                         {'message': 'Employee 에 passer ({}) 는 있고 employee ({})는 없다.'.format(passer.employee_id)})
+    elif len(employees) > 1:
+        logError(get_api(request),
+                 ' Employee 에 passer ({}) 는 있고 employee ({})는 여러개 머지?'.format(passer.id, passer.employee_id))
+    employee = employees[0]
+    employee_works = Works(employee.get_works())
+    if not employee_works.is_active(dt_touch):
+        logError(get_api(request), '근무할 업무가 없다.'.format())
+        return status422(get_api(request), {'message': '근무할 업무가 없다.'.format()})
+    employee_work = employee_works.data[employee_works.index]
+    work_id = employee_work['id']
+    work = get_work_dict([work_id])
+    new_pass = Pass(
+        passer_id=passer.id,
+        is_in=is_in,
+        is_beacon=False,
+        dt=dt_sms,
+    )
+    new_pass.save()
+
+    #
+    # Pass_History update
+    #
+    year_month_day = dt_touch.strftime("%Y-%m-%d")
+    pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
+    if not is_in:
+        # out touch 일 경우
+        if len(pass_histories) == 0:
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            yesterday = dt_touch - datetime.timedelta(days=1)
+            yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+            pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=yesterday_year_month_day)
+            if len(pass_histories) == 0:
+                logError(get_api(request),
+                         ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                # out 인데 어제, 오늘 in 기록이 없다?
+                #   그럼 터치 시간이 9시 이전이면 어제 in 이 누락된거라고 판단하고 어제 날짜에 퇴근처리가 맞겠다.
+                #   (9시에 퇴근시간이 찍히면 반나절 4시간 근무(휴식 포함 4:30)라고 하면 4:30 출근인데 그럼 오늘 출근이잖아!)
+                #   (로그 찍히니까 계속 감시하는 수 밖에...)
+                if dt_touch.hour < 9:
+                    # 어제 pass_history 가 없어서 새로 만든다.
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=yesterday_year_month_day,
+                        action=0,
+                        work_id=work_id,
+                    )
+                else:
+                    # 오늘 pass_history 가 없어서 새로 만든다.
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=year_month_day,
+                        action=0,
+                        work_id=work_id,
+                    )
+            else:
+                pass_history = pass_histories[0]
+        else:
+            pass_history = pass_histories[0]
+
+        pass_history.dt_out_verify = dt_touch
+        pass_history.dt_out_em = dt_touch
+        dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
+        if dt_in is None:
+            # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
+            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+        elif (dt_in + datetime.timedelta(hours=12)) < dt_touch:
+            # 출근시간 이후 12 시간이 지났서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
+            logError(get_api(request),
+                     ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
+                                                                                                      dt_touch))
+    else:
+        # in touch 일 경우
+        if len(pass_histories) == 0:
+            # 오늘 날짜 pass_history 가 없어서 새로 만든다.
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                year_month_day=year_month_day,
+                action=0,
+                work_id=work_id,
+            )
+        else:
+            pass_history = pass_histories[0]
+
+        if pass_history.dt_in_verify is None:
+            pass_history.dt_in_verify = dt_touch
+            pass_history.dt_in_em = dt_touch
+
+    #
+    # 정상, 지각, 조퇴 처리
+    #
+    update_pass_history(pass_history, work)
+
+    pass_history.save()
+    return REG_200_SUCCESS.to_json_response()
+
+
+@cross_origin_read_allow
+def pass_sms_v2(request):
     """
     문자로 출근/퇴근, 업무 수락/거절: 스마트폰이 아닌 사용자가 문자로 출근(퇴근), 업무 수락/거절을 서버로 전송
       - 수락/거절은 복수의 수락/거절에 모두 답하는 문제를 안고 있다.
@@ -3901,7 +4628,7 @@ def update_pass_history(pass_history: dict, work: dict):
             # 출근 터치가 있으면 지각여부 처리한다.
             action_in = 100
             # logSend('  > time_info: {}'.format(work['time_info']))
-            time_info = work.get_time_info()
+            time_info = work['time_info']
             # logSend('  > time_info: {} {}'.format(time_info, type(time_info)))
             work_time_list = time_info['work_time_list']
             begin_list = [str2min(work_time['t_begin']) for work_time in work_time_list]
@@ -3927,8 +4654,8 @@ def update_pass_history(pass_history: dict, work: dict):
             else:
                 # 퇴근 터치가 있으면 조퇴여부 처리한다.
                 action_out = 10
-                # logSend('  > time_info: {}'.format(work['time_info']))
-                time_info = work.get_time_info()
+                logSend('  > time_info: {}'.format(work['time_info']))
+                time_info = work['time_info']
                 # logSend('  > time_info: {} {}'.format(time_info, type(time_info)))
                 work_time_list = time_info['work_time_list']
                 end_list = [str2min(work_time['t_end']) for work_time in work_time_list]
@@ -5184,8 +5911,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     month_work_dict = {}
     work_id = ''  		# 현재 업무 id
-    hours_break = 0       	# 휴게시간 합계
     hours_basic = 0       	# 기본근로시간 합계
+    hours_break = 0       	# 휴게시간 합계
     hours_night = 0       	# 야간근로시간 합계
     hours_overtime = 0    	# 연장근로시간 합계
     hours_holiday = 0     	# 유급휴일근로시간 합계

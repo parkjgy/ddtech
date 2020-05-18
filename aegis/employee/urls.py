@@ -31,8 +31,11 @@ urlpatterns = [
     url(r'employee/passer_reg$', views.passer_reg, name='passer_reg'),
 
     url(r'employee/pass_reg$', views.pass_reg, name='pass_reg'),
+    url(r'employee/pass_beacon$', views.pass_beacon, name='pass_beacon'),
     url(r'employee/pass_verify$', views.pass_verify, name='pass_verify'),
+    url(r'employee/pass_touch$', views.pass_touch, name='pass_touch'),
     url(r'employee/pass_sms$', views.pass_sms, name='pass_sms'),
+    url(r'employee/pass_sms_v2$', views.pass_sms_v2, name='pass_sms_v2'),
 
     # 비콘 상테 전송 API 이름 변경
     # url(r'employee/beacon_verify$', views.beacons_is, name='beacons_is'),
