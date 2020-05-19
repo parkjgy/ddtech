@@ -8154,7 +8154,7 @@ def beacon_remover(request):
     dt_before_month = datetime.datetime.now() - timedelta(days=31)
     if dt_before_month < dt_last_day:
         return status422(get_api(request), {'message': '한달 이내의 데이터는 삭제할 수 없습니다.'})
-    beacon_record_list = Beacon_Record.objects.filter(dt_end__lt=dt_last_day)
+    beacon_record_list = Beacon_Record.objects.filter(dt_begin__lt=dt_last_day)
     for beacon_record in beacon_record_list:
         # print('  > {}: {}/{}/{}'.format(beacon_record.id, beacon_record.major, beacon_record.minor, beacon_record.dt_end))
         beacon_record.delete()
