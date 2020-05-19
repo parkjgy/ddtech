@@ -1708,6 +1708,8 @@ def pass_beacon(request):
 
         if pass_history.dt_out is None:
             pass_history.dt_out = dt_beacon
+        elif pass_history.dt_out < dt_beacon:
+            pass_history.dt_out = dt_baecon
     else:
         # in baecon 일 경우
         if len(pass_histories) == 0:
@@ -1724,6 +1726,8 @@ def pass_beacon(request):
             pass_history = pass_histories[0]
 
         if pass_history.dt_in is None:
+            pass_history.dt_in = dt_beacon
+        elif dt_beacon < pass_history.dt_in:
             pass_history.dt_in = dt_beacon
         # elif :  # 앱 실행 후 처음이 [출근]이라 [퇴근]눌러야 할 경우 [출근]을 눌러서 [츨근]을 덮어 써야하는 상황
         # 첫날 데이터가 퇴근 인 상황에서 출근으로 처리하면 퇴근이 안되는 현상
