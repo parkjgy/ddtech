@@ -1433,7 +1433,7 @@ def pass_beacon(request):
     출입등록 : 앱에서 인식된 비콘 값을 서버로 보낸다.
         - 인식은 앱이 포그라운드가 되어있는 시간동안에 인식된 값이다.
         - 앱이 포그라운드가 되면 그전 비콘 값을 지우고 새로 수집한다.
-        - 수집 대상은 비콘 처음 인식시간, 처음 인식한 신호 강도, 마지막 인식시간, 처음과 마지막 인식시간 동안 수집된 갯
+        - 수집 대상은 비콘 처음 인식시간, 처음 인식한 신호 강도, 마지막 인식시간, 처음과 마지막 인식시간 동안 수집된 갯수
         http://0.0.0.0:8000/employee/pass_beacon?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
     POST : json
         {
@@ -8119,3 +8119,60 @@ def work_remover(request):
         work.save()
     return REG_200_SUCCESS.to_json_response({'work_dict': work_dict, 'result_dict': result_dict})
 
+
+@cross_origin_read_allow
+def beacon_remover(request):
+    """
+    - 일정기간이 지난 비콘 기록을 삭제한다.
+    - 중복된 비콘정보를 삭제한다.
+        http://0.0.0.0:8000/employee/beacon_remover?dt_last_day=2020-04-01
+    GET
+        work_id_list: 업무 id lsit
+    response
+        STATUS 416
+            {'message': '개발상태에서만 사용할 수 있습니다.'}
+        STATUS 200
+            {'message': '출입자가 이미 삭제 되었습니다.'}
+            {'message': '근로자가 이미 삭제 되었습니다.'}
+        STATUS 422 # 개발자 수정사항
+    log Error
+            logError(get_api(request), ' 잘못된 비콘 양식: {} - {}'.format(e, beacon))
+    """
+    # if not settings.DEBUG:
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '개발상태에서만 사용할 수 있습니다.'})
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['dt_last_day'])
+    if not parameter_check['is_ok']:
+        return status422(get_api(request),
+                         {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
+    dt_last_day = str_to_datetime(parameter_check['parameters']['dt_last_day'])
+    dt_before_month = datetime.datetime.now() - timedelta(days=31)
+    if dt_before_month < dt_last_day:
+        return status422(get_api(request), {'message': '한달 이내의 데이터는 삭제할 수 없습니다.'})
+    beacon_record_list = Beacon_Record.objects.filter(dt_end__lt=dt_last_day)
+    for beacon_record in beacon_record_list:
+        # print('  > {}: {}/{}/{}'.format(beacon_record.id, beacon_record.major, beacon_record.minor, beacon_record.dt_end))
+        beacon_record.delete()
+
+    beacon_list = Beacon.objects.all()
+    beacon_dict = {}
+    for beacon in beacon_list:
+        major_minor = '{0:05d}-{1:05d}'.format(beacon.major, beacon.minor)
+        if major_minor in list(beacon_dict.keys()):
+            # print('{}: {} vs {}'.format(major_minor, beacon_dict[major_minor].dt_last, beacon.dt_last))
+            if beacon_dict[major_minor].dt_last < beacon.dt_last:
+                beacon_dict[major_minor] = beacon
+                beacon_dict[major_minor].delete()
+            else:
+                beacon.delete()
+        else:
+            beacon_dict[major_minor] = beacon
+    # print('  > no of beacon: {}'.format(len(list(beacon_dict.keys()))))
+    # for key in beacon_dict.keys():
+    #     print('  > {}: {}'.format(key, beacon_dict[key].dt_last))
+    return REG_200_SUCCESS.to_json_response({'no of beacon': len(list(beacon_dict.keys())), 'deleted record': len(beacon_record_list)})
