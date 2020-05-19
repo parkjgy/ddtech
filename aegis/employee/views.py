@@ -1481,7 +1481,7 @@ def pass_beacon(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     passer_id = parameter_check['parameters']['passer_id']
     dt = parameter_check['parameters']['dt']
-    dt_touch = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    dt_beacon = str_to_datetime(dt)  #datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
     is_in = int(parameter_check['parameters']['is_in'])
     major = parameter_check['parameters']['major']
     if request.method == 'POST':
@@ -1550,31 +1550,61 @@ def pass_beacon(request):
         new_beacon_record.save()
 
     # 통과 기록 저장
-    new_pass = Pass(
-        passer_id=passer_id,
-        is_in=is_in,
-        is_beacon=True,
-        dt=dt,
-        x=x,
-        y=y,
-    )
-    new_pass.save()
+    try:
+        year_month_day = dt[0:10]
+        passer_pass_list = Pass.objects.filter(passer_id=passer_id, is_in=is_in, dt__contains=year_month_day)
+        passer_pass = passer_pass_list[0]
+        logSend('  > #: {}'.format(len(passer_pass_list)))
+        if is_in == 1:
+            # 출근했을 때
+            if dt_beacon < passer_pass.dt:
+                # 비콘으로 안으로 들어온 시간이 더 일찍이면 시간 변경 - 발생 가능성 없음
+                logSend('  >> 비콘 시간에 출근시간인데 더 빨라진 경우: 발생하면 안됨')
+                passer_pass.dt = dt_beacon
+                passer_pass.save()
+        else:
+            # 퇴근할 때
+            if passer_pass.dt < dt_beacon:
+                # 비콘의 시간이 변경되면 밖으로 나간 시간을 변경 - 거의 발생
+                logSend('  >> 비콘 시간에 출근시간인데 더 빨라진 경우: 발생하면 안됨')
+                passer_pass.dt = dt_beacon
+                passer_pass.save()
+    except Exception as e:
+        logSend('  > new pass: none: {}'.format(e))
+        new_pass = Pass(
+            passer_id=passer_id,
+            is_in=is_in,
+            is_beacon=True,
+            dt=dt,
+            x=x,
+            y=y,
+        )
+        new_pass.save()
     #
     # Pass_History update
     #
     if passer.employee_id == -2:
         # 전화번호로 출입만 관리되는 출입자
-        pass_history = Pass_History(
-            passer_id=passer_id,
-            work_id=-1,
-            year_month_day=dt[0:10],    # 2020-05-18 19:00:00 >> dt[0:10] >> 2020-05-18
-            x=x,
-            y=y,
-        )
+        try:
+            pass_history = Pass_History.objects.get(passer_id=passer_id, work_id=-1, year_month_day=dt[0:10])
+        except Exception as e:
+            pass_history = Pass_History(
+                passer_id=passer_id,
+                work_id=-1,
+                year_month_day=dt[0:10],    # 2020-05-18 19:00:00 >> dt[0:10] >> 2020-05-18
+                x=x,
+                y=y,
+            )
         if is_in == 1:
-            pass_history.dt_in_em = pass_history.dt_in_verify = str_to_datetime(dt)
+            if pass_history.dt_in is None:
+                pass_history.dt_in = dt_beacon
+            elif dt_beacon < pass_history.dt_in:
+                pass_history.dt_in = dt_beacon
         else:
-            pass_history.dt_out_em = pass_history.dt_out_verify = str_to_datetime(dt)
+            if pass_history.dt_out is None:
+                pass_history.dt_out = dt_beacon
+            elif pass_history.dt_out < dt_beacon:
+                pass_history.dt_out = dt_beacon
         pass_history.save()
         return REG_200_SUCCESS.to_json_response()
     try:
@@ -1586,7 +1616,7 @@ def pass_beacon(request):
     if len(employee_works.data) == 0:
         # 근로자 정보에 업무가 없다.
         return REG_200_SUCCESS.to_json_response({'message': '근로자에게 배정된 업무가 없다.'})
-    if not employee_works.is_active(dt_touch):
+    if not employee_works.is_active(dt_beacon):
         # 현재 하고 있는 없무가 없다.
         return REG_200_SUCCESS.to_json_response({'message': '근로자가 현재 출퇴근하는 업무가 없다.'})
     logSend('  > index: {}, id: {}, begin: {}, end: {}'.format(employee_works.index, employee_works.data[employee_works.index]['id'], employee_works.data[employee_works.index]['begin'], employee_works.data[employee_works.index]['end']))
@@ -1596,47 +1626,97 @@ def pass_beacon(request):
     work = work_dict[list(work_dict.keys())[0]]
     work['id'] = list(work_dict.keys())[0]
     logSend('  > work id: {}, {}({}) - {}'.format(work['id'], work['name'], work['type'], work['work_place_name']))
-    year_month_day = dt[0:10]
+    year_month_day = dt[0:10]  # 2020-05-19 00:00:00 >> [0:10] >> 2020-05-19
     pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work['id'], year_month_day=year_month_day)
+    #
+    # Pass_History update
+    #
     if not is_in:
-        # out 일 경우
-        if len(pass_histories) == 0:
-            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
-            yesterday = dt_beacon - datetime.timedelta(days=1)
-            yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
-            pass_histories = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
-                                                         year_month_day=yesterday_year_month_day)
-            if len(pass_histories) == 0:
-                # out 인데 어제, 오늘 출입 기록이 없다? >> 에러 로그 남기고 만다.
-                logError(get_api(request),
-                         ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
-                return REG_200_SUCCESS.to_json_response({'message': 'out 인데 어제 오늘 in 기록이 없다.'})
+        # out touch 일 경우
+        time_gap = 1440
+        mins_touch = str2min(dt[11:16])
+        # logSend('   >>> time_info: {}'.format(work['time_info']))
+        work_time_list = work['time_info']['work_time_list']
+        for work_time in work_time_list:
+            if str2min(work_time['t_begin']) >= str2min(work_time['t_end']):
+                # 퇴근시간이 더 빠르면 전날 출근해서 다음날 퇴근하는 케이스다.
+                work_time['is_next_day'] = True
             else:
-                pass_history = pass_histories[0]
+                work_time['is_next_day'] = False
+            work_time['gap_out'] = abs(mins_touch - str2min(work_time['t_end']))
+            if time_gap > work_time['gap_out']:
+                time_gap = work_time['gap_out']
+                current_work_time = work_time
+        # logSend('  >>> work_time_list: {}'.format(work_time_list))
+        logSend('  >>> current_work_time: {}'.format(current_work_time))
+        # ? 연장근무나 시간 수정이 되었을 때
+        # ? 문제가 발생할 수 있다.
+        yesterday = dt_beacon - datetime.timedelta(days=1)
+        yesterday_year_month_day = yesterday.strftime("%Y-%m-%d")
+        yesterday_pass_histories = Pass_History.objects.filter(passer_id=passer_id,
+                                                               year_month_day=yesterday_year_month_day)
+        if len(pass_histories) == 0:
+            # in (츨근 처리를 하지 않았다.)
+            # out 인데 오늘 날짜 pass_history 가 없다? >> 그럼 어제 저녁에 근무 들어갔겠네!
+            if len(yesterday_pass_histories) == 0:
+                # out 인데 어제, 오늘 in 기록이 없다?
+                # 1. 어제 출근해서 오늘 퇴근하는 근무시간이 없으면 현재시간으로 퇴근시간을 처리한다.
+                # 2. 연장근무 시간을 차감한 퇴근시간과 유사한 근무시간을 찾는다.
+                logError(get_api(request),
+                         ' passer_id={} out touch 인데 어제, 오늘 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+                if current_work_time['is_next_day']:
+                    logSend('  > 어제 출근 오늘 퇴근 근무시간: 출근이 없어서 만든다.')
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=yesterday_year_month_day,
+                        action=0,
+                        work_id=work_id,
+                        x=x,
+                        y=y,
+                    )
+                else:
+                    logSend('  > 오늘 출근 오늘 퇴근 근무시간: 출근이 없어서 만든다.')
+                    pass_history = Pass_History(
+                        passer_id=passer_id,
+                        year_month_day=year_month_day,
+                        action=0,
+                        work_id=work_id,
+                        x=x,
+                        y=y,
+                    )
+            elif current_work_time['is_next_day']:
+                # 어제 출근이 있는 경우
+                logSend('  > 어제 출근에 오늘 퇴근 근무시간: 어제 근무시간에 퇴근을 넣는다.')
+                pass_history = yesterday_pass_histories[0]
+            else:
+                logSend('  > 오늘 출근에 오늘 퇴근 근무시간: 오늘 근무시간을 만든다.(출근 시간 누락)')
+                # 오늘 pass_history 가 없어서 새로 만든다.
+                pass_history = Pass_History(
+                    passer_id=passer_id,
+                    year_month_day=year_month_day,
+                    action=0,
+                    work_id=work['id'],
+                    x=x,
+                    y=y,
+                )
+        elif current_work_time['is_next_day']:
+            logSend('  > 어제 출근에 오늘 퇴근 근무시간: 오늘 출근이 있어도 어제에 넣는다.')
+            pass_history = yesterday_pass_histories[0]
         else:
+            logSend('  > 오늘 출근에 오늘 퇴근 근무시간: 오늘 근무시간에 퇴근을 넣는다.')
             pass_history = pass_histories[0]
 
-        dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
-        if dt_in is None:
-            # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-            logError(get_api(request), ' passer_id={} in 기록이 없다. dt_in={}'.format(passer_id, dt_in))
-        elif (dt_in + datetime.timedelta(hours=12)) < dt_beacon:
-            # 출근시간 이후 12 시간이 지났으면 무시한다.
-            logError(get_api(request),
-                     ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in,
-                                                                                                   dt_beacon))
-            return REG_200_SUCCESS.to_json_response({'message': 'in 으로 부터 12 시간이 지나서 beacon out 을 무시한다.'})
-
-        pass_history.dt_out = dt_beacon
+        if pass_history.dt_out is None:
+            pass_history.dt_out = dt_beacon
     else:
-        # in 일 경우
+        # in baecon 일 경우
         if len(pass_histories) == 0:
             # 오늘 날짜 pass_history 가 없어서 새로 만든다.
             pass_history = Pass_History(
                 passer_id=passer_id,
-                work_id=work_id,
                 year_month_day=year_month_day,
                 action=0,
+                work_id=work['id'],
                 x=x,
                 y=y,
             )
@@ -1645,6 +1725,9 @@ def pass_beacon(request):
 
         if pass_history.dt_in is None:
             pass_history.dt_in = dt_beacon
+        # elif :  # 앱 실행 후 처음이 [출근]이라 [퇴근]눌러야 할 경우 [출근]을 눌러서 [츨근]을 덮어 써야하는 상황
+        # 첫날 데이터가 퇴근 인 상황에서 출근으로 처리하면 퇴근이 안되는 현상
+
     pass_history.save()
     return REG_200_SUCCESS.to_json_response()
 
