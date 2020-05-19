@@ -1709,7 +1709,7 @@ def pass_beacon(request):
         if pass_history.dt_out is None:
             pass_history.dt_out = dt_beacon
         elif pass_history.dt_out < dt_beacon:
-            pass_history.dt_out = dt_baecon
+            pass_history.dt_out = dt_beacon
     else:
         # in baecon 일 경우
         if len(pass_histories) == 0:
