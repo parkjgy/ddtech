@@ -785,7 +785,10 @@ def notification_list_v2(request):
     # logSend('  notification work_id list: {}'.format(list(notification_work_id_dict.keys())))
     arr_notification = []
     work_dict = get_work_dict(list(notification_work_id_dict.keys()))
-    notification_type_dict = {-30: '새업무', -23: '퇴근 취소', -22: '출근 취소', -21: '퇴근시간 수정', -20: '출근시간 수정', -5: '소정근로일 부여', -4: '무급휴일 부여', -3: '유급휴일 부여', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
+    notification_type_dict = {-30: '새업무',
+                              -23: '퇴근 취소', -22: '출근 취소', -21: '퇴근시간 수정', -20: '출근시간 수정',
+                              -13: '휴일(휴일근무)', -12: '소정근로일', -11: '주휴일(연장근무)', -10: '유급휴일',
+                              -3: '반차휴무', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
     for notification in notification_list:
         # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
         # 2019/05/17 임시 기능 정지 - 업무 시작 후 업무 참여요청 보낼 필요 발생
@@ -1430,46 +1433,49 @@ def is_in_verify(beacons):
 @cross_origin_read_allow
 def pass_beacon(request):
     """
-    출입등록 : 앱에서 인식된 비콘 값을 서버로 보낸다.
-        - 인식은 앱이 포그라운드가 되어있는 시간동안에 인식된 값이다.
-        - 앱이 포그라운드가 되면 그전 비콘 값을 지우고 새로 수집한다.
-        - 수집 대상은 비콘 처음 인식시간, 처음 인식한 신호 강도, 마지막 인식시간, 처음과 마지막 인식시간 동안 수집된 갯수
-        http://0.0.0.0:8000/employee/pass_beacon?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
-    POST : json
-        {
-            'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
-            'dt' : '2018-01-21 08:25:30',
-            'is_in' : 1,        # 0: out, 1 : in
-            'major' : 11001,    # 11 (지역) 001(사업장)
-            'beacons' : [
-                 {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
-                 {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
-                 {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
-            ]
-            'x': 37.6135,       # latitude (optional),
-            'y': 126.8350,      # longitude (optional),
-        }
-    response
-        STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
-            {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
-            {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
-        STATUS 422 # 개발자 수정사항
-            {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
-            {'message':'ClientError: parameter \'dt\' 가 없어요'}
-            {'message':'ClientError: parameter \'is_in\' 가 없어요'}
-            {'message':'ClientError: parameter \'major\' 가 없어요'}
-            {'message':'ClientError: parameter \'beacons\' 가 없어요'}
-            {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
-            {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
-            {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
-            {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
-    log Error
-        logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
-        logError(get_api(request), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
-        logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        logError(get_api(request), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
-        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
-        logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
+### 출입할 때 beacon 값을 서버에 전달
+    - 수집: 앱이 포그라운드 상태가 되면 그전 수집 값을 지우고 새로 수집을 시작한다.
+    - 전달: 앱이 백그라운드 상태가 될 때 서버로 전달한다.
+    - 수집 내용: major, minor, dt_begin(첫 인식시간), dt_end(마지막 인식시간), rssi(신호강도 값의 최저치), count(인식 시간동안 인식 횟수)
+
+##### 시험 사례
+    http://0.0.0.0:8000/employee/pass_beacon?passer_id=qgf6YHf1z2Fx80DR8o/Lvg&dt=2019-05-7 17:45:00&is_in=0&major=11001&beacons=
+
+##### POST : json
+    {
+        'passer_id' : '앱 등록시에 부여받은 암호화된 출입자 id',
+        'dt' : '2018-01-21 08:25:30',
+        'is_in' : 1,        # 0: out, 1 : in
+        'major' : 11001,    # 11 (지역) 001(사업장)
+        'beacons' : [
+             {'minor': 11001, 'dt_begin': '2019-01-21 08:25:30', 'rssi': -70, 'dt_end': '2019-01-21 08:30:00', 'count': 660},  # 5:30 초당 2번
+             {'minor': 11002, 'dt_begin': '2019-01-21 08:25:31', 'rssi': -70, 'dt_end': '2019-01-21 08:30:01', 'count': 660},  # 5:30 초당 2번
+             {'minor': 11003, 'dt_begin': '2019-01-21 08:25:32', 'rssi': -70, 'dt_end': '2019-01-21 08:30:02', 'count': 660},  # 5:30 초당 2번
+        ]
+        'x': 37.6135,       # latitude (optional),
+        'y': 126.8350,      # longitude (optional),
+    }
+##### response
+    STATUS 200 - 아래 내용은 처리가 무시되기 때문에 에러처리는 하지 않는다.
+        {'message': 'out 인데 어제 오늘 in 기록이 없다.'}
+        {'message': 'in 으로 부터 12 시간이 지나서 out 을 무시한다.'}
+    STATUS 422 # 개발자 수정사항
+        {'message':'ClientError: parameter \'passer_id\' 가 없어요'}
+        {'message':'ClientError: parameter \'dt\' 가 없어요'}
+        {'message':'ClientError: parameter \'is_in\' 가 없어요'}
+        {'message':'ClientError: parameter \'major\' 가 없어요'}
+        {'message':'ClientError: parameter \'beacons\' 가 없어요'}
+        {'message':'ClientError: parameter \'passer_id\' 가 정상적인 값이 아니예요.'}
+        {'message':'ServerError: Passer 에 passer_id=%s 이(가) 없거나 중복됨' % passer_id }
+        {'message':'ServerError: Employee 에 employee_id=%s 이(가) 없거나 중복됨' % employee_id }
+        {'message': 'ClientError: parameter \'dt\' 양식을 확인해주세요.'}
+##### log Error
+    logError(get_api(request), ' 비콘 등록 기능 << Beacon 설치할 때 등록되어야 하는데 왜?')
+    logError(get_api(request), ' passer_id={} out 인데 어제, 오늘 기록이 없다. dt_beacon={}'.format(passer_id, dt_beacon))
+    logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
+    logError(get_api(request), ' passer_id={} in 으로 부터 12 시간이 지나서 out 을 무시한다. dt_in={}, dt_beacon={}'.format(passer_id, dt_in, dt_beacon))
+    logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 없음.'.format(passer.employee_id))
+    logError(get_api(request), ' passer 의 employee_id={} 에 해당하는 근로자가 한명 이상임.'.format(passer.employee_id))
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -2108,16 +2114,6 @@ def pass_touch(request):
         if pass_history.dt_out_verify is None:
             pass_history.dt_out_verify = dt_touch
             pass_history.dt_out_em = dt_touch
-        # dt_in = pass_history.dt_in if pass_history.dt_in_verify is None else pass_history.dt_in_verify
-        # if dt_in is None:
-        #     # in beacon, in touch 가 없다? >> 에러처리는 하지 않고 기록만 한다.
-        #     logError(get_api(request), ' passer_id={} in 기록이 없다. dt_touch={}'.format(passer_id, dt_touch))
-        # elif (dt_in + datetime.timedelta(hours=12)
-        #       + datetime.timedelta(hours=pass_history.overtime // 2 + pass_history.overtime % 2 * .5)) < dt_touch:
-        #     # 출근시간 이후 12 시간이 지나서 out touch가 들어왔다. >> 에러처리는 하지 않고 기록만 한다.
-        #     logError(get_api(request),
-        #              ' passer_id={} in 기록후 12시간 이상 지나서 out touch가 들어왔다. dt_in={}, dt_touch={}'.format(passer_id, dt_in,
-        #                                                                                               dt_touch))
     else:
         # in touch 일 경우 (출근 버튼이 눌렸을 때)
         if len(pass_histories) == 0:
@@ -2136,8 +2132,6 @@ def pass_touch(request):
         if pass_history.dt_in_verify is None:
             pass_history.dt_in_verify = dt_touch
             pass_history.dt_in_em = dt_touch
-        # elif :  # 앱 실행 후 처음이 [출근]이라 [퇴근]눌러야 할 경우 [출근]을 눌러서 [츨근]을 덮어 써야하는 상황
-        # 첫날 데이터가 퇴근 인 상황에서 출근으로 처리하면 퇴근이 안되는 현상
 
     # push to staff
     push_staff(employee.name, dt_touch, work_id, is_in)
@@ -2469,7 +2463,7 @@ def pass_sms_v2(request):
       - 수락/거절은 복수의 수락/거절에 모두 답하는 문제를 안고 있다.
       - 수락/거절하게 되먼 수락/거절한 업무가 여러개라도 모두 sms 로 보낸다. (업무, 담당자, 담당자 전화번호, 기간)
       - 수락은 이름이 안들어 오면 에러처리한다. (2019/05/22 거절에 이름 확인 기능 삭제)
-    http://0.0.0.0:8000/employee/pass_sms?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
+    http://0.0.0.0:8000/employee/pass_sms_v2?phone_no=010-3333-9999&dt=2019-01-21 08:25:35&sms=출근
     POST : json
         {
             'phone_no': '문자 보낸 사람 전화번호',
@@ -2627,9 +2621,9 @@ def pass_sms_v2(request):
         return REG_200_SUCCESS.to_json_response()
 
     elif '출근' in sms:
-        is_in = True
+        is_in = 1
     elif '퇴근' in sms:
-        is_in = False
+        is_in = 0
     else:
         logError(get_api(request), ' 수락, 거절, 출근, 퇴근 외에 들어오는거 머지? pNo = {}, sms = \"{}\"'.format(phone_no, sms))
         return status422(get_api(request),
