@@ -808,13 +808,15 @@ def notification_list_v2(request):
             'work_name_type': work['work_name_type'],
             'staff_name': work['staff_name'],
             'staff_pNo': work['staff_pNo'],
-            'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y-%m-%d %H:%M"),
+            # 'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y-%m-%d %H:%M"),
+            'dt_answer_deadline': dt_str(notification.dt_answer_deadline, "%Y/%m/%d %H:%M"),
             'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
             'end': dt_str(notification.dt_end, "%Y/%m/%d"),
             'notification_type': notification.notification_type,
             'notification_type_str': notification_type_dict[notification.notification_type] if notification.notification_type <= 0 else "연장근무",
             'comment': notification.comment,
-            'dt_io': dt_str(notification.dt_inout, "%Y-%m-%d %H:%M"),
+            # 'dt_io': dt_str(notification.dt_inout, "%Y-%m-%d %H:%M"),
+            'dt_io': dt_str(notification.dt_inout, "%Y/%m/%d %H:%M"),
         }
         arr_notification.append(view_notification)
     return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
@@ -4237,7 +4239,7 @@ def work_record_in_day_for_customer(request):
                         "overtime_staff_id": 12,
                         "x": null,
                         "y": null,
-                        "notification": 2,                 # 0: 근로자가 확인하지 않은 알림 있음 (이름: 파랑), 2: 근로자가 거절한 알림 임음 (이름 빨강)
+                        "notification": 2,                 # -1: 알림 없음, 0: 근로자가 확인하지 않은 알림 있음 (이름: 파랑), 2: 근로자가 거절한 알림 있음 (이름 빨강), 3: 답변시한 지난 알림 (이름 빨강)
                         "week": "일",                      # 요일
                         "day_type": 0,                    # 이날의 근무 형태 0: 유급휴일, 1: 무급휴일, 2: 소정근무일
                         "day_type_description": "유급휴일"  # 근무 형태 설명
@@ -4349,7 +4351,10 @@ def work_record_in_day_for_customer(request):
     # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
     # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
     #   근로자 변경 알림은 거절(2)이 미확인(0)보다 우선하여 표시한다. - 이름에 미확인(0)은 파랑색, 거절(2)은 빨강색
-    notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=working_passer_id_list, is_x__in=[0, 2])
+    # noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_last_day.date())
+    dt_year_month_day = str_to_datetime(year_month_day)
+    notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=working_passer_id_list,
+                                                         dt_inout__startswith=dt_year_month_day.date(), is_x__in=[0, 2])
     # is_x__in=[0, 2, 3]  # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
     notification_passer_key_dict = {}
     for notification in notification_list:
@@ -4547,7 +4552,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     staff_id = -1
     comment = ''
     dt_inout = str_to_datetime("2019-12-05")
-    # 근무일 변 처리
+    # 근무일 변경 처리
     if ('day_type' in rqst.keys()) and ('day_type_staff_id' in rqst.keys()):
         day_type = int(rqst['day_type'])
         day_type_staff_id = AES_DECRYPT_BASE64(rqst['day_type_staff_id'])
@@ -4639,7 +4644,14 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 push_title = '{} 퇴근시간을 조정합니다.'.format(year_month_day)
                 comment = '{}'.format(rqst['dt_out_verify'])
                 dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_out_verify']))
-
+    #
+    # 중복된 알림이 있으면 취소처리한다.
+    # 예) 2020-06-05, 퇴근 취소(-21) > 2020-06-05, 23:00 퇴근(-23) 이면 앞을 취소처리
+    #
+    cancel_noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_inout.date(), notification_type=notification_type)
+    for cancel_noti in cancel_noti_list:
+        cancel_noti.is_x = 1
+        cancel_noti.save()
     #
     # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
     # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.
@@ -8232,6 +8244,13 @@ def beacon_remover(request):
         return status422(get_api(request),
                          {'message': '{}'.format(''.join([message for message in parameter_check['results']]))})
     dt_last_day = str_to_datetime(parameter_check['parameters']['dt_last_day'])
+
+    # noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_last_day.date())
+    # print('>> no of noti: {}'.format(len(noti_list)))
+    # for noti in noti_list:
+    #     print('> {}: {}'.format(noti.comment, noti.dt_inout))
+    # return REG_200_SUCCESS.to_json_response()
+
     dt_before_month = datetime.datetime.now() - timedelta(days=31)
     if dt_before_month < dt_last_day:
         return status422(get_api(request), {'message': '한달 이내의 데이터는 삭제할 수 없습니다.'})
