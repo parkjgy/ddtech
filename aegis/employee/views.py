@@ -984,7 +984,7 @@ def notification_accept_v2(request):
         return status422(get_api(request), {'message': '출입자({}) 가 없어요'.format(passer_id)})
 
     try:
-        notification = Notification_Work.objects.get(is_x=False, id=notification_id)
+        notification = Notification_Work.objects.get(is_x=0, id=notification_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
 
@@ -1128,7 +1128,7 @@ def notification_accept_v2(request):
 
         # 정상적으로 처리되었을 때 알림을 완료한다.
         # notification.delete()
-        notification.is_x = 1
+        notification.is_x = 1  # 처리완료 (삭제와 같은 효과)
         notification.save()
     logSend('  - is_accept: {}'.format(is_accept))
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})

@@ -5191,7 +5191,7 @@ def staff_fg(request):
         # works = Work.objects.filter(contractor_id=app_user.co_id, work_place_id__in=arr_work_place_id) # 협력업체가 수주하면 못찾음
         # works = Work.objects.filter(work_place_id__in=arr_work_place_id, dt_end__gt=dt_today)
         works = Work.objects.filter(work_place_id__in=arr_work_place_id,
-                                    dt_end__gt=(dt_today - datetime.timedelta(days=3)))
+                                    dt_end__gt=(dt_today - datetime.timedelta(days=40)))
     else:
         # works = Work.objects.filter(contractor_id=app_user.co_id, staff_id=app_user.id) # 협력업체가 수주하면 못찾음
         works = Work.objects.filter(staff_id=app_user.id, dt_end__gt=(dt_today - datetime.timedelta(days=3)))
