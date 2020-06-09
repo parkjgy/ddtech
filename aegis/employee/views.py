@@ -291,6 +291,20 @@ def list_my_work(request):
         logError(get_api(request), ' employee id: {} 중복되었다.'.format(passer.employee_id))
     employee = employees[0]
     logSend('   --- employee works: {}'.format(employee.get_works()))
+    work_list = Works(employee.get_works())
+    logSend('   > current work: {}'.format(work_list.find_work_by_date(datetime.datetime.now())))
+    current_work = work_list.find_work_by_date(datetime.datetime.now())
+    if current_work == None:
+        return REG_200_SUCCESS.to_json_response({'works': []})
+    work_dict = get_work_dict([current_work['id']])
+    if len(work_dict.keys()) == 0:
+        return REG_200_SUCCESS.to_json_response({'works': []})
+    # logSend('   > work: {}, {}'.format(current_work['id'], work_dict[str(current_work['id'])]))
+    work_list = [work_dict[str(current_work['id'])]]
+    work_list[0]['begin'] = current_work['begin']
+    work_list[0]['end'] = current_work['end']
+    return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
+
     employee_works = employee.get_works()
     before15day = datetime.datetime.now() - timedelta(days=15)
     # before15day = datetime.datetime.now() - timedelta(days=100)
@@ -311,7 +325,7 @@ def list_my_work(request):
         work_infor['begin'] = lately_work['begin']
         work_infor['end'] = lately_work['end']
         work_list.append(work_infor)
-    return REG_200_SUCCESS.to_json_response({'works': work_list})
+    return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
 
 
 @cross_origin_read_allow
