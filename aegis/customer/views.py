@@ -2516,6 +2516,7 @@ def update_work_v2(request):
         int_break_time_type = int(work_time['break_time_type'])
         if int_break_time_type == 0:  # 휴게시간(들)이 정해져 있을 때
             if 'break_time_list' in work_time:
+                break_time_sum = 0
                 for break_time in work_time['break_time_list']:
                     if 'bt_begin' not in break_time:
                         logSend(get_api(request), '휴게시간에 시작시간이 없다.')
@@ -2531,6 +2532,13 @@ def update_work_v2(request):
                         bt_end += 24 * 60
                     if bt_end > t_end:
                         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'})
+                    begin = str2min(break_time['bt_begin'])
+                    end = str2min(break_time['bt_end'])
+                    time = end - begin
+                    if end < begin:
+                        time = end + (1440 - begin)
+                    break_time_sum = time
+                work_time['break_time_total'] = break_time_sum
             else:
                 logSend(get_api(request), '휴게시간이 시간지정인데 지정시간 리스트가 없다.')
                 return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'})

@@ -301,6 +301,20 @@ def list_my_work(request):
         return REG_200_SUCCESS.to_json_response({'works': []})
     # logSend('   > work: {}, {}'.format(current_work['id'], work_dict[str(current_work['id'])]))
     work_list = [work_dict[str(current_work['id'])]]
+    work_time_list = work_list[0]['time_info']['work_time_list']
+    logSend('  > work_time: {}'.format(work_time_list))
+    for work_time in work_time_list:
+        if work_time['break_time_type'] == 2:
+            work_time['break_time_total'] = 0
+        elif work_time['break_time_type'] == 0:
+            for break_time in work_time['break_time_list']:
+                begin = str2min(break_time['bt_begin'])
+                end = str2min(break_time['bt_end'])
+                time = end - begin
+                if end < begin:
+                    time = end + (1440 - begin)
+                work_time['break_time_total'] = time
+
     work_list[0]['begin'] = current_work['begin']
     work_list[0]['end'] = current_work['end']
     return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
