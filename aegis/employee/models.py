@@ -12,11 +12,11 @@ class Employee(models.Model):
     """
     name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
 
-    work_start = models.CharField(max_length = 20, default='')         # 출근 시간 23:00
-    working_time = models.CharField(max_length = 20, default='')       # 근무 시간 04 ~ 12
-    rest_time = models.CharField(max_length = 7, default='-1')          # 근무 시간 00:30 ~ 06:00
-    work_start_alarm = models.CharField(max_length = 20, default='')   # 출근 알람 1:00, 30, X
-    work_end_alarm = models.CharField(max_length = 20, default='')     # 퇴근 알람 30, 0, X
+    work_start = models.CharField(max_length = 20, default='')          # 출근 시간 23:00
+    work_end = models.CharField(max_length = 20, default='')            # 퇴근 시간 07:00
+    break_time = models.CharField(max_length = 7, default='0')          # 근무 시간 00:30 ~ 06:00
+    work_start_alarm = models.CharField(max_length = 20, default='')    # 출근 알람 1:00, 30, X
+    work_end_alarm = models.CharField(max_length = 20, default='')      # 퇴근 알람 30, 0, X
     
     bank = models.CharField(max_length = 20, default='')            # 급여 은행
     bank_account = models.CharField(max_length=20, default='')    # 급여 계좌
