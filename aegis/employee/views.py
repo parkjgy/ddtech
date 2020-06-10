@@ -6050,6 +6050,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 dt_paid_day = str_to_datetime(day_dict['year_month_day'])
                 break
         # 첫번째 유급휴일 날
+        # 첫번째 유급휴일이 아직 없을 경우
         logSend('  > dt_paid_day: {}'.format(dt_paid_day))
     else:
         dt_paid_day = str_to_datetime(first_day_rec['year_month_day'][0:7])
@@ -6059,7 +6060,10 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if work_dict[work_id_db]['time_info']['paid_day'] == (week_index + 1) % 7:
                 break
             dt_paid_day = dt_paid_day + datetime.timedelta(days=1)
-    logSend('   > dt_paid_day: {} {} {}'.format(dt_paid_day, dt_paid_day.weekday(), week_comment[dt_paid_day.weekday()]))
+    if (dt_paid_day == ''):
+        logSend('   > dt_paid_day: None')
+    else:
+        logSend('   > dt_paid_day: {} {} {}'.format(dt_paid_day, dt_paid_day.weekday(), week_comment[dt_paid_day.weekday()]))
     if dt_paid_day != '':
         # 1일이면 그 전 1주일 데이터를 week_dict 에 넣는다.
         # 일주일전 근로내역을 가져온다.
