@@ -1094,19 +1094,25 @@ def notification_accept_v2(request):
             elif notification.notification_type == -23:  #퇴근시간 삭제
                 pass_record.dt_out_verify = None
                 pass_record.in_staff_id = notification.staff_id
-            elif notification.notification_type == -5:  # 소정근로일 부여
+            elif notification.notification_type == -12:  # 소정근로일 부여
                 pass_record.day_type = 2
                 pass_record.day_type_staff_id = notification.staff_id
-            elif notification.notification_type == -4:  # 무급휴일 부여
+            elif notification.notification_type == -11:  # 무급휴일 부여
                 pass_record.day_type = 1
                 pass_record.day_type_staff_id = notification.staff_id
-            elif notification.notification_type == -3:  # 유급휴일 부여
+            elif notification.notification_type == -13:  # 유급휴일 부여
                 pass_record.day_type = 0
                 pass_record.day_type_staff_id = notification.staff_id
-            # elif notification.notification_type == -2:  # 연차휴무 부여
-            # elif notification.notification_type == -1:  # 조기퇴근 부여
-            # elif notification.notification_type == 0:  # 연차휴무, 조기퇴근, 연장근로 취소
-            else:  # 연장근로 부여
+            elif notification.notification_type == -2:  # 연차휴무 부여
+                pass_record.overtime = notification.notification_type
+                pass_record.overtime_staff_id = notification.staff_id
+            elif notification.notification_type == -1:  # 조기퇴근 부여
+                pass_record.overtime = notification.notification_type
+                pass_record.overtime_staff_id = notification.staff_id
+            elif notification.notification_type == 0:  # 연차휴무, 조기퇴근, 연장근로 취소
+                pass_record.overtime = notification.notification_type
+                pass_record.overtime_staff_id = notification.staff_id
+            elif notification.notification_type > 0:  # 연장근로 부여
                 pass_record.overtime = notification.notification_type
                 pass_record.overtime_staff_id = notification.staff_id
             pass_record.save()
