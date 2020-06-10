@@ -819,16 +819,10 @@ def notification_list_v2(request):
                               -3: '반차휴무', -2: '연차휴무', -1: '조기퇴근', 0: '정상근무'}
     for notification in notification_list:
         # dt_answer_deadline 이 지났으면 처리하지 않고 notification_list 도 삭제
-        # 2019/05/17 임시 기능 정지 - 업무 시작 후 업무 참여요청 보낼 필요 발생
-        # if notification.dt_answer_deadline < datetime.datetime.now():
-        #     notification.delete()
-        #     continue
-
-        # 시험을 위해 임시로 기능 정지 2020/04/28
-        # if notification.dt_answer_deadline < datetime.datetime.now():
-        #     notification.is_x = 3
-        #     notification.save()
-        #     continue
+        if notification.dt_answer_deadline < datetime.datetime.now():
+            notification.is_x = 3
+            notification.save()
+            continue
         work = work_dict[str(notification.work_id)]
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
