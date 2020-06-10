@@ -306,6 +306,9 @@ def list_my_work(request):
     for work_time in work_time_list:
         if work_time['break_time_type'] == 2:
             work_time['break_time_total'] = 0
+            work_time['break_time_list'] = []
+        elif work_time['break_time_type'] == 1:
+            work_time['break_time_list'] = []
         elif work_time['break_time_type'] == 0:
             for break_time in work_time['break_time_list']:
                 begin = str2min(break_time['bt_begin'])
