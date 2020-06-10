@@ -2546,6 +2546,7 @@ def update_work_v2(request):
             if 'break_time_total' not in work_time:
                 logSend(get_api(request), '휴게시간이 총 휴게시간인데 휴게시간이 없다.')
                 return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 총 휴게시간인데 휴게시간이 없다.'})
+            work_time['break_time_list'] = []
             # else:  #
             #     bt_total = str_minute(work_time['break_time_total'])
             #     if not (0 <= bt_total <= (t_end - t_begin)/8):  # 4시간당 30분의 휴게시간을 주면 24시간 근무해도 8시간을 초과할 수 없다.
