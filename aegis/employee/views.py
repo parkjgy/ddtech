@@ -6056,7 +6056,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if work_dict[work_id_db]['time_info']['paid_day'] == (week_index + 1) % 7:
                 break
             dt_paid_day = dt_paid_day + datetime.timedelta(days=1)
-    logSend('   > dt_paid_day: {} {}'.format(dt_paid_day, week_comment[dt_paid_day.weekday()]))
+    logSend('   > dt_paid_day: {} {} {}'.format(dt_paid_day, dt_paid_day.weekday(), week_comment[dt_paid_day.weekday()]))
     if dt_paid_day != '':
         # 1일이면 그 전 1주일 데이터를 week_dict 에 넣는다.
         # 일주일전 근로내역을 가져온다.
