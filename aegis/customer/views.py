@@ -15,7 +15,7 @@ from django.conf import settings
 
 from config.log import logSend, logError
 from config.common import ReqLibJsonResponse
-from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api, str_minute
+from config.common import status422, is_parameter_ok, id_ok, type_ok, get_client_ip, get_api, str_minute, str2min
 # secret import
 from config.common import hash_SHA256, no_only_phone_no, phone_format, dt_null, dt_str, str_to_datetime, int_none
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
