@@ -64,10 +64,11 @@ class Notification_Work(models.Model):
     is_x = models.IntegerField(default=False)           # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
 
     notification_type = models.IntegerField(default=-30)        
-    # -21: 퇴근시간 수정, -20: 출근시간 수정,
+    # 알림 종류: -30: 새업무 알림,
+    # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭
     # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
     # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
-    # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+    # -3: 반차휴가(현재 사용안함9), -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
     comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
     staff_id = models.IntegerField(default=-1)                  # 알림을 보내는 관리자 id
     dt_inout = models.DateTimeField(null=True, blank=True)      # 변경된 출퇴근시간이 저장된다.

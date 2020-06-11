@@ -4704,7 +4704,21 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     # 중복된 알림이 있으면 취소처리한다.
     # 예) 2020-06-05, 퇴근 취소(-21) > 2020-06-05, 23:00 퇴근(-23) 이면 앞을 취소처리
     #
-    cancel_noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_inout.date(), notification_type=notification_type)
+    # 알림 종류: -30: 새업무 알림,
+    # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭
+    # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+    # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
+    # -3: 반차휴가(현재 사용안함9), -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+    target_list = []
+    if notification_type > -10:
+        target_list = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    elif notification_type > -20:
+        target_list = [-10, -11, -12, -13]
+    elif notification_type > -30:
+        target_list = [-20, -21, -22, -23]
+    else:
+        target_list = [-30]
+    cancel_noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_inout.date(), notification_type__in=target_list)
     for cancel_noti in cancel_noti_list:
         cancel_noti.is_x = 1
         cancel_noti.save()
@@ -4727,11 +4741,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             work_place_name=work_dict['work_place_name'],
             work_name_type=work_dict['work_name_type'],
             is_x=0,  # 사용확인 용?
-            notification_type=notification_type,  # 알림 종류: -30: 새업무 알림,
-            # -21: 퇴근시간 수정, -20: 출근시간 수정,
-            # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
-            # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
-            # -3: 반차휴무, -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
+            notification_type=notification_type,
             comment=comment,
             staff_id=staff_id,
             dt_inout=dt_inout,
