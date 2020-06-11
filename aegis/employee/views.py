@@ -1065,17 +1065,18 @@ def notification_accept_v2(request):
             year_month_day = dt_str(notification.dt_inout, "%Y-%m-%d")
             pass_record_list = Pass_History.objects.filter(work_id=notification.work_id, passer_id=notification.employee_id, year_month_day=year_month_day)
             if len(pass_record_list) == 0:
+                work_dict = get_work_dict([notification.work_id])
+                work = work_dict[list(work_dict.keys())[0]]
+                work['id'] = list(work_dict.keys())[0]
                 pass_record = Pass_History(
                     passer_id=notification.employee_id,
                     work_id=notification.work_id,
                     year_month_day=year_month_day,
                     action=0,
+                    day_type=get_day_type(work, year_month_day),
                     # x=x,
                     # y=y,
                 )
-                work_dict = get_work_dict([notification.work_id])
-                work = work_dict[list(work_dict.keys())[0]]
-                work['id'] = list(work_dict.keys())[0]
                 update_pass_history(pass_record, work)
                 pass_record.save()
             else:
@@ -1091,7 +1092,7 @@ def notification_accept_v2(request):
             elif notification.notification_type == -22:  # 출근시간 삭제
                 pass_record.dt_in_verify = None
                 pass_record.in_staff_id = notification.staff_id
-            elif notification.notification_type == -23:  #퇴근시간 삭제
+            elif notification.notification_type == -23:  # 퇴근시간 삭제
                 pass_record.dt_out_verify = None
                 pass_record.in_staff_id = notification.staff_id
             elif notification.notification_type == -12:  # 소정근로일 부여
@@ -1631,6 +1632,7 @@ def pass_beacon(request):
                 passer_id=passer_id,
                 work_id=-1,
                 year_month_day=dt[0:10],    # 2020-05-18 19:00:00 >> dt[0:10] >> 2020-05-18
+                # day_type=get_day_type(work, dt[0:10]),  # 출입만 관리하는 경우 사용되지 안음
                 x=x,
                 y=y,
             )
@@ -1710,6 +1712,7 @@ def pass_beacon(request):
                         year_month_day=yesterday_year_month_day,
                         action=0,
                         work_id=work_id,
+                        day_type=get_day_type(work, yesterday_year_month_day),
                         x=x,
                         y=y,
                     )
@@ -1720,6 +1723,7 @@ def pass_beacon(request):
                         year_month_day=year_month_day,
                         action=0,
                         work_id=work_id,
+                        day_type=get_day_type(work, year_month_day),
                         x=x,
                         y=y,
                     )
@@ -1735,6 +1739,7 @@ def pass_beacon(request):
                     year_month_day=year_month_day,
                     action=0,
                     work_id=work['id'],
+                    day_type=get_day_type(work, year_month_day),
                     x=x,
                     y=y,
                 )
@@ -1758,6 +1763,7 @@ def pass_beacon(request):
                 year_month_day=year_month_day,
                 action=0,
                 work_id=work['id'],
+                day_type=get_day_type(work, year_month_day),
                 x=x,
                 y=y,
             )
@@ -1980,6 +1986,28 @@ def pass_verify(request):
     return REG_200_SUCCESS.to_json_response()
 
 
+def get_day_type(work: dict, year_month_day: str) -> int:
+    #
+    # 근무 방식에 따라 day_type 을 결정해 넣는다.
+    #
+    if work['time_info']['time_type'] in [0, 1]:
+        # 급여형태가 시급제/월급제 일 경우는 day_type 을 넣는다.
+        week_index = str_to_datetime(year_month_day).weekday()
+        week_index = (week_index + 1) % 7  # 0: 일요일
+        if week_index in work['time_info']['working_days']:
+            day_type = 2  # 소정근로일
+        elif week_index == work['time_info']['paid_day']:
+            day_type = 0  # 유급휴일
+        elif work['time_info']['is_holiday_work'] == '1':
+            day_type = 1  # 무급휴무일(연장 근무)
+        else:
+            day_type = 3  # 무급휴일(휴일/연장 근무)
+    else:
+        # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정
+        day_type = 2
+    return day_type
+
+
 @cross_origin_read_allow
 def pass_touch(request):
     """
@@ -2057,7 +2085,7 @@ def pass_touch(request):
     work_id = employee_works.data[employee_works.index]['id']
     work_dict = get_work_dict([work_id])
     work = work_dict[str(work_id)]
-    # logSend('  >> work: {}'.format(work))
+    logSend('  >> work: {}'.format(work))
     work['id'] = work_id
     #
     # 1. 기존에 인식했던 비콘이면 통과 (passer.beacons)
@@ -2068,6 +2096,8 @@ def pass_touch(request):
     # Pass_History update
     #
     year_month_day = dt_touch.strftime("%Y-%m-%d")
+    day_type = get_day_type(work, year_month_day)
+    # logSend('   > day_type: {}'.format(day_type))
     pass_histories = Pass_History.objects.filter(passer_id=passer_id, year_month_day=year_month_day)
     if not is_in:
         # out touch 일 경우
@@ -2109,6 +2139,7 @@ def pass_touch(request):
                         year_month_day=yesterday_year_month_day,
                         action=0,
                         work_id=work_id,
+                        day_type=get_day_type(work, yesterday_year_month_day),
                         x=x,
                         y=y,
                     )
@@ -2119,6 +2150,7 @@ def pass_touch(request):
                         year_month_day=year_month_day,
                         action=0,
                         work_id=work_id,
+                        day_type=day_type,
                         x=x,
                         y=y,
                     )
@@ -2134,6 +2166,7 @@ def pass_touch(request):
                     year_month_day=year_month_day,
                     action=0,
                     work_id=work_id,
+                    day_type=day_type,
                     x=x,
                     y=y,
                 )
@@ -2156,6 +2189,7 @@ def pass_touch(request):
                 year_month_day=year_month_day,
                 action=0,
                 work_id=work_id,
+                day_type=day_type,
                 x=x,
                 y=y,
             )
@@ -2163,6 +2197,7 @@ def pass_touch(request):
             pass_history = pass_histories[0]
 
         if pass_history.dt_in_verify is None:
+            # 실제 앱에서 [출근] 터치한 시간을 저장한다.
             pass_history.dt_in_verify = dt_touch
             pass_history.dt_in_em = dt_touch
 
@@ -4320,7 +4355,7 @@ def work_record_in_day_for_customer(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: 해당 업무가 없어요.'})
     work = work_dict[list(work_dict.keys())[0]]
     work['id'] = list(work_dict.keys())[0]
-    logSend('  > work: {}'.format(work))
+    # logSend('  > work: {}'.format(work))
     fail_dict = {}
     fail_employee_id_list = []
     employee_ids = []
@@ -4402,6 +4437,7 @@ def work_record_in_day_for_customer(request):
             year_month_day=year_month_day,
             action=0,
             work_id=work_id,
+            day_type=get_day_type(work, year_month_day)
         )
         new_pass_record.save()
     pass_histories = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=employee_ids,
@@ -5707,7 +5743,6 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     #         passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
     #     else:
     #         passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 확인했다.
-
     # 연장근로 처리
     #   - 출퇴근 시간과 상관없이 처리한다.
     #   - 조기퇴근은 출퇴근 시간과 상관있다.
@@ -5989,6 +6024,10 @@ def my_work_records_v2(request):
     passer_rec_dict = {}
     for pass_record in pass_record_list:
         # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
+        if pass_record.day_type_staff_id == -1:
+            day_type = get_day_type(work_dict[pass_record.work_id], pass_record.day_type)
+        else:
+            day_type = pass_record.day_type
         passer_record_dict = {
             'year_month_day': pass_record.year_month_day,
             'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
@@ -5999,13 +6038,13 @@ def my_work_records_v2(request):
             'break': '',    # 휴게시간
             'basic': '',    # 기본근로
             'night': '',    # 야간근로
-            'overtime': '',  # 연장근로
+            'overtime': '', # 연장근로
             'holiday': '',  # 휴일근무
             'ho': '',       # 휴일/연장
             'remarks': '',  #
-            'is_accept': '1',  # 관리자에 의해 근태가 변경되지 않았다. (출/퇴근시간, 유급휴일, 연차휴가, 조기퇴근, 연장근무)
+            'is_accept': '1',  # '"" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),,  # 관리자에 의해 근태가 변경되지 않았다. (출/퇴근시간, 유급휴일, 연차휴가, 조기퇴근, 연장근무)
             'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
-            'day_type': pass_record.day_type,  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
             'passer_id': passer.id,
         }
         logSend('------------------ {}'.format(pass_record.year_month_day))
