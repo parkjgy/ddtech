@@ -6025,7 +6025,7 @@ def my_work_records_v2(request):
     for pass_record in pass_record_list:
         # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
         if pass_record.day_type_staff_id == -1:
-            day_type = get_day_type(work_dict[str(pass_record.work_id)], pass_record.day_type)
+            day_type = get_day_type(work_dict[pass_record.work_id], pass_record.year_month_day)
         else:
             day_type = pass_record.day_type
         passer_record_dict = {
