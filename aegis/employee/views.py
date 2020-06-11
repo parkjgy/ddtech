@@ -6017,6 +6017,11 @@ def my_work_records_v2(request):
         employee_works = Works(employee.get_works())
     # 업무내역에서 복잡한 휴게시간 미리 계산하기
     set_break_time_of_work_time_info(work_dict)
+    notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
+    notification_dict = {}
+    for notification in notification_list:
+        notification_dict[notification.dt_inout.strftime("%Y-%m-%d")] = notification.is_x  # 0: 결정 안함, 2: 거부됨, 3: 답변시한 지남
+    # logSend('  > notification_dict: {}'.format(notification_dict))
     #
     # 근로자의 근로내역 생성: 근로자 id 를 key 로하는 dictionary
     #
@@ -6046,6 +6051,7 @@ def my_work_records_v2(request):
             'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
             'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
             'passer_id': passer.id,
+            'notification': -1 if pass_record.year_month_day not in list(notification_dict.keys()) else notification_dict[pass_record.year_month_day],
         }
         logSend('------------------ {}'.format(pass_record.year_month_day))
         process_pass_record(passer_record_dict, pass_record, work_dict)
