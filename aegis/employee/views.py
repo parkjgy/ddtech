@@ -5670,7 +5670,7 @@ def set_break_time_of_work_time_info(work_dict: dict):
             else:
                 break_time_sum = 0
                 # logSend('  >> break_time: {}'.format(break_time_sum))
-            work_time['break_hours'] = break_time_sum / 60
+            work_time['break_mins'] = break_time_sum
         work_dict[work_dict_key]['time_info']['work_time_list'] = sorted(work_time_list, key=itemgetter('t_begin'))
         logSend('  ----- work_time_list: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
     # logSend('----------- work time list')
@@ -5699,7 +5699,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
         result = {'dt_in': dt_in_verify,
                   'dt_out': dt_out_verify,
                   'work_minutes': 0,
-                  'break_hours': 0,
+                  'break_mins': 0,
                   'work_time': None
                   }
         return result
@@ -5732,12 +5732,12 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
     mins_work = mins_end - mins_begin
     if mins_end < mins_begin:
         mins_work = mins_end + (1440 - mins_begin)
-    mins_work -= find_work_time['break_hours'] * 60
+    mins_work -= find_work_time['break_mins']
     # mins_work += mins_overtime
     result = {'dt_in': dt_in,
               'dt_out': dt_out,
               'work_minutes': mins_work,
-              'break_hours': find_work_time['break_hours'],
+              'break_mins': find_work_time['break_mins'],
               'work_time': find_work_time
               }
     return result
@@ -5746,13 +5746,6 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
 def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict):
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     current_work_id = pass_record.work_id
-    # 근로자에게 알림이 있을 때 처리 - 2020/03/31 확인하기 전까지 알림 내용이 적용되지 않기 때문에 쓸모가 없어졌다.
-    # if (pass_record.in_staff_id != -1) or (pass_record.out_staff_id != -1) or (pass_record.overtime_staff_id != -1) or (pass_record.day_type_staff_id != -1):
-    #     # 근로자에게 가 알림을 확인 했으면
-    #     if pass_record.dt_accept is None:
-    #         passer_record_dict['is_accept'] = '0'  # 관리자에 의한 근태변경을 근로자가 인정하지 않았다.
-    #     else:
-    #         passer_record_dict['is_accept'] = '1'  # 관리자에 의한 근태변경을 근로자가 확인했다.
     # 연장근로 처리
     #   - 출퇴근 시간과 상관없이 처리한다.
     #   - 조기퇴근은 출퇴근 시간과 상관있다.
@@ -5795,7 +5788,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     # 휴게시간
     dt_in = r['dt_in']
     dt_out = r['dt_out']
-    passer_record_dict['break'] = str(r['break_hours'])
+    passer_record_dict['break'] = str(r['break_mins'])
     # 기본근로시간
     basic_minutes = r['work_minutes']
     basic_hours = basic_minutes / 60
@@ -5948,7 +5941,7 @@ def my_work_records_v2(request):
                         "holiday": "",
                         "ho": "",
                         "remarks": "",
-                        "is_accept": "1"
+                        "notification": "-1"    # -1: 알림 없음, 0: 알림이 있음, 2: 알림 내용을 거부했음, 3: 답변시한을 넘겼음
                     },
                     ......
                     "29": {
@@ -6050,14 +6043,13 @@ def my_work_records_v2(request):
             'work_id': AES_ENCRYPT_BASE64(str(pass_record.work_id)),
             'begin': dt_str(pass_record.dt_in_verify, "%H:%M"),
             'end': dt_str(pass_record.dt_out_verify, "%H:%M"),
-            'break': '',    # 휴게시간
-            'basic': '',    # 기본근로
-            'night': '',    # 야간근로
-            'overtime': '', # 연장근로
-            'holiday': '',  # 휴일근무
-            'ho': '',       # 휴일/연장
-            'remarks': '',  #
-            'is_accept': '1',  # '"" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),,  # 관리자에 의해 근태가 변경되지 않았다. (출/퇴근시간, 유급휴일, 연차휴가, 조기퇴근, 연장근무)
+            'break': '',        # 휴게시간
+            'basic': '',        # 기본근로
+            'night': '',        # 야간근로
+            'overtime': '',     # 연장근로
+            'holiday': '',      # 휴일근무
+            'ho': '',           # 휴일/연장
+            'remarks': '',      # 연차후무, 소정근로일
             'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
             'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
             'passer_id': passer.id,
@@ -6211,17 +6203,17 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             else:
                 month_work_dict[work_id]['e_begin'] = current_employee_work['begin']
                 month_work_dict[work_id]['e_end'] = current_employee_work['end']
-            hours_break = 0  # 휴게시간 합계
-            hours_basic = 0  # 기본근로시간 합계
-            hours_night = 0  # 야간근로시간 합계
+            hours_break = 0     # 휴게시간 합계
+            hours_basic = 0     # 기본근로시간 합계
+            hours_night = 0     # 야간근로시간 합계
             hours_overtime = 0  # 연장근로시간 합계
-            hours_holiday = 0  # 유급휴일근로시간 합계
-            hours_ho = 0  # 휴일/연장근로시간 합계
-            hours_week = 0  # 주 소정근로시간
+            hours_holiday = 0   # 유급휴일근로시간 합계
+            hours_ho = 0        # 휴일/연장근로시간 합계
+            hours_week = 0      # 주 소정근로시간
 
-            days_working = 0           # 근무일수
-            days_holiday = 0    # 연차휴무 횟수
-            days_early_out = 0          # 조기퇴근 횟수
+            days_working = 0        # 근무일수
+            days_holiday = 0        # 연차휴무 횟수
+            days_early_out = 0      # 조기퇴근 횟수
 
         #
         # 소정근로 시간 추가
@@ -6254,7 +6246,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                     # 출퇴근중 하나가 있으면 근무가 있었다.
                     is_working = True
             else:
-                # 연장근무가 0이 아니면 월차, 조기퇴근, 연장근무를 했으니까 근무한 것이다.
+                # 연장근무가 0이 아니면 연차, 조기퇴근, 연장근무를 했으니까 근무한 것이다.
                 is_working = True
             if is_working:
                 week_dict[(str_to_datetime(day_dict['year_month_day']).weekday() + 1) % 7] = {
