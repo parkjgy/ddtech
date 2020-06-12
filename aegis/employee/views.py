@@ -4447,7 +4447,7 @@ def work_record_in_day_for_customer(request):
     week_index = str_to_datetime(year_month_day).weekday()
     week_index = (week_index + 1) % 7
     logSend('  > week_index: {}, {}'.format(week_index, week_comments[week_index]))
-    day_type_descriptions = ["유급휴일", "무급휴일", "소정근무일", "수동지정"]
+    day_type_descriptions = ["유급휴일", "무급휴무일", "소정근무일", "무급휴일"]
     day_type = 3
     if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
         day_type = 3
