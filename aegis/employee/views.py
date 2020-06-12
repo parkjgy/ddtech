@@ -5740,6 +5740,13 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
               'break_mins': find_work_time['break_mins'],
               'work_time': find_work_time
               }
+    if find_work_time['break_time_type'] == 0:
+        break_time_str = ""
+        for break_time in find_work_time['break_time_list']:
+            if len(break_time_str) > 3:
+                break_time_str += "\n"
+            break_time_str += "{} ~ {}".format(break_time['bt_begin'], break_time['bt_end'])
+        result['break_list'] = break_time_str
     return result
 
 
@@ -5789,6 +5796,8 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     dt_in = r['dt_in']
     dt_out = r['dt_out']
     passer_record_dict['break'] = str(r['break_mins'])
+    if r['break_list'] is not None:
+        passer_record_dict['break_list'] = r['break_list']
     # 기본근로시간
     basic_minutes = r['work_minutes']
     basic_hours = basic_minutes / 60
