@@ -4620,18 +4620,18 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             notification_type = (day_type + 10) * -1
             dt_inout = str_to_datetime(year_month_day)
             staff_id = day_type_staff_id
-            # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+            # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
             if day_type == 0:
                 push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
                 comment = send_comment
             elif day_type == 1:
-                push_title = '{} 주휴일(연장근로)로 부여합니다.'.format(year_month_day)
+                push_title = '{} 무급휴무일로 부여합니다.'.format(year_month_day)
                 comment = send_comment
             elif day_type == 2:
                 push_title = '{} 소정근로일로 부여합니다.'.format(year_month_day)
                 comment = send_comment
             else:
-                push_title = '{} 휴일(휴일근로)로 부여합니다.'.format(year_month_day)
+                push_title = '{} 무급휴일로 부여합니다.'.format(year_month_day)
                 comment = send_comment
     # 연장 근무 처리
     if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
