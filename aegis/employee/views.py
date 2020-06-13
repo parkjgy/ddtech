@@ -5796,7 +5796,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     dt_in = r['dt_in']
     dt_out = r['dt_out']
     passer_record_dict['break'] = str(r['break_mins'])
-    if r['break_list'] is not None:
+    if 'break_list' in list(r.keys()):
         passer_record_dict['break_list'] = r['break_list']
     # 기본근로시간
     basic_minutes = r['work_minutes']
