@@ -5844,10 +5844,12 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
             passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
             passer_record_dict['holiday'] = str(basic_hours)
+            passer_record_dict['basic'] = ''
             if pass_record.overtime > 0:
                 passer_record_dict['overtime'] = ''
                 passer_record_dict['ho'] = str(pass_record.overtime / 2)
         elif passer_record_dict['day_type'] == 1:  # 무급휴무일: 기본근로, 연장근로
+            passer_record_dict['basic'] = ''
             holiday = basic_hours
             if pass_record.overtime > 0:
                 holiday += pass_record.overtime / 2
@@ -5856,6 +5858,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         elif passer_record_dict['day_type'] == 3:  # 무급휴일: 기본근로, 휴일근로, 휴일연장
             passer_record_dict['remarks'] = '무급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
             passer_record_dict['holiday'] = str(basic_hours)
+            passer_record_dict['basic'] = ''
             if pass_record.overtime > 0:
                 passer_record_dict['overtime'] = ''
                 passer_record_dict['ho'] = str(pass_record.overtime / 2)
