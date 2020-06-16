@@ -5620,19 +5620,16 @@ def staff_employees_at_day_v2(request):
         return status422(get_api(request), {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
     dt_target_day = str_to_datetime(year_month_day)
-    employee_list = Employee.objects.filter(work_id=work.id)
+    employee_list = Employee.objects.filter(work_id=work.id, dt_begin__lt=dt_target_day + timedelta(days=1), dt_end__gt=dt_target_day)
     logSend('  > employee_list: {}'.format([employee.id for employee in employee_list]))
     employee_ids = []
     for employee in employee_list:
-        if employee.dt_begin < datetime.datetime.now():
-            # 업무가 시작된 근로자 중에 응답이 없거나 거절한 근로자 삭제
-            if not (employee.is_accept_work == 1):  # 수락하지 않은: None, 0, 2
-                # 업무를 수락하지 않은 근로자를 표시하지 않게 한다.
-                continue
-            if employee.dt_end < dt_target_day:
-                logError(
-                    ' 업무 종료 근로자: {} {} {}'.format(employee.name, employee.pNo, dt_str(employee.dt_end, "%Y-%m-%d")))
-                continue
+        #
+        # 2020-06-17 임시로 업무가 시작되었지만 답변거부, 응답전, 답변시한지남 모두 표시
+        #
+        # if not (employee.is_accept_work == 1):  # None: 응답 전 상태, 0: 업무를 거부, 1: 업무에 승락, 2: 답변시한 지남
+        #     # 업무를 수락하지 않은 근로자를 표시하지 않게 한다.
+        #     continue
         employee_ids.append(AES_ENCRYPT_BASE64(str(employee.employee_id)))
     # employee_ids = [AES_ENCRYPT_BASE64(str(employee.employee_id)) for employee in employee_list]
     employees_infor = {'employees': employee_ids,

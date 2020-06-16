@@ -960,7 +960,7 @@ def notification_accept(request):
 
     # 정상적으로 처리되었을 때 알림을 완료한다.
     # notification.delete()
-    notification.is_x = True
+    notification.is_x = 1
     notification.save()
     logSend('  - is_accept: {}'.format(is_accept))
     return REG_200_SUCCESS.to_json_response({'is_accept': is_accept})

@@ -13,8 +13,10 @@ class Employee(models.Model):
     name = models.CharField(max_length = 127, default = 'unknown')  # 암호화 한다.
 
     work_start = models.CharField(max_length = 20, default='')          # 출근 시간 23:00
+    working_time = models.CharField(max_length = 20, default='')        # 근무 시간 8 (1.5 업그레이드 후 삭제) 
+    rest_time = models.CharField(max_length = 7, default='0')           # 휴게 시간 00:30 ~ 06:00 (1.5 업그레이드 후 삭제)
     work_end = models.CharField(max_length = 20, default='')            # 퇴근 시간 07:00
-    break_time = models.CharField(max_length = 7, default='0')          # 근무 시간 00:30 ~ 06:00
+    break_time = models.CharField(max_length = 7, default='0')          # 휴게시간 00:30 ~ 06:00
     work_start_alarm = models.CharField(max_length = 20, default='')    # 출근 알람 1:00, 30, X
     work_end_alarm = models.CharField(max_length = 20, default='')      # 퇴근 알람 30, 0, X
     
@@ -66,7 +68,7 @@ class Notification_Work(models.Model):
     notification_type = models.IntegerField(default=-30)        
     # 알림 종류: -30: 새업무 알림,
     # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭
-    # 근무일 구분 0: 유급휴일, 1: 주휴일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
+    # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
     # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
     # -3: 반차휴가(현재 사용안함9), -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
     comment = models.CharField(max_length=512, default = "")    # -3 ~ -1: 관리자가 근로자에게 전달할 사유
