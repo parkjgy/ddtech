@@ -5918,8 +5918,8 @@ def my_work_records_v2(request):
                         "staff_name": "박종기",
                         "staff_pNo": "010-2557-3555",
                         "staff_email": "id@mail.com",
-                        "e_begin": "2020/01/21",
-                        "e_end": "2020/02/05",
+                        "e_begin": "2020/01/21",    # 근로자의 업무 시작 날짜
+                        "e_end": "2020/02/05",      # 근로자의 업무 종료 날짜
 
                         "hours_basic": 56.0,      # 기본근로시간		basic_sum
                         "hours_break": 7.0,       # 휴게시간			break_sum
@@ -6176,7 +6176,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 # 근로자의 업무 목록(employee.get_works)에서 업무가 없는 경우 (발생하면 안되는 경우)
                 # 이 업무의 근로 시작일: 업무의 시작일 > 근태요구 첫날
                 # month_work_dict[encryted_work_id]['e_begin'] = month_work_dict[encryted_work_id]['dt_begin']
-                month_work_dict[work_id]['e_begin'] = str_to_datetime(day_dict['year_month_day'])
+                month_work_dict[work_id]['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
                 # 이 업무의 근로 종료일: 업무의 종료일 > 업무의 마지막 날
                 # month_work_dict[encryted_work_id]['e_end'] = month_work_dict[encryted_work_id]['dt_end']
                 month_work_dict[work_id]['e_end'] = ''  # 업무가 바뀔 때 넣어야 한다.
@@ -6202,7 +6202,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             month_work_dict[work_id]['days_early_out'] = days_early_out
 
             if month_work_dict[work_id]['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
-                month_work_dict[work_id]['e_end'] = day_dict['year_month_day']
+                month_work_dict[work_id]['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
             # 업무가 바뀌어 전 업무의 합계값을 저장한다.
 
             work_id = day_dict['work_id']
@@ -6210,7 +6210,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             month_work_dict[work_id] = copy.deepcopy(work_dict[work_id_db])
             current_employee_work = employee_works.find_work_include_date(work_id_db, str_to_datetime(day_dict['year_month_day']))
             if current_employee_work is None:
-                month_work_dict[work_id]['e_begin'] = day_dict['year_month_day']
+                month_work_dict[work_id]['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
                 month_work_dict[work_id]['e_end'] = ''
             else:
                 month_work_dict[work_id]['e_begin'] = current_employee_work['begin']
@@ -6303,7 +6303,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     month_work_dict[work_id]['days_early_out'] = days_early_out
 
     if month_work_dict[work_id]['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
-        month_work_dict[work_id]['e_end'] = day_dict['year_month_day']
+        month_work_dict[work_id]['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
 
     return month_work_dict
 
