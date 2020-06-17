@@ -5763,9 +5763,9 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
             passer_record_dict['remarks'] = "연차휴가"
+            return  # 근무가 없기 때문에 더 처리할 일이 없다.
         else:
             passer_record_dict['remarks'] = "연차휴가(반차)"
-        return  # 근무가 없기 때문에 더 처리할 일이 없다.
     elif pass_record.overtime == -1:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "조기퇴근"
@@ -5808,21 +5808,21 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         overtime = pass_record.overtime / 2
         passer_record_dict['overtime'] = str(overtime)
     # 야간근로시간 22:00 ~ 06:00
-    # if work_dict[current_work_id]['time_info']['time_type'] != 3:
-    #     # 감시단속직은 야간근로시간 없다.
-    logSend('  > time: {} ~ {}'.format(dt_in, dt_out))
-    dt_night_begin = str_to_datetime(dt_str(dt_in, "%Y-%m-%d 22:00:00"))
-    dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
-    logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
-    if (dt_in < dt_night_begin < dt_out) or (dt_in < dt_night_end < dt_out):
-        if dt_night_begin < dt_in:
-            dt_night_begin = dt_in
-        if dt_out < dt_night_end:
-            dt_night_end = dt_out
-        dt_night = dt_night_end - dt_night_begin
-        night = int(dt_night.seconds / 360) / 10
-        # night_sum += night
-        passer_record_dict['night'] = str(night)
+    if work_dict[current_work_id]['time_info']['time_type'] != 3:
+        # 감시단속직은 야간근로시간 없다.
+        logSend('  > time: {} ~ {}'.format(dt_in, dt_out))
+        dt_night_begin = str_to_datetime(dt_str(dt_in, "%Y-%m-%d 22:00:00"))
+        dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
+        logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
+        if (dt_in < dt_night_begin < dt_out) or (dt_in < dt_night_end < dt_out):
+            if dt_night_begin < dt_in:
+                dt_night_begin = dt_in
+            if dt_out < dt_night_end:
+                dt_night_end = dt_out
+            dt_night = dt_night_end - dt_night_begin
+            night = int(dt_night.seconds / 360) / 10
+            # night_sum += night
+            passer_record_dict['night'] = str(night)
     # 유급휴일근로시간
     week_index = str_to_datetime(pass_record.year_month_day).weekday()
     week_index_db = (week_index + 1) % 7
