@@ -1998,12 +1998,12 @@ def get_day_type(work: dict, year_month_day: str) -> int:
             day_type = 2  # 소정근로일
         elif week_index == work['time_info']['paid_day']:
             day_type = 0  # 유급휴일
-        elif work['time_info']['is_holiday_work'] == '1':
+        elif work['time_info']['is_holiday_work'] == 1:
             day_type = 1  # 무급휴무일(연장 근무)
         else:
             day_type = 3  # 무급휴일(휴일/연장 근무)
     else:
-        # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정
+        # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정 - 무조건 소정근로일로 처리
         day_type = 2
     return day_type
 
@@ -6045,6 +6045,7 @@ def my_work_records_v2(request):
     for pass_record in pass_record_list:
         # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
         if pass_record.day_type_staff_id == -1:
+            # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
             day_type = get_day_type(work_dict[pass_record.work_id], pass_record.year_month_day)
         else:
             day_type = pass_record.day_type
