@@ -2002,6 +2002,7 @@ def get_day_type(work: dict, year_month_day: str) -> int:
             day_type = 1  # 무급휴무일(연장 근무)
         else:
             day_type = 3  # 무급휴일(휴일/연장 근무)
+        logSend('   > day_type: {}, is_holiday_work: {}'.format(day_type, work['time_info']['is_holiday_work']))
     else:
         # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정 - 무조건 소정근로일로 처리
         day_type = 2
@@ -4448,19 +4449,23 @@ def work_record_in_day_for_customer(request):
     week_index = (week_index + 1) % 7
     logSend('  > week_index: {}, {}'.format(week_index, week_comments[week_index]))
     day_type_descriptions = ["유급휴일", "무급휴무일", "소정근무일", "무급휴일"]
-    day_type = 3
-    if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
-        day_type = 3
-    elif week_index == work['time_info']['paid_day']:
-        day_type = 0
-    elif week_index in work['time_info']['working_days']:
-        day_type = 2
-    else:
-        day_type = 1
+    # day_type = 3
+    # if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
+    #     day_type = 3
+    # elif week_index == work['time_info']['paid_day']:
+    #     day_type = 0
+    # elif week_index in work['time_info']['working_days']:
+    #     day_type = 2
+    # else:
+    #     day_type = 1
     for pass_history in pass_histories:
-        if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
-            # pass_history.day_type  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
+        if pass_history.day_type_staff_id == -1:
+            day_type = get_day_type(work, year_month_day)
+        else:
             day_type = pass_history.day_type
+        # if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
+        #     # pass_history.day_type  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
+        #     day_type = pass_history.day_type
         pass_history_dict = {
             'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
             'year_month_day': pass_history.year_month_day,
