@@ -5769,7 +5769,10 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     passer_record_dict['overtime'] = str(pass_record.overtime)
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        one_day_working_hours = int(work_dict[current_work_id]['time_info']['week_hours']) / len(work_dict[current_work_id]['time_info']['working_days'])
+        try:
+            one_day_working_hours = int(work_dict[current_work_id]['time_info']['week_hours']) / len(work_dict[current_work_id]['time_info']['working_days'])
+        except Exception as e:
+            one_day_working_hours = 0
         logSend('  >> week_hours: {}, working_days: {}, one_day_working_hours: {}'.format(work_dict[current_work_id]['time_info']['week_hours'],
                                                                len(work_dict[current_work_id]['time_info']['working_days']), one_day_working_hours))
         if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
@@ -5845,7 +5848,10 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
         passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
         passer_record_dict['holiday'] = str(basic_hours)
-        holiday_pay = int(work_dict[current_work_id]['time_info']['week_hours']) * .2
+        try:
+            holiday_pay = int(work_dict[current_work_id]['time_info']['week_hours']) * .2
+        except Exception as e:
+            holiday_pay = 0
         logSend('  >> 유급 휴일 + 주휴시간: >> week_hours: {}, holiday_pay: {}'.format(work_dict[current_work_id]['time_info']['week_hours'], holiday_pay))
         passer_record_dict['basic'] = str(holiday_pay)    # 유급휴일에 주휴시간(주소정근로시간의 20%) 을 준다.
         if pass_record.overtime > 0:
