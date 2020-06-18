@@ -5668,9 +5668,10 @@ def set_break_time_of_work_time_info(work_dict: dict):
                     end = str2min(break_time['bt_end'])
                     time = end - begin
                     if end < begin:
-                        time = end + (1440-begin)
+                        time = end + (1440 - begin)
                     break_time_sum = time
-                # logSend('  >> break_time_list: {} - {} - {}'.format(work_time['break_time_list'], break_time_sum, (break_time_sum/60)))
+                    logSend('  > begin: {}, end:{}, break: {}, sum: {}'.format(begin, end, time, break_time_sum))
+                logSend('  >> break_time_list: {} - {} - {}'.format(work_time['break_time_list'], break_time_sum, (break_time_sum/60)))
             elif work_time['break_time_type'] == 1:
                 break_time_sum = str2min(work_time['break_time_total'])
                 # logSend('  >> break_time_total: {} - {} - {}'.format(work_time['break_time_total'], break_time_sum, (break_time_sum/60)))
