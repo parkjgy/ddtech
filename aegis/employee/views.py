@@ -5669,9 +5669,9 @@ def set_break_time_of_work_time_info(work_dict: dict):
                     time = end - begin
                     if end < begin:
                         time = end + (1440 - begin)
-                    break_time_sum = time
-                    logSend('  > begin: {}, end:{}, break: {}, sum: {}'.format(begin, end, time, break_time_sum))
-                logSend('  >> break_time_list: {} - {} - {}'.format(work_time['break_time_list'], break_time_sum, (break_time_sum/60)))
+                    break_time_sum += time
+                    # logSend('  > begin: {}, end:{}, break: {}, sum: {}'.format(begin, end, time, break_time_sum))
+                # logSend('  >> break_time_list: {} - {} - {}'.format(work_time['break_time_list'], break_time_sum, (break_time_sum/60)))
             elif work_time['break_time_type'] == 1:
                 break_time_sum = str2min(work_time['break_time_total'])
                 # logSend('  >> break_time_total: {} - {} - {}'.format(work_time['break_time_total'], break_time_sum, (break_time_sum/60)))
@@ -5680,7 +5680,7 @@ def set_break_time_of_work_time_info(work_dict: dict):
                 # logSend('  >> break_time: {}'.format(break_time_sum))
             work_time['break_mins'] = break_time_sum
         work_dict[work_dict_key]['time_info']['work_time_list'] = sorted(work_time_list, key=itemgetter('t_begin'))
-        logSend('  ----- work_time_list: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
+        # logSend('  ----- work_time_list: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
     # logSend('----------- work time list')
     return
 
@@ -5769,17 +5769,23 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     passer_record_dict['overtime'] = str(pass_record.overtime)
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
+        one_day_working_hours = int(work_dict[current_work_id]['time_info']['week_hours']) / len(work_dict[current_work_id]['time_info']['working_days'])
+        logSend('  >> week_hours: {}, working_days: {}, one_day_working_hours: {}'.format(work_dict[current_work_id]['time_info']['week_hours'],
+                                                               len(work_dict[current_work_id]['time_info']['working_days']), one_day_working_hours))
         if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
             passer_record_dict['remarks'] = "연차휴가"
+            # if passer_record_dict['week_hours']
+            passer_record_dict['basic'] = str(one_day_working_hours)        # 일 근로시간을 추가한다. (주소정근로시간 / 소정근로일)
             return  # 근무가 없기 때문에 더 처리할 일이 없다.
         else:
             passer_record_dict['remarks'] = "연차휴가(반차)"
+            passer_record_dict['basic'] = str(one_day_working_hours / 2)        # 일 근로시간의 50% 를 추가한다. (주소정근로시간 / 소정근로일) / 2
     elif pass_record.overtime == -1:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "조기퇴근"
     elif pass_record.overtime == 0:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
-        passer_record_dict['remarks'] = "정상근무"
+        passer_record_dict['remarks'] = ""
     else:
         passer_record_dict['remarks'] = '연장근무: {0:02d}:{1:02d}'.format((pass_record.overtime // 2), (pass_record.overtime % 2) * 30)
     #
@@ -5836,42 +5842,30 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     week_index_db = (week_index + 1) % 7
     logSend('  >> {} week: {} - {}, db: {}'.format(pass_record.year_month_day, week_index, week_comment[week_index], week_index_db))
     # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
-    if week_index_db not in work_dict[current_work_id]['time_info']['working_days']:
-        # 소정근로일이 아닌경우 >> 무급휴일이거나 유급 휴일
-        # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-        # 2020/06/18 day_type 이 먼저 처리되어 온다.
-        # if passer_record_dict['day_type'] == 2:
-        #     # 근무일 구분이 default = 2 이면
-        #     if work_dict[current_work_id]['time_info']['paid_day'] == week_index_db:
-        #         # 요일이 유급휴일이면 근무일을 유급휴일로 표시
-        #         passer_record_dict['day_type'] = 0
-        #     elif work_dict[current_work_id]['time_info']['is_holiday_work'] == 1:
-        #         # 무급휴일이 휴일근무로 규정되어 있으면 휴일(휴일/연장 근무)
-        #         passer_record_dict['day_type'] = 3
-        #     else:
-        #         passer_record_dict['day_type'] = 1
-        if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
-            passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
-            passer_record_dict['holiday'] = str(basic_hours)
-            passer_record_dict['basic'] = ''
-            if pass_record.overtime > 0:
-                passer_record_dict['overtime'] = ''
-                passer_record_dict['ho'] = str(pass_record.overtime / 2)
-        elif passer_record_dict['day_type'] == 1:  # 무급휴무일: 기본근로, 연장근로
-            passer_record_dict['basic'] = ''
-            holiday = basic_hours
-            if pass_record.overtime > 0:
-                holiday += pass_record.overtime / 2
-            passer_record_dict['remarks'] = '무급휴무일: {:2.1f}H'.format(holiday)
-            passer_record_dict['overtime'] = str(holiday)
-        elif passer_record_dict['day_type'] == 3:  # 무급휴일: 기본근로, 휴일근로, 휴일연장
-            passer_record_dict['remarks'] = '무급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
-            passer_record_dict['holiday'] = str(basic_hours)
-            passer_record_dict['basic'] = ''
-            if pass_record.overtime > 0:
-                passer_record_dict['overtime'] = ''
-                passer_record_dict['ho'] = str(pass_record.overtime / 2)
-        logSend('   > 휴일근로: {} {} << 0: 유급휴일, 1: 무급휴무일(연장 근무)무급휴무일, 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)무급휴일'.format(passer_record_dict['day_type'], passer_record_dict['remarks']))
+    if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
+        passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        passer_record_dict['holiday'] = str(basic_hours)
+        holiday_pay = int(work_dict[current_work_id]['time_info']['week_hours']) * .2
+        logSend('  >> 유급 휴일 + 주휴시간: >> week_hours: {}, holiday_pay: {}'.format(work_dict[current_work_id]['time_info']['week_hours'], holiday_pay))
+        passer_record_dict['basic'] = str(holiday_pay)    # 유급휴일에 주휴시간(주소정근로시간의 20%) 을 준다.
+        if pass_record.overtime > 0:
+            passer_record_dict['overtime'] = ''
+            passer_record_dict['ho'] = str(pass_record.overtime / 2)
+    elif passer_record_dict['day_type'] == 1:  # 무급휴무일: 기본근로, 연장근로
+        passer_record_dict['basic'] = ''
+        holiday = basic_hours
+        if pass_record.overtime > 0:
+            holiday += pass_record.overtime / 2
+        passer_record_dict['remarks'] = '무급휴무일: {:2.1f}H'.format(holiday)
+        passer_record_dict['overtime'] = str(holiday)
+    elif passer_record_dict['day_type'] == 3:  # 무급휴일: 기본근로, 휴일근로, 휴일연장
+        passer_record_dict['remarks'] = '무급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        passer_record_dict['holiday'] = str(basic_hours)
+        passer_record_dict['basic'] = ''
+        if pass_record.overtime > 0:
+            passer_record_dict['overtime'] = ''
+            passer_record_dict['ho'] = str(pass_record.overtime / 2)
+    logSend('   > 휴일근로: {} {} << 0: 유급휴일, 1: 무급휴무일(연장 근무)무급휴무일, 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)무급휴일'.format(passer_record_dict['day_type'], passer_record_dict['remarks']))
     return
 
 
