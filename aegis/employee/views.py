@@ -4710,7 +4710,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
     # 예) 2020-06-05, 퇴근 취소(-21) > 2020-06-05, 23:00 퇴근(-23) 이면 앞을 취소처리
     #
     # 알림 종류: -30: 새업무 알림,
-    # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭
+    # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭제
     # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 휴일(휴일/연장 근무)
     # -13: 휴일(휴일근무), -12: 소정근로일, -11: 무급휴무일(연장근무), -10: 유급휴일
     # -3: 반차휴가(현재 사용안함9), -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
@@ -4719,8 +4719,10 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         target_list = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     elif notification_type > -20:
         target_list = [-10, -11, -12, -13]
-    elif notification_type > -30:
-        target_list = [-20, -21, -22, -23]
+    elif notification_type in [-21, -23]:
+        target_list = [-21, -23]
+    elif notification_type in [-20, -22]:
+        target_list = [-20, -22]
     else:
         target_list = [-30]
     cancel_noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_inout.date(), notification_type__in=target_list)
@@ -5735,7 +5737,7 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
     mins_begin = str2min(find_work_time['t_begin'])
     mins_end = str2min(find_work_time['t_end'])
     mins_work = mins_end - mins_begin
-    if mins_end < mins_begin:
+    if mins_end <= mins_begin:
         mins_work = mins_end + (1440 - mins_begin)
     mins_work -= find_work_time['break_mins']
     # mins_work += mins_overtime
