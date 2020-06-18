@@ -6075,7 +6075,7 @@ def my_work_records_v2(request):
             'passer_id': passer.id,
             'notification': -1 if pass_record.year_month_day not in list(notification_dict.keys()) else notification_dict[pass_record.year_month_day],
         }
-        logSend('------------------ {}'.format(pass_record.year_month_day))
+        logSend('------------------ {}{}: day_type: '.format(pass_record.year_month_day, passer_record_dict['day_type']))
         process_pass_record(passer_record_dict, pass_record, work_dict)
         logSend('  >> {}: {}'.format(passer_record_dict['year_month_day'], passer_record_dict))
         passer_rec_dict[pass_record.year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
