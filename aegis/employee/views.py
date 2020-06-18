@@ -1095,13 +1095,18 @@ def notification_accept_v2(request):
             elif notification.notification_type == -23:  # 퇴근시간 삭제
                 pass_record.dt_out_verify = None
                 pass_record.in_staff_id = notification.staff_id
+            # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
+            # -13: 휴일(휴일근무), -12: 소정근로일, -11: 무급휴무일(연장근무), -10: 유급휴일
+            elif notification.notification_type == -13:  # 무급휴일 부여
+                pass_record.day_type = 3
+                pass_record.day_type_staff_id = notification.staff_id
             elif notification.notification_type == -12:  # 소정근로일 부여
                 pass_record.day_type = 2
                 pass_record.day_type_staff_id = notification.staff_id
-            elif notification.notification_type == -11:  # 무급휴일 부여
+            elif notification.notification_type == -11:  # 무급휴무일 부여
                 pass_record.day_type = 1
                 pass_record.day_type_staff_id = notification.staff_id
-            elif notification.notification_type == -13:  # 유급휴일 부여
+            elif notification.notification_type == -10:  # 유급휴일 부여
                 pass_record.day_type = 0
                 pass_record.day_type_staff_id = notification.staff_id
             elif notification.notification_type == -2:  # 연차휴무 부여
