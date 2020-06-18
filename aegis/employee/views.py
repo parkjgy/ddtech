@@ -6170,6 +6170,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
 
     for day in passer_rec_dict.keys():
         day_dict = passer_rec_dict[day]
+        logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
         if work_id == '':
             # 아직 업무가 정해지지 않았으면
             work_id = day_dict['work_id']
@@ -6295,7 +6296,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             hours_holiday += float(day_dict['holiday'])
         if len(day_dict['ho']) > 0:
             hours_ho += float(day_dict['ho'])
-        logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
+        logSend('   <<<<< {}, day_type: {}'.format(day, day_dict['day_type']))
 
     month_work_dict[work_id]['hours_break'] = hours_break
     month_work_dict[work_id]['hours_basic'] = hours_basic
