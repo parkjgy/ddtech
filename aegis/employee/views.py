@@ -5838,16 +5838,17 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if week_index_db not in work_dict[current_work_id]['time_info']['working_days']:
         # 소정근로일이 아닌경우 >> 무급휴일이거나 유급 휴일
         # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-        if passer_record_dict['day_type'] == 2:
-            # 근무일 구분이 default = 2 이면
-            if work_dict[current_work_id]['time_info']['paid_day'] == week_index_db:
-                # 요일이 유급휴일이면 근무일을 유급휴일로 표시
-                passer_record_dict['day_type'] = 0
-            elif work_dict[current_work_id]['time_info']['is_holiday_work'] == 1:
-                # 무급휴일이 휴일근무로 규정되어 있으면 휴일(휴일/연장 근무)
-                passer_record_dict['day_type'] = 3
-            else:
-                passer_record_dict['day_type'] = 1
+        # 2020/06/18 day_type 이 먼저 처리되어 온다.
+        # if passer_record_dict['day_type'] == 2:
+        #     # 근무일 구분이 default = 2 이면
+        #     if work_dict[current_work_id]['time_info']['paid_day'] == week_index_db:
+        #         # 요일이 유급휴일이면 근무일을 유급휴일로 표시
+        #         passer_record_dict['day_type'] = 0
+        #     elif work_dict[current_work_id]['time_info']['is_holiday_work'] == 1:
+        #         # 무급휴일이 휴일근무로 규정되어 있으면 휴일(휴일/연장 근무)
+        #         passer_record_dict['day_type'] = 3
+        #     else:
+        #         passer_record_dict['day_type'] = 1
         if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
             passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
             passer_record_dict['holiday'] = str(basic_hours)
@@ -6115,10 +6116,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     work_id_db = AES_DECRYPT_BASE64(first_day_rec['work_id'])
     logSend('  > paid_day: {}'.format(work_dict[work_id_db]['time_info']['paid_day']))
 
-    for day in passer_rec_dict.keys():
-        day_dict = passer_rec_dict[day]
-        logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
-
     if work_dict[work_id_db]['time_info']['paid_day'] == -1:
         # 유급휴일이 수동지정일 경우
         dt_paid_day = ''
@@ -6138,10 +6135,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if work_dict[work_id_db]['time_info']['paid_day'] == (week_index + 1) % 7:
                 break
             dt_paid_day = dt_paid_day + datetime.timedelta(days=1)
-
-    for day in passer_rec_dict.keys():
-        day_dict = passer_rec_dict[day]
-        logSend('   >>> {}, day_type: {}'.format(day, day_dict['day_type']))
 
     if (dt_paid_day == ''):
         logSend('   > dt_paid_day: None')
@@ -6177,10 +6170,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                     'is_working': is_working,
                 }
         logSend('  >> week_dict: {}'.format(week_dict))
-
-    for day in passer_rec_dict.keys():
-        day_dict = passer_rec_dict[day]
-        logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
 
     for day in passer_rec_dict.keys():
         day_dict = passer_rec_dict[day]
