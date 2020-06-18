@@ -6114,6 +6114,11 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     first_day_rec = passer_rec_dict[list(passer_rec_dict.keys())[0]]
     work_id_db = AES_DECRYPT_BASE64(first_day_rec['work_id'])
     logSend('  > paid_day: {}'.format(work_dict[work_id_db]['time_info']['paid_day']))
+
+    for day in passer_rec_dict.keys():
+        day_dict = passer_rec_dict[day]
+        logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
+
     if work_dict[work_id_db]['time_info']['paid_day'] == -1:
         # 유급휴일이 수동지정일 경우
         dt_paid_day = ''
@@ -6133,6 +6138,11 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             if work_dict[work_id_db]['time_info']['paid_day'] == (week_index + 1) % 7:
                 break
             dt_paid_day = dt_paid_day + datetime.timedelta(days=1)
+
+    for day in passer_rec_dict.keys():
+        day_dict = passer_rec_dict[day]
+        logSend('   >>> {}, day_type: {}'.format(day, day_dict['day_type']))
+
     if (dt_paid_day == ''):
         logSend('   > dt_paid_day: None')
     else:
@@ -6171,6 +6181,9 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     for day in passer_rec_dict.keys():
         day_dict = passer_rec_dict[day]
         logSend('   >>>>> {}, day_type: {}'.format(day, day_dict['day_type']))
+
+    for day in passer_rec_dict.keys():
+        day_dict = passer_rec_dict[day]
         if work_id == '':
             # 아직 업무가 정해지지 않았으면
             work_id = day_dict['work_id']
@@ -6296,7 +6309,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             hours_holiday += float(day_dict['holiday'])
         if len(day_dict['ho']) > 0:
             hours_ho += float(day_dict['ho'])
-        logSend('   <<<<< {}, day_type: {}'.format(day, day_dict['day_type']))
 
     month_work_dict[work_id]['hours_break'] = hours_break
     month_work_dict[work_id]['hours_basic'] = hours_basic
