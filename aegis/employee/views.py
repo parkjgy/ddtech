@@ -1011,7 +1011,7 @@ def notification_accept_v2(request):
         return status422(get_api(request), {'message': '출입자({}) 가 없어요'.format(passer_id)})
 
     try:
-        notification = Notification_Work.objects.get(is_x=0, id=notification_id)
+        notification = Notification_Work.objects.get(is_x=0, id=notification_id, employee_id=passer_id)
     except Exception as e:
         return status422(get_api(request), {'message': 'Notification_Work 알림({}) 가 없어요'.format(notification_id)})
 
@@ -1038,8 +1038,9 @@ def notification_accept_v2(request):
             if employee_works.find(notification.work_id):
                 # 이미 등록되어 있는 업무의 날짜를 변경할 때 발생할 수 있다.
                 logSend('  > 이미 등록되어 있는 업무다. work_id: {}'.format(notification.work_id))
-                employee_works[employee_works.index]['begin'] = new_work['begin']
-                employee_works[employee_works.index]['end'] = new_work['end']
+                logSend('  >> employee index: {} - data: {}'.format(employee_works.index, employee_works.data[employee_works.index]))
+                employee_works.data[employee_works.index]['begin'] = new_work['begin']
+                employee_works.data[employee_works.index]['end'] = new_work['end']
                 employee.set_works(employee_works.data)
                 employee.save()
             elif employee_works.is_overlap(new_work):
@@ -1140,20 +1141,26 @@ def notification_accept_v2(request):
             notification.save()
     else:
         if notification.notification_type == -30:
-            logSend('  - 거절: works 에 있으면 삭제 (단, 업무가 시작되었으면 삭제 X)')
+            logSend('   > 거절: works 에 있으면 삭제 (단, 업무가 시작되었으면 삭제 X)')
+            # 예외: 관리자 웹에서
+            #   근로자에게 주었던 업무를 없애려면 [등록/수정]을 통해 근로자가 (거부)하도록 하면 된다.
             if employee_works.find(notification.work_id):
+                logSend('   >> 거절한 업무가 있음: {} - {}'.format(employee_works.index, employee_works.data[employee_works.index]))
                 # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
                 # 업무가 시작된 경우에는 삭제하지 않는다.
                 if datetime.datetime.now() < str_to_dt(employee_works.data[employee_works.index]['begin']):
-                    # 그전에 수락한 업무지만 업무가 시작되지 않았으면 삭제한다.
+                    logSend('   >>> 오늘: {} 보다 업무시작: {} 이 나중임'.format(dt_str(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S"), employee_works.data[employee_works.index]['begin']))
+                    # 그전에 수락한 업무지만 업무가 시작되지 않았으면
+                    #    근로자 업무 목록에서 삭제한다.
                     del employee_works.data[employee_works.index]
                     employee.set_works(employee_works.data)
                     employee.save()
+            # notification.is_x 는 아랫부분 있다.
         else:
             #
             # pass_history 에
             #
-            notification.is_x = 2  # 관리자의 근태 정보 변경을 거절했다.
+            notification.is_x = 2  # 관리자의 근태 정보 변경을 근로자가 거절했다.
             notification.save()
     if notification.notification_type == -30:
         #
