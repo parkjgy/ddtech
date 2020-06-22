@@ -1035,12 +1035,17 @@ def notification_accept_v2(request):
                         'begin': dt_str(notification.dt_begin, "%Y/%m/%d"),
                         'end': dt_str(notification.dt_end, "%Y/%m/%d"),
                         }
-            if employee_works.is_overlap(new_work):
+            if employee_works.find(notification.work_id):
+                # 이미 등록되어 있는 업무의 날짜를 변경할 때 발생할 수 있다.
+                logSend('  > 이미 등록되어 있는 업무다. work_id: {}'.format(notification.work_id))
+                employee_works[employee_works.index]['begin'] = new_work['begin']
+                employee_works[employee_works.index]['end'] = new_work['end']
+                employee.set_works(employee_works.data)
+                employee.save()
+            elif employee_works.is_overlap(new_work):
                 logSend('  > 업무 기간이 겹쳤다.(업무 부여할 때 겹침을 확인하는데 가능한가?')
                 # 다른 업무와 겹쳤을 때 (이게 가능한가?)
                 is_accept = 0
-            elif employee_works.find(notification.work_id):
-                logSend('  > 이미 등록되어 있는 업무다. work_id: {}'.format(notification.work_id))
             else:
                 # 근로자에 업무를 추가해서 저장한다.
                 employee_works.add(new_work)
@@ -1134,13 +1139,16 @@ def notification_accept_v2(request):
             notification.is_x = 1  # 처리완료 (삭제와 같은 효과)
             notification.save()
     else:
-        # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
         if notification.notification_type == -30:
-            logSend('  - 거절: works 에 있으면 삭제')
+            logSend('  - 거절: works 에 있으면 삭제 (단, 업무가 시작되었으면 삭제 X)')
             if employee_works.find(notification.work_id):
-                del employee_works.data[employee_works.index]
-            employee.set_works(employee_works.data)
-            employee.save()
+                # 거절했을 경우 - 근로자가 업무를 가지고 있으면 삭제한다.
+                # 업무가 시작된 경우에는 삭제하지 않는다.
+                if datetime.datetime.now() < str_to_dt(employee_works.data[employee_works.index]['begin']):
+                    # 그전에 수락한 업무지만 업무가 시작되지 않았으면 삭제한다.
+                    del employee_works.data[employee_works.index]
+                    employee.set_works(employee_works.data)
+                    employee.save()
         else:
             #
             # pass_history 에
