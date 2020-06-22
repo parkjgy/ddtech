@@ -3994,6 +3994,8 @@ def my_work_list(request):
     if len(passers) != 1:
         # 출입자에 없는 사람을 수정하려는 경우
         logError(get_api(request), ' passer_id = {} Passer 에 없다.(리셋 메세지)'.format(passer_id))
+        send_slack(' <상용> employee/my_work_list \npasser_id: {}'.format(passer_id),
+                   '근로자가 없다.', channel='#server_bug')
         return status422(get_api(request), {'message': '서버에 등록되지 않은 출입자 입니다.\n앱이 리셋됩니다.'})
     passer = passers[0]
     if passer.employee_id == -1:
@@ -4002,6 +4004,8 @@ def my_work_list(request):
     if len(employees) != 1:
         # 출입자의 근로자 정보가 없다.
         logError(get_api(request), ' employee_id = {} Employee 에 없다.(리셋 메세지)'.format(passer.employee_id))
+        send_slack(' <상용> employee/my_work_list \npasser.employee_id: {}'.format(passer.employee_id),
+                   '근로자 정보가 없다.', channel='#server_bug')
         return status422(get_api(request), {'message': '서버에 출입자 정보가 없어요.\n앱이 리셋됩니다.'})
     employee = employees[0]
     employee_works = Works(employee.get_works())
@@ -4010,11 +4014,18 @@ def my_work_list(request):
     if len(employee_works.data) > 0:
         work_id_list = [work['id'] for work in employee_works.data]
         work_dict = get_work_dict(work_id_list)
-        for work_key in work_dict.keys():
-            work = work_dict[work_key]
-            work['work_id'] = work_key
-            work['begin'] = work['dt_begin']
-            work['end'] = work['dt_end']
+        for work_id in list(work_dict.keys()):
+            work = work_dict[work_id]
+            work['work_id'] = AES_ENCRYPT_BASE64(work_id)
+            if employee_works.find(int(work_id)):
+                work['begin'] = employee_works.data[employee_works.index]['begin']
+                work['end'] = employee_works.data[employee_works.index]['end']
+            else:
+                send_slack(' <상용> employee/my_work_list \nwork_id: {}'.format(work_id),
+                           '근로자 정보에 업무가 없다.', channel='#server_bug')
+                work['begin'] = work['dt_begin']
+                work['end'] = work['dt_end']
+            # logSend('   > work_id: {}, b: {}, e: {}, index: {}'.format(work_id, work['begin'], work['end'], employee_works.index))
             work_list.append(work)
 
     return REG_200_SUCCESS.to_json_response({'works': work_list})
