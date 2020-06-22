@@ -410,7 +410,7 @@ class Works(object):
     element type: {'id':999, 'begin':'2019/05/01', 'end':'2019/05/30'}
     """
     def __init__(self, x=None):
-        self.index = 0
+        self.index = -1
         if x is None:
             self.data = []
         else:
@@ -421,7 +421,7 @@ class Works(object):
         """
         data 중에 날짜가 지난 항목이 있으면 삭제한다.
         """
-        today = datetime.datetime.now()
+        # today = datetime.datetime.now()
         # for element in self.data:
         #     # logSend('  * id: {}, begin: {}, end: {} {}'.format(element['id'], element['begin'], element['end'], (str_to_dt(element['end']) < today)))
         #     if str_to_dt(element['end']) < today:
@@ -512,11 +512,13 @@ class Works(object):
         work_id 가 있는지 찾는다.
         """
         # logSend('  find id: {}, data: {}'.format(work_id, self.data))
-        for element in self.data:
+        for index in range(len(self.data)):
             # logSend('  element: {}'.format(element))
-            if element['id'] == work_id:
+            if self.data[index]['id'] == work_id:
                 # logSend('  finded: {}'.format(work_id))
+                self.index = index
                 return True
+        self.index = -1
         return False
 
     def is_active(self, when=None):
