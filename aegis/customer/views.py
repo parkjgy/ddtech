@@ -5620,7 +5620,8 @@ def staff_employees_at_day_v2(request):
         return status422(get_api(request), {'message': '아직 업무가 시직되지 않음 >> staff_employee'})
 
     dt_target_day = str_to_datetime(year_month_day)
-    employee_list = Employee.objects.filter(work_id=work.id, dt_begin__lt=dt_target_day + timedelta(days=1), dt_end__gt=dt_target_day)
+    # employee_list = Employee.objects.filter(work_id=work.id, dt_begin__lt=dt_target_day + timedelta(days=1), dt_end__gt=dt_target_day)
+    employee_list = Employee.objects.filter(work_id=work.id, dt_end__gt=dt_target_day)
     logSend('  > employee_list: {}'.format([employee.id for employee in employee_list]))
     employee_ids = []
     for employee in employee_list:

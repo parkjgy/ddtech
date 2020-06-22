@@ -808,7 +808,7 @@ def notification_list_v2(request):
         return REG_403_FORBIDDEN.to_json_response({'message': '알 수 없는 사용자입니다.'})
 
     dt_today = datetime.datetime.now()
-    logSend(passer.pNo)
+    logSend('  > pNo: {}'.format(passer.pNo))
     # notification_list = Notification_Work.objects.filter(is_x=False, employee_pNo=passer.pNo, dt_answer_deadline__gt=dt_today)
     notification_list = Notification_Work.objects.filter(is_x=0, employee_pNo=passer.pNo)
     # logSend('  notification: {}'.format([x.work_id for x in notification_list]))
