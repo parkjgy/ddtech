@@ -5859,6 +5859,9 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if work_dict[current_work_id]['time_info']['time_type'] != 3:
         # 감시단속직은 야간근로시간 없다.
         logSend('  > time: {} ~ {}'.format(dt_in, dt_out))
+        if dt_in > dt_out:
+            dt_out += datetime.timedelta(days=1)
+            logSend('  >> time: {} ~ {}'.format(dt_in, dt_out))
         dt_night_begin = str_to_datetime(dt_str(dt_in, "%Y-%m-%d 22:00:00"))
         dt_night_end = dt_night_begin + datetime.timedelta(hours=8)
         logSend('  > night: {} ~ {}'.format(dt_night_begin, dt_night_end))
