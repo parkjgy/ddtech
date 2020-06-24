@@ -4441,7 +4441,8 @@ def work_record_in_day_for_customer(request):
     # noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_last_day.date())
     dt_year_month_day = str_to_datetime(year_month_day)
     notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=working_passer_id_list,
-                                                         dt_inout__startswith=dt_year_month_day.date(), is_x__in=[0, 2, 3])
+                                                         dt_inout__startswith=year_month_day, is_x__in=[0, 2, 3])
+    logSend('   > notification_list: {}'.format([{notification.employee_id, notification.dt_inout} for notification in notification_list]))
     # is_x__in=[0, 2, 3]  # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
     notification_passer_dict = {}
     for notification in notification_list:
@@ -6071,7 +6072,11 @@ def my_work_records_v2(request):
         employee_works = Works(employee.get_works())
     # 업무내역에서 복잡한 휴게시간 미리 계산하기
     set_break_time_of_work_time_info(work_dict)
-    notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
+    if work_id is None:
+        notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
+    else:
+        notification_list = Notification_Work.objects.filter(work_id=work_id, is_x__in=[0, 2, 3], employee_id=passer.id).exclude(
+            notification_type=-30)
     notification_dict = {}
     for notification in notification_list:
         notification_dict[notification.dt_inout.strftime("%Y-%m-%d")] = notification  # 0: 결정 안함, 2: 거부됨, 3: 답변시한 지남
