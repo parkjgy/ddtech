@@ -4441,18 +4441,13 @@ def work_record_in_day_for_customer(request):
     # noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_last_day.date())
     dt_year_month_day = str_to_datetime(year_month_day)
     notification_list = Notification_Work.objects.filter(work_id=work['id'], employee_id__in=working_passer_id_list,
-                                                         dt_inout__startswith=dt_year_month_day.date(), is_x__in=[0, 2])
+                                                         dt_inout__startswith=dt_year_month_day.date(), is_x__in=[0, 2, 3])
     # is_x__in=[0, 2, 3]  # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
-    notification_passer_key_dict = {}
+    notification_passer_dict = {}
     for notification in notification_list:
-        if notification.employee_id in notification_passer_key_dict.keys():
-            # notification_passer_key_dict[notification.employee_id].append(notification.is_x)
-            if notification_passer_key_dict[notification.employee_id] < notification.is_x:
-                notification_passer_key_dict[notification.employee_id] = notification
-        else:
-            # notification_passer_key_dict[notification.employee_id] = [notification.is_x]
-            notification_passer_key_dict[notification.employee_id] = notification
-    logSend('  > notification_passer_key_dict: {}'.format(notification_passer_key_dict.keys()))
+        # 같은 passer 에 여러개의 notification 이 있으면 마지막 notification 만 저장된다.
+        notification_passer_dict[notification.employee_id] = notification
+    logSend('  > notification_passer_dict.keys(): {}'.format(notification_passer_dict.keys()))
 
     pass_record_list = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=working_passer_id_list,
                                                    work_id=work_id)
@@ -4497,8 +4492,8 @@ def work_record_in_day_for_customer(request):
         # if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
         #     # pass_history.day_type  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
         #     day_type = pass_history.day_type
-        if pass_history.passer_id in list(notification_passer_key_dict.keys()):
-            notification = notification_passer_key_dict[pass_history.passer_id]
+        if pass_history.passer_id in list(notification_passer_dict.keys()):
+            notification = notification_passer_dict[pass_history.passer_id]
             notification_state = notification.is_x
             notification_type = notification.notification_type
         else:
