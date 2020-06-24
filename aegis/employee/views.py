@@ -4448,11 +4448,11 @@ def work_record_in_day_for_customer(request):
         if notification.employee_id in notification_passer_key_dict.keys():
             # notification_passer_key_dict[notification.employee_id].append(notification.is_x)
             if notification_passer_key_dict[notification.employee_id] < notification.is_x:
-                notification_passer_key_dict[notification.employee_id] = notification.is_x
+                notification_passer_key_dict[notification.employee_id] = notification
         else:
             # notification_passer_key_dict[notification.employee_id] = [notification.is_x]
-            notification_passer_key_dict[notification.employee_id] = notification.is_x
-    logSend('  > notification_passer_key_dict: {}'.format(notification_passer_key_dict))
+            notification_passer_key_dict[notification.employee_id] = notification
+    logSend('  > notification_passer_key_dict: {}'.format(notification_passer_key_dict.keys()))
 
     pass_record_list = Pass_History.objects.filter(year_month_day=year_month_day, passer_id__in=working_passer_id_list,
                                                    work_id=work_id)
@@ -4497,6 +4497,13 @@ def work_record_in_day_for_customer(request):
         # if work['time_info']['paid_day'] == -1:  # 유급휴일 수동지정
         #     # pass_history.day_type  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
         #     day_type = pass_history.day_type
+        if pass_history.passer_id in list(notification_passer_key_dict.keys()):
+            notification = notification_passer_key_dict[pass_history.passer_id]
+            notification_state = notification.is_x
+            notification_type = notification.notification_type
+        else:
+            notification_state = -1
+            notification_type = 0
         pass_history_dict = {
             'passer_id': AES_ENCRYPT_BASE64(str(pass_history.passer_id)),
             'year_month_day': pass_history.year_month_day,
@@ -4512,7 +4519,8 @@ def work_record_in_day_for_customer(request):
             'overtime_staff_id': pass_history.overtime_staff_id,
             'x': pass_history.x,
             'y': pass_history.y,
-            'notification': notification_passer_key_dict[pass_history.passer_id] if pass_history.passer_id in notification_passer_key_dict.keys() else -1,
+            'notification': notification_state,
+            'notification_type': notification_type,
             'week': week_comments[week_index],
             'day_type': day_type,
             'day_type_description': day_type_descriptions[day_type],
