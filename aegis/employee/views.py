@@ -5982,39 +5982,32 @@ def my_work_records_v2(request):
                     ......
                 },
                 "work_day_dict": {
-                    "03": {
-                        "year_month_day": "2020-02-03",
-                        "week": "월",
-                        "action": 110,
-                        "work_id": "ErKSUq7CYPAJMLzKN4Q5VA",
-                        "begin": "08:29",
-                        "end": "17:33",
-                        "break": "1.0",
-                        "basic": "9.0",
-                        "night": "",
-                        "overtime": "0.0",
-                        "holiday": "",
-                        "ho": "",
+                    "05": {
+                        "year_month_day": "2020-06-05",
+                        "week": "금",
+                        "action": 0,
+                        "work_id": "sBEXp67DHY1TpQbybrTBQg",
+                        "passer_id": "ryWQkNtiHgkUaY_SZ1o2uA",
+                        "begin": "08:00",   # 출근시간
+                        "end": "17:00",     # 퇴근시간
+                        "break": "60",      # 휴게시간(단위: 분)
+                        "break_list": "12:00 ~ 13:00\n15:00 ~ 15:30", # 휴게시간이 여러개일 때 만 있음.
+                        "basic": "8",       # 기본근로시간(유급휴일일 때는 주휴시간)
+                        "night": "2",       # 야간근로시간
+                        "overtime": "0",    # 연장근로시간
+                        "holiday": "",      # 휴일근로시간
+                        "ho": "",           # 휴일/연장근로시간
                         "remarks": "",
-                        "notification": "-1"    # -1: 알림 없음, 0: 알림이 있음, 2: 알림 내용을 거부했음, 3: 답변시한을 넘겼음
+                        "dt_accept": "2020-06-07 14:23:51",
+                        "day_type": 2,              # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
+                        "notification": 2,          # 알림 상태: -1: 없음, 0: 알림 확인전, 1: 알림 확인, 2: 알림 거부, 3: 알림 답변시한 지남
+                        "notification_type": -20    # 알림 종류: -30: 새업무 알림,
+                                                    # -21: 퇴근시간 수정, -23: 퇴근시간 삭제, -20: 출근시간 수정, -22: 출근시간 삭
+                                                    # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
+                                                    # -13: 휴일(휴일근무), -12: 소정근로일, -11: 주휴일(연장근무), -10: 유급휴일
+                                                    # -3: 반차휴가(현재 사용안함9), -2: 연차휴무, -1: 조기퇴근, 0:정상근무, 1~18: 연장근무 시간
                     },
                     ......
-                    "29": {
-                        "year_month_day": "2020-02-29",
-                        "week": "토",
-                        "action": 0,
-                        "work_id": "PinmZxCWGvvrcnj20cRanw",
-                        "begin": "",
-                        "end": "",
-                        "break": "",
-                        "basic": "",
-                        "night": "",
-                        "overtime": "",
-                        "holiday": "",
-                        "ho": "",
-                        "remarks": "",
-                        "is_accept": "1"
-                    }
                 }
             }
         STATUS 422 # 개발자 수정사항
@@ -6078,7 +6071,7 @@ def my_work_records_v2(request):
     notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
     notification_dict = {}
     for notification in notification_list:
-        notification_dict[notification.dt_inout.strftime("%Y-%m-%d")] = notification.is_x  # 0: 결정 안함, 2: 거부됨, 3: 답변시한 지남
+        notification_dict[notification.dt_inout.strftime("%Y-%m-%d")] = notification  # 0: 결정 안함, 2: 거부됨, 3: 답변시한 지남
     # logSend('  > notification_dict: {}'.format(notification_dict))
     #
     # 근로자의 근로내역 생성: 근로자 id 를 key 로하는 dictionary
@@ -6092,6 +6085,14 @@ def my_work_records_v2(request):
             day_type = get_day_type(work_dict[pass_record.work_id], pass_record.year_month_day)
         else:
             day_type = pass_record.day_type
+        logSend('   > {} {}'.format(pass_record.year_month_day, list(notification_dict.keys())))
+        if pass_record.year_month_day in list(notification_dict.keys()):
+            notification = notification_dict[pass_record.year_month_day]
+            notification_state = notification.is_x
+            notification_type = notification.notification_type
+        else:
+            notification_state = -1
+            notification_type = -1
         passer_record_dict = {
             'year_month_day': pass_record.year_month_day,
             'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
@@ -6109,7 +6110,8 @@ def my_work_records_v2(request):
             'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
             'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
             'passer_id': passer.id,
-            'notification': -1 if pass_record.year_month_day not in list(notification_dict.keys()) else notification_dict[pass_record.year_month_day],
+            'notification': notification_state,
+            'notification_type': notification_type,
         }
         logSend('------------------ {}: day_type: {}'.format(pass_record.year_month_day, passer_record_dict['day_type']))
         process_pass_record(passer_record_dict, pass_record, work_dict)
