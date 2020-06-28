@@ -2862,10 +2862,10 @@ def list_work_v2(request):
 
 
 @cross_origin_read_allow
-def list_work_from_employee_v2(request):
+def work_dict_from_id(request):
     """
     ((근로자 서버)) 업무 id 에 의한 업무 요청
-    http://0.0.0.0:8000/customer/list_work_from_employee_v2?work_id_list=1
+    http://0.0.0.0:8000/customer/work_dict_from_id?work_id_list=1
     GET
         work_id_list    = 업무 id
     response
@@ -2903,10 +2903,10 @@ def list_work_from_employee_v2(request):
     else:
         rqst = request.GET
 
-    if '-1' in rqst['work_id_list']:
+    if '-1' in rqst['id_list']:
         work_list = Work.objects.all()
     else:
-        work_list = Work.objects.filter(id__in=rqst['work_id_list'])
+        work_list = Work.objects.filter(id__in=rqst['id_list'])
     # logSend('  > work_list: {}'.format(work_list))
     all_work_dict = {}
     # arr_work = []
@@ -2935,7 +2935,7 @@ def list_work_from_employee_v2(request):
         # del work_dict['id']
         all_work_dict[work.id] = work_dict
     # return REG_200_SUCCESS.to_json_response({'work_list': arr_work})
-    logSend('  > work_dict: {}'.format(all_work_dict))
+    # logSend('  > work_dict: {}'.format(all_work_dict))
     return REG_200_SUCCESS.to_json_response({'work_dict': all_work_dict})
 
 

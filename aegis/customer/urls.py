@@ -45,7 +45,7 @@ urlpatterns = [
     url(r'customer/list_work_v2', views.list_work_v2, name='list_work_v2'),
     url(r'customer/list_work_from_work_place_v2', views.list_work_from_work_place_v2,
         name='list_work_from_work_place_v2'),
-    url(r'customer/list_work_from_employee_v2$', views.list_work_from_employee_v2, name='list_work_from_employee_v2'),
+    url(r'customer/work_dict_from_id', views.work_dict_from_id, name='work_dict_from_id'),
 
     url(r'customer/reg_employee$', views.reg_employee, name='reg_employee'),
     url(r'customer/employee_work_accept_for_employee$', views.employee_work_accept_for_employee, name='employee_work_accept_for_employee'),

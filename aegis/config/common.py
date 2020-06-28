@@ -8,6 +8,7 @@ from .status_collection import *
 from .secret import AES_DECRYPT_BASE64, AES_ENCRYPT_BASE64, AES_ENCRYPT
 import datetime
 from urllib.parse import quote
+from dateutil.relativedelta import relativedelta
 
 
 # @csrf_exempt
@@ -376,6 +377,28 @@ def str_to_dt(str_dt):
     return datetime.datetime.strptime(str_dt, "%Y/%m/%d")
 
 
+def get_year_month_all_day_dict(year_month: str, is_until_today=True) -> dict:
+    """
+    문자열로된 년월로 그달의 1일부터 말일까지 날짜를 키로하는 dict 을 구한다.
+    :param year_month_day: '2020-06'
+    :param is_until_today: default(True: 이번 달이면 오늘까지), False: 이번 달이라도 이달의 말일까지
+    :return: {'2020-06-01':None, ..., '2020-06-29':None}
+    """
+    dt_month_low = str_to_datetime(year_month)
+    dt_month_high = dt_month_low + relativedelta(months=1)
+    dt_month_high -= datetime.timedelta(days=1) - datetime.timedelta(hours=23)
+    if is_until_today:
+        today = datetime.datetime.now()
+        if today < dt_month_high:
+            dt_month_high = today
+    year_month_day_dict = {}
+    while dt_month_low < dt_month_high:
+        year_month_day = dt_month_low.strftime("%Y-%m-%d")
+        year_month_day_dict[year_month_day] = None
+        dt_month_low += datetime.timedelta(days=1)
+    return year_month_day_dict
+
+
 def str_no(str_no) -> str:
     """
     문자열을 숫자문자로 변경
@@ -401,7 +424,7 @@ def get_client_ip(request):
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
-    logSend('  - IP: {}'.format(ip))
+    # logSend('   > client IP: {}'.format(ip))
     return ip
 
 

@@ -13,7 +13,7 @@ from config.log import logSend, logError, send_slack
 from config.common import ReqLibJsonResponse
 from config.common import status422, no_only_phone_no, phone_format, dt_null, dt_str, is_parameter_ok, str_to_datetime
 from config.common import str_no, str_to_dt, get_client_ip, get_api, str2min, time_gap, min2str, int_none, zero_blank
-from config.common import Works
+from config.common import get_year_month_all_day_dict, Works
 
 # secret import
 from config.secret import AES_ENCRYPT_BASE64, AES_DECRYPT_BASE64
@@ -5795,6 +5795,8 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
 
 def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict):
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
+    if pass_record is None:
+        return
     current_work_id = pass_record.work_id
     # 연장근로 처리
     #   - 출퇴근 시간과 상관없이 처리한다.
@@ -6042,7 +6044,7 @@ def my_work_records_v2(request):
     try:
         employee = Employee.objects.get(id=passer.employee_id)
     except Exception as e:
-        return status422(get_api(request), {'message': 'employee_id{} 없음. {}'.format(passer.employee_id, str(e))})
+        return status422(get_api(request), {'message': 'passer_id: {} 의 employee_id: {} 없음. {}'.format(passer_id, passer.employee_id, str(e))})
     if work_id is not None:
         # 업무 id 가 있을 경우: 그 업무의 근무 내역만 구한다.
         # /customer/staff_employee_working_v2 에서 사용할 때는 work_id 가 있다.
@@ -6053,22 +6055,29 @@ def my_work_records_v2(request):
         # 출입자(근로자)의 월 근로 내역 가져오기
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id, work_id=work_id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
-        if len(pass_record_list) == 0:
-            return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+        # 2020/06/29 모든 날짜에 대한 응답으로 기능 삭제
+        # if len(pass_record_list) == 0:
+        #     return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
     else:
         # 근로자가 한달 내에 여러개의 업무를 가지고 있을 때 처리
         # 출입자(근로자)의 월 근로 내역 가져오기
         pass_record_list = Pass_History.objects.filter(passer_id=passer.id,
                                                        year_month_day__contains=year_month).order_by('year_month_day')
-        if len(pass_record_list) == 0:
-            return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+        # 2020/06/29 모든 날짜에 대한 응답으로 기능 삭제
+        # if len(pass_record_list) == 0:
+        #     return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
+
         # 월 근로내역에서 업무 찾기 (중복 업무 거르기)
         work_id_dict = {}
+        # logSend('   > get work')
         for pass_record in pass_record_list:
-            if pass_record.work_id not in work_id_dict.keys():
-                work_id_dict[pass_record.work_id] = id
+            # logSend('   >> pass_record.work_id: {}'.format(pass_record.work_id))
+            if pass_record.work_id not in list(work_id_dict.keys()):
+                work_id_dict[pass_record.work_id] = pass_record.work_id
+                # logSend('   >>> not in work_id_dict.keys(): {}'.format(work_id_dict.keys()))
+        # logSend('   > get work id list: {}'.format(work_id_dict))
         work_dict = get_work_dict(list(work_id_dict.keys()))
-        logSend('  > work_dict: {}'.format(work_dict.keys()))
+        # logSend('   > work_dict: {}'.format(list(work_dict.keys())))
         employee_works = Works(employee.get_works())
     # 업무내역에서 복잡한 휴게시간 미리 계산하기
     set_break_time_of_work_time_info(work_dict)
@@ -6084,47 +6093,92 @@ def my_work_records_v2(request):
     #
     # 근로자의 근로내역 생성: 근로자 id 를 key 로하는 dictionary
     #
+    pass_record_year_month_day_dict = {pass_record.year_month_day: pass_record for pass_record in pass_record_list}
+    logSend('   > pass_record_year_month_day_dict: {}'.format(pass_record_year_month_day_dict.keys()))
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
+    year_month_all_day_dict = get_year_month_all_day_dict(year_month)
+    logSend('   > year_month_all_day_dict: {}'.format(year_month_all_day_dict))
+
     passer_rec_dict = {}
-    for pass_record in pass_record_list:
-        # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
-        if pass_record.day_type_staff_id == -1:
-            # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
-            day_type = get_day_type(work_dict[pass_record.work_id], pass_record.year_month_day)
+    for year_month_day in year_month_all_day_dict.keys():
+        logSend('------------------ {}'.format(year_month_day))
+        if year_month_day in list(pass_record_year_month_day_dict.keys()):
+            # 날짜에 해당하는 근로내역이 있을 때
+            pass_record = pass_record_year_month_day_dict[year_month_day]
+            # logSend('  > current: {} vs pass_record: {}'.format(current_work_id, pass_record.work_id))
+            if pass_record.day_type_staff_id == -1:
+                # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
+                day_type = get_day_type(work_dict[pass_record.work_id], pass_record.year_month_day)
+            else:
+                day_type = pass_record.day_type
+            logSend('   > {} {}'.format(pass_record.year_month_day, list(notification_dict.keys())))
+            if pass_record.year_month_day in list(notification_dict.keys()):
+                notification = notification_dict[pass_record.year_month_day]
+                notification_state = notification.is_x
+                notification_type = notification.notification_type
+            else:
+                notification_state = -1
+                notification_type = -1
+            passer_record_dict = {
+                'year_month_day': pass_record.year_month_day,
+                'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
+                'action': pass_record.action,
+                'work_id': AES_ENCRYPT_BASE64(str(pass_record.work_id)),
+                'begin': dt_str(pass_record.dt_in_verify, "%H:%M"),
+                'end': dt_str(pass_record.dt_out_verify, "%H:%M"),
+                'break': '',        # 휴게시간
+                'basic': '',        # 기본근로
+                'night': '',        # 야간근로
+                'overtime': '',     # 연장근로
+                'holiday': '',      # 휴일근무
+                'ho': '',           # 휴일/연장
+                'remarks': '',      # 연차후무, 소정근로일
+                'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
+                'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
+                'passer_id': passer.id,
+                'notification': notification_state,
+                'notification_type': notification_type,
+            }
         else:
-            day_type = pass_record.day_type
-        logSend('   > {} {}'.format(pass_record.year_month_day, list(notification_dict.keys())))
-        if pass_record.year_month_day in list(notification_dict.keys()):
-            notification = notification_dict[pass_record.year_month_day]
-            notification_state = notification.is_x
-            notification_type = notification.notification_type
-        else:
-            notification_state = -1
-            notification_type = -1
-        passer_record_dict = {
-            'year_month_day': pass_record.year_month_day,
-            'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
-            'action': pass_record.action,
-            'work_id': AES_ENCRYPT_BASE64(str(pass_record.work_id)),
-            'begin': dt_str(pass_record.dt_in_verify, "%H:%M"),
-            'end': dt_str(pass_record.dt_out_verify, "%H:%M"),
-            'break': '',        # 휴게시간
-            'basic': '',        # 기본근로
-            'night': '',        # 야간근로
-            'overtime': '',     # 연장근로
-            'holiday': '',      # 휴일근무
-            'ho': '',           # 휴일/연장
-            'remarks': '',      # 연차후무, 소정근로일
-            'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
-            'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-            'passer_id': passer.id,
-            'notification': notification_state,
-            'notification_type': notification_type,
-        }
-        logSend('------------------ {}: day_type: {}'.format(pass_record.year_month_day, passer_record_dict['day_type']))
+            # 날짜에 해당하는 근로내역이 없을 때
+            pass_record = None
+            cur_work = employee_works.find_work_by_date(str_to_datetime(year_month_day))
+            logSend('   > cur_work: {}'.format(cur_work))
+            if cur_work is None:
+                day_type = 1
+            else:
+                day_type = get_day_type(work_dict[str(cur_work['id'])], year_month_day)
+            if year_month_day in list(notification_dict.keys()):
+                notification = notification_dict[year_month_day]
+                notification_state = notification.is_x
+                notification_type = notification.notification_type
+            else:
+                notification_state = -1
+                notification_type = -1
+            passer_record_dict = {
+                'year_month_day': year_month_day,
+                'week': week_comment[str_to_datetime(year_month_day).weekday()],
+                'action': 0,
+                'work_id': AES_ENCRYPT_BASE64(str(cur_work['id'])) if cur_work is not None else AES_ENCRYPT_BASE64('79'),
+                'begin': "",
+                'end': "",
+                'break': '',        # 휴게시간
+                'basic': '',        # 기본근로
+                'night': '',        # 야간근로
+                'overtime': '',     # 연장근로
+                'holiday': '',      # 휴일근무
+                'ho': '',           # 휴일/연장
+                'remarks': '',      # 연차후무, 소정근로일
+                'dt_accept': "",
+                'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
+                'passer_id': passer.id,
+                'notification': notification_state,
+                'notification_type': notification_type,
+            }
+        logSend('   > passer_record_dict: {}'.format(passer_record_dict))
         process_pass_record(passer_record_dict, pass_record, work_dict)
-        logSend('  >> {}: {}'.format(passer_record_dict['year_month_day'], passer_record_dict))
-        passer_rec_dict[pass_record.year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
+        logSend('   >> {}: {}'.format(passer_record_dict['year_month_day'], passer_record_dict))
+        passer_rec_dict[year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
     month_work_dict = process_month_pass_record(passer_rec_dict, work_dict, employee_works)
     for day in passer_rec_dict.keys():
         passer_rec = passer_rec_dict[day]
@@ -8253,11 +8307,11 @@ def get_work_dict(id_list: list) -> dict:
     response
         {'1': [...]}
     """
-    logSend('>>> get_work_dict\n^ work_id_list: {}'.format(id_list))
+    # logSend('>>> get_work_dict\n^ work_id_list: {}'.format(id_list))
     if len(id_list) == 0:
         return {}
-    r = requests.post(settings.CUSTOMER_URL + 'list_work_from_employee_v2', json={'work_id_list': id_list})
-    logSend('\nv work_dict: {}\nv {} {}\n<<< get_work_dict'.format(r.json()['work_dict'].keys(), r.status_code, r.json()['message']))
+    r = requests.post(settings.CUSTOMER_URL + 'work_dict_from_id', json={'id_list': id_list})
+    # logSend('\nv work_dict: {}\nv {} {}\n<<< get_work_dict'.format(r.json()['work_dict'].keys(), r.status_code, r.json()['message']))
     if r.status_code != 200:
         return {}
     return r.json()['work_dict']

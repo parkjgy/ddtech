@@ -17,7 +17,7 @@ class StatusCollection(object):
         resp = JsonResponse(response_body)
         resp.status_code = self.status
         # logSend('  {} {}'.format(resp.status_code, response_body))
-        logSend('v {} {}'.format(resp.status_code, response_body['message']))
+        # logSend('v {} {}'.format(resp.status_code, response_body['message']))
         return resp
 
     def to_response(self, _body=None):
