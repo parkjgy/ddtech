@@ -5793,11 +5793,14 @@ def get_work_time(work_time_list: list, dt_in_verify: datetime, dt_out_verify: d
     return result
 
 
-def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: dict):
+def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: dict):
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
     if pass_record is None:
+        #
+        # 월 처리에서 유급 휴일의 주휴시간을 처리한다.
+        #   - 주소정근로시간을 채웠느지 여기서 계산하면 느려진다.
+        #
         return
-    current_work_id = pass_record.work_id
     # 연장근로 처리
     #   - 출퇴근 시간과 상관없이 처리한다.
     #   - 조기퇴근은 출퇴근 시간과 상관있다.
@@ -5807,11 +5810,11 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         try:
-            one_day_working_hours = int(work_dict[current_work_id]['time_info']['week_hours']) / len(work_dict[current_work_id]['time_info']['working_days'])
+            one_day_working_hours = int(cur_work['time_info']['week_hours']) / len(cur_work['time_info']['working_days'])
         except Exception as e:
             one_day_working_hours = 0
-        logSend('  >> week_hours: {}, working_days: {}, one_day_working_hours: {}'.format(work_dict[current_work_id]['time_info']['week_hours'],
-                                                               len(work_dict[current_work_id]['time_info']['working_days']), one_day_working_hours))
+        logSend('  >> week_hours: {}, working_days: {}, one_day_working_hours: {}'.format(cur_work['time_info']['week_hours'],
+                                                               len(cur_work['time_info']['working_days']), one_day_working_hours))
         if (pass_record.dt_in_verify is None) and (pass_record.dt_out_verify is None):
             passer_record_dict['remarks'] = "연차휴가"
             # if passer_record_dict['week_hours']
@@ -5836,7 +5839,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         return
 
     # 출퇴근 시간중에 하나라도 있으면 - 어찌되었건 출근했다.
-    work_time_list = work_dict[current_work_id]['time_info']['work_time_list']
+    work_time_list = cur_work['time_info']['work_time_list']
     r = get_work_time(work_time_list, pass_record.dt_in_verify, pass_record.dt_out_verify, pass_record.overtime)
     # result = {'dt_in': dt_str(dt_in_verify, "%Y-%m-%d %H:%M:%S"),
     #           'dt_out': dt_str(dt_out_verify, "%Y-%m-%d %H:%M:%S"),
@@ -5862,7 +5865,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
         overtime = pass_record.overtime / 2
         passer_record_dict['overtime'] = str(overtime)
     # 야간근로시간 22:00 ~ 06:00
-    if work_dict[current_work_id]['time_info']['time_type'] != 3:
+    if cur_work['time_info']['time_type'] != 3:
         # 감시단속직은 야간근로시간 없다.
         logSend('  > time: {} ~ {}'.format(dt_in, dt_out))
         if dt_in > dt_out:
@@ -5884,15 +5887,15 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, work_dict: 
     week_index = str_to_datetime(pass_record.year_month_day).weekday()
     week_index_db = (week_index + 1) % 7
     logSend('  >> {} week: {} - {}, db: {}'.format(pass_record.year_month_day, week_index, week_comment[week_index], week_index_db))
-    # logSend('  > {}'.format(work_dict[current_work_id]['time_info']))
+    # logSend('  > {}'.format(cur_work['time_info']))
     if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
         passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
         passer_record_dict['holiday'] = str(basic_hours)
         try:
-            holiday_pay = int(work_dict[current_work_id]['time_info']['week_hours']) * .2
+            holiday_pay = int(cur_work['time_info']['week_hours']) * .2
         except Exception as e:
             holiday_pay = 0
-        logSend('  >> 유급 휴일 + 주휴시간: >> week_hours: {}, holiday_pay: {}'.format(work_dict[current_work_id]['time_info']['week_hours'], holiday_pay))
+        logSend('  >> 유급 휴일 + 주휴시간: >> week_hours: {}, holiday_pay: {}'.format(cur_work['time_info']['week_hours'], holiday_pay))
         passer_record_dict['basic'] = str(holiday_pay)    # 유급휴일에 주휴시간(주소정근로시간의 20%) 을 준다.
         if pass_record.overtime > 0:
             passer_record_dict['overtime'] = ''
@@ -6135,19 +6138,22 @@ def my_work_records_v2(request):
                 'remarks': '',      # 연차후무, 소정근로일
                 'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
                 'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-                'passer_id': passer.id,
+                'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
                 'notification': notification_state,
                 'notification_type': notification_type,
             }
+            cur_work = work_dict[str(pass_record.work_id)]
         else:
             # 날짜에 해당하는 근로내역이 없을 때
             pass_record = None
-            cur_work = employee_works.find_work_by_date(str_to_datetime(year_month_day))
-            logSend('   > cur_work: {}'.format(cur_work))
-            if cur_work is None:
-                day_type = 1
+            cur_work_employee = employee_works.find_work_by_date(str_to_datetime(year_month_day))
+            logSend('   > cur_work_employee: {}'.format(cur_work_employee))
+            if cur_work_employee is None:
+                day_type = -1
+                cur_work = None
             else:
-                day_type = get_day_type(work_dict[str(cur_work['id'])], year_month_day)
+                day_type = get_day_type(work_dict[str(cur_work_employee['id'])], year_month_day)
+                cur_work = work_dict[str(cur_work_employee['id'])]
             if year_month_day in list(notification_dict.keys()):
                 notification = notification_dict[year_month_day]
                 notification_state = notification.is_x
@@ -6159,7 +6165,7 @@ def my_work_records_v2(request):
                 'year_month_day': year_month_day,
                 'week': week_comment[str_to_datetime(year_month_day).weekday()],
                 'action': 0,
-                'work_id': AES_ENCRYPT_BASE64(str(cur_work['id'])) if cur_work is not None else AES_ENCRYPT_BASE64('79'),
+                'work_id': AES_ENCRYPT_BASE64(str(cur_work_employee['id'])) if cur_work_employee is not None else "",
                 'begin': "",
                 'end': "",
                 'break': '',        # 휴게시간
@@ -6171,26 +6177,22 @@ def my_work_records_v2(request):
                 'remarks': '',      # 연차후무, 소정근로일
                 'dt_accept': "",
                 'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-                'passer_id': passer.id,
+                'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
                 'notification': notification_state,
                 'notification_type': notification_type,
             }
         logSend('   > passer_record_dict: {}'.format(passer_record_dict))
-        process_pass_record(passer_record_dict, pass_record, work_dict)
+        process_pass_record(passer_record_dict, pass_record, cur_work)
         logSend('   >> {}: {}'.format(passer_record_dict['year_month_day'], passer_record_dict))
         passer_rec_dict[year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
     month_work_dict = process_month_pass_record(passer_rec_dict, work_dict, employee_works)
-    for day in passer_rec_dict.keys():
-        passer_rec = passer_rec_dict[day]
-        # logSend('>>> passer_record: {}'.format(passer_rec))
-        passer_rec['passer_id'] = AES_ENCRYPT_BASE64(str(passer_rec['passer_id']))
     return REG_200_SUCCESS.to_json_response({'work_dict': month_work_dict, 'work_day_dict': passer_rec_dict})
 
 
 def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     week_comment = ['월', '화', '수', '목', '금', '토', '일']
-    month_work_dict = {}
-    work_id = ''  		# 현재 업무 id
+    month_work_dict = {}    # 이달의 각 업무별 총계 {'암호화된 업무 id': {work_dict, ...}, ...}
+
     hours_basic = 0       	# 기본근로시간 합계
     hours_break = 0       	# 휴게시간 합계
     hours_night = 0       	# 야간근로시간 합계
@@ -6210,12 +6212,38 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     logSend('>>> {}'.format(passer_rec_dict.keys()))
     logSend('>>> {}'.format(work_dict.keys()))
     is_first_day = True     # 이번달의 첫날이면 그전 10일의 근로내역을 가져와서 week_dict 를 넣기 위한 flag
+    passer_rec_day_index = 0
+    passer_rec_day_list = list(passer_rec_dict.keys())
+    logSend('   > passer_rec_dict.keys: {}'.format(passer_rec_day_list))
+    first_day_rec = passer_rec_dict[list(passer_rec_dict.keys())[passer_rec_day_index]]
+    logSend('   > first_day_rec: {}'.format(first_day_rec))
+    while first_day_rec['work_id'] is '':
+        logSend('   > day_index: {}, work_id: {}'.format(passer_rec_day_index, first_day_rec['work_id']))
+        passer_rec_day_index += 1
+        if passer_rec_day_index >= len(passer_rec_day_list):
+            break
+        first_day_rec = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
+    if first_day_rec['work_id'] is '':
+        # 이달의 모든 날에 업무가 없다.
+        return month_work_dict
+    passer_id = AES_DECRYPT_BASE64(first_day_rec['passer_id'])
+    work_id_encoded = first_day_rec['work_id']
+    work_id = AES_DECRYPT_BASE64(work_id_encoded)
+    logSend('   > passer_id: {}, work_id: {}'.format(passer_id, work_id))
+    logSend('  > paid_day: {}'.format(work_dict[work_id]['time_info']['paid_day']))
 
-    first_day_rec = passer_rec_dict[list(passer_rec_dict.keys())[0]]
-    work_id_db = AES_DECRYPT_BASE64(first_day_rec['work_id'])
-    logSend('  > paid_day: {}'.format(work_dict[work_id_db]['time_info']['paid_day']))
+    month_work_dict[work_id_encoded] = copy.deepcopy(work_dict[work_id])
+    current_month_dict = month_work_dict[work_id_encoded]
+    day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
+    current_employee_work = employee_works.find_work_include_date(work_id, str_to_datetime(day_dict['year_month_day']))
+    if current_employee_work is None:
+        current_month_dict['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
+        current_month_dict['e_end'] = ''
+    else:
+        current_month_dict['e_begin'] = current_employee_work['begin']
+        current_month_dict['e_end'] = current_employee_work['end']
 
-    if work_dict[work_id_db]['time_info']['paid_day'] == -1:
+    if work_dict[work_id]['time_info']['paid_day'] == -1:
         # 유급휴일이 수동지정일 경우
         dt_paid_day = ''
         for day in passer_rec_dict.keys():
@@ -6231,7 +6259,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         for i in range(1, 8):
             week_index = dt_paid_day.weekday()
             logSend('   > {} {} {} {}'.format(dt_paid_day, week_index, week_comment[week_index], str((week_index + 1) % 7)))
-            if work_dict[work_id_db]['time_info']['paid_day'] == (week_index + 1) % 7:
+            if work_dict[work_id]['time_info']['paid_day'] == (week_index + 1) % 7:
                 break
             dt_paid_day = dt_paid_day + datetime.timedelta(days=1)
 
@@ -6248,7 +6276,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             dt_before = dt_current - datetime.timedelta(days=i)
             before_days.append(dt_str(dt_before, "%Y-%m-%d"))
         logSend('   > before 7 days: {}'.format(before_days))
-        before_pass_record_list = Pass_History.objects.filter(passer_id=first_day_rec['passer_id'], work_id=work_id_db,
+        before_pass_record_list = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
                                                               year_month_day__in=before_days).order_by('year_month_day')
         for pass_record in before_pass_record_list:
             logSend(
@@ -6270,61 +6298,70 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 }
         logSend('  >> week_dict: {}'.format(week_dict))
 
-    for day in passer_rec_dict.keys():
-        day_dict = passer_rec_dict[day]
-        if work_id == '':
-            # 아직 업무가 정해지지 않았으면
-            work_id = day_dict['work_id']
-            work_id_db = AES_DECRYPT_BASE64(work_id)
-            month_work_dict[work_id] = copy.deepcopy(work_dict[work_id_db])
-            # work_time_list = month_work_dict[current_work_id]['work_time_list']
-            logSend('   {}, {}'.format(work_id_db, str(work_id_db)))
-            current_employee_work = employee_works.find_work_include_date(work_id_db, str_to_datetime(day_dict['year_month_day']))
-            logSend(' >> current_employee_work: {}'.format(current_employee_work))
-            logSend('  > month_work_dict[{}]: {}'.format(work_id_db, month_work_dict[work_id]))
-            if current_employee_work is None:
-                # 근로자의 업무 목록(employee.get_works)에서 업무가 없는 경우 (발생하면 안되는 경우)
-                # 이 업무의 근로 시작일: 업무의 시작일 > 근태요구 첫날
-                # month_work_dict[encryted_work_id]['e_begin'] = month_work_dict[encryted_work_id]['dt_begin']
-                month_work_dict[work_id]['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
-                # 이 업무의 근로 종료일: 업무의 종료일 > 업무의 마지막 날
-                # month_work_dict[encryted_work_id]['e_end'] = month_work_dict[encryted_work_id]['dt_end']
-                month_work_dict[work_id]['e_end'] = ''  # 업무가 바뀔 때 넣어야 한다.
-            else:
-                # 이 업무의 근로 시작일
-                month_work_dict[work_id]['e_begin'] = current_employee_work['begin']
-                # 이 업무의 근로 종료일
-                month_work_dict[work_id]['e_end'] = current_employee_work['end']
-        elif work_id != day_dict['work_id']:
+    while passer_rec_day_index < len(passer_rec_day_list):
+        day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
+        # if work_id == '':
+        #     #
+        #     # 아직 업무가 정해지지 않았을 때
+        #     #
+        #     work_id = day_dict['work_id']
+        #     work_id = AES_DECRYPT_BASE64(work_id)
+        #     month_work_dict[work_id] = copy.deepcopy(work_dict[work_id])
+        #     # work_time_list = month_work_dict[current_work_id]['work_time_list']
+        #     logSend('   {}, {}'.format(work_id, str(work_id)))
+        #     current_employee_work = employee_works.find_work_include_date(work_id, str_to_datetime(day_dict['year_month_day']))
+        #     logSend(' >> current_employee_work: {}'.format(current_employee_work))
+        #     logSend('  > month_work_dict[{}]: {}'.format(work_id, month_work_dict[work_id]))
+        #     if current_employee_work is None:
+        #         # 근로자의 업무 목록(employee.get_works)에서 업무가 없는 경우 (발생하면 안되는 경우)
+        #         # 이 업무의 근로 시작일: 업무의 시작일 > 근태요구 첫날
+        #         # month_work_dict[encryted_work_id]['e_begin'] = month_work_dict[encryted_work_id]['dt_begin']
+        #         month_work_dict[work_id]['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
+        #         # 이 업무의 근로 종료일: 업무의 종료일 > 업무의 마지막 날
+        #         # month_work_dict[encryted_work_id]['e_end'] = month_work_dict[encryted_work_id]['dt_end']
+        #         month_work_dict[work_id]['e_end'] = ''  # 업무가 바뀔 때 넣어야 한다.
+        #     else:
+        if work_id_encoded != day_dict['work_id']:
             # logSend(' >> {} {}'.format(current_work_id, pass_record.work_id))
             # 업무가 바뀌었다.
-            # 계산된 값을 저장하고 설정 값은 초기
-            month_work_dict[work_id]['hours_break'] = hours_break
-            month_work_dict[work_id]['hours_basic'] = hours_basic
-            month_work_dict[work_id]['hours_night'] = hours_night
-            month_work_dict[work_id]['hours_overtime'] = hours_overtime
-            month_work_dict[work_id]['hours_holiday'] = hours_holiday
-            month_work_dict[work_id]['hours_ho'] = hours_ho
-            month_work_dict[work_id]['hours_week'] = hours_week
+            # 계산된 값을 저장하고 설정 값은 초기화
+            current_month_dict['hours_break'] = hours_break
+            current_month_dict['hours_basic'] = hours_basic
+            current_month_dict['hours_night'] = hours_night
+            current_month_dict['hours_overtime'] = hours_overtime
+            current_month_dict['hours_holiday'] = hours_holiday
+            current_month_dict['hours_ho'] = hours_ho
+            current_month_dict['hours_week'] = hours_week
 
-            month_work_dict[work_id]['days_working'] = days_working
-            month_work_dict[work_id]['days_holiday'] = days_holiday
-            month_work_dict[work_id]['days_early_out'] = days_early_out
+            current_month_dict['days_working'] = days_working
+            current_month_dict['days_holiday'] = days_holiday
+            current_month_dict['days_early_out'] = days_early_out
 
-            if month_work_dict[work_id]['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
-                month_work_dict[work_id]['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
+            if current_month_dict['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
+                current_month_dict['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
             # 업무가 바뀌어 전 업무의 합계값을 저장한다.
 
-            work_id = day_dict['work_id']
-            work_id_db = AES_DECRYPT_BASE64(work_id)
-            month_work_dict[work_id] = copy.deepcopy(work_dict[work_id_db])
-            current_employee_work = employee_works.find_work_include_date(work_id_db, str_to_datetime(day_dict['year_month_day']))
+            work_id_encoded = day_dict['work_id']
+            while work_id_encoded is '':
+                passer_rec_day_index += 1
+                if passer_rec_day_index >= len(passer_rec_day_list):
+                    break
+                day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
+                work_id_encoded = day_dict['work_id']
+            if work_id_encoded is '':
+                # 남은 모든 날에 업무가 없다.
+                return month_work_dict
+            work_id = AES_DECRYPT_BASE64(work_id_encoded)
+            logSend('   > work_id_encoded: {}, work_id: {}'.format(work_id_encoded, work_id))
+            month_work_dict[work_id_encoded] = copy.deepcopy(work_dict[work_id])
+            current_month_dict = month_work_dict[work_id_encoded]
+            current_employee_work = employee_works.find_work_include_date(work_id, str_to_datetime(day_dict['year_month_day']))
             if current_employee_work is None:
-                month_work_dict[work_id]['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
-                month_work_dict[work_id]['e_end'] = ''
+                current_month_dict['e_begin'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
+                current_month_dict['e_end'] = ''
             else:
-                month_work_dict[work_id]['e_begin'] = current_employee_work['begin']
-                month_work_dict[work_id]['e_end'] = current_employee_work['end']
+                current_month_dict['e_begin'] = current_employee_work['begin']
+                current_month_dict['e_end'] = current_employee_work['end']
             hours_break = 0     # 휴게시간 합계
             hours_basic = 0     # 기본근로시간 합계
             hours_night = 0     # 야간근로시간 합계
@@ -6349,14 +6386,14 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 # 소정근로시간을 추가하고 week_dict 를 초기화한다.
                 logSend('  >> week_dict: {}'.format(week_dict))
                 is_all_week = True
-                for week_index in month_work_dict[work_id]['time_info']['working_days']:
+                for week_index in current_month_dict['time_info']['working_days']:
                     # 업무의 소정근로일에
                     if week_index not in week_dict.keys():
                         # 근무를 하지 않았으면
                         is_all_week = False
                         break
                 if is_all_week:  # 소정근로시간을 채웠다.
-                    hours_week += int(month_work_dict[work_id]['time_info']['week_hours']) * .2  # 주 소정근로시간
+                    hours_week += int(current_month_dict['time_info']['week_hours']) * .2  # 주 소정근로시간
                     logSend('  > 주 소정근로시간: {}'.format(hours_week))
                 dt_paid_day = dt_paid_day + datetime.timedelta(days=7)
                 week_dict = {}
@@ -6397,23 +6434,24 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             hours_holiday += float(day_dict['holiday'])
         if len(day_dict['ho']) > 0:
             hours_ho += float(day_dict['ho'])
+        passer_rec_day_index += 1
 
-    month_work_dict[work_id]['hours_break'] = hours_break
-    month_work_dict[work_id]['hours_basic'] = hours_basic
-    month_work_dict[work_id]['hours_night'] = hours_night
-    month_work_dict[work_id]['hours_overtime'] = hours_overtime
-    month_work_dict[work_id]['hours_holiday'] = hours_holiday
-    month_work_dict[work_id]['hours_ho'] = hours_ho
-    month_work_dict[work_id]['hours_week'] = hours_week
-    month_work_dict[work_id]['hours_month'] = hours_month
+    current_month_dict['hours_break'] = hours_break
+    current_month_dict['hours_basic'] = hours_basic
+    current_month_dict['hours_night'] = hours_night
+    current_month_dict['hours_overtime'] = hours_overtime
+    current_month_dict['hours_holiday'] = hours_holiday
+    current_month_dict['hours_ho'] = hours_ho
+    current_month_dict['hours_week'] = hours_week
+    current_month_dict['hours_month'] = hours_month
 
-    month_work_dict[work_id]['days_working'] = days_working
-    month_work_dict[work_id]['days_week'] = days_week
-    month_work_dict[work_id]['days_holiday'] = days_holiday
-    month_work_dict[work_id]['days_early_out'] = days_early_out
+    current_month_dict['days_working'] = days_working
+    current_month_dict['days_week'] = days_week
+    current_month_dict['days_holiday'] = days_holiday
+    current_month_dict['days_early_out'] = days_early_out
 
-    if month_work_dict[work_id]['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
-        month_work_dict[work_id]['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
+    if current_month_dict['e_end'] == '':  # 업무 종료 날짜를 알수 없는 경우 처리
+        current_month_dict['e_end'] = dt_str(str_to_datetime(day_dict['year_month_day']), "%Y/%m/%d")
 
     return month_work_dict
 
