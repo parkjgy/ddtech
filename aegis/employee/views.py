@@ -155,11 +155,17 @@ def check_version(request):
                      ' 등록된 전화번호: {}, 서버 id: {}, 앱 id: {}'.format(phone_no, passer.id, passer_id))
             return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '앱이 리셋됩니다.\n다시 실행해주세요.'})
         if 't' in rqst:
-            logSend('[{}] vs [{}]'.format(rqst['t'], passer.push_token))
+            push_token = rqst['t']
+            push_token = push_token.replace(' ', '')
+            # logSend('[{}] vs [{}]'.format(push_token, passer.push_token))
             if rqst['t'] == 'Token_did_not_registration':
-                passer.push_token = rqst['t']
+                passer.push_token = push_token
                 passer.save()
-            elif rqst['t'] != passer.push_token:
+            elif push_token != passer.push_token:
+                message = 'in push_token: [{}]\n'\
+                           'passer.id: {}\n'\
+                           'db push_token: [{}]'.format(push_token, passer.id, passer.push_token)
+                send_slack('employee/check_version: 아이폰 버그 확인', message, channel='#server_bug')
                 return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '다른 폰에 앱이 새로 설치되어 사용할 수 없습니다.'})
         if 'uuid' in rqst:
             logSend('[{}] vs [{}]'.format(rqst['uuid'], passer.uuid))

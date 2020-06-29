@@ -210,6 +210,8 @@ def notification(push_contents):
                      }
     }
 """
+
+
 def fcm(target_type, target_list, alert, sound, badge, contents):
     if target_type == 'user':
         logSend('   >> User')
