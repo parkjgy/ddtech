@@ -62,7 +62,7 @@ def cross_origin_read_allow(function):
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
                 # logSend('ERROR > {}'.format(get_api(request)))
-                # logSend('   >>> request: {}, e: {}'.format(request, e))
+                logSend('   >>> request: {}, e: {}'.format(request, e))
                 response = exception_handler(request, e)
         # logSend('<<< {}: {}\n^ {}'.format(get_api(request), response.status_code, response.content))
         # logSend('v {} {}'.format(resp.status_code, response_body['message']))
@@ -96,6 +96,7 @@ def token_to_session(function):
     Web Client 에서 Header 에서 받은 Token 값으로 Session 으로 치환하는 Decorator
     """
     def wrap(request, *args, **kwargs):
+        logSend('   > token_to_session: wrap')
         if 'HTTP_TOKEN' in request.META:
             # print(request.META['HTTP_TOKEN'])
             request.session = SessionStore(session_key=request.META['HTTP_TOKEN'])
