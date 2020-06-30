@@ -62,17 +62,17 @@ def cross_origin_read_allow(function):
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
                 # logSend('ERROR > {}'.format(get_api(request)))
-                logSend('   >>> request: {}, e: {}'.format(request, e))
+                # logSend('   >>> request: {}, e: {}'.format(request, e))
                 response = exception_handler(request, e)
         # logSend('<<< {}: {}\n^ {}'.format(get_api(request), response.status_code, response.content))
         # logSend('v {} {}'.format(resp.status_code, response_body['message']))
-        logSend('   > response.content: {}'.format(response.content))
-        logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
-        # if response.content is None:
-        #     logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
-        # else:
-        #     json_content = json.loads(response.content)
-        #     logSend('\nv {} {}\n<<< {}\n'.format(response.status_code, json_content['message'], get_api(request)))
+        # logSend('   > response.content: {}'.format(response.content))
+        try:
+            json_content = json.loads(response.content)
+            logSend('\nv {} {}\n<<< {}\n'.format(response.status_code, json_content['message'], get_api(request)))
+        except Exception as e:
+            logSend('   > {}'.format(str(e)))
+            logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
 
         if 'HTTP_ORIGIN' in request.META:
             response["Access-Control-Allow-Origin"] = request.META['HTTP_ORIGIN']
