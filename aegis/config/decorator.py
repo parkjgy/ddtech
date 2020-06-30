@@ -72,7 +72,7 @@ def cross_origin_read_allow(function):
             logSend('\nv {} {}\n<<< {}\n'.format(response.status_code, json_content['message'], get_api(request)))
         except Exception as e:
             logSend('   > {}'.format(str(e)))
-            logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
+            logSend('\nv {}\n<<< {}'.format(response.status_code, get_api(request)))
 
         if 'HTTP_ORIGIN' in request.META:
             response["Access-Control-Allow-Origin"] = request.META['HTTP_ORIGIN']

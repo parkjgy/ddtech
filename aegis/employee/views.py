@@ -5804,7 +5804,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
     if pass_record is None:
         #
         # 월 처리에서 유급 휴일의 주휴시간을 처리한다.
-        #   - 주소정근로시간을 채웠느지 여기서 계산하면 느려진다.
+        #   - 주소정근로시간을 채웠는지 여기서 계산하면 느려진다.
         #
         return
     # 연장근로 처리
@@ -5812,7 +5812,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
     #   - 조기퇴근은 출퇴근 시간과 상관있다.
     # -2: 연차휴무, -1: 조기퇴근, 0: 정상근무, 1~18: 연장근무(1: 30분, 2: 1시간, ..., 17: 8시간 30분, 18: 9시간)
     # logSend('  > overtime: {}'.format(pass_record.overtime))
-    passer_record_dict['overtime'] = str(pass_record.overtime / 2)
+    passer_record_dict['overtime'] = ""
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         try:
@@ -5836,6 +5836,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = ""
     else:
+        passer_record_dict['overtime'] = str(pass_record.overtime / 2)
         passer_record_dict['remarks'] = '연장근무: {0:02d}:{1:02d}'.format((pass_record.overtime // 2), (pass_record.overtime % 2) * 30)
     #
     # 출퇴근 기록이 없음: 무급휴일이나 유급휴일이겠네.
