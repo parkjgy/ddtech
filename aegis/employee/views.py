@@ -4393,7 +4393,7 @@ def work_record_in_day_for_customer(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'ClientError: 해당 업무가 없어요.'})
     work = work_dict[list(work_dict.keys())[0]]
     work['id'] = list(work_dict.keys())[0]
-    # logSend('  > work: {}'.format(work))
+    logSend('  > work: {}'.format(work))
     fail_dict = {}
     fail_employee_id_list = []
     employee_ids = []

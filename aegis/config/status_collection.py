@@ -7,29 +7,29 @@ from .log import logSend
 
 class StatusCollection(object):
     def __init__(self, status, message):
-        logSend('   >> StatusCollection init')
+        # logSend('   >> StatusCollection init')
         self.status = status
         self.message = message
 
     def to_json_response(self, _body=None):
-        logSend('   >> StatusCollection to_json_response')
+        # logSend('   >> StatusCollection to_json_response')
         response_body = {"message": self.message}
         if _body is not None and isinstance(_body, dict):
             response_body.update(_body)
         resp = JsonResponse(response_body)
         resp.status_code = self.status
-        logSend('v  {} {}'.format(resp.status_code, response_body))
+        # logSend('v  {} {}'.format(resp.status_code, response_body))
         # logSend('v {} {}'.format(resp.status_code, response_body['message']))
         return resp
 
     def to_response(self, _body=None):
-        logSend('   >> StatusCollection to_response')
+        # logSend('   >> StatusCollection to_response')
         response_body = {"message": self.message}
         if _body is not None and isinstance(_body, dict):
             response_body.update(_body)
         resp = HttpResponse(json.dumps(response_body, cls=DateTimeEncoder))
         resp.status_code = self.status
-        logSend('<StatusCollection>', resp.status_code)
+        # logSend('<StatusCollection>', resp.status_code)
         return resp
 
 

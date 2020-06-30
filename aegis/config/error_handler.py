@@ -64,8 +64,7 @@ def exception_handler(request, exception):
     # my_json = response.content.decode('utf8').replace("'", '"')
     # logSend('  ERROR: {}'.format(my_json))
     # return REG_416_RANGE_NOT_SATISFIABLE.to_json_response()
-
-    return REG_520_UNDEFINED.to_json_response({'message': str(exception), 'stack_trace': stack_trace})
+    return StatusCollection(500, '서버에서 처리 중 에러: slack > #server_bug').to_json_response({'log': stack_trace})
     # return HttpResponse(json.dumps(
     #     {'message': str(exception),
     #      'stack_trace': stack_trace}
