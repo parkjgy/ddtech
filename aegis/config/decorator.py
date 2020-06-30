@@ -66,6 +66,7 @@ def cross_origin_read_allow(function):
                 response = exception_handler(request, e)
         # logSend('<<< {}: {}\n^ {}'.format(get_api(request), response.status_code, response.content))
         # logSend('v {} {}'.format(resp.status_code, response_body['message']))
+        logSend('   > response.content: {}'.format(response.content))
         logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
         # if response.content is None:
         #     logSend('\nv {}\n<<< {}\n'.format(response.status_code, get_api(request)))
