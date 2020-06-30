@@ -3494,8 +3494,8 @@ def reg_from_certification_no_2(request):
             logError(get_api(request), ' 발생하면 안됨: passer.employee_id 의 근로자가 employee 에 없다. (새로 만듦)')
             status_code = 201
             employee = Employee(
-            work_start_alarm='X',
-            work_end_alarm='X',
+                work_start_alarm='X',
+                work_end_alarm='X',
             )
             employee.save()
             passer.employee_id = employee.id
