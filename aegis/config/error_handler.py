@@ -64,10 +64,12 @@ def exception_handler(request, exception):
     # my_json = response.content.decode('utf8').replace("'", '"')
     # logSend('  ERROR: {}'.format(my_json))
     # return REG_416_RANGE_NOT_SATISFIABLE.to_json_response()
-    return HttpResponse(json.dumps(
-        {'message': str(exception),
-         'stack_trace': stack_trace}
-    ), status=520)
+
+    return REG_520_UNDEFINED.to_json_response({'message': str(exception), 'stack_trace': stack_trace})
+    # return HttpResponse(json.dumps(
+    #     {'message': str(exception),
+    #      'stack_trace': stack_trace}
+    # ), status=520)
 
 
 def get_traceback_str():

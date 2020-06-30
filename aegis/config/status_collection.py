@@ -7,10 +7,12 @@ from .log import logSend
 
 class StatusCollection(object):
     def __init__(self, status, message):
+        logSend('   >> StatusCollection init')
         self.status = status
         self.message = message
 
     def to_json_response(self, _body=None):
+        logSend('   >> StatusCollection to_json_response')
         response_body = {"message": self.message}
         if _body is not None and isinstance(_body, dict):
             response_body.update(_body)
@@ -21,6 +23,7 @@ class StatusCollection(object):
         return resp
 
     def to_response(self, _body=None):
+        logSend('   >> StatusCollection to_response')
         response_body = {"message": self.message}
         if _body is not None and isinstance(_body, dict):
             response_body.update(_body)

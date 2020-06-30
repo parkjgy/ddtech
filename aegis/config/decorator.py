@@ -62,6 +62,7 @@ def cross_origin_read_allow(function):
             except Exception as e:
                 # 해당 Decorator 를 사용하는 View 에서 오류 발생 시, 똑같은 오류처리
                 # logSend('ERROR > {}'.format(get_api(request)))
+                logSend('   >>> request: {}, e: {}'.format(request, e))
                 response = exception_handler(request, e)
         # logSend('<<< {}: {}\n^ {}'.format(get_api(request), response.status_code, response.content))
         # logSend('v {} {}'.format(resp.status_code, response_body['message']))
