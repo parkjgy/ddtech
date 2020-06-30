@@ -98,7 +98,7 @@ def token_to_session(function):
     Web Client 에서 Header 에서 받은 Token 값으로 Session 으로 치환하는 Decorator
     """
     def wrap(request, *args, **kwargs):
-        logSend('   > token_to_session: wrap')
+        # logSend('   > token_to_session: wrap')
         if 'HTTP_TOKEN' in request.META:
             # print(request.META['HTTP_TOKEN'])
             request.session = SessionStore(session_key=request.META['HTTP_TOKEN'])
