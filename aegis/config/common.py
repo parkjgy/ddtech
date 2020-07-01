@@ -592,3 +592,23 @@ class Works(object):
                 # logSend('   >> find: {}'.format(element))
                 return element
         return None
+
+    def find_month(self, year_month: str):
+        """
+        업무 중에서 해당 달의 업무가 있으면 업무 id를 리턴한다.
+        """
+        begin = str_to_datetime(year_month)
+        end = begin + relativedelta(months=1) - datetime.timedelta(seconds=1)
+        # logSend('  > begin: {}, end: {}'.format(begin, end))
+        id_dict = {}
+        for element in self.data:
+            # logSend('  element: {}'.format(element))
+            if str_to_dt(element['begin']) <= begin < (str_to_dt(element['end']) + datetime.timedelta(days=1)):
+                if element['id'] not in list(id_dict.keys()):
+                    id_dict[element['id']] = 'NULL'
+                # logSend('   > find id: {}'.format(element['id']))
+            if str_to_dt(element['begin']) <= end < (str_to_dt(element['end']) + datetime.timedelta(days=1)):
+                if element['id'] not in list(id_dict.keys()):
+                    id_dict[element['id']] = 'NULL'
+                # logSend('   > find id: {}'.format(element['id']))
+        return id_dict
