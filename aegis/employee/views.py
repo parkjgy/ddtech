@@ -6433,7 +6433,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             hours_basic += float(day_dict['basic'])
             days_working += 1
         if len(day_dict['break']) > 0:
-            hours_break += float(day_dict['break'])
+            # day_dict['break'] minutes
+            hours_break += float(day_dict['break']) / 60
         if len(day_dict['overtime']) > 0:
             overtime = float(day_dict['overtime'])
             if overtime > 0:
