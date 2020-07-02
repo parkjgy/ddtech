@@ -5812,7 +5812,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
     #   - 조기퇴근은 출퇴근 시간과 상관있다.
     # -2: 연차휴무, -1: 조기퇴근, 0: 정상근무, 1~18: 연장근무(1: 30분, 2: 1시간, ..., 17: 8시간 30분, 18: 9시간)
     # logSend('  > overtime: {}'.format(pass_record.overtime))
-    passer_record_dict['overtime'] = ""
+    passer_record_dict['overtime'] = str(pass_record.overtime)
     if pass_record.overtime == -2:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         try:
