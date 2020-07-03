@@ -605,10 +605,10 @@ class Works(object):
             # logSend('  element: {}'.format(element))
             if str_to_dt(element['begin']) <= begin < (str_to_dt(element['end']) + datetime.timedelta(days=1)):
                 if element['id'] not in list(id_dict.keys()):
-                    id_dict[element['id']] = 'NULL'
+                    id_dict[str(element['id'])] = 'NULL'
                 # logSend('   > find id: {}'.format(element['id']))
             if str_to_dt(element['begin']) <= end < (str_to_dt(element['end']) + datetime.timedelta(days=1)):
                 if element['id'] not in list(id_dict.keys()):
-                    id_dict[element['id']] = 'NULL'
+                    id_dict[str(element['id'])] = 'NULL'
                 # logSend('   > find id: {}'.format(element['id']))
         return id_dict

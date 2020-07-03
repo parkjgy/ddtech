@@ -2028,10 +2028,29 @@ def get_day_type(work: dict, year_month_day: str) -> int:
             day_type = 1  # 무급휴무일(연장 근무)
         else:
             day_type = 3  # 무급휴일(휴일/연장 근무)
-        logSend('   > day_type: {}, is_holiday_work: {}'.format(day_type, work['time_info']['is_holiday_work']))
+        logSend('   > 시급/월급 day_type: {}, is_holiday_work: {}'.format(day_type, work['time_info']['is_holiday_work']))
+    elif work['time_info']['time_type'] is 2:
+        # 급여형태가 교대제
+        if work['time_info']['paid_day'] is -1:
+            # 수동지정이면 모두 소정근로일
+            day_type = 2
+            logSend('   > 교대제 day_type: {}, paid_day: {}'.format(day_type, work['time_info']['paid_day']))
+        else:
+            week_index = str_to_datetime(year_month_day).weekday()
+            week_index = (week_index + 1) % 7  # 0: 일요일
+            if week_index in work['time_info']['working_days']:
+                day_type = 2  # 소정근로일
+            elif week_index == work['time_info']['paid_day']:
+                day_type = 0  # 유급휴일
+            elif work['time_info']['is_holiday_work'] == 1:
+                day_type = 1  # 무급휴무일(연장 근무)
+            else:
+                day_type = 3  # 무급휴일(휴일/연장 근무)
+            logSend('   > 교대제 day_type: {}, is_holiday_work: {}'.format(day_type, work['time_info']['is_holiday_work']))
     else:
         # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정 - 무조건 소정근로일로 처리
         day_type = 2
+        logSend('   > 교대제 day_type: {}, paid_day: {}'.format(day_type, work['time_info']['paid_day']))
     return day_type
 
 
@@ -5837,7 +5856,9 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
         passer_record_dict['remarks'] = ""
     else:
         passer_record_dict['overtime'] = str(pass_record.overtime / 2)
-        passer_record_dict['remarks'] = '연장근무: {0:02d}:{1:02d}'.format((pass_record.overtime // 2), (pass_record.overtime % 2) * 30)
+        passer_record_dict['remarks'] = '연장근무: {0:3.1f} H'.format((pass_record.overtime / 2))
+        # passer_record_dict['remarks'] = '연장근무: {0:02d}:{1:02d}'.format((pass_record.overtime // 2),
+        #                                                            (pass_record.overtime % 2) * 30)
     #
     # 출퇴근 기록이 없음: 무급휴일이나 유급휴일이겠네.
     #
@@ -6069,6 +6090,7 @@ def my_work_records_v2(request):
         #     return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
 
         # 월 근로내역에서 업무 찾기 (중복 업무 거르기)
+
         work_id_dict = employee_id_dict
         # logSend('   > get work')
         for pass_record in pass_record_list:
@@ -6232,6 +6254,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     first_day_rec = passer_rec_dict[list(passer_rec_dict.keys())[passer_rec_day_index]]
     logSend('   > first_day_rec: {}'.format(first_day_rec))
     while first_day_rec['work_id'] is '':
+        # 업무가 없으면 처리하지 않고 넘어간다.
         logSend('   > day_index: {}, work_id: {}'.format(passer_rec_day_index, first_day_rec['work_id']))
         passer_rec_day_index += 1
         if passer_rec_day_index >= len(passer_rec_day_list):
@@ -6239,12 +6262,14 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         first_day_rec = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
     if first_day_rec['work_id'] is '':
         # 이달의 모든 날에 업무가 없다.
+        month_work_dict = {}
+        logSend('   >> 이달에 업무가 없어서 처리할 일도 없다.')
         return month_work_dict
     passer_id = AES_DECRYPT_BASE64(first_day_rec['passer_id'])
     work_id_encoded = first_day_rec['work_id']
     work_id = AES_DECRYPT_BASE64(work_id_encoded)
-    logSend('   > passer_id: {}, work_id: {}'.format(passer_id, work_id))
-    logSend('  > paid_day: {}'.format(work_dict[work_id]['time_info']['paid_day']))
+    logSend('   >> 이번 달({})의 첫 업무(work_id): {} 근로자(passer_id): {}'.format(first_day_rec['year_month_day'], work_id, passer_id))
+    logSend('   > paid_day: {}'.format(work_dict[work_id]['time_info']['paid_day']))
 
     month_work_dict[work_id_encoded] = copy.deepcopy(work_dict[work_id])
     current_month_dict = month_work_dict[work_id_encoded]
