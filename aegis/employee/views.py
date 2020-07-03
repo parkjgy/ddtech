@@ -5894,6 +5894,7 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
     basic_hours = basic_minutes / 60
     logSend('  > basic minutes: {}, hours: {}'.format(basic_minutes, basic_hours))
     passer_record_dict['basic'] = str(basic_hours)
+    logSend('   > passer_record_dict: {}'.format(passer_record_dict))
     # 연장근로시간
     if pass_record.overtime > 0:
         overtime = pass_record.overtime / 2
@@ -6227,6 +6228,7 @@ def my_work_records_v2(request):
         process_pass_record(passer_record_dict, pass_record, cur_work)
         logSend('   >> {}: {}'.format(passer_record_dict['year_month_day'], passer_record_dict))
         passer_rec_dict[year_month_day[8:10]] = passer_record_dict  # {'03': {...}, '04': {...}}
+        logSend('   >>> {}'.format(passer_rec_dict[year_month_day[8:10]]))
     month_work_dict = process_month_pass_record(passer_rec_dict, work_dict, employee_works)
     return REG_200_SUCCESS.to_json_response({'work_dict': month_work_dict, 'work_day_dict': passer_rec_dict})
 
@@ -6297,6 +6299,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
 
     while passer_rec_day_index < len(passer_rec_day_list):
         day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
+        logSend('   >>> day_dict: {}'.format(day_dict))
         if work_id_encoded != day_dict['work_id']:
             # logSend(' >> {} {}'.format(current_work_id, pass_record.work_id))
             # 업무가 바뀌었다.
@@ -6376,13 +6379,13 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #           주휴시간: 웹에서 입력한 주 소정근로시간
 
                 # 소정근로일 개근 여부 파악
-                day_dict['basic'] = week_holiday_hours
+                day_dict['basic'] = str(week_holiday_hours)
                 logSend('   > time_type: {}'.format(time_type))
             else:
                 # 교대제, 감시단속직
                 #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
                 #       주휴시간: 웹에서 입력한 주 소정근로시간
-                day_dict['basic'] = week_holiday_hours
+                day_dict['basic'] = str(week_holiday_hours)
                 logSend('   > time_type: {}'.format(time_type))
 
         # if dt_paid_day != '':
@@ -6423,6 +6426,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         #         }
         #     # logSend('  >> week_dict: {}'.format(week_dict))
 
+        logSend('   > day: {} - day_dict.basic: [{}], type: {}'.format(day_dict['year_month_day'], day_dict['basic'], type(day_dict['basic'])))
+        logSend('   > day_dict: {}'.format(day_dict))
         if len(day_dict['basic']) > 0:
             hours_basic += float(day_dict['basic'])
             days_working += 1
