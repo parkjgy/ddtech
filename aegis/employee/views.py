@@ -6255,7 +6255,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
 
     logSend('>>> {}'.format(passer_rec_dict.keys()))
     logSend('>>> {}'.format(work_dict.keys()))
-    is_first_day = True     # 이번달의 첫날이면 그전 10일의 근로내역을 가져와서 week_dict 를 넣기 위한 flag
     passer_rec_day_index = 0
     passer_rec_day_list = list(passer_rec_dict.keys())
     logSend('   > passer_rec_dict.keys: {}'.format(passer_rec_day_list))
@@ -6299,7 +6298,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
 
     while passer_rec_day_index < len(passer_rec_day_list):
         day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
-        logSend('   >>> day_dict: {}'.format(day_dict))
+        # logSend('   >>> day_dict: {}'.format(day_dict))
         if work_id_encoded != day_dict['work_id']:
             # logSend(' >> {} {}'.format(current_work_id, pass_record.work_id))
             # 업무가 바뀌었다.
@@ -6377,10 +6376,69 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #       소정근로일에 개근했을 때 주휴시간 부여
                 #           소정근로일 개근: 출퇴근시간이 있는 경우, 연차가 있는 경우
                 #           주휴시간: 웹에서 입력한 주 소정근로시간
-
-                # 소정근로일 개근 여부 파악
-                day_dict['basic'] = str(week_holiday_hours)
-                logSend('   > time_type: {}'.format(time_type))
+                #
+                # 소정근로일 개근 여부 파악: is_working_complete
+                is_working_complete = True
+                # 1. 근로자의 업무기간에 일주일이 되지 않으면 False
+                # 2. 일주일 전 근로 내역 가져온다.
+                #    2.1. 소정근로일이 아니면 True
+                #    2.2. 소정근로일에 근무 기록이 없으면 False
+                #    2.3. 소정근로일에 연차가 있으면 True
+                #    2.4. 소정근로일에 출근 or 퇴근이 없으면 False
+                today = str_to_datetime(day_dict['year_month_day'])
+                logSend('   >>> today: {}'.format(today))
+                current_employee_work = employee_works.find_work_include_date(work_id, today)
+                if current_employee_work is None:
+                    message = 'date: {}\n' \
+                              'work_id: {}\n' \
+                              'passer_id: {}'.format(today, work_id, passer_id)
+                    send_slack('employee/my_work_records_v2: 근로자 업무 내역에 업무가 없다.', message, channel='#server_bug')
+                else:
+                    # current_employee_work: {'id': 123, 'begin': '2020/07/07', 'end': '2020/07/09'}
+                    logSend('   > current_employee_work: {} vs today: {}'.format(current_employee_work, today))
+                    if str_to_dt(current_employee_work['begin']) <= today - timedelta(days=7):
+                        # 근로자의 업무기간이 오늘의 일주일 전에 업무가 시작되었다.
+                        before_day_list = [(today - timedelta(days=day)).strftime("%Y-%m-%d %H:%M:%S") for day in range(1, 7)]
+                        logSend('   > before_day_list: {}'.format(before_day_list))
+                        before_pass_record_list = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
+                                                                              year_month_day__in=before_day_list).order_by(
+                            'year_month_day')
+                        logSend('   > before_pass_record_list: {}'.format([before_pass_record for before_pass_record in before_pass_record_list]))
+                        if len(before_pass_record_list) == 0:
+                            # 일주일 동안 근로내역이 없다.
+                            is_working_complete = False
+                        else:
+                            before_pass_record_dict = {before_day.year_month_day: before_day_list[before_day] for before_day in before_day_list}
+                            logSend('   > before_pass_record_dict: {}'.format(before_pass_record_dict))
+                            for before_day in before_day_list:
+                                if before_pass_record_dict[before_day].day_type_staff_id == -1:
+                                    # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
+                                    day_type = get_day_type(work_dict[work_id], before_day)
+                                else:
+                                    day_type = pass_record.day_type
+                                if day_type is not 2:
+                                    #    2.1. 소정근로일이 아니면 True
+                                    continue
+                                if before_day not in list(before_pass_record_dict.keys()):
+                                    #    2.2. 소정근로일에 근무 기록이 없으면 False
+                                    is_working_complete = False
+                                    break
+                                before_day_pass_record = before_pass_record_dict[before_day]
+                                if before_day_pass_record.overtime == -2:
+                                    #    2.3. 소정근로일에 연차가 있으면 True
+                                    continue
+                                if (before_day_pass_record.dt_in_verify is None) and (before_day_pass_record.dt_out_verify is None):
+                                    #    2.4. 소정근로일에 출근 or 퇴근이 없으면 False
+                                    is_working_complete = False
+                                    break
+                    else:
+                        logSend('   > 지난 일주일에 업무가 없다.')
+                        is_working_complete = False
+                if is_working_complete:
+                    # 소정근로일을 개근했다.
+                    logSend('   >> 소정근로일 개근')
+                    day_dict['basic'] = str(week_holiday_hours)
+                logSend('   << time_type: {}'.format(time_type))
             else:
                 # 교대제, 감시단속직
                 #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
@@ -6388,46 +6446,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 day_dict['basic'] = str(week_holiday_hours)
                 logSend('   > time_type: {}'.format(time_type))
 
-        # if dt_paid_day != '':
-        #     # 유급휴일이 수동지정일 경우 유급휴일을 아직 지정하지 않은 경우
-        #     # 소정근로시간 추가를 계산하지 않는다.
-        #     if dt_paid_day <= str_to_datetime(day_dict['year_month_day']):
-        #         # 유급 휴일이거나 유급휴일이 지났으면
-        #         # 소정근로에 결근이 없었는지 확인하고
-        #         # 소정근로시간을 추가하고 week_dict 를 초기화한다.
-        #         logSend('  >> week_dict: {}'.format(week_dict))
-        #         is_all_week = True
-        #         for week_index in current_month_dict['time_info']['working_days']:
-        #             # 업무의 소정근로일에
-        #             if week_index not in week_dict.keys():
-        #                 # 근무를 하지 않았으면
-        #                 is_all_week = False
-        #                 break
-        #         if is_all_week:  # 소정근로시간을 채웠다.
-        #             hours_week += int(current_month_dict['time_info']['week_hours']) * .2  # 주 소정근로시간
-        #             logSend('  > 주 소정근로시간: {}'.format(hours_week))
-        #         dt_paid_day = dt_paid_day + datetime.timedelta(days=7)
-        #         week_dict = {}
-        #     # logSend(' >> day_dict: {} {}'.format(day_dict['year_month_day'], day_dict['week']))
-        #     is_working = False
-        #     if day_dict['overtime'] == 0:
-        #         # 연장근무가 0 이면 근무가 없을 수도 있다.
-        #         if (day_dict['dt_in_verify'] is not None) or (day_dict['dt_out_verify'] is not None):
-        #             # 출퇴근중 하나가 있으면 근무가 있었다.
-        #             is_working = True
-        #     else:
-        #         # 연장근무가 0이 아니면 연차, 조기퇴근, 연장근무를 했으니까 근무한 것이다.
-        #         is_working = True
-        #     if is_working:
-        #         week_dict[(str_to_datetime(day_dict['year_month_day']).weekday() + 1) % 7] = {
-        #             'week': week_comment[str_to_datetime(day_dict['year_month_day']).weekday()],
-        #             'day_type': day_dict['day_type'],
-        #             'is_working': is_working,
-        #         }
-        #     # logSend('  >> week_dict: {}'.format(week_dict))
-
-        logSend('   > day: {} - day_dict.basic: [{}], type: {}'.format(day_dict['year_month_day'], day_dict['basic'], type(day_dict['basic'])))
-        logSend('   > day_dict: {}'.format(day_dict))
         if len(day_dict['basic']) > 0:
             hours_basic += float(day_dict['basic'])
             days_working += 1
