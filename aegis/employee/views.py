@@ -2037,16 +2037,21 @@ def get_day_type(work: dict, year_month_day: str) -> int:
             logSend('   > 교대제 day_type: {}, paid_day: {}'.format(day_type, work['time_info']['paid_day']))
         else:
             week_index = str_to_datetime(year_month_day).weekday()
+            paid_day = int(work['time_info']['paid_day'])  # 유급휴일 요일
+            paid_day_before = paid_day - 1  # 유급휴일 전날: 무급휴무일이나 무급휴일
+            if paid_day_before == -1:
+                paid_day_before = 6
             week_index = (week_index + 1) % 7  # 0: 일요일
-            logSend('   >> week_index: {}, paid_day: {}, working_days: {}'.format(week_index, work['time_info']['paid_day'], work['time_info']['working_days'], ))
-            if week_index in work['time_info']['working_days']:
-                day_type = 2  # 소정근로일
-            elif week_index == work['time_info']['paid_day']:
+            logSend('   >> week_index: {}, paid_day: {}, paid_day_before: {}, working_days: {}'.format(week_index, paid_day, paid_day_before, work['time_info']['working_days'], ))
+            if week_index is paid_day:
                 day_type = 0  # 유급휴일
-            elif work['time_info']['is_holiday_work'] == 1:
-                day_type = 1  # 무급휴무일(연장 근무)
+            elif week_index is paid_day_before:
+                if work['time_info']['is_holiday_work'] == 1:
+                    day_type = 1  # 무급휴무일(연장 근무)
+                else:
+                    day_type = 3  # 무급휴일(휴일/연장 근무)
             else:
-                day_type = 3  # 무급휴일(휴일/연장 근무)
+                day_type = 2  # 소정근로일
             logSend('   > 교대제 day_type: {}, is_holiday_work: {}, working_days: {}'.format(day_type, work['time_info']['is_holiday_work'], work['time_info']['working_days']))
     else:
         # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정 - 무조건 소정근로일로 처리
