@@ -838,6 +838,10 @@ def notification_list_v2(request):
             notification.save()
             continue
         work = work_dict[str(notification.work_id)]
+        if notification.notification_type in [-21, -20]:
+            dt_io = dt_str(notification.dt_inout, "%Y/%m/%d %H:%M")
+        else:
+            dt_io = dt_str(notification.dt_inout, "%Y/%m/%d")
         view_notification = {
             'id': AES_ENCRYPT_BASE64(str(notification.id)),
             'work_place_name': work['work_place_name'],
@@ -853,7 +857,7 @@ def notification_list_v2(request):
                 notification.notification_type] if notification.notification_type <= 0 else "연장근무",
             'comment': notification.comment,
             # 'dt_io': dt_str(notification.dt_inout, "%Y-%m-%d %H:%M"),
-            'dt_io': dt_str(notification.dt_inout, "%Y/%m/%d %H:%M"),
+            'dt_io': dt_io,
         }
         arr_notification.append(view_notification)
     return REG_200_SUCCESS.to_json_response({'notifications': arr_notification})
