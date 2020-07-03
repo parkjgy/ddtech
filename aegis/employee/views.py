@@ -2046,7 +2046,7 @@ def get_day_type(work: dict, year_month_day: str) -> int:
                 day_type = 1  # 무급휴무일(연장 근무)
             else:
                 day_type = 3  # 무급휴일(휴일/연장 근무)
-            logSend('   > 교대제 day_type: {}, is_holiday_work: {}'.format(day_type, work['time_info']['is_holiday_work']))
+            logSend('   > 교대제 day_type: {}, is_holiday_work: {}, working_days: {}'.format(day_type, work['time_info']['is_holiday_work'], work['time_info']['working_days']))
     else:
         # 교대제/감시단속직은 수동으로 유급휴일/소정근로일 지정 - 무조건 소정근로일로 처리
         day_type = 2
