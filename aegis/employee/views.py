@@ -5905,7 +5905,8 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
             return  # 근무가 없기 때문에 더 처리할 일이 없다.
         else:
             passer_record_dict['remarks'] = "연차휴가(반차)"
-            passer_record_dict['basic'] = str(one_day_working_hours / 2)  # 일 근로시간의 50% 를 추가한다. (주소정근로시간 / 소정근로일) / 2
+            # passer_record_dict['basic'] = str(one_day_working_hours / 2)  # 일 근로시간의 50% 를 추가한다. (주소정근로시간 / 소정근로일) / 2
+            passer_record_dict['basic'] = str(one_day_working_hours)  # 일 근로시간을 추가한다. 2020/07/04
     elif pass_record.overtime == -1:
         # logSend('  >> overtime: {}'.format(pass_record.overtime))
         passer_record_dict['remarks'] = "조기퇴근"
