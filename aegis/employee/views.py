@@ -6352,6 +6352,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     time_type = current_month_dict['time_info']['time_type']  # 급여형태: 0: 시간제, 1: 월급제, 2: 교대제, 3: 감시단속직
     week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
     week_holiday_hours = week_hours * .2  # 주휴시간
+    logSend('   >>>>> 주휴시간: {}, 주소정근로시간: {}'.format(week_holiday_hours, week_hours))
 
     day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
     # 근로자의 업무기간 계산 (업무의 기간과 다를 수 있다.)
@@ -6422,6 +6423,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             time_type = current_month_dict['time_info']['time_type']  # 급여형태: 0: 시간제, 1: 월급제, 2: 교대제, 3: 감시단속직
             week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
             week_holiday_hours = week_hours * .2  # 주휴시간
+            logSend('   >>>>> 주휴시간: {}, 주소정근로시간: {}'.format(week_holiday_hours, week_hours))
 
             current_employee_work = employee_works.find_work_include_date(work_id,
                                                                           str_to_datetime(day_dict['year_month_day']))
