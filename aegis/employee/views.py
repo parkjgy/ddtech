@@ -2038,6 +2038,7 @@ def get_day_type(work: dict, year_month_day: str) -> int:
         else:
             week_index = str_to_datetime(year_month_day).weekday()
             week_index = (week_index + 1) % 7  # 0: 일요일
+            logSend('   >> week_index: {}, paid_day: {}, working_days: {}'.format(week_index, work['time_info']['paid_day'], work['time_info']['working_days'], ))
             if week_index in work['time_info']['working_days']:
                 day_type = 2  # 소정근로일
             elif week_index == work['time_info']['paid_day']:
