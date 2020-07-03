@@ -6353,7 +6353,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             #
             # 급여형태에 따른 상수 계산
             time_type = current_month_dict['time_info']['time_type']  # 급여형태: 0: 시간제, 1: 월급제, 2: 교대제, 3: 감시단속직
-            week_hours = current_month_dict['time_info']['week_hours']  # 주소정근로시간
+            week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
             week_holiday_hours = week_hours * .2  # 주휴시간
 
             current_employee_work = employee_works.find_work_include_date(work_id, str_to_datetime(day_dict['year_month_day']))
