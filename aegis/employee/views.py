@@ -4738,16 +4738,16 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             staff_id = day_type_staff_id
             # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
             if day_type == 0:
-                push_title = '{} 유급휴일로 부여합니다.'.format(year_month_day)
+                push_title = '{} 유급휴일이 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             elif day_type == 1:
-                push_title = '{} 무급휴무일로 부여합니다.'.format(year_month_day)
+                push_title = '{} 무급휴무일이 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             elif day_type == 2:
-                push_title = '{} 소정근로일로 부여합니다.'.format(year_month_day)
+                push_title = '{} 소정근로일이 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             else:
-                push_title = '{} 무급휴일로 부여합니다.'.format(year_month_day)
+                push_title = '{} 무급휴일이 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
     # 연장 근무 처리
     if ('overtime' in rqst.keys()) and ('overtime_staff_id' in rqst.keys()):
@@ -4762,19 +4762,19 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
             dt_inout = str_to_datetime(year_month_day)
             staff_id = overtime_staff_id
             if overtime == -3:
-                push_title = '{} 반차휴가로 부여합니다.'.format(year_month_day)
+                push_title = '{} 반차휴가가 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             elif overtime == -2:
-                push_title = '{} 연차휴가를 부여합니다.'.format(year_month_day)
+                push_title = '{} 연차휴가가 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             elif overtime == -1:
-                push_title = '{} 조기퇴근을 부여합니다.'.format(year_month_day)
+                push_title = '{} 조기퇴근이 부여되었습니다.'.format(year_month_day)
                 comment = send_comment
             elif overtime == 0:
                 push_title = '{} 휴가, 조퇴, 연장이 철회됩니다.'.format(year_month_day)
                 comment = '연차휴가, 조기퇴근, 연장근무'
             else:
-                push_title = '{} 연장근로를 부여합니다.'.format(year_month_day)
+                push_title = '{} 연장근로가 부여되었습니다.'.format(year_month_day)
                 comment = '{0:02d} 시간 {1:02d} 분'.format(overtime // 2, (overtime % 2) * 30)
 
     # 출근시간 수정 처리
@@ -4793,8 +4793,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 dt_inout = str_to_datetime(year_month_day)
             else:
                 notification_type = -20
-                push_title = '{} 출근시간을 조정합니다.'.format(year_month_day)
-                comment = '{}'.format(rqst['dt_in_verify'])
+                push_title = '{} 출근 인정이 부여되었습니다.'.format(year_month_day)
+                comment = '{}'.format(rqst['dt_in_verify'][0:5])
                 dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_in_verify']))
 
     # 퇴근시간 수정 처리
@@ -4813,8 +4813,8 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 dt_inout = str_to_datetime(year_month_day)
             else:
                 notification_type = -21
-                push_title = '{} 퇴근시간을 조정합니다.'.format(year_month_day)
-                comment = '{}'.format(rqst['dt_out_verify'])
+                push_title = '{} 퇴근 인정이 부여되었습니다.'.format(year_month_day)
+                comment = '{}'.format(rqst['dt_out_verify'][0:5])
                 dt_inout = str_to_datetime('{} {}'.format(year_month_day, rqst['dt_out_verify']))
     #
     # 중복된 알림이 있으면 취소처리한다.
@@ -5977,7 +5977,11 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
                                                    week_index_db))
     # logSend('  > {}'.format(cur_work['time_info']))
     if passer_record_dict['day_type'] == 0:  # 유급휴일: 기본근로, 휴일근로, 휴일연장
-        passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        # passer_record_dict['remarks'] = '유급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        if pass_record.overtime > 0:
+            passer_record_dict['remarks'] = '휴일연장: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        else:
+            passer_record_dict['remarks'] = '휴일근로: {:2.1f}H'.format(basic_hours)
         passer_record_dict['holiday'] = str(basic_hours)
         try:
             holiday_pay = int(cur_work['time_info']['week_hours']) * .2
@@ -5994,10 +5998,14 @@ def process_pass_record(passer_record_dict: dict, pass_record: dict, cur_work: d
         holiday = basic_hours
         if pass_record.overtime > 0:
             holiday += pass_record.overtime / 2
-        passer_record_dict['remarks'] = '무급휴무일: {:2.1f}H'.format(holiday)
+        passer_record_dict['remarks'] = '연장근로: {:2.1f}H'.format(holiday)  # 무급휴무일 근로
         passer_record_dict['overtime'] = str(holiday)
     elif passer_record_dict['day_type'] == 3:  # 무급휴일: 기본근로, 휴일근로, 휴일연장
-        passer_record_dict['remarks'] = '무급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        # passer_record_dict['remarks'] = '무급휴일: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        if pass_record.overtime > 0:
+            passer_record_dict['remarks'] = '휴일연장: {:2.1f}H'.format(basic_hours + pass_record.overtime / 2)
+        else:
+            passer_record_dict['remarks'] = '휴일근로: {:2.1f}H'.format(basic_hours)
         passer_record_dict['holiday'] = str(basic_hours)
         passer_record_dict['basic'] = ''
         if pass_record.overtime > 0:
