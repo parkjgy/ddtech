@@ -6364,7 +6364,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         #
         # 소정근로 시간 추가
         #
-        if day_dict['day_type'] is '0':  # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
+        if day_dict['day_type'] is 0:  # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
             days_week += 1
             # 유급휴일의 주휴시간 추가
             #
