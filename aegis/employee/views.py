@@ -6243,8 +6243,7 @@ def my_work_records_v2(request):
                 'holiday': '',  # 휴일근무
                 'ho': '',  # 휴일/연장
                 'remarks': '',  # 연차후무, 소정근로일
-                'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime(
-                    "%Y-%m-%d %H:%M:%S"),
+                'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
                 'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
                 'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
                 'notification': notification_state,
@@ -6259,12 +6258,16 @@ def my_work_records_v2(request):
             if cur_work_employee is None:
                 cur_work = None
                 day_type = -1
+            elif str(cur_work_employee['id']) not in list(work_dict.keys()):
+                cur_work = None
+                day_type = -1
             else:
-                # logSend('   > cur_work_employee[id]: {}'.format(cur_work_employee['id']))
-                # logSend('   > work_dict: {}'.format(work_dict))
-                # logSend('   > work_dict[cur_work_employee[id]]: {}'.format(work_dict[str(cur_work_employee_id)]))
+                logSend('   > cur_work_employee[id]: {}'.format(cur_work_employee['id']))
+                logSend('   > work_dict: {}'.format(work_dict))
+                logSend('   > work_dict[cur_work_employee[id]]: {}'.format(work_dict[str(cur_work_employee_id)]))
                 cur_work = work_dict[str(cur_work_employee['id'])]
                 day_type = get_day_type(cur_work, year_month_day)
+
             if year_month_day in list(notification_dict.keys()):
                 notification = notification_dict[year_month_day]
                 notification_state = notification.is_x
@@ -6276,7 +6279,7 @@ def my_work_records_v2(request):
                 'year_month_day': year_month_day,
                 'week': week_comment[str_to_datetime(year_month_day).weekday()],
                 'action': 0,
-                'work_id': AES_ENCRYPT_BASE64(str(cur_work_employee['id'])) if cur_work_employee is not None else "",
+                'work_id': AES_ENCRYPT_BASE64(str(cur_work_employee['id'])) if cur_work is not None else "",
                 'begin': "",
                 'end': "",
                 'break': '',  # 휴게시간
