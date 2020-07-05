@@ -5804,6 +5804,95 @@ def staff_employees(request):
 
 
 @cross_origin_read_allow
+# @session_is_none_403
+def staff_get_month_notifications(request):
+    """
+    요청: 업무의 월 알림 내역
+    - 관리자 앱의 날짜를 선택 >> 달력을 보여주고 달력에 알림이 있으면 표시한다.
+    http://0.0.0.0:8000/customer/staff_get_month_notifications?staff_id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=4dnQVYFTi501mmdz6hX6CA
+    POST
+        staff_id : 앱 사용자의 식별 id
+        work_id : 업무 id
+    response
+        STATUS 200
+            {
+              "message": "정상적으로 처리되었습니다.",
+              "employees": [
+                {
+                  "is_accept_work": '응답 X',  # '수락', '거절', '답변시한'
+                  "employee_id": "iZ_rkELjhh18ZZauMq2vQw",
+                  "name": "-----",
+                  "phone": "010-4871-8362",
+                  "dt_begin": "2019-04-25 00:00:00",
+                  "dt_end": "2019-07-31 00:00:00",
+                  "x": null,
+                  "y": null
+                },
+                ...... # 다른 근로자 정보
+              ]
+            }
+        STATUS 422 # 개발자 수정사항
+            {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message': 'ClientError: parameter \'staff_id\' 가 정상적인 값이 아니예요.'}
+            {'message': 'ClientError: parameter \'work_id\' 가 정상적인 값이 아니예요.'}
+
+            {'message': 'ServerError: 등록되지 않은 관리자 입니다.'}
+            {'message': 'ServerError: 등록되지 않은 업무 입니다.'}
+            {'message': '이미 업무가 시직되었습니다. >> staff_employees_at_day'}
+    """
+
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    staff_id = int(parameter_check['parameters']['staff_id'])
+    work_id = int(parameter_check['parameters']['work_id'])
+
+    staffs = Staff.objects.filter(id=staff_id)
+    if len(staffs) == 0:
+        logError(get_api(request), ' ServerError: Staff 에 staff_id=[{}] 이(가) 없다'.format(staff_id))
+        return status422(get_api(request), {'message': 'ServerError: 등록되지 않은 관리자 입니다.'})
+
+    works = Work.objects.filter(id=work_id)
+    if len(works) == 0:
+        logError(get_api(request), ' ServerError: Work 에 work_id={} 이(가) 없거나 중복됨'.format(work_id))
+        return status422(get_api(request), {'message': 'ServerError: 등록되지 않은 업무 입니다.'})
+    work = works[0]
+
+    is_work_begin = True if work.dt_begin < datetime.datetime.now() else False
+    if is_work_begin:
+        return status422(get_api(request), {'message': '이미 업무가 시직되었습니다. >> staff_employees_at_day'})
+
+    employees = Employee.objects.filter(work_id=work.id)
+    arr_employee = []
+    for employee in employees:
+        employee_dic = {
+            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
+            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
+            'name': employee.name,
+            'phone': phone_format(employee.pNo),
+            'dt_begin': dt_null(employee.dt_begin),
+            'dt_end': dt_null(employee.dt_end),
+            # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
+            # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
+            # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
+            # 'dt_end_touch': dt_null(employee.dt_end_touch),
+            # 'overtime': employee.overtime,
+            'x': employee.x,
+            'y': employee.y,
+        }
+        arr_employee.append(employee_dic)
+    result = {'employees': arr_employee}
+
+    return REG_200_SUCCESS.to_json_response(result)
+
+
+@cross_origin_read_allow
 def staff_bg(request):
     """
     [관리자용 앱]:  foreground to background (서버로 전송할 내용이 있으면 전송하다.)
