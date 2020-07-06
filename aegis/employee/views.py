@@ -6627,7 +6627,7 @@ def month_notifications(request):
     noti_no_dict = {}
     for noti in notification_list:
         noti_year_month_day = noti.dt_inout.strftime("%Y-%m-%d")
-        if noti_year_month_day not in list(noti_no_dict):
+        if noti_year_month_day not in list(noti_no_dict.keys()):
             noti_dict = {
                            "year_month_day": noti_year_month_day,  # 년월일
                            "notification_all": 0,  # 알림 갯수: 모든 알림 갯수
