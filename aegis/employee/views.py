@@ -6581,20 +6581,20 @@ def month_notifications(request):
         work_id: YC9pzssqfyokuFojmsHDYw     # 업무 id (암호화 된 상태)
         year_month: 2020-07                 # 년월
     response
-        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
         STATUS 200
-        {
-            'working':
-            [
-                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
-                    'outing':
-                    [
-                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
-                    ]
-                },
-                ......
-            ]
-        }
+            {
+                "message": "정상적으로 처리되었습니다.",
+                "noti_no_dict": {
+                    "03": {
+                        "year_month_day": "2020-07-03",
+                        "notification_all": 3,
+                        "notification_before": 1,
+                        "notification_reject": 2,
+                        "notification_timeover": 0
+                    },
+                    ......
+                }
+            }
         STATUS 422 # 개발자 수정사항
             {'message':'ClientError: parameter \'work_id\' 가 없어요'}
             {'message':'ClientError: parameter \'year_month\' 가 없어요'}
@@ -6614,20 +6614,19 @@ def month_notifications(request):
     #     return status422(get_api(request), {'message': '해당 업무(customer_work_id: {}) 없음. {}'.format(work_id, str(e))})
     # work = work_dict([work_id])
 
-    month_last_day = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(seconds=1)
-    today = datetime.datetime.now()
-    if today < month_last_day:
-        # 월말이 오늘 보다 나중이면 오늘을 월말로 한다.
-        month_last_day = today
+    # month_last_day = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(seconds=1)
+    # today = datetime.datetime.now()
+    # if today < month_last_day:
+    #     # 월말이 오늘 보다 나중이면 오늘을 월말로 한다.
+    #     month_last_day = today
+
     # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
-    # notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month, is_x__in=[0, 2, 3])
-    notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month)
-    logSend('   > notification_list: {}'.format(
-        [{notification.employee_id, notification.dt_inout} for notification in notification_list]))
+    notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month, is_x__in=[0, 2, 3])
+    # notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month)
     noti_no_dict = {}
     for noti in notification_list:
         noti_year_month_day = noti.dt_inout.strftime("%Y-%m-%d")
-        if noti_year_month_day not in list(noti_no_dict.keys()):
+        if noti_year_month_day[8:10] not in list(noti_no_dict.keys()):
             noti_dict = {
                            "year_month_day": noti_year_month_day,  # 년월일
                            "notification_all": 0,  # 알림 갯수: 모든 알림 갯수
@@ -6636,7 +6635,8 @@ def month_notifications(request):
                            "notification_timeover": 0,  # 알림 갯수: 답변시한이 지난 갯수
                        }
         else:
-            noti_dict = noti_no_dict[noti_year_month_day]
+            noti_dict = noti_no_dict[noti_year_month_day[8:10]]
+        # logSend('   > noti_dict: {}'.format(noti_dict))
         noti_dict['notification_all'] += 1
         if noti.is_x is 0:
             noti_dict['notification_before'] += 1
@@ -6644,6 +6644,7 @@ def month_notifications(request):
             noti_dict['notification_reject'] += 1
         else:  # 3
             noti_dict['notification_timeover'] += 1
+        noti_no_dict[noti_year_month_day[8:10]] = noti_dict
 
     return REG_200_SUCCESS.to_json_response({'noti_no_dict': noti_no_dict})
 

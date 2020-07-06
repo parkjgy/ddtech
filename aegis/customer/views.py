@@ -5823,7 +5823,7 @@ def staff_month_notifications(request):
         STATUS 200
             {
               "message": "정상적으로 처리되었습니다.",
-              "notifications": {
+              "notification_dict": {
                 "01": {
                     "year_month_day": 2020-07-01,   # 년월일
                     "notification_all": 3,          # 알림 갯수: 모든 알림 갯수
@@ -5864,28 +5864,15 @@ def staff_month_notifications(request):
     except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: 등록되지 않은 업무 입니다.'})
 
-    employees = Employee.objects.filter(work_id=work.id)
-    arr_employee = []
-    for employee in employees:
-        employee_dic = {
-            'is_accept_work': '응답 X' if employee.is_accept_work is None else '수락' if employee.is_accept_work == 1 else '거절' if employee.is_accept_work == 0 else '답변시한',
-            'employee_id': AES_ENCRYPT_BASE64(str(employee.id)),
-            'name': employee.name,
-            'phone': phone_format(employee.pNo),
-            'dt_begin': dt_null(employee.dt_begin),
-            'dt_end': dt_null(employee.dt_end),
-            # 'dt_begin_beacon': dt_null(employee.dt_begin_beacon),
-            # 'dt_end_beacon': dt_null(employee.dt_end_beacon),
-            # 'dt_begin_touch': dt_null(employee.dt_begin_touch),
-            # 'dt_end_touch': dt_null(employee.dt_end_touch),
-            # 'overtime': employee.overtime,
-            'x': employee.x,
-            'y': employee.y,
-        }
-        arr_employee.append(employee_dic)
-    result = {'employees': arr_employee}
-
-    return REG_200_SUCCESS.to_json_response(result)
+    parameters = {
+        "work_id": rqst['work_id'],
+        "year_month": rqst['year_month']
+    }
+    s = requests.session()
+    r = s.post(settings.EMPLOYEE_URL + 'month_notifications', json=parameters)
+    if r.status_code != 200:
+        return ReqLibJsonResponse(r)
+    return REG_200_SUCCESS.to_json_response({'notification_dict': r.json()['noti_no_dict']})
 
 
 @cross_origin_read_allow
