@@ -7326,6 +7326,7 @@ def push_from_employee(request):
         'contents': {
             'title': '{}*{}님 {}, 시간: {}'.format(name[:1], name[len(name) - 1:], ("출근" if is_in else "퇴근"),
                                                 dt.strftime("%H:%M")),
+            'subtitle':'',
             # 'subtitle': '시간: {}'.format(dt.strftime("%H:%M")),
             'body': {'action': 'AlertInOut', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
         }
