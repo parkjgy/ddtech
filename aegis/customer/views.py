@@ -5121,6 +5121,7 @@ def staff_fg(request):
         login_id=abc
         login_pw=password
         token=...
+        pType = 10      # 10: 아이폰, 20: 안드로이드
     response
         STATUS 200
             {
@@ -5151,13 +5152,14 @@ def staff_fg(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['login_id', 'login_pw', 'token_@'])
+    parameter_check = is_parameter_ok(rqst, ['login_id', 'login_pw', 'token_@', 'pType_@'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
 
     login_id = parameter_check['parameters']['login_id']
     login_pw = parameter_check['parameters']['login_pw']
     token = parameter_check['parameters']['token']
+    pType = parameter_check['parameters']['pType']
 
     staffs = Staff.objects.filter(login_id=login_id)
     if len(staffs) == 0:
@@ -5176,12 +5178,13 @@ def staff_fg(request):
     app_user = staffs[0]
     app_user.is_app_login = True
     app_user.dt_app_login = datetime.datetime.now()
-    if token == None:
+    if token is None or pType is None:
         app_user.push_token = "Staff_token_is_None"
     else:
         app_user.push_token = token
-    # logSend(request.META)
+        app_user.pType = pType
     if 'HTTP_AV' in request.META:
+        logSend(request.META['HTTP_AV'])
         app_user.app_version = request.META['HTTP_AV']
     app_user.save()
     # request.session['id'] = app_user.id
@@ -7269,6 +7272,12 @@ def staff_work_update_employee(request):
     return REG_200_SUCCESS.to_json_response()
 
 
+def send_push(push_contents):
+    push_result = notification(push_contents)
+    logSend('push result: {}'.format(push_result))
+    return push_result
+
+
 @cross_origin_read_allow
 def push_from_employee(request):
     """
@@ -7318,6 +7327,20 @@ def push_from_employee(request):
 
     if len(staff.push_token) < 64:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': 'none token: {}'.format(staff.push_token)})
+    # push_contents = {
+    #     'target_list': push_list,
+    #     'func': 'user',
+    #     'isSound': True,
+    #     'badge': 1,
+    #     'contents': {'title': '(채용정보) {}: {}'.format(work['work_place_name'], work['work_name_type']),
+    #                  'subtitle': '{} ~ {}'.format(work['dt_begin'], work['dt_end']),
+    #                  'body': {'action': 'NewWork',  # 'NewRecruiting',
+    #                           'dt_begin': work['dt_begin'],
+    #                           'dt_end': work['dt_end']
+    #                           }
+    #                  }
+    # }
+    # send_push(push_contents)
     push_contents = {
         'target_list': [{'id': staff.id, 'token': staff.push_token, 'pType': staff.pType}],
         'func': 'mng',
@@ -7326,12 +7349,15 @@ def push_from_employee(request):
         'contents': {
             'title': '{}*{}님 {}, 시간: {}'.format(name[:1], name[len(name) - 1:], ("출근" if is_in else "퇴근"),
                                                 dt.strftime("%H:%M")),
-            'subtitle':'',
+            'subtitle': '',
             # 'subtitle': '시간: {}'.format(dt.strftime("%H:%M")),
-            'body': {'action': 'AlertInOut', 'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
+            'body': {'action': 'AlertInOut',
+                     'current': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                     },
         }
     }
-    response = notification(push_contents)
+    response = send_push(push_contents)
+    # response = notification(push_contents)
 
     return REG_200_SUCCESS.to_json_response({'response': json.dumps(response)})
 
