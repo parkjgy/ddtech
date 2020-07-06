@@ -5816,25 +5816,23 @@ def staff_month_notifications(request):
     - 관리자 앱의 날짜를 선택 >> 달력을 보여주고 달력에 알림이 있으면 표시한다.
     http://0.0.0.0:8000/customer/staff_month_notifications?staff_id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=4dnQVYFTi501mmdz6hX6CA
     POST
-        staff_id : 앱 사용자의 식별 id
-        work_id : 업무 id
+        staff_id: ryWQkNtiHgkUaY_SZ1o2uA    # 앱 사용자 id
+        work_id: ryWQkNtiHgkUaY_SZ1o2uA     # 업무 id
+        year_month: 2020-06                 # 년월
     response
         STATUS 200
             {
               "message": "정상적으로 처리되었습니다.",
-              "employees": [
-                {
-                  "is_accept_work": '응답 X',  # '수락', '거절', '답변시한'
-                  "employee_id": "iZ_rkELjhh18ZZauMq2vQw",
-                  "name": "-----",
-                  "phone": "010-4871-8362",
-                  "dt_begin": "2019-04-25 00:00:00",
-                  "dt_end": "2019-07-31 00:00:00",
-                  "x": null,
-                  "y": null
-                },
-                ...... # 다른 근로자 정보
-              ]
+              "notifications": {
+                "01": {
+                    "year_month_day": 2020-07-01,   # 년월일
+                    "notification_all": 3,          # 알림 갯수: 모든 알림 갯수
+                    "notification_before": 1,       # 알림 갯수: 확인 안한 알림
+                    "notification_reject": 1,       # 알림 갯수: 거부한 갯수
+                    "notification_timeover": 1,     # 알림 갯수: 답변시한이 지난 갯수
+                    },
+                ......  # 다른 날짜
+              }
             }
         STATUS 422 # 개발자 수정사항
             {'message': 'ClientError: parameter \'staff_id\' 가 없어요'}
@@ -5844,7 +5842,6 @@ def staff_month_notifications(request):
 
             {'message': 'ServerError: 등록되지 않은 관리자 입니다.'}
             {'message': 'ServerError: 등록되지 않은 업무 입니다.'}
-            {'message': '이미 업무가 시직되었습니다. >> staff_employees_at_day'}
     """
 
     if request.method == 'POST':
@@ -5852,26 +5849,20 @@ def staff_month_notifications(request):
     else:
         rqst = request.GET
 
-    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!'])
+    parameter_check = is_parameter_ok(rqst, ['staff_id_!', 'work_id_!', 'year_month'])
     if not parameter_check['is_ok']:
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     staff_id = int(parameter_check['parameters']['staff_id'])
     work_id = int(parameter_check['parameters']['work_id'])
 
-    staffs = Staff.objects.filter(id=staff_id)
-    if len(staffs) == 0:
-        logError(get_api(request), ' ServerError: Staff 에 staff_id=[{}] 이(가) 없다'.format(staff_id))
+    try:
+        staff = Staff.objects.get(id=staff_id)
+    except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: 등록되지 않은 관리자 입니다.'})
-
-    works = Work.objects.filter(id=work_id)
-    if len(works) == 0:
-        logError(get_api(request), ' ServerError: Work 에 work_id={} 이(가) 없거나 중복됨'.format(work_id))
+    try:
+        work = Work.objects.filter(id=work_id)
+    except Exception as e:
         return status422(get_api(request), {'message': 'ServerError: 등록되지 않은 업무 입니다.'})
-    work = works[0]
-
-    is_work_begin = True if work.dt_begin < datetime.datetime.now() else False
-    if is_work_begin:
-        return status422(get_api(request), {'message': '이미 업무가 시직되었습니다. >> staff_employees_at_day'})
 
     employees = Employee.objects.filter(work_id=work.id)
     arr_employee = []

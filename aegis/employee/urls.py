@@ -69,6 +69,7 @@ urlpatterns = [
     url(r'employee/alert_recruiting$', views.alert_recruiting, name='alert_recruiting'),
 
     url(r'employee/my_work_records_v2$', views.my_work_records_v2, name='my_work_records_v2'),
+    url(r'employee/month_notifications$', views.month_notifications, name='month_notifications'),
 
     url(r'employee/analysys$', views.analysys, name='analysys'),
     url(r'employee/rebuild_pass_history$', views.rebuild_pass_history, name='rebuild_pass_history'),

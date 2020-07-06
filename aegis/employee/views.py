@@ -6574,6 +6574,60 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
 
 
 @cross_origin_read_allow
+def month_notifications(request):
+    """
+    알림 갯수: 어떤 달의 알림 갯수 정보
+    POST
+        work_id: YC9pzssqfyokuFojmsHDYw     # 업무 id (암호화 된 상태)
+        year_month: 2020-07                 # 년월
+    response
+        STATUS 204 # 일한 내용이 없어서 보내줄 데이터가 없다.
+        STATUS 200
+        {
+            'working':
+            [
+                { 'action': 10, 'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36',
+                    'outing':
+                    [
+                        {'dt_begin': '2018-12-28 12:53:36', 'dt_end': '2018-12-28 12:53:36'}
+                    ]
+                },
+                ......
+            ]
+        }
+        STATUS 422 # 개발자 수정사항
+            {'message':'ClientError: parameter \'work_id\' 가 없어요'}
+            {'message':'ClientError: parameter \'year_month\' 가 없어요'}
+    """
+    if request.method == 'POST':
+        rqst = json.loads(request.body.decode("utf-8"))
+    else:
+        rqst = request.GET
+    parameter_check = is_parameter_ok(rqst, ['work_id_!', 'year_month'])
+    if not parameter_check['is_ok']:
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
+    work_id = parameter_check['parameters']['work_id']
+    year_month = parameter_check['parameters']['year_month']
+
+    # work_dict = get_work_dict([work_id])
+    # if len(work_dict.keys()) == 0:
+    #     return status422(get_api(request), {'message': '해당 업무(customer_work_id: {}) 없음. {}'.format(work_id, str(e))})
+    # work = work_dict([work_id])
+
+    # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
+    # notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month, is_x__in=[0, 2, 3])
+    notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month)
+    logSend('   > notification_list: {}'.format(
+        [{notification.employee_id, notification.dt_inout} for notification in notification_list]))
+    notification_dict = {notification.dt_inout.strftime("%Y-%m-%d"): {'type': notification.notification_type,
+                                                                      'is_x': notification.is_x,
+                                                                      }
+                         for notification in notification_list}
+
+    return REG_200_SUCCESS.to_json_response({'notification_dict': notification_dict})
+
+
+@cross_origin_read_allow
 def alert_recruiting(request):
     """
     채용 알림 : 근로자에게 채용 내용을 알림
