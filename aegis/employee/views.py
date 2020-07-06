@@ -6615,9 +6615,10 @@ def month_notifications(request):
     # work = work_dict([work_id])
 
     month_last_day = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(seconds=1)
-    if datetime.now() < month_last_day:
+    today = datetime.datetime.now()
+    if today < month_last_day:
         # 월말이 오늘 보다 나중이면 오늘을 월말로 한다.
-        month_last_day = datetime.now()
+        month_last_day = today
     # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
     # notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month, is_x__in=[0, 2, 3])
     notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month)
@@ -6644,7 +6645,7 @@ def month_notifications(request):
         else:  # 3
             noti_dict['notification_timeover'] += 1
 
-    return REG_200_SUCCESS.to_json_response({'notification_dict': notification_dict})
+    return REG_200_SUCCESS.to_json_response({'noti_no_dict': noti_no_dict})
 
 
 @cross_origin_read_allow
