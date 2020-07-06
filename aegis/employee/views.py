@@ -6614,15 +6614,35 @@ def month_notifications(request):
     #     return status422(get_api(request), {'message': '해당 업무(customer_work_id: {}) 없음. {}'.format(work_id, str(e))})
     # work = work_dict([work_id])
 
+    month_last_day = str_to_datetime(year_month) + relativedelta(months=1) - datetime.timedelta(seconds=1)
+    if datetime.now() < month_last_day:
+        # 월말이 오늘 보다 나중이면 오늘을 월말로 한다.
+        month_last_day = datetime.now()
     # 0: 알림 답변 전 상태, 1: 알림 확인 적용된 상태, 2: 알림 내용 거절, 3: 알림 확인 시한 지남
     # notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month, is_x__in=[0, 2, 3])
     notification_list = Notification_Work.objects.filter(work_id=work_id, dt_inout__startswith=year_month)
     logSend('   > notification_list: {}'.format(
         [{notification.employee_id, notification.dt_inout} for notification in notification_list]))
-    notification_dict = {notification.dt_inout.strftime("%Y-%m-%d"): {'type': notification.notification_type,
-                                                                      'is_x': notification.is_x,
-                                                                      }
-                         for notification in notification_list}
+    noti_no_dict = {}
+    for noti in notification_list:
+        noti_year_month_day = noti.dt_inout.strftime("%Y-%m-%d")
+        if noti_year_month_day not in list(noti_no_dict):
+            noti_dict = {
+                           "year_month_day": noti_year_month_day,  # 년월일
+                           "notification_all": 0,  # 알림 갯수: 모든 알림 갯수
+                           "notification_before": 0,  # 알림 갯수: 확인 안한 알림
+                           "notification_reject": 0,  # 알림 갯수: 거부한 갯수
+                           "notification_timeover": 0,  # 알림 갯수: 답변시한이 지난 갯수
+                       }
+        else:
+            noti_dict = noti_no_dict[noti_year_month_day]
+        noti_dict['notification_all'] += 1
+        if noti.is_x is 0:
+            noti_dict['notification_before'] += 1
+        elif noti.is_x is 2:
+            noti_dict['notification_reject'] += 1
+        else:  # 3
+            noti_dict['notification_timeover'] += 1
 
     return REG_200_SUCCESS.to_json_response({'notification_dict': notification_dict})
 
