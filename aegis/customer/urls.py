@@ -74,8 +74,7 @@ urlpatterns = [
     url(r'customer/staff_employees_at_day$', views.staff_employees_at_day, name='staff_employees_at_day'),
     url(r'customer/staff_employees_at_day_v2$', views.staff_employees_at_day_v2, name='staff_employees_at_day_v2'),
     url(r'customer/staff_employees$', views.staff_employees, name='staff_employees'),
-    url(r'customer/staff_get_month_notifications$', views.staff_get_month_notifications,
-        name='staff_get_month_notifications'),
+    url(r'customer/staff_month_notifications$', views.staff_month_notifications, name='staff_month_notifications'),
 
     # url(r'customer/staff_bg$', views.staff_bg, name='staff_bg'),
     url(r'customer/staff_background$', views.staff_background, name='staff_background'),

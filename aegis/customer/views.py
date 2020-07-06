@@ -5271,7 +5271,8 @@ def virtual_work(isWorkStart, work) -> dict:
 @cross_origin_read_allow
 def staff_update_me(request):
     """
-    [관리자용 앱]:  자기정보 update (사용 보류)
+    [관리자용 앱]: 자기정보 update
+        - 2020/07/07 is_push_touch 만 사
         주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
         response 는 추후 추가될 예정이다.
     http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
@@ -5310,16 +5311,17 @@ def staff_update_me(request):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': parameter_check['results']})
     staff_id = int(parameter_check['parameters']['staff_id'])
     is_push_touch = int(parameter_check['parameters']['is_push_touch'])
-    if is_push_touch > 1 or is_push_touch < 0:
+    if (is_push_touch < 0) or (1 < is_push_touch):
         return status422(get_api(request), {'message': 'is_push_touch 는 0/1 중 하나입니다.'})
 
-    staffs = Work.objects.filter(id=staff_id)
-    if len(staffs) == 0:
-        logError(get_api(request), ' ServerError: Staff 에 staff_id={} 이(가) 없거나 중복됨'.format(staff_id))
+    try:
+        staff = Staff.objects.get(id=staff_id)
+    except Exception as e:
+        message = ' ServerError: Staff 에 staff_id={} 이(가) 없거나 중복됨'.format(staff_id)
+        send_slack('customer/staff_update_me', message, channel='#server_bug')
         return status422(get_api(request), {'message': 'ServerError: 직원으로 등록되어 있지 않거나 중복되었다.'})
-
-    staff = staffs[0]
-    staff.is_push_touch = is_push_touch
+    staff.is_push_touch = True if (is_push_touch == 1) else False
+    # logSend('   > staff.is_push_touch: {}, staff.id:{}, name: {}'.format(staff.is_push_touch, staff.id, staff.name))
     staff.save()
 
     return REG_200_SUCCESS.to_json_response()
@@ -5805,11 +5807,11 @@ def staff_employees(request):
 
 @cross_origin_read_allow
 # @session_is_none_403
-def staff_get_month_notifications(request):
+def staff_month_notifications(request):
     """
     요청: 업무의 월 알림 내역
     - 관리자 앱의 날짜를 선택 >> 달력을 보여주고 달력에 알림이 있으면 표시한다.
-    http://0.0.0.0:8000/customer/staff_get_month_notifications?staff_id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=4dnQVYFTi501mmdz6hX6CA
+    http://0.0.0.0:8000/customer/staff_month_notifications?staff_id=ryWQkNtiHgkUaY_SZ1o2uA&work_id=4dnQVYFTi501mmdz6hX6CA
     POST
         staff_id : 앱 사용자의 식별 id
         work_id : 업무 id
@@ -7195,7 +7197,7 @@ def staff_work_update_employee(request):
     [관리자용 앱]:  업무에 근무 중인 근로자 내용 수정, 추가(지각, 외출, 조퇴, 특이사항)
     	주)	항목이 비어있으면 수정하지 않는 항목으로 간주한다.
     		response 는 추후 추가될 예정이다.
-    http://0.0.0.0:8000/customer/staff_update_me?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
+    http://0.0.0.0:8000/customer/staff_work_update_employee?id=&login_id=temp_1&before_pw=A~~~8282&login_pw=&name=박종기&position=이사&department=개발&phone_no=010-2557-3555&phone_type=10&push_token=unknown&email=thinking@ddtechi.com
     POST
     	{
     		'id': '암호화된 id',           # 아래 login_id 와 둘 중의 하나는 필수
