@@ -17,7 +17,7 @@ DATABASES = {
         # The following settings are not used with sqlite3:
         'USER': 'ddtech',
         'PASSWORD': 'ddTech!!82',
-        'HOST': 'aegisdbinstance.cpa3beafxpw7.ap-northeast-2.rds.amazonaws.com',
+        'HOST': 'aegis-qa.cpa3beafxpw7.ap-northeast-2.rds.amazonaws.com',
         # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '3306',  # Set to empty string for default.
     }
