@@ -4836,11 +4836,13 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
         target_list = [-20, -22]
     else:
         target_list = [-30]
-    cancel_noti_list = Notification_Work.objects.filter(dt_inout__startswith=dt_inout.date(),
-                                                        notification_type__in=target_list)
-    for cancel_noti in cancel_noti_list:
-        cancel_noti.is_x = 1
-        cancel_noti.save()
+    for employee_id in employee_ids:
+        cancel_noti_list = Notification_Work.objects.filter(employee_id=employee_id,
+                                                            dt_inout__startswith=dt_inout.date(),
+                                                            notification_type__in=target_list)
+        for cancel_noti in cancel_noti_list:
+            cancel_noti.is_x = 1
+            cancel_noti.save()
     #
     # 유급휴일이 수동지정이면 day_type 으로 소정근로일/무급휴일/유급휴일을 표시해야한다.
     # 근태정보 변경 알림을 확인/거절/기한지남 인 경우 표시해야 한다.

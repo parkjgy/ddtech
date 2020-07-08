@@ -6316,7 +6316,7 @@ def staff_change_work_v2(request):
     # logSend(employee_ids)
     if len(employee_ids) == 0:
         # 연장근무 저장할 근로자 목록이 없다.
-        logError(get_api(request), ' 근로자 연장 근무요청을 했는데 선택된 근로자({})가 없다?'.format(employee_ids))
+        logError(get_api(request), ' 근로자 목록({})이 없다?'.format(employee_ids))
 
         return REG_200_SUCCESS.to_json_response()
     # 암호화된 employee id 복호화
