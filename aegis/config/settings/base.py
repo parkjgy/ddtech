@@ -30,8 +30,8 @@ ALLOWED_HOSTS = ['0.0.0.0',  # local
                  '192.168.123.77',  # 상암동 개발 IP
                  '125.142.28.181',  # 행신동 박종기 집 IP
                  'dev.ddtechi.com',  # 개발서버
-                 'api-dev.ezchk.co.kr',  # 상용서버를 통한 개발서버
-                 'api-qa.ezchk.co.kr',  # QA서버
+                 'api-dev.ezchek.co.kr',  # 상용서버를 통한 개발서버
+                 'api-qa.ezchek.co.kr',  # QA서버
                  'api-qa.aegisfac.com',  # QA서버
                  'api.ezchek.co.kr',  # 상용서버
                  'api.aegisfac.com',  # 상용서버 필수 추가
