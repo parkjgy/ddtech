@@ -1824,9 +1824,9 @@ def certification_no_to_sms(request):
         'msg': '이지체크 [' + str(certificateNo) + ']\n'
         '인증번호 입니다.'
     }
-    if settings.IS_TEST:
-        rData['testmode_yn'] = 'Y'
-        return REG_200_SUCCESS.to_json_response(rData)
+    # if settings.IS_TEST:
+    #     rData['testmode_yn'] = 'Y'
+    #     return REG_200_SUCCESS.to_json_response(rData)
 
     rSMS = requests.post('https://apis.aligo.in/send/', data=rData)
     # print(rSMS.status_code)
