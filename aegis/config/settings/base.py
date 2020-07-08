@@ -35,9 +35,7 @@ ALLOWED_HOSTS = ['0.0.0.0',  # local
                  'api-qa.aegisfac.com',  # QA서버
                  'api.ezchek.co.kr',  # 상용서버
                  'api.aegisfac.com',  # 상용서버 필수 추가
-                 '52.78.233.31',  # 상용서버 (필요없을 듯)
-                 '222.120.80.158', # 행신동 오피스텔
-]
+                 '52.78.233.31']  # 상용서버 (필요없을 듯)
 
 # Application definition
 
