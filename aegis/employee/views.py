@@ -6447,6 +6447,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
             week_holiday_hours = week_hours * .2  # 주휴시간
             if time_type in [0, 1]:
+                logSend('   > len(working_days): {}'.format(len(current_month_dict['time_info']['working_days'])))
                 day_basic_hours = week_hours / len(current_month_dict['time_info']['working_days'])  # 일소정근로시간
             else:
                 day_basic_hours = week_holiday_hours  # 교대제, 감시단속직은 일소정근로시간을 주휴시간으로 처리한다.
