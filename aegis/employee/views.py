@@ -6477,7 +6477,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #           소정근로일 개근: 출퇴근시간이 있는 경우, 연차가 있는 경우
                 #           주휴시간: 웹에서 입력한 주 소정근로시간
                 #
-                week_index = str_to_datetime(pass_record.year_month_day).weekday()
+                week_index = str_to_datetime(day_dict['year_month_day']).weekday()
                 week_index_db = (week_index + 1) % 7
                 if current_month_dict['time_type']['paid_day'] is not week_index_db:
                     # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
