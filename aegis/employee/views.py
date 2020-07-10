@@ -6479,7 +6479,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #
                 week_index = str_to_datetime(day_dict['year_month_day']).weekday()
                 week_index_db = (week_index + 1) % 7
-                if current_month_dict['time_type']['paid_day'] is not week_index_db:
+                if current_month_dict['time_info']['paid_day'] is not week_index_db:
                     # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
                     #   일소정근로시간을 기본근로시간으로 준다.
                     day_dict['basic'] = day_basic_hours
