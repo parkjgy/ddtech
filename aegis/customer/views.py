@@ -2563,6 +2563,8 @@ def update_work_v2(request):
         time_info['week_hours'] = week_hours
     if 'month_hours' in rqst:
         time_info['month_hours'] = month_hours
+    elif int(time_type) is 0:  # 시급제는 월소정근로일을 0으로
+        time_info['month_hours'] = 0
     if 'working_days' in rqst:
         time_info['working_days'] = working_days
     if 'paid_day' in rqst:
