@@ -6245,7 +6245,7 @@ def my_work_records_v2(request):
                 else:
                     dt_accept = pass_record.dt_out_verify.strftime("%Y-%m-%d %H:%M:%S")
             else:
-                dt_accept = pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
+                dt_accept = pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S")
             passer_record_dict = {
                 'year_month_day': pass_record.year_month_day,
                 'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
@@ -6447,6 +6447,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
             week_holiday_hours = week_hours * .2  # 주휴시간
             if time_type in [0, 1]:
+                logSend('   > working_days: {}'.format(current_month_dict['time_info']['working_days']))
                 logSend('   > len(working_days): {}'.format(len(current_month_dict['time_info']['working_days'])))
                 day_basic_hours = week_hours / len(current_month_dict['time_info']['working_days'])  # 일소정근로시간
             else:
