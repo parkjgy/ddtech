@@ -6266,7 +6266,7 @@ def my_work_records_v2(request):
             else:
                 logSend('   > cur_work_employee[id]: {}'.format(cur_work_employee['id']))
                 logSend('   > work_dict: {}'.format(work_dict))
-                logSend('   > work_dict[cur_work_employee[id]]: {}'.format(work_dict[str(cur_work_employee_id)]))
+                logSend('   > work_dict[cur_work_employee[id]]: {}'.format(work_dict[str(cur_work_employee['id'])]))
                 cur_work = work_dict[str(cur_work_employee['id'])]
                 day_type = get_day_type(cur_work, year_month_day)
 
