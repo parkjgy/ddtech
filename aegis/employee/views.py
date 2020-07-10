@@ -6324,8 +6324,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     days_holiday = 0  # 연차휴무 횟수
     days_early_out = 0  # 조기퇴근 횟수
 
-    week_dict = {}  # 소정근로 시간을 처리하기 위해 유급휴일 전까지 근로 내역을 저장
-
     logSend('>>> {}'.format(passer_rec_dict.keys()))
     logSend('>>> {}'.format(work_dict.keys()))
     passer_rec_day_index = 0
@@ -6358,6 +6356,10 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
     time_type = current_month_dict['time_info']['time_type']  # 급여형태: 0: 시간제, 1: 월급제, 2: 교대제, 3: 감시단속직
     week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
     week_holiday_hours = week_hours * .2  # 주휴시간
+    if time_type in [0, 1]:
+        day_basic_hours = week_hours / len(current_month_dict['time_info']['working_days'])  # 일소정근로시간
+    else:
+        day_basic_hours = week_holiday_hours  # 교대제, 감시단속직은 일소정근로시간을 주휴시간으로 처리한다.
     logSend('   >>>>> 주휴시간: {}, 주소정근로시간: {}'.format(week_holiday_hours, week_hours))
 
     day_dict = passer_rec_dict[passer_rec_day_list[passer_rec_day_index]]
@@ -6429,6 +6431,10 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             time_type = current_month_dict['time_info']['time_type']  # 급여형태: 0: 시간제, 1: 월급제, 2: 교대제, 3: 감시단속직
             week_hours = int(current_month_dict['time_info']['week_hours'])  # 주소정근로시간
             week_holiday_hours = week_hours * .2  # 주휴시간
+            if time_type in [0, 1]:
+                day_basic_hours = week_hours / len(current_month_dict['time_info']['working_days'])  # 일소정근로시간
+            else:
+                day_basic_hours = week_holiday_hours  # 교대제, 감시단속직은 일소정근로시간을 주휴시간으로 처리한다.
             logSend('   >>>>> 주휴시간: {}, 주소정근로시간: {}'.format(week_holiday_hours, week_hours))
 
             current_employee_work = employee_works.find_work_include_date(work_id,
@@ -6444,22 +6450,26 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         # 소정근로 시간 추가
         #
         if day_dict['day_type'] is 0:  # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
-            days_week += 1
-            today_pass_record = Pass_History.objects.get(passer_id=passer_id, work_id=work_id,
-                                                         year_month_day=day_dict['year_month_day'])
-            if (today_pass_record is not None) and (today_pass_record.day_type_staff_id is not -1):
-                # 관리자에 의해 부여된 유급휴일
-                #   기본근로 8시간 부여
-                day_dict['basic'] = str(week_holiday_hours)
-            else:
-                # 유급휴일의 주휴시간 추가
-                if time_type in [0, 1]:
-                    # 시급제, 월급제
-                    #   정해진 유급휴일이 되면
-                    #       소정근로일에 개근했을 때 주휴시간 부여
-                    #           소정근로일 개근: 출퇴근시간이 있는 경우, 연차가 있는 경우
-                    #           주휴시간: 웹에서 입력한 주 소정근로시간
-                    #
+            days_week += 1  # 유급휴일 일수 증가
+
+            # 유급휴일의 주휴시간 추가
+            if time_type in [0, 1]:
+                # 시급제, 월급제
+                #   정해진 유급휴일이 되면
+                #       소정근로일에 개근했을 때 주휴시간 부여
+                #           소정근로일 개근: 출퇴근시간이 있는 경우, 연차가 있는 경우
+                #           주휴시간: 웹에서 입력한 주 소정근로시간
+                #
+                week_index = str_to_datetime(pass_record.year_month_day).weekday()
+                week_index_db = (week_index + 1) % 7
+                if current_month_dict['time_type']['paid_day'] is not week_index_db:
+                    # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
+                    #   일소정근로시간을 기본근로시간으로 준다.
+                    day_dict['basic'] = day_basic_hours
+                else:
+                    # 유급휴일이 주휴일이면
+                    #   주소정근로일 개근 여부를 파악해서 개근했을 때
+                    #       주휴시간을 기본근로시간으로 준다.
                     # 소정근로일 개근 여부 파악: is_working_complete
                     is_working_complete = True
                     # 1. 근로자의 업무기간에 일주일이 되지 않으면 False
@@ -6476,6 +6486,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                                   'work_id: {}\n' \
                                   'passer_id: {}'.format(today, work_id, passer_id)
                         send_slack('employee/my_work_records_v2: 근로자 업무 내역에 업무가 없다.', message, channel='#server_bug')
+                        logSend('   > 오늘 날짜에 업무가 없다. (개근 아님)')
+                        is_working_complete = False
                     else:
                         # current_employee_work: {'id': 123, 'begin': '2020/07/07', 'end': '2020/07/09'}
                         logSend('   > current_employee_work: {} vs today: {}'.format(current_employee_work, today))
@@ -6490,12 +6502,12 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                             logSend('   > before_pass_record_list: {}'.format(
                                 [before_pass_record for before_pass_record in before_pass_record_list]))
                             if len(before_pass_record_list) == 0:
-                                # 일주일 동안 근로내역이 없다.
+                                logSend('   > 오늘 이전 일주일의 근로 내역이 없다. (개근 아님)')
                                 is_working_complete = False
                             else:
                                 before_pass_record_dict = {before_pass_record.year_month_day: before_pass_record for
                                                            before_pass_record in before_pass_record_list}
-                                logSend('   > before_pass_record_dict: {}'.format(before_pass_record_dict))
+                                logSend('   > before_pass_record_dict: {}'.format(list(before_pass_record_dict.keys())))
                                 for before_day in before_day_list:
                                     if before_pass_record_dict[before_day].day_type_staff_id == -1:
                                         # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
@@ -6519,19 +6531,19 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                                         is_working_complete = False
                                         break
                         else:
-                            logSend('   > 지난 일주일에 업무가 없다.')
+                            logSend('   > 업무기간이 아직 일주일이 되지 않았다. (개근 아님)')
                             is_working_complete = False
                     if is_working_complete:
                         # 소정근로일을 개근했다.
                         logSend('   >> 소정근로일 개근')
                         day_dict['basic'] = str(week_holiday_hours)
                     logSend('   << time_type: {}'.format(time_type))
-                else:
-                    # 교대제, 감시단속직
-                    #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
-                    #       주휴시간: 웹에서 입력한 주 소정근로시간
-                    day_dict['basic'] = str(week_holiday_hours)
-                    logSend('   > time_type: {}'.format(time_type))
+            else:
+                # 교대제, 감시단속직
+                #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
+                #       주휴시간: 웹에서 입력한 주 소정근로시간
+                day_dict['basic'] = str(week_holiday_hours)
+                logSend('   > time_type: {} 교대제, 감시단속직 유급휴일에 (주휴시간)을 기본근로시간으로 추'.format(time_type))
 
         if len(day_dict['basic']) > 0:
             hours_basic += float(day_dict['basic'])
