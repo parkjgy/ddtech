@@ -6231,6 +6231,21 @@ def my_work_records_v2(request):
             else:
                 notification_state = -1
                 notification_type = -1
+            # 근로자 확인시간:
+            #       1. 관리자에 의한 변경내용 확인시간
+            #       2. 퇴근시간
+            #       3. 출근시간
+            #       4. 없음
+            if pass_record.dt_accept is None:
+                if pass_record.dt_out_verify is None:
+                    if pass_record.dt_in_verify is None:
+                        dt_accept = ""
+                    else:
+                        dt_accept = pass_record.dt_in_verify.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    dt_accept = pass_record.dt_out_verify.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                dt_accept = pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
             passer_record_dict = {
                 'year_month_day': pass_record.year_month_day,
                 'week': week_comment[str_to_datetime(pass_record.year_month_day).weekday()],
@@ -6245,7 +6260,7 @@ def my_work_records_v2(request):
                 'holiday': '',  # 휴일근무
                 'ho': '',  # 휴일/연장
                 'remarks': '',  # 연차후무, 소정근로일
-                'dt_accept': "" if pass_record.dt_accept is None else pass_record.dt_accept.strftime("%Y-%m-%d %H:%M:%S"),
+                'dt_accept': dt_accept,
                 'day_type': day_type,  # 근무일 구분 0: 유급휴일, 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
                 'passer_id': AES_ENCRYPT_BASE64(str(passer.id)),
                 'notification': notification_state,
