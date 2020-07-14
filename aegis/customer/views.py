@@ -3047,8 +3047,8 @@ def reg_employee(request):
     # if dt_begin < datetime.datetime.now():
     #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
 
-    if dt_begin < dt_answer_deadline:
-        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+    # if dt_begin < dt_answer_deadline:
+    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
 
     # if dt_answer_deadline < datetime.datetime.now():
     #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
