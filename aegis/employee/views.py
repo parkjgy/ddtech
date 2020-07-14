@@ -300,7 +300,7 @@ def list_my_work(request):
     work_list = Works(employee.get_works())
     logSend('   > current work: {}'.format(work_list.find_work_by_date(datetime.datetime.now())))
     current_work = work_list.find_work_by_date(datetime.datetime.now())
-    if current_work == None:
+    if current_work is None:
         return REG_200_SUCCESS.to_json_response({'works': []})
     work_dict = get_work_dict([current_work['id']])
     if len(work_dict.keys()) == 0:
@@ -6482,7 +6482,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 if current_month_dict['time_info']['paid_day'] is not week_index_db:
                     # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
                     #   일소정근로시간을 기본근로시간으로 준다.
-                    day_dict['basic'] = day_basic_hours
+                    day_dict['basic'] = str(day_basic_hours)
                 else:
                     # 유급휴일이 주휴일이면
                     #   주소정근로일 개근 여부를 파악해서 개근했을 때
