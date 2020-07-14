@@ -3044,25 +3044,25 @@ def reg_employee(request):
     #
     # 답변시한 검사
     #
-    # if dt_begin < datetime.datetime.now():
-    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
-
-    # if dt_begin < dt_answer_deadline:
-    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
-
-    # if dt_answer_deadline < datetime.datetime.now():
-    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
-
     if dt_begin < work.dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 시작 날짜보다 같거나 늦어야 합니다.'})
 
-    # if work.dt_end < dt_end:
-    # 
-    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
-    #
-    # if dt_end < dt_begin:
-    # 
-    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
+    logSend('   > settings.DEBUG: {}'.format(settings.DEBUG))
+    if not settings.DEBUG:
+        if dt_begin < datetime.datetime.now():
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 오늘보다 늦어야 합니다.'})
+
+        if dt_begin < dt_answer_deadline:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 근무 시작 날짜보다 빨라야 합니다.'})
+
+        if dt_answer_deadline < datetime.datetime.now():
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '답변 시한은 현재 시각보다 빨라야 합니다.'})
+
+        if work.dt_end < dt_end:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 종료 날짜는 업무 종료 날짜보다 먼저이거나 같아야 합니다.'})
+
+        if dt_end < dt_begin:
+            return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '근무 시작 날짜는 업무 종료 날짜보다 빨라야 합니다.'})
     #
     # 2019/06/17 기존 근로자가 중복되더라도 새로 업무를 부여할 수 있게 중복번호기능을 중지한다.
     #
