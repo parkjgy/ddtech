@@ -583,7 +583,7 @@ def reg_employee_for_customer(request):
         new_notification = Notification_Work(
             work_id=customer_work_id,
             customer_work_id='',
-            employee_id=passer.id,  # phones_state[phone_no],
+            employee_id=-1 if passer is None else passer.id,  # phones_state[phone_no],
             employee_pNo=phone_no,
             dt_answer_deadline=dt_answer_deadline,
             dt_begin=str_to_dt(dt_begin_employee),
