@@ -554,6 +554,8 @@ def reg_employee_for_customer(request):
                     phones_state[phone_no] = -21  # 피쳐폰은 업무를 한개 이상 배정받지 못하게 한다.
                     continue
         else:
+            passer = Passer(pNo=phone_no)
+            passer.save()
             phones_state[phone_no] = -1  # 등록안된 SMS 대상
 
         if phones_state[phone_no] in [-1, 1]:
@@ -583,7 +585,7 @@ def reg_employee_for_customer(request):
         new_notification = Notification_Work(
             work_id=customer_work_id,
             customer_work_id='',
-            employee_id=-1 if passer is None else passer.id,  # phones_state[phone_no],
+            employee_id=passer.id,  # phones_state[phone_no],
             employee_pNo=phone_no,
             dt_answer_deadline=dt_answer_deadline,
             dt_begin=str_to_dt(dt_begin_employee),
