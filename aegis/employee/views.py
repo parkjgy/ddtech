@@ -307,6 +307,8 @@ def list_my_work(request):
         return REG_200_SUCCESS.to_json_response({'works': []})
     # logSend('   > work: {}, {}'.format(current_work['id'], work_dict[str(current_work['id'])]))
     work_list = [work_dict[str(current_work['id'])]]
+    for work in work_list:
+        work['id'] = AES_ENCRYPT_BASE64(str(current_work['id']))
     work_time_list = work_list[0]['time_info']['work_time_list']
     logSend('  > work_time: {}'.format(work_time_list))
     for work_time in work_time_list:
@@ -328,29 +330,29 @@ def list_my_work(request):
     work_list[0]['end'] = current_work['end']
     return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
 
-    employee_works = employee.get_works()
-    before15day = datetime.datetime.now() - timedelta(days=15)
-    # before15day = datetime.datetime.now() - timedelta(days=100)
-    # logSend(before15day)
-    lately_work_list = [employee_work for employee_work in employee_works if
-                        before15day < str_to_dt(employee_work['end'])]
-    lately_work_dict = {employee_work['id']: 'id' for employee_work in employee_works if
-                        before15day < str_to_dt(employee_work['end'])}
-    # logSend('  > lately_work_dict: {}'.format(lately_work_dict))
-    work_id_list = list(lately_work_dict.keys())
-    work_dict = get_work_dict(work_id_list)
-    # logSend('  > work_dict: {}'.format(work_dict.keys()))
-    if len(work_dict.keys()) == 0:
-        return REG_200_SUCCESS.to_json_response({'works': []})
-    work_list = []
-    for lately_work in lately_work_list:
-        # logSend('  > id: {}, work_dict: {}'.format(lately_work['id'], 11))
-        # logSend('  >> work_dict: {}'.format(work_dict['68']))
-        work_infor = copy.deepcopy(work_dict[str(lately_work['id'])])
-        work_infor['begin'] = lately_work['begin']
-        work_infor['end'] = lately_work['end']
-        work_list.append(work_infor)
-    return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
+    # employee_works = employee.get_works()
+    # before15day = datetime.datetime.now() - timedelta(days=15)
+    # # before15day = datetime.datetime.now() - timedelta(days=100)
+    # # logSend(before15day)
+    # lately_work_list = [employee_work for employee_work in employee_works if
+    #                     before15day < str_to_dt(employee_work['end'])]
+    # lately_work_dict = {employee_work['id']: 'id' for employee_work in employee_works if
+    #                     before15day < str_to_dt(employee_work['end'])}
+    # # logSend('  > lately_work_dict: {}'.format(lately_work_dict))
+    # work_id_list = list(lately_work_dict.keys())
+    # work_dict = get_work_dict(work_id_list)
+    # # logSend('  > work_dict: {}'.format(work_dict.keys()))
+    # if len(work_dict.keys()) == 0:
+    #     return REG_200_SUCCESS.to_json_response({'works': []})
+    # work_list = []
+    # for lately_work in lately_work_list:
+    #     # logSend('  > id: {}, work_dict: {}'.format(lately_work['id'], 11))
+    #     # logSend('  >> work_dict: {}'.format(work_dict['68']))
+    #     work_infor = copy.deepcopy(work_dict[str(lately_work['id'])])
+    #     work_infor['begin'] = lately_work['begin']
+    #     work_infor['end'] = lately_work['end']
+    #     work_list.append(work_infor)
+    # return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
 
 
 @cross_origin_read_allow
