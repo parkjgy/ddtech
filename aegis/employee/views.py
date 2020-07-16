@@ -326,7 +326,7 @@ def list_my_work(request):
             work_time['break_time_list'] = []
         else:
             work_time['break_time_list'] = []
-            work_time['break_time_total'] = 0
+            work_time['break_time_total'] = ""
     work_list[0]['begin'] = current_work['begin']
     work_list[0]['end'] = current_work['end']
     return REG_200_SUCCESS.to_json_response({'works': work_list, 'work': work_list[0]})
