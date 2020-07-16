@@ -2454,7 +2454,7 @@ def update_work_v2(request):
     if dt_end < dt_begin:
         return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '업무 시작 날짜보다 업무 종료 날짜가 더 빠릅니다.'})
 
-    #'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
+    # 'time_type': 0,  # 0:시급제, 1: 월급제, 2: 교대제, 3: 감시단속직 (급여 계산)
     if not (0 <= int(time_type) <= 3):
         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))})
     if int(time_type) in [0, 1]:
