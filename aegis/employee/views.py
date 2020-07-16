@@ -6531,7 +6531,10 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                                                            before_pass_record in before_pass_record_list}
                                 logSend('   > before_pass_record_dict: {}'.format(list(before_pass_record_dict.keys())))
                                 for before_day in before_day_list:
-                                    if before_pass_record_dict[before_day].day_type_staff_id == -1:
+                                    if before_day not in list(before_pass_record_dict.keys()):
+                                        # 근태내역에 before_day 근태내역이 없을 경우
+                                        day_type = get_day_type(work_dict[work_id], before_day)
+                                    elif before_pass_record_dict[before_day].day_type_staff_id == -1:
                                         # 관리자가 근태정보(소정근로일/휴일) 부여하지 않았음 - 업무 등록정보로 근태정보 설정
                                         day_type = get_day_type(work_dict[work_id], before_day)
                                     else:
