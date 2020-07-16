@@ -2521,17 +2521,19 @@ def update_work_v2(request):
                     if 'bt_begin' not in break_time:
                         logSend(get_api(request), '휴게시간에 시작시간이 없다.')
                         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 시작시간이 없다.'})
-                    bt_begin = str_minute(break_time['bt_begin'])
-                    if bt_begin < t_begin:
-                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'})
+                    # 2020/07/16 기능 정지
+                    # bt_begin = str_minute(break_time['bt_begin'])
+                    # if bt_begin < t_begin:
+                    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 시작시간이 출근시간보다 빠르면 안됩니다.'})
                     if 'bt_end' not in break_time:
                         logSend(get_api(request), '휴게시간에 종료시간이 없다.')
                         return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간에 종료시간이 없다.'})
-                    bt_end = str_minute(break_time['bt_end'])
-                    if bt_end <= bt_begin:
-                        bt_end += 24 * 60
-                    if bt_end > t_end:
-                        return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'})
+                    # 2020/07/16 기능 정지
+                    # bt_end = str_minute(break_time['bt_end'])
+                    # if bt_end <= bt_begin:
+                    #     bt_end += 24 * 60
+                    # if bt_end > t_end:
+                    #     return REG_416_RANGE_NOT_SATISFIABLE.to_json_response({'message': '휴게 종료시간이 퇴근시간보다 늦으면 안됩니다.'})
                     begin = str2min(break_time['bt_begin'])
                     end = str2min(break_time['bt_end'])
                     time = end - begin
