@@ -6143,8 +6143,10 @@ def my_work_records_v2(request):
     passer_id = parameter_check['parameters']['passer_id']
     year_month = parameter_check['parameters']['dt']
     work_id = parameter_check['parameters']['work_id']
+
     # 날짜 범위 확인
-    current_month = datetime.now().strftime("%Y-%m")
+    current_month = datetime.datetime.now().strftime("%Y-%m")
+    logSend('   > current_month: {} vs year_month: {}'.format(current_month, year_month))
     if current_month < year_month:
         return status422(get_api(request), {'message': '요청 월({})이 현재 월보다 나중이다.'.format(year_month)})
 
