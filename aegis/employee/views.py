@@ -4777,7 +4777,7 @@ def pass_record_of_employees_in_day_for_customer_v2(request):
                 comment = send_comment
             elif overtime == 0:
                 push_title = '{} 휴가, 조퇴, 연장이 철회됩니다.'.format(year_month_day)
-                comment = '연차휴가, 조기퇴근, 연장근무'
+                comment = ''
             else:
                 push_title = '{} 연장근로가 부여되었습니다.'.format(year_month_day)
                 comment = '{0:02d} 시간 {1:02d} 분'.format(overtime // 2, (overtime % 2) * 30)
@@ -6195,7 +6195,17 @@ def my_work_records_v2(request):
         # if len(pass_record_list) == 0:
         #     return REG_200_SUCCESS.to_json_response({'message': '근태내역이 없습니다.', 'arr_working': []})
     # 업무내역에서 복잡한 휴게시간 미리 계산하기
-    set_break_time_of_work_time_info(work_dict)
+    for work_dict_key in work_dict.keys():
+        work_time_list = work_dict[work_dict_key]['time_info']['work_time_list']
+        for work_time in work_time_list:
+            work_time['break_mins'] = str2min(work_time['break_time_total'])
+        # work_dict[work_dict_key]['time_info']['work_time_list'] = sorted(work_time_list, key=itemgetter('t_begin'))
+        # logSend('   > work_dict[work_dict_key][time_info][work_time_list]: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
+    # 2020/07/18 - reg_work_v2 에서 처리
+    # set_break_time_of_work_time_info(work_dict)
+    # for work_dict_key in work_dict.keys():
+    #     logSend('   > work_dict[work_dict_key][time_info][work_time_list]: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
+
     if work_id is None:
         notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(
             notification_type=-30)
