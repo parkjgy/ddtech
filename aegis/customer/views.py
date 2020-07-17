@@ -2564,6 +2564,7 @@ def update_work_v2(request):
         'time_type': time_type,
         'work_time_list': work_time_list,
     }
+    logSend('   > time_infor: {}'.format(time_info))
     if 'week_hours' in rqst:
         time_info['week_hours'] = week_hours
     if 'month_hours' in rqst:
