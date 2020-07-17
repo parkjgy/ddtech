@@ -6214,14 +6214,11 @@ def my_work_records_v2(request):
     #     logSend('   > work_dict[work_dict_key][time_info][work_time_list]: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
 
     if work_id is None:
-        notification_list = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(
-            notification_type=-30)
+        notifications = Notification_Work.objects.filter(is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
     else:
-        notification_list = Notification_Work.objects.filter(work_id=work_id, is_x__in=[0, 2, 3],
-                                                             employee_id=passer.id).exclude(
-            notification_type=-30)
+        notifications = Notification_Work.objects.filter(work_id=work_id, is_x__in=[0, 2, 3], employee_id=passer.id).exclude(notification_type=-30)
     notification_dict = {}
-    for notification in notification_list:
+    for notification in notifications:
         notification_dict[notification.dt_inout.strftime("%Y-%m-%d")] = notification  # 0: 결정 안함, 2: 거부됨, 3: 답변시한 지남
     # logSend('  > notification_dict: {}'.format(notification_dict))
     #
