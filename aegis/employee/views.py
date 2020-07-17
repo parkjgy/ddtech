@@ -6130,6 +6130,7 @@ def my_work_records_v2(request):
             {'message':'ClientError: parameter \'dt\' 가 없어요'}
             {'message': 'passer_id: {} 없음. {}'.format(passer_id, str(e))}
             {'message': 'employee_id{} 없음. {}'.format(passer.employee_id, str(e))}
+            {'message': '요청 월({})이 현재 월보다 나중이다.'.format(year_month)}
     """
     if request.method == 'POST':
         rqst = json.loads(request.body.decode("utf-8"))
@@ -6142,7 +6143,10 @@ def my_work_records_v2(request):
     passer_id = parameter_check['parameters']['passer_id']
     year_month = parameter_check['parameters']['dt']
     work_id = parameter_check['parameters']['work_id']
-    # print('   > work_id: {}'.format(work_id))
+    # 날짜 범위 확인
+    current_month = datetime.now().strftime("%Y-%m")
+    if current_month < year_month:
+        return status422(get_api(request), {'message': '요청 월({})이 현재 월보다 나중이다.'.format(year_month)})
 
     # 출입자(근로자) 정보 가져오기
     try:
@@ -6198,7 +6202,10 @@ def my_work_records_v2(request):
     for work_dict_key in work_dict.keys():
         work_time_list = work_dict[work_dict_key]['time_info']['work_time_list']
         for work_time in work_time_list:
-            work_time['break_mins'] = str2min(work_time['break_time_total'])
+            if len(work_time['break_time_total']) == 0:
+                work_time['break_mins'] = 0
+            else:
+                work_time['break_mins'] = str2min(work_time['break_time_total'])
         # work_dict[work_dict_key]['time_info']['work_time_list'] = sorted(work_time_list, key=itemgetter('t_begin'))
         # logSend('   > work_dict[work_dict_key][time_info][work_time_list]: {}'.format(work_dict[work_dict_key]['time_info']['work_time_list']))
     # 2020/07/18 - reg_work_v2 에서 처리
