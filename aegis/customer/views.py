@@ -2283,7 +2283,6 @@ def reg_work_v2(request):
             {'message': '[유급휴일]이 -1 ~ 6 사이의 값이 아닙니다.'}
             {'message': '급여형태: {} 가 범위 초과(0 ~ 3)'.format(int(time_type))}
     """
-
     return update_work_v2(request)
 
 
@@ -2540,7 +2539,8 @@ def update_work_v2(request):
                     if end < begin:
                         time = end + (1440 - begin)
                     break_time_sum = time
-                work_time['break_time_total'] = break_time_sum
+                work_time['break_time_total'] = '{0:02d}:{1:02d}'.format((break_time_sum // 60), (break_time_sum % 60))
+                logSend('   > break_time_total: {}'.format(work_time['break_time_total']))
             else:
                 logSend(get_api(request), '휴게시간이 시간지정인데 지정시간 리스트가 없다.')
                 return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'})
@@ -2557,6 +2557,9 @@ def update_work_v2(request):
         elif int_break_time_type > 2:  # 휴게시간을 별도 정하지 않았을 때
             logSend(get_api(request), '휴게시간 방식이 범위를 넘었다.')
             return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간에 휴게시간 방식이 범위를 넘었다.'})
+        else:
+            work_time['break_time_list'] = []
+            work_time['break_time_total'] = ''
     time_info = {
         'time_type': time_type,
         'work_time_list': work_time_list,
