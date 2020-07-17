@@ -2538,9 +2538,8 @@ def update_work_v2(request):
                     time = end - begin
                     if end < begin:
                         time = end + (1440 - begin)
-                    break_time_sum = time
+                    break_time_sum += time
                 work_time['break_time_total'] = '{0:02d}:{1:02d}'.format((break_time_sum // 60), (break_time_sum % 60))
-                logSend('   > break_time_total: {}'.format(work_time['break_time_total']))
             else:
                 logSend(get_api(request), '휴게시간이 시간지정인데 지정시간 리스트가 없다.')
                 return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '휴게시간이 시간지정인데 지정시간 리스트가 없다.'})
