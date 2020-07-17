@@ -2560,6 +2560,9 @@ def update_work_v2(request):
         else:
             work_time['break_time_list'] = []
             work_time['break_time_total'] = ''
+    if len(work_time_list) is 0:
+        logSend(get_api(request), '근무시간이 없습니다.')
+        return REG_422_UNPROCESSABLE_ENTITY.to_json_response({'message': '근무시간이 없습니다.'})
     time_info = {
         'time_type': time_type,
         'work_time_list': work_time_list,
