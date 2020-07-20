@@ -6584,14 +6584,17 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
                 #       주휴시간: 웹에서 입력한 주 소정근로시간
                 day_dict['basic'] = str(week_holiday_hours)
-                logSend('   > time_type: {} 교대제, 감시단속직 유급휴일에 (주휴시간)을 기본근로시간으로 추'.format(time_type))
+                logSend('   > time_type: {} 교대제, 감시단속직 유급휴일에 (주휴시간)을 기본근로시간으로 추가'.format(time_type))
 
         if len(day_dict['basic']) > 0:
             logSend('   >>>>> {} - 근로시간: {}, 근태: {}, 연차/연장: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['day_type'], day_dict['overtime']))
             hours_basic += float(day_dict['basic'])
-            if int(day_dict['day_type']) == 2:  # 소정근로일 이면
-                if float(day_dict['overtime']) < -1.9:  # 연차휴가 가 아니면
-                    days_working += 1
+            if time_type in [0, 1]:  # 기간제, 월급제
+                if int(day_dict['day_type']) == 2:  # 소정근로일 이면
+                    if float(day_dict['overtime']) < -1.9:  # 연차휴가 가 아니면
+                        days_working += 1
+            else:
+                days_working += 1
         if len(day_dict['break']) > 0:
             # day_dict['break'] minutes
             hours_break += float(day_dict['break']) / 60
