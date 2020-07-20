@@ -6589,8 +6589,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         if len(day_dict['basic']) > 0:
             logSend('   >>>>> 근로시간: {}, 근태: {}, 연차/연장: {}'.format(day_dict['basic'], day_dict['day_type'], day_dict['overtime']))
             hours_basic += float(day_dict['basic'])
-            if day_dict['day_type'] is '2':
-                if day_dict['overtime'] is not '-2':
+            if int(day_dict['day_type']) == 2:
+                if int (day_dict['overtime']) ==-2:
                     days_working += 1
         if len(day_dict['break']) > 0:
             # day_dict['break'] minutes
