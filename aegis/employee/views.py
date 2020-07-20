@@ -6587,11 +6587,11 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 logSend('   > time_type: {} 교대제, 감시단속직 유급휴일에 (주휴시간)을 기본근로시간으로 추가'.format(time_type))
 
         if len(day_dict['basic']) > 0:
-            logSend('   >>>>> {} - 근로시간: {}, 근태: {}, 연차/연장: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['day_type'], day_dict['overtime']))
+            logSend('   >>>>> {} : 근로시간: {}, 근태: {}, 연차/연장: {} days_working: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['day_type'], day_dict['overtime'], days_working))
             hours_basic += float(day_dict['basic'])
             if time_type in [0, 1]:  # 기간제, 월급제
                 if int(day_dict['day_type']) == 2:  # 소정근로일 이면
-                    if float(day_dict['overtime']) < -1.9:  # 연차휴가 가 아니면
+                    if float(day_dict['overtime']) > -2.0:  # 연차휴가 가 아니면
                         days_working += 1
             else:
                 days_working += 1
