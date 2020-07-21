@@ -6487,9 +6487,9 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         #
         # 소정근로 시간 추가
         #
-        if day_dict['day_type'] is 0:  # 근무일 구분 0: 유급휴일, 1: 무급휴무일 - 주휴일(연장 근무), 2: 소정근로일, 3: 무급휴일 - 무휴일(휴일/연장 근무)
+        if day_dict['day_type'] is 0:  # 근무일 구분 0: 유급휴일(근무하지 않아도 기본근로가 추가되는 휴일: 주휴일(주휴수당 지급 휴일), 예비군 훈련, 근로자의 날 등), 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
             days_week += 1  # 유급휴일 일수 증가
-
+            logSend('   > 유급휴일: {}'.format(day_dict['day_type']))
             # 유급휴일의 주휴시간 추가
             if time_type in [0, 1]:
                 # 시급제, 월급제
@@ -6501,6 +6501,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 week_index = str_to_datetime(day_dict['year_month_day']).weekday()
                 week_index_db = (week_index + 1) % 7
                 if current_month_dict['time_info']['paid_day'] is not week_index_db:
+                    logSend('   > 유급휴일: 주휴일(요일: {}) 이 아님 요일: {}'.format(week_index_db, week_index))
                     # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
                     #   일소정근로시간을 기본근로시간으로 준다.
                     day_dict['basic'] = str(day_basic_hours)
@@ -6517,35 +6518,34 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                     #    2.3. 소정근로일에 연차가 있으면 True
                     #    2.4. 소정근로일에 출근 or 퇴근이 없으면 False
                     today = str_to_datetime(day_dict['year_month_day'])
-                    logSend('   >>> today: {}'.format(today))
                     current_employee_work = employee_works.find_work_include_date(work_id, today)
                     if current_employee_work is None:
                         message = 'date: {}\n' \
                                   'work_id: {}\n' \
                                   'passer_id: {}'.format(today, work_id, passer_id)
                         send_slack('employee/my_work_records_v2: 근로자 업무 내역에 업무가 없다.', message, channel='#server_bug')
-                        logSend('   > 오늘 날짜에 업무가 없다. (개근 아님)')
+                        logSend('      > 오늘 날짜({})에 업무가 없다. (개근 아님)'.format(today))
                         is_working_complete = False
                     else:
                         # current_employee_work: {'id': 123, 'begin': '2020/07/07', 'end': '2020/07/09'}
-                        logSend('   > current_employee_work: {} vs today: {}'.format(current_employee_work, today))
+                        logSend('      > current_employee_work: {} vs today: {}'.format(current_employee_work, today))
                         if str_to_dt(current_employee_work['begin']) <= today - timedelta(days=7):
                             # 근로자의 업무기간이 오늘의 일주일 전에 업무가 시작되었다.
                             before_day_list = [(today - timedelta(days=day)).strftime("%Y-%m-%d") for day in
                                                range(1, 7)]
-                            logSend('   > passer_id: {}, work_id: {}, before_day_list: {}'.format(passer_id, work_id, before_day_list))
+                            logSend('      > passer_id: {}, work_id: {}, before_day_list: {}'.format(passer_id, work_id, before_day_list))
                             before_pass_record_list = Pass_History.objects.filter(passer_id=passer_id, work_id=work_id,
                                                                                   year_month_day__in=before_day_list).order_by(
                                 'year_month_day')
-                            logSend('   > before_pass_record_list: {}'.format(
+                            logSend('      > before_pass_record_list: {}'.format(
                                 [before_pass_record for before_pass_record in before_pass_record_list]))
                             if len(before_pass_record_list) == 0:
-                                logSend('   > 오늘 이전 일주일의 근로 내역이 없다. (개근 아님)')
+                                logSend('      > 오늘 이전 일주일의 근로 내역이 없다. (개근 아님)')
                                 is_working_complete = False
                             else:
                                 before_pass_record_dict = {before_pass_record.year_month_day: before_pass_record for
                                                            before_pass_record in before_pass_record_list}
-                                logSend('   > before_pass_record_dict: {}'.format(list(before_pass_record_dict.keys())))
+                                logSend('      > before_pass_record_dict: {}'.format(list(before_pass_record_dict.keys())))
                                 for before_day in before_day_list:
                                     if before_day not in list(before_pass_record_dict.keys()):
                                         # 근태내역에 before_day 근태내역이 없을 경우
@@ -6572,7 +6572,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                                         is_working_complete = False
                                         break
                         else:
-                            logSend('   > 업무기간이 아직 일주일이 되지 않았다. (개근 아님)')
+                            logSend('      > 업무기간이 아직 일주일이 되지 않았다. (개근 아님)')
                             is_working_complete = False
                     if is_working_complete:
                         # 소정근로일을 개근했다.
