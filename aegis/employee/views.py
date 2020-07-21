@@ -6488,8 +6488,6 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
         # 소정근로 시간 추가
         #
         if day_dict['day_type'] is 0:  # 근무일 구분 0: 유급휴일(근무하지 않아도 기본근로가 추가되는 휴일: 주휴일(주휴수당 지급 휴일), 예비군 훈련, 근로자의 날 등), 1: 무급휴무일(연장 근무), 2: 소정근로일, 3: 무급휴일(휴일/연장 근무)
-            days_week += 1  # 유급휴일 일수 증가
-            logSend('   > 유급휴일: {}'.format(days_week))
             # 유급휴일의 주휴시간 추가
             if time_type in [0, 1]:
                 # 시급제, 월급제
@@ -6500,7 +6498,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 #
                 week_index = str_to_datetime(day_dict['year_month_day']).weekday()
                 week_index_db = (week_index + 1) % 7
-                logSend('   > 유급휴일({}): 주휴일(요일: {}) vs 요일: {}'.format(day_dict['year_month_day'], week_comment[week_index_db], week_comment[week_index]))
+                logSend('   > 유급휴일({}): 주휴일(요일: {}) vs 요일: {}'.format(day_dict['year_month_day'], day_dict['week'], week_comment[week_index]))
                 if current_month_dict['time_info']['paid_day'] is not week_index_db:
                     # 유급휴일이 주휴일이 아니면 (예비군 훈련, 노동절 등)
                     #   일소정근로시간을 기본근로시간으로 준다.
@@ -6577,7 +6575,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                         # 소정근로일을 개근했다.
                         logSend('   >> 소정근로일 개근')
                         day_dict['basic'] = str(week_holiday_hours)
-                    logSend('   << time_type: {}'.format(time_type))
+                        days_week += 1  # 유급휴일 일수 증가
+                    logSend('   > 유급휴일: {}'.format(days_week))
             else:
                 # 교대제, 감시단속직
                 #   유급휴일에 주휴시간(근로시간에 추가) 부여: 소정근로시간 개근 여부 확인 안함
