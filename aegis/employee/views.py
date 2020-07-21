@@ -6590,7 +6590,7 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
             logSend('   >>>>> {} : 근로시간: {}, 근태: {}, 연차/연장: {} days_working: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['day_type'], day_dict['overtime'], days_working))
             hours_basic += float(day_dict['basic'])
             if time_type in [0, 1]:  # 기간제, 월급제
-                if int(day_dict['day_type']) == 2:  # 소정근로일 이면
+                if int(day_dict['day_type']) != 0:  # 소정근로일 이면
                     if float(day_dict['overtime']) > -2.0:  # 연차휴가 가 아니면
                         days_working += 1
             else:
