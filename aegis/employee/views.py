@@ -6584,8 +6584,8 @@ def process_month_pass_record(passer_rec_dict, work_dict, employee_works):
                 day_dict['basic'] = str(week_holiday_hours)
                 logSend('   > time_type: {} 교대제, 감시단속직 유급휴일에 (주휴시간)을 기본근로시간으로 추가'.format(time_type))
 
-        if len(day_dict['basic']) > 0:
-            logSend('   >>>>> {} : 근로시간: {}, 근태: {}, 연차/연장: {} days_working: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['day_type'], day_dict['overtime'], days_working))
+        if len(day_dict['basic']) > 0 or len(day_dict['holiday']) > 0:
+            logSend('   >>>>> {} : 근로시간: {}, 휴일근로시간: {}, 근태: {}, 연차/연장: {} days_working: {}'.format(day_dict['year_month_day'], day_dict['basic'], day_dict['holiday'], day_dict['day_type'], day_dict['overtime'], days_working))
             hours_basic += float(day_dict['basic'])
             if time_type in [0, 1]:  # 기간제, 월급제
                 if int(day_dict['day_type']) != 0:  # 소정근로일 이면
